@@ -147,7 +147,10 @@ export function eventSentence(e: SessionEvent): string {
       }
       if (p.holdEnded) return `Bloqueo terminado (${p.cancelled ? 'cancelado' : String(p.quality) === 'valid' ? 'válido' : 'no válido'})`;
       if (p.kind === 'manualBreath') return `${who} pidió una respiración manual`;
-      if (p.kind === 'increaseO2') return p.phase === 'started' ? '↑O₂ iniciado (100 % por 120 s)' : '↑O₂ detenido';
+      if (p.kind === 'increaseO2')
+        return p.phase === 'started'
+          ? `↑O₂ iniciado (+${Math.round(Number(p.deltaFraction ?? 1) * 100)} % durante ${Math.round(Number(p.durationMs ?? 0) / 1000)} s)`
+          : '↑O₂ detenido';
       if (p.cancel) return `${who} canceló el procedimiento`;
       if (p.type === 'rejected') return `Bloqueo no elegible: ${humanReason(String(p.reason))}`;
       return 'Procedimiento';
@@ -162,7 +165,7 @@ export function eventSentence(e: SessionEvent): string {
     case 'pause':
       return p.paused ? `Simulación pausada${p.reason ? ' (' + String(p.reason) + ')' : ''}` : 'Simulación reanudada';
     case 'audio':
-      return 'Pausa de audio 120 s';
+      return `Pausa de audio ${Math.round(Number(p.pauseMs ?? 0) / 1000)} s`;
     case 'discontinuity':
       return `Tiempo descartado: ${Math.round((p.droppedMs as number) ?? 0)} ms`;
     case 'rejected':

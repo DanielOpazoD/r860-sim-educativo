@@ -11,7 +11,8 @@ import type { Command } from '../domain/commands';
 import type { SettingRule } from '../domain/settingRules';
 import type { AlarmLimits, AlarmState, SettingsKey, VcSettings, VentMode } from '../domain/types';
 import { gridValues, isOnGrid, nearestGridValue, validateDomains, validateVcSettings, deriveVcTiming } from '../domain/validation';
-import { defaultInit, type EngineFrame, type SimulatorInit } from '../engine/simulator';
+import type { EngineFrame, SimulatorInit } from '../engine/simulator';
+import { defaultInit } from '../profiles';
 import { ENGINE_VERSION } from '../engine/version';
 import { frameFromFixture, PHOTO_FIXTURES } from '../fixtures/photoFixtures';
 import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
@@ -607,8 +608,11 @@ export function startApp(opts: AppOptions): void {
     const h = !active ? fr.procedure.last[holdType] : null;
     const v1 = insp ? h?.values.pplat : h?.values.peepTot,
       v2 = insp ? h?.values.cstat : h?.values.peepi;
-    put('#hold-value', h?.quality === 'valid' && v1?.value != null ? f(v1.value, 0) : '—');
-    put('#hold-second', h?.quality === 'valid' && v2?.value != null ? f(insp ? v2.value * 1000 : v2.value, insp ? 0 : 1) : '—');
+    put('#hold-value', h?.quality === 'valid' && v1?.value !== null && v1?.value !== undefined ? f(v1.value, 0) : '—');
+    put(
+      '#hold-second',
+      h?.quality === 'valid' && v2?.value !== null && v2?.value !== undefined ? f(insp ? v2.value * 1000 : v2.value, insp ? 0 : 1) : '—',
+    );
     // ▶ sólo inicia; mientras hay una solicitud en cola o en curso queda deshabilitado y aparece «Cancelar».
     const run = $<HTMLButtonElement>('#hold-run');
     const busy = !!active || holdRequestInFlight;
@@ -900,8 +904,8 @@ export function startApp(opts: AppOptions): void {
       ppeak: fr.metrics.ppeak?.value ?? fr.live.ppeakCurrent,
       peep,
       standby: fr.ventilation === 'standby',
-      vteMl: fr.metrics.vte?.value == null ? null : fr.metrics.vte.value * 1000,
-      fio2Pct: fr.metrics.fio2?.value == null ? null : fr.metrics.fio2.value * 100,
+      vteMl: fr.metrics.vte?.value === null || fr.metrics.vte?.value === undefined ? null : fr.metrics.vte.value * 1000,
+      fio2Pct: fr.metrics.fio2?.value === null || fr.metrics.fio2?.value === undefined ? null : fr.metrics.fio2.value * 100,
     });
     if (teacherVisible) drawMuscle($<HTMLCanvasElement>('#muscle-canvas'), points, simS());
   }

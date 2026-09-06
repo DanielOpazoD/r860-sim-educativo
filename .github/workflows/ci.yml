@@ -12,6 +12,7 @@ jobs:
         with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npm run lint
+      - run: npm run deps
       - run: npm run format:check
       - run: npm run typecheck
       # vitest.config.ts fija umbrales de cobertura medidos (unidad + banco); falla ante regresiones.

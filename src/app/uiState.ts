@@ -160,29 +160,31 @@ export class ModeMenuDraft {
   ) {
     this.draft = { ...original };
   }
+  private set<K extends SettingsKey>(key: K, value: VcSettings[K]): void {
+    this.draft[key] = value;
+  }
   adjust(key: SettingsKey, direction: 1 | -1): void {
     const rule = this.rules[key];
     const cur = this.draft[key];
     if (rule.unit === 'boolean') {
-      (this.draft as unknown as Record<string, unknown>)[key] = direction > 0;
+      this.set(key, (direction > 0) as VcSettings[typeof key]);
       return;
     }
     if (rule.allowOff) {
       const min = rule.domain[0]?.min ?? 0;
       if (cur === 'off') {
-        if (direction > 0) (this.draft as unknown as Record<string, unknown>)[key] = min / rule.displayFactor;
+        if (direction > 0) this.set(key, (min / rule.displayFactor) as VcSettings[typeof key]);
         return;
       }
       const d = (cur as number) * rule.displayFactor;
       if (direction < 0 && Math.abs(d - min) < 1e-9) {
-        (this.draft as unknown as Record<string, unknown>)[key] = 'off';
+        this.set(key, 'off' as VcSettings[typeof key]);
         return;
       }
-      (this.draft as unknown as Record<string, unknown>)[key] = stepDisplayValue(rule, d, direction) / rule.displayFactor;
+      this.set(key, (stepDisplayValue(rule, d, direction) / rule.displayFactor) as VcSettings[typeof key]);
       return;
     }
-    (this.draft as unknown as Record<string, unknown>)[key] =
-      stepDisplayValue(rule, (cur as number) * rule.displayFactor, direction) / rule.displayFactor;
+    this.set(key, (stepDisplayValue(rule, (cur as number) * rule.displayFactor, direction) / rule.displayFactor) as VcSettings[typeof key]);
   }
   validate() {
     return validateVcSettings(this.draft, this.limits);

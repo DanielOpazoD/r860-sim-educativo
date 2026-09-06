@@ -1,4 +1,5 @@
-import { Simulator, defaultInit, type SimulatorInit } from '../src/engine/simulator';
+import { Simulator, type SimulatorInit } from '../src/engine/simulator';
+import { R860_PROFILE, defaultInit } from '../src/profiles';
 import type { PatientParams, VcSettings } from '../src/domain/types';
 
 /** Banco SC-01: C = 0.05, R = 10, PEEP 5, VT 0.5 L, Tinsp 1 s (flujo 0.5 L/s), sin pausa. */
@@ -23,7 +24,7 @@ export const BENCH_SETTINGS: VcSettings = {
 };
 
 export function benchSim(over: Partial<SimulatorInit> = {}): Simulator {
-  return new Simulator(defaultInit({ patient: { ...BENCH_PATIENT }, settings: { ...BENCH_SETTINGS }, ...over }));
+  return new Simulator(defaultInit({ patient: { ...BENCH_PATIENT }, settings: { ...BENCH_SETTINGS }, ...over }), R860_PROFILE);
 }
 
 /** Avanza hasta que se complete la respiración con secuencia `seq` (o expira el presupuesto). */

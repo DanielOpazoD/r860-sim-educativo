@@ -1,5 +1,6 @@
 import { planSteps } from '../engine/clock';
 import { Simulator, type SimulatorInit } from '../engine/simulator';
+import { profileFor } from '../profiles';
 import { exportSession, importSession, replaySession } from '../history/session';
 import type { Scenario } from '../scenarios';
 import type { Discontinuity, EngineToMain, MainToEngine } from './protocol';
@@ -36,7 +37,7 @@ export class EngineHost {
     switch (m.type) {
       case 'init':
         try {
-          this.sim = new Simulator(m.init);
+          this.sim = new Simulator(m.init, profileFor(m.init));
         } catch (e) {
           // Nunca silencioso: el cliente lo notifica por onDegraded y la interfaz lo muestra.
           this.post({ type: 'initError', reason: (e as Error).message });
@@ -144,7 +145,7 @@ export class EngineHost {
       initialV: sc.initialV ?? 'equilibrium',
       startVentilating: true,
     };
-    this.sim = new Simulator(init);
+    this.sim = new Simulator(init, profileFor(init));
     this.sim.noteEvent('scenario', 'instructor', { scenarioId: sc.id, name: sc.name, synthetic: true });
     this.scenarioPerturbations = sc.perturbations.map((p) => ({
       atSimTimeMs: p.atSimTimeMs,

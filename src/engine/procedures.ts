@@ -1,6 +1,5 @@
 import type { MetricSample, ProcedureKind, ProcedureResult, Quality } from '../domain/types';
-import type { ControllerEvent, HoldKind, HoldOutcome, VcController } from './controller';
-import { PLATEAU_STABILITY_CMH2O } from './controller';
+import { PLATEAU_STABILITY_CMH2O, type ControllerEvent, type HoldKind, type HoldOutcome, type VcController } from './controller';
 import { msToS, sToMs } from '../domain/units';
 
 /** Denominador mínimo para Cstat (cmH2O), P. */

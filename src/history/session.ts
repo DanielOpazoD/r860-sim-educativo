@@ -2,7 +2,7 @@ import { COMMAND_TYPES, type Command, type CommandLogEntry } from '../domain/com
 import type { Actor, BreathRecord } from '../domain/types';
 import { Simulator, type SimulatorInit } from '../engine/simulator';
 import { ACCEPTED_ENGINE_VERSIONS, ENGINE_VERSION, SESSION_SCHEMA_VERSION } from '../engine/version';
-import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
+import { findProfile, profileFor } from '../profiles';
 import {
   validateDomains,
   validateEffort,
@@ -11,7 +11,6 @@ import {
   validateSettingsKeys,
   validateVcSettings,
 } from '../domain/validation';
-import { VC_ADULT_CROSS_LIMITS, VC_ADULT_RULES } from '../profiles/r860-es-photo-reference/settings';
 
 export interface SessionFile {
   schemaVersion: string;
@@ -35,9 +34,9 @@ export function exportSession(sim: Simulator): SessionFile {
   return {
     schemaVersion: SESSION_SCHEMA_VERSION,
     engineVersion: ENGINE_VERSION,
-    profileId: PROFILE.profileId,
-    profileVersion: PROFILE.profileVersion,
-    banner: PROFILE.banner,
+    profileId: sim.profile.profileId,
+    profileVersion: sim.profile.profileVersion,
+    banner: sim.profile.banner,
     exportedAtIso: new Date(sim.wallTimeMs).toISOString(),
     init: JSON.parse(JSON.stringify(sim.init)) as SimulatorInit,
     commands: sim.commandLog
@@ -109,7 +108,8 @@ export function importSession(text: string): ImportResult {
   ]);
   for (const k of Object.keys(o)) if (!allowed.has(k)) errors.push(`Clave desconocida: ${k}`);
   if (o.schemaVersion !== SESSION_SCHEMA_VERSION) errors.push(`schemaVersion no soportada: ${String(o.schemaVersion)}`);
-  if (o.profileId !== PROFILE.profileId) errors.push(`profileId distinto: ${String(o.profileId)}`);
+  const profile = typeof o.profileId === 'string' ? findProfile(o.profileId) : null;
+  if (!profile) errors.push(`profileId desconocido: ${String(o.profileId)}`);
   if (typeof o.engineVersion === 'string' && o.engineVersion !== ENGINE_VERSION) {
     if (ACCEPTED_ENGINE_VERSIONS.includes(o.engineVersion))
       warnings.push(`Sesión creada con motor ${o.engineVersion}; la reproducción puede no ser idéntica`);
@@ -124,11 +124,11 @@ export function importSession(text: string): ImportResult {
       if (!init[k] || typeof init[k] !== 'object') errors.push(`init.${k} ausente`);
     if (init.settings && typeof init.settings === 'object') {
       const st = init.settings as SimulatorInit['settings'];
-      const ke = validateSettingsKeys(st as unknown as Record<string, unknown>, VC_ADULT_RULES);
+      const ke = validateSettingsKeys(st as unknown as Record<string, unknown>, profile?.rules ?? {});
       if (ke.length) errors.push(...ke.map((r) => `init.settings: ${r}`));
-      else {
-        errors.push(...validateDomains(st, VC_ADULT_RULES).map((r) => `init.settings: ${r}`));
-        errors.push(...validateVcSettings(st, VC_ADULT_CROSS_LIMITS).reasons.map((r) => `init.settings: ${r}`));
+      else if (profile) {
+        errors.push(...validateDomains(st, profile.rules).map((r) => `init.settings: ${r}`));
+        errors.push(...validateVcSettings(st, profile.crossLimits).reasons.map((r) => `init.settings: ${r}`));
       }
     }
     if (init.effort && typeof init.effort === 'object')
@@ -180,7 +180,8 @@ export function importSession(text: string): ImportResult {
 
 /** Reproduce una sesión: misma inicialización y mismos comandos a los mismos tiempos simulados (TIM-02). */
 export function replaySession(session: SessionFile, untilMs = session.finalSimTimeMs): Simulator {
-  const sim = new Simulator(JSON.parse(JSON.stringify(session.init)) as SimulatorInit);
+  const init = JSON.parse(JSON.stringify(session.init)) as SimulatorInit;
+  const sim = new Simulator(init, profileFor({ profileId: init.profileId ?? session.profileId }));
   const cmds = [...session.commands].sort((a, b) => a.simTimeMs - b.simTimeMs);
   let i = 0;
   while (sim.simTimeMs < untilMs - 1e-9) {
