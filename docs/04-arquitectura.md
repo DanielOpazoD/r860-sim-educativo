@@ -36,7 +36,7 @@ Los `import type` no cuentan para estas reglas: desaparecen al compilar y no aco
 - `patient.ts`: modelo de un compartimento con volumen absoluto; integrador RK2 con sub-pasos de 0,2·τ, tope de flujo y resistencia en serie dentro del integrador.
 - `controller.ts`: fases (`inspFlow`, `inspLimited`, `inspPause`, `inspPressure`, `exp`, bloqueos), eventos programados con sub-paso exacto, transiciones diferidas, cola de eventos que el `Simulator` drena en orden.
 - `metrics.ts`, `alarms.ts`, `procedures.ts`, `sensors.ts`, `effort.ts`: componentes pequeños que sólo hablan por `BreathRecord`, `MetricSample`, `AlarmState` y `ProcedureResult`.
-- `simulator.ts`: composición, validación de fronteras, ejecución de comandos y construcción del cuadro.
+- `simulator.ts`: composición, validación de fronteras, reloj y construcción del cuadro. `commandHandlers.ts`: un manejador por tipo de comando sobre una interfaz `CommandContext` (validar → aplicar → registrar); la prueba ARQ-02 exige un manejador por cada tipo declarado en el dominio.
 
 Invariantes: `null ≠ 0 ≠ Off`; seleccionar ≠ aplicar; el volumen absoluto nunca se reinicia; todo dato lleva calidad y motivo.
 
