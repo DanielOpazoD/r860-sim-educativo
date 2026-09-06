@@ -88,7 +88,7 @@ test.describe('A/C PC y edición', () => {
   });
 
   test('cancelar una solicitud en cola se anuncia', async ({ page }) => {
-    await open(page, { speed: 1 });
+    await open(page, { speed: 0.25 }); // a un cuarto de velocidad la solicitud sigue en cola cuando se pulsa por segunda vez
     await page.click('[data-action="expiratory"]');
     await page.click('#hold-run');
     await expect(page.locator('#hold-run')).toHaveAttribute('aria-label', /Cancelar (solicitud|bloqueo)/);
