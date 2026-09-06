@@ -1,0 +1,14 @@
+{
+ "name": "vis-03-live-sc01-t12s",
+ "project": "desktop-1440",
+ "viewport": {
+  "width": 1440,
+  "height": 1000
+ },
+ "t0": "2026-08-18T21:04:05-04:00",
+ "seed": 1,
+ "simTimeMs": 12000,
+ "wallTimeMs": 1787101457000,
+ "engine": "worker",
+ "scenario": "banco por defecto (SC-01)"
+}

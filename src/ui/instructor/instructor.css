@@ -1,0 +1,14 @@
+/* Panel docente: fuera del marco del equipo, estética distinta a propósito (regla 12). */
+.instructor { flex: 0 0 360px; background: #f4f5f7; color: #1d2330; border: 2px dashed #b36b00; border-radius: 8px; padding: 10px; font-size: 13px; max-height: calc(100vh - 70px); overflow: auto; }
+.instructor h2 { margin: 0 0 6px 0; font-size: 15px; color: #b36b00; }
+.instructor h3 { margin: 10px 0 4px 0; font-size: 13px; border-bottom: 1px solid #d8dbe2; }
+.instructor .row { display: flex; align-items: center; gap: 6px; margin: 3px 0; flex-wrap: wrap; }
+.instructor label { min-width: 120px; }
+.instructor input[type="number"], .instructor select { width: 90px; padding: 2px 4px; }
+.instructor button { background: #fff; border: 1px solid #9aa1b1; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.instructor button.primary { background: #b36b00; color: #fff; border-color: #b36b00; }
+.instructor .truth { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: #fff; border: 1px solid #d8dbe2; padding: 6px; border-radius: 4px; white-space: pre-wrap; }
+.instructor .log { font-family: ui-monospace, Menlo, monospace; font-size: 11px; background: #fff; border: 1px solid #d8dbe2; padding: 6px; border-radius: 4px; max-height: 160px; overflow: auto; }
+.instructor .warn { color: #a12; }
+.instructor .ok { color: #176a2b; }
+.instructor.hidden { display: none; }

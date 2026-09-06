@@ -1,0 +1,13 @@
+{
+ "name": "vis-03-mobile",
+ "project": "mobile",
+ "viewport": {
+  "width": 412,
+  "height": 839
+ },
+ "t0": "2026-08-18T21:04:05-04:00",
+ "seed": 1,
+ "simTimeMs": 8000,
+ "wallTimeMs": 1787101453000,
+ "engine": "worker"
+}

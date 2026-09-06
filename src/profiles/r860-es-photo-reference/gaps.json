@@ -1,0 +1,293 @@
+{
+  "schemaVersion": "1.0.0",
+  "generated": "2026-09-06",
+  "note": "Registro de incertidumbres. Las U-01…U-18 provienen del dossier; U-19 en adelante se descubrieron en esta etapa. «blocks» enumera lo que queda desactivado o aproximado por cada brecha.",
+  "gaps": [
+    {
+      "id": "U-01",
+      "question": "Firmware y opciones del equipo fotografiado.",
+      "policy": "Sólo perfil visual; no se proclama réplica de una versión.",
+      "status": "abierta",
+      "blocks": [
+        "cualquier afirmación de equivalencia de versión"
+      ]
+    },
+    {
+      "id": "U-02",
+      "question": "Resolución, relación de aspecto y tipografía nativas.",
+      "policy": "Lienzo 1200×800 escalable; fuente del sistema.",
+      "status": "abierta",
+      "blocks": [
+        "regresión visual píxel a píxel contra el equipo"
+      ]
+    },
+    {
+      "id": "U-03",
+      "question": "Colorimetría e iconos exactos.",
+      "policy": "Tokens aproximados; iconos marcadores (glifos Unicode).",
+      "status": "abierta",
+      "blocks": [
+        "fidelidad de iconos"
+      ]
+    },
+    {
+      "id": "U-04",
+      "question": "Orden completo de menús y traducciones de esa instalación.",
+      "policy": "Sólo etiquetas observadas; traducciones nuevas marcadas (P).",
+      "status": "abierta",
+      "blocks": [
+        "vista básica sin curvas",
+        "vista dividida",
+        "tabulada",
+        "menús completos"
+      ]
+    },
+    {
+      "id": "U-05",
+      "question": "Reglas cruzadas y escalones por modo/edad.",
+      "policy": "Escalones D de la ficha 2014; I:E con paso 0.5 (P); relaciones Tinsp/Texp/flujo (P).",
+      "status": "abierta",
+      "blocks": [
+        "pediátrico",
+        "neonatal",
+        "otros modos"
+      ]
+    },
+    {
+      "id": "U-06",
+      "question": "Momento de aplicación de cada ajuste.",
+      "policy": "Siguiente respiración salvo Pmáx y FiO2 inmediatos (P), registrado en cada evento.",
+      "status": "abierta",
+      "blocks": []
+    },
+    {
+      "id": "U-07",
+      "question": "Tiempo de cancelación de edición.",
+      "policy": "20 s configurable, etiquetado como propuesto.",
+      "status": "abierta",
+      "blocks": []
+    },
+    {
+      "id": "U-08",
+      "question": "Ventanas y filtros de métricas.",
+      "policy": "Estimadores propios: última respiración; FR y VMesp con ventana de 8 respiraciones; calidad y ventana publicadas en cada muestra.",
+      "status": "abierta",
+      "blocks": []
+    },
+    {
+      "id": "U-09",
+      "question": "Algoritmo adaptativo PRVC/VS/BiLevel VG.",
+      "policy": "No implementado; R23 aporta cotas (PEEP+Pmin…Pmax−2, ±3/respiración) para una futura aproximación declarada.",
+      "status": "abierta",
+      "blocks": [
+        "PRVC",
+        "VS",
+        "BiLevel VG"
+      ]
+    },
+    {
+      "id": "U-10",
+      "question": "Trigger, sincronización y compensaciones precisas.",
+      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s (P); sin compensación de fuga/trigger.",
+      "status": "abierta",
+      "blocks": [
+        "Leak Comp",
+        "Trigger Comp",
+        "Tube Comp"
+      ]
+    },
+    {
+      "id": "U-11",
+      "question": "Retardos, prioridades y enclavamientos de todas las alarmas.",
+      "policy": "Prioridades y enclavamiento propuestos; sin retardos; límites iniciales Off.",
+      "status": "abierta",
+      "blocks": [
+        "Auto Limits",
+        "tiempo de apnea",
+        "High Alert Audio",
+        "alarmas técnicas"
+      ]
+    },
+    {
+      "id": "U-12",
+      "question": "Audio original y tiempos exactos entre tonos.",
+      "policy": "Patrón D (5×2 / 3 / 1 tonos) con timbre y cadencia P; requiere activación por gesto.",
+      "status": "abierta",
+      "blocks": []
+    },
+    {
+      "id": "U-13",
+      "question": "Filtros y cálculo de Cstat/Pplat fuera de maniobras.",
+      "policy": "Pplat de panel sólo con pausa ≥ 0.1 s estable; sin pausa muestra ---. La fixture P1 (35 sin pausa visible) se conserva como transcripción.",
+      "status": "abierta",
+      "blocks": [
+        "Pplat de panel continuo como en P1"
+      ]
+    },
+    {
+      "id": "U-14",
+      "question": "Metabolismo/FRC: módulos, umbrales y estados inválidos.",
+      "policy": "Espacio Futuro desactivado con motivo.",
+      "status": "abierta",
+      "blocks": [
+        "FRC INview",
+        "SpiroDynamics",
+        "metabolismo",
+        "cálculos"
+      ]
+    },
+    {
+      "id": "U-15",
+      "question": "Oxigenoterapia y modos neonatales de esa versión.",
+      "policy": "No habilitados.",
+      "status": "abierta",
+      "blocks": [
+        "O2 Therapy",
+        "nCPAP",
+        "NIV"
+      ]
+    },
+    {
+      "id": "U-16",
+      "question": "Autonomía, transición de gases y fallos electrónicos.",
+      "policy": "Tecla Energía informa que no se simula; sin batería ni gases.",
+      "status": "abierta",
+      "blocks": [
+        "apagado/encendido",
+        "alarmas de suministro"
+      ]
+    },
+    {
+      "id": "U-17",
+      "question": "Integridad del PDF oficial Rev F enlazado.",
+      "policy": "Acceso fallido (502) registrado en evidence.json; sin hash.",
+      "status": "abierta (confirmada en esta sesión)",
+      "blocks": []
+    },
+    {
+      "id": "U-18",
+      "question": "Exactitud global frente al equipo real.",
+      "policy": "Se declaran niveles validados (L1 interacción y L2 banco analítico); sin porcentajes.",
+      "status": "abierta",
+      "blocks": [
+        "cualquier cifra de fidelidad"
+      ]
+    },
+    {
+      "id": "U-19",
+      "question": "Compensación de flujo entre respiraciones en VC cuando Plimit recorta el VT (R23: «ajusta el flujo inspiratorio necesario para mantener el VT en las próximas respiraciones»). Ganancias y límites no publicados.",
+      "policy": "No implementada: el VT real permanece por debajo del programado hasta que el usuario cambie ajustes (comportamiento visible y registrado).",
+      "status": "nueva",
+      "blocks": [
+        "adaptación de flujo en VC"
+      ]
+    },
+    {
+      "id": "U-20",
+      "question": "Criterio de validez de la meseta en el bloqueo inspiratorio (ventana, umbral de estabilidad, arranque).",
+      "policy": "P: máx−mín ≤ 0.5 cmH2O tras un arranque de min(0.5 s, 30 % de la ventana); duración insuficiente, Pmáx o cancelación invalidan.",
+      "status": "nueva",
+      "blocks": []
+    },
+    {
+      "id": "U-21",
+      "question": "Qué ocurre con la temporización tras un bloqueo (¿la espiración posterior dura Texp completo?).",
+      "policy": "P: tras un bloqueo inspiratorio sigue una espiración de Texp completo; tras uno espiratorio empieza la siguiente respiración.",
+      "status": "nueva",
+      "blocks": []
+    },
+    {
+      "id": "U-22",
+      "question": "Ventana de disparo y periodo refractario en A/C (la ficha sólo documenta «ventana de trigger 80 % del tiempo espiratorio», aplicable a SIMV).",
+      "policy": "P: refractario 0.25 s desde el inicio de la espiración.",
+      "status": "nueva",
+      "blocks": []
+    },
+    {
+      "id": "U-23",
+      "question": "Límites de alarma iniciales para un paciente nuevo y política de Auto Limits.",
+      "policy": "P: todos Off salvo Pmáx; Auto Limits desactivado con motivo.",
+      "status": "nueva",
+      "blocks": [
+        "Auto Limits"
+      ]
+    },
+    {
+      "id": "U-24",
+      "question": "Semántica física de PEEP «Off» y del estado de espera en la vía aérea.",
+      "policy": "P: Off ⇒ presión ambiente (0); en espera la vía aérea queda a ambiente y el pulmón se vacía por su mecánica.",
+      "status": "nueva",
+      "blocks": []
+    },
+    {
+      "id": "U-25",
+      "question": "Duración del resultado del bloqueo espiratorio (PEEPtot/PEEPi) y etiquetas exactas en español de esa pantalla.",
+      "policy": "P: ventana análoga a la de bloqueo inspiratorio con etiquetas «PEEPtot (P)» y «PEEPi (P)».",
+      "status": "nueva",
+      "blocks": []
+    },
+    {
+      "id": "U-26",
+      "question": "Qué ocurre con el periodo obligatorio cuando Pmáx acorta la inspiración (¿la espiración dura Texp completo o el temporizador de FR gobierna?).",
+      "policy": "P: el temporizador de FR gobierna la siguiente obligatoria; el tiempo no usado va a la espiración (FR medida = FR programada).",
+      "status": "nueva (revisión adversarial)",
+      "blocks": []
+    },
+    {
+      "id": "U-27",
+      "question": "Estado de una alarma activa cuando el usuario pone su límite en Off.",
+      "policy": "P: se resuelve y se da por reconocida en ese instante (Off = no se evalúa; no un estado congelado).",
+      "status": "nueva (revisión adversarial)",
+      "blocks": []
+    },
+    {
+      "id": "U-28",
+      "question": "Bloqueo espiratorio en cola con paciente que dispara antes del fin del temporizador.",
+      "policy": "P: ocluye al final de la espiración la termine quien la termine; con esfuerzo la meseta resulta inestable e inválida con motivo.",
+      "status": "nueva (revisión adversarial)",
+      "blocks": []
+    }
+  ],
+  "disabledFeatures": [
+    {
+      "feature": "Vista básica sin curvas",
+      "reason": "Composición no observada (U-04); CFG-05."
+    },
+    {
+      "feature": "Pantalla dividida (bucles) y vista tabulada",
+      "reason": "Etapa 4 de la hoja de ruta; bucles no implementados."
+    },
+    {
+      "feature": "Espacios Pasado (tendencias, capturas) y Futuro (SBT, FRC, SpiroDynamics, metabolismo, cálculos)",
+      "reason": "Etapas 4–6; U-14."
+    },
+    {
+      "feature": "Modos distintos de A/C VC",
+      "reason": "PC y CPAP/PS sólo tras pruebas de banco propias (BM-03 con rampa real, PHY-03); adaptativos U-09; opcionales U-15."
+    },
+    {
+      "feature": "Nuevo paciente, pediátrico, neonatal, tipo/diámetro de tubo",
+      "reason": "Sólo adulto en P0; escalones por población U-05."
+    },
+    {
+      "feature": "Aspiración, nebulizador, compensaciones de fuga/trigger/tubo",
+      "reason": "Sin submodelos de circuito/fuga en P0 (U-10)."
+    },
+    {
+      "feature": "Auto Limits, tiempo de apnea, High Alert Audio, alarmas técnicas y de suministro",
+      "reason": "U-11, U-16."
+    },
+    {
+      "feature": "Captura de pantalla del equipo",
+      "reason": "Etapa 4; las capturas de validación se hacen con Playwright."
+    },
+    {
+      "feature": "Apagado/encendido y batería",
+      "reason": "U-16; la aplicación permanece recuperable."
+    },
+    {
+      "feature": "Fuga, circuito, espacio muerto, sensores con ruido/retraso de presión y flujo",
+      "reason": "Modelo mínimo P0; SC-07/SC-08 pendientes."
+    }
+  ]
+}

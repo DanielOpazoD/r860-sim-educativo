@@ -1,0 +1,14 @@
+{
+ "name": "vis-02-p3-basic",
+ "project": "desktop-1440",
+ "viewport": {
+  "width": 1440,
+  "height": 1000
+ },
+ "t0": "2026-08-18T21:04:05-04:00",
+ "seed": 1,
+ "simTimeMs": 0,
+ "wallTimeMs": 1787146270000,
+ "engine": "worker",
+ "fixture": "P3"
+}

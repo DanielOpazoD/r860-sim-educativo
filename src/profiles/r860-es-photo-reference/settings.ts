@@ -1,0 +1,150 @@
+import type { SettingRule } from '../../domain/settingRules';
+import type { CrossLimits } from '../../domain/validation';
+import type { AlarmLimits, VcSettings } from '../../domain/types';
+
+/**
+ * Reglas de ajuste para ADULTO · A/C VC (única franja habilitada en esta etapa).
+ * Fuente de rangos: ficha técnica JB23840CO (2014), leída íntegra (R03). Escalones I:E y políticas de aplicación: P.
+ * Los tramos están en unidad MOSTRADA; el motor usa L, s, cmH2O y fracciones.
+ */
+export const IE_VALUES: number[] = (() => {
+  const vals: number[] = [];
+  for (let e = 9; e >= 1; e -= 0.5) vals.push(1 / e); // 1:9 … 1:1
+  for (let i = 1.5; i <= 4; i += 0.5) vals.push(i);   // 1.5:1 … 4:1
+  return vals;
+})();
+
+export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRule> = {
+  fio2: {
+    key: 'fio2', label: 'FiO2', unit: 'fraction', displayUnit: '%', displayFactor: 100, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 21, max: 100, step: 1 }], allowOff: false, dependencies: [],
+    applyPolicy: 'immediate',
+    evidence: { sourceId: 'R03', locator: 'p.2 «FiO2: 21 a 100% O2»', status: 'D', note: 'Paso de 1% no explícito en la ficha (P).' },
+    policyEvidence: { status: 'P', note: 'Objetivo del mezclador cambia al confirmar; el sensor de O2 sigue con retardo propio.' },
+  },
+  vt: {
+    key: 'vt', label: 'VT', unit: 'L', displayUnit: 'ml', displayFactor: 1000, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 100, max: 300, step: 5 }, { min: 300, max: 1000, step: 25 }, { min: 1000, max: 2000, step: 50 }],
+    allowOff: false, dependencies: ['rr', 'ie', 'pausePct'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Volumen Tidal … 100 a 2000 mL» con incrementos 5/25/50 (icono adulto)', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Aplicación en la siguiente respiración: no verificado frente al equipo (U-06).' },
+  },
+  rr: {
+    key: 'rr', label: 'Frecuencia', unit: 'perMin', displayUnit: '/min', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 3, max: 120, step: 1 }], allowOff: false, dependencies: ['ie', 'vt'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «3 a 120 respiros por minuto para A/C VC…» (icono adulto/pediátrico según dossier §10)', status: 'D', note: 'La ficha también lista 3–150 con otro icono de población; se toma 3–120 para adulto (dossier).' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  ie: {
+    key: 'ie', label: 'I:E', unit: 'ratio', displayUnit: '', displayFactor: 1, decimals: 3,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [], values: IE_VALUES, allowOff: false, dependencies: ['rr', 'vt'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Relación inspiratoria/espiratoria: 1:9 a 4:1»', status: 'D', note: 'Escalones de 0.5 en la parte E y en la parte I: PROPUESTA (U-05).' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  peep: {
+    key: 'peep', label: 'PEEP', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 1, max: 50, step: 1 }], allowOff: true, dependencies: ['pmax', 'plimit'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «PEEP: Inactivo, 1 a 50 cm H2O (incrementos de 1)»', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Se aplica al inicio de la siguiente respiración; su espiración usa el nuevo nivel. El volumen pulmonar se conserva (transitorio físico, PHY-06).' },
+  },
+  pmax: {
+    key: 'pmax', label: 'Pmáx', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 7, max: 100, step: 1 }], allowOff: false, dependencies: ['peep'], applyPolicy: 'immediate',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Rango de presión máxima inspiratoria (Pmax): 7 a 100 cm H2O»', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Umbral de seguridad: vigente de inmediato al confirmar.' },
+  },
+  plimit: {
+    key: 'plimit', label: 'Plimit', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 7, max: 100, step: 1 }], allowOff: false, dependencies: ['peep'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Rango de límite de presión (Plimit): 7 a 100 cm H2O para A/C VC y SIMV VC»', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  pausePct: {
+    key: 'pausePct', label: 'Pausa insp', unit: 'fraction', displayUnit: '%', displayFactor: 100, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 0, max: 75, step: 5 }], allowOff: false, dependencies: ['vt', 'rr', 'ie'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Pausa inspiratoria: 0 a 75% de tiempo de inspiración (incrementos de 5%)»', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  assistControl: {
+    key: 'assistControl', label: 'Control asistido', unit: 'boolean', displayUnit: '', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 0, max: 1, step: 1 }], allowOff: false, dependencies: ['flowTrigger'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R02', locator: 'p.7 «Assist Control is only available in … A/C VC, A/C PC, A/C PRVC»', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración.' },
+  },
+  flowTrigger: {
+    key: 'flowTrigger', label: 'Trigger flujo', unit: 'L/s', displayUnit: 'L/min', displayFactor: 60, decimals: 1,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+    domain: [{ min: 1, max: 3, step: 0.1 }, { min: 3, max: 9, step: 0.5 }], allowOff: false, dependencies: [], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Trigger inspiratorio por flujo: 1 a 3 L/min (0.1); 3 a 9 L/min (0.5)» (icono adulto según dossier)', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración.' },
+  },
+};
+
+/** Límites cruzados adulto invasivo (D ficha 2014: Tinsp 0.25–15 s; Texp 0.25–29.9 s; flujo 2–160 L/min). */
+export const VC_ADULT_CROSS_LIMITS: CrossLimits = {
+  tInspMinS: 0.25, tInspMaxS: 15, tExpMinS: 0.25, tExpMaxS: 29.9, flowMinLpm: 2, flowMaxLpm: 160,
+};
+
+/** Duraciones de bloqueo (D ficha 2014 p.3): insp 2–15 s (1 s) y 15–40 s (5 s); esp 2–20 s (1 s) y 20–60 s (5 s). */
+export const INSP_HOLD_RULE: SettingRule = {
+  key: 'inspHoldS', label: 'Tiempo', unit: 's', displayUnit: 's', displayFactor: 1, decimals: 0,
+  allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+  domain: [{ min: 2, max: 15, step: 1 }, { min: 15, max: 40, step: 5 }], allowOff: false, dependencies: [], applyPolicy: 'immediate',
+  evidence: { sourceId: 'R03', locator: 'p.3 «Bloqueo inspiratorio: 2 a 15 seg (1 seg); 15 a 40 seg (5 seg)»', status: 'D' },
+  policyEvidence: { status: 'D', note: 'Duración seleccionada antes de iniciar (O en P1/P2/P3: «Tiempo 3 s»).' },
+};
+export const EXP_HOLD_RULE: SettingRule = {
+  key: 'expHoldS', label: 'Tiempo', unit: 's', displayUnit: 's', displayFactor: 1, decimals: 0,
+  allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
+  domain: [{ min: 2, max: 20, step: 1 }, { min: 20, max: 60, step: 5 }], allowOff: false, dependencies: [], applyPolicy: 'immediate',
+  evidence: { sourceId: 'R03', locator: 'p.3 «Bloqueo espiratorio: 2 a 20 seg (1 seg); 20 a 60 seg (5 seg)»', status: 'D' },
+  policyEvidence: { status: 'P', note: 'Secuencia de oclusión propuesta.' },
+};
+
+/**
+ * Valores iniciales del paciente sintético «nuevo» en esta etapa.
+ * NO son ajustes clínicos sugeridos: son un punto de partida válido dentro de los dominios documentados,
+ * elegido para que las pruebas de banco BM-01/BM-02 sean directas (VT 0.5 L, flujo 0.5 L/s, PEEP 5).
+ */
+export const DEFAULT_VC_SETTINGS: VcSettings = {
+  mode: 'AC_VC',
+  fio2: 0.21,
+  vt: 0.5,
+  rr: 15,
+  ie: 1 / 3, // Tcycle 4 s -> Tinsp 1 s, Texp 3 s
+  peep: 5,
+  pmax: 40,
+  plimit: 35,
+  pausePct: 0,
+  assistControl: true,
+  flowTrigger: 2 / 60,
+};
+
+/** Límites de alarma iniciales: Off salvo lo que exige el motor (P). Rangos editables D ficha 2014 p.3. */
+export const DEFAULT_ALARM_LIMITS: AlarmLimits = {
+  ppeakLow: 'off', vteLow: 'off', vteHigh: 'off', mveLow: 'off', mveHigh: 'off', rrLow: 'off', rrHigh: 'off',
+  fio2Low: 'off', fio2High: 'off', peepeLow: 'off', peepeHigh: 'off',
+};
+
+export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
+  ppeakLow: { key: 'ppeakLow', label: 'Ppico baja', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 1, max: 97, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Ppico: Bajo: 1 a 97 cm H2O»', status: 'D', note: 'Off: P (la ficha no lo indica).' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  vteLow: { key: 'vteLow', label: 'VTesp bajo', unit: 'L', displayUnit: 'ml', displayFactor: 1000, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 1, max: 1950, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Volumen tidal: Bajo: Inactivo, 1 a 1950 mL»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  vteHigh: { key: 'vteHigh', label: 'VTesp alto', unit: 'L', displayUnit: 'ml', displayFactor: 1000, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 3, max: 2000, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 3 a 2000 mL, inactivo»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  mveLow: { key: 'mveLow', label: 'VMesp bajo', unit: 'perMin', displayUnit: 'l/min', displayFactor: 1, decimals: 1, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 0.1, max: 40, step: 0.1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Volumen minuto: Bajo: 0.01 a 40 L/min»', status: 'D', note: 'Paso 0.1 y Off: P.' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  mveHigh: { key: 'mveHigh', label: 'VMesp alto', unit: 'perMin', displayUnit: 'l/min', displayFactor: 1, decimals: 1, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 0.1, max: 99, step: 0.1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 0.02 a 99 L/min»', status: 'D', note: 'Paso 0.1 y Off: P.' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  rrLow: { key: 'rrLow', label: 'FR baja', unit: 'perMin', displayUnit: '/min', displayFactor: 1, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 1, max: 99, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Frecuencia respiratoria: Bajo: Inactivo, 1 a 99/min»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  rrHigh: { key: 'rrHigh', label: 'FR alta', unit: 'perMin', displayUnit: '/min', displayFactor: 1, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 2, max: 150, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 2 a 150/min, inactivo»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  fio2Low: { key: 'fio2Low', label: 'FiO2 baja', unit: 'fraction', displayUnit: '%', displayFactor: 100, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 18, max: 99, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «FiO2: Bajo: 18 a 99%»', status: 'D', note: 'Off: P.' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  fio2High: { key: 'fio2High', label: 'FiO2 alta', unit: 'fraction', displayUnit: '%', displayFactor: 100, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 24, max: 100, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 24 a 100%, Off»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  peepeLow: { key: 'peepeLow', label: 'PEEPe baja', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 1, max: 20, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «PEEPe: Bajo: Off, 1 a 20 cm H2O»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+  peepeHigh: { key: 'peepeHigh', label: 'PEEPe alta', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0, allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'], domain: [{ min: 5, max: 50, step: 1 }], allowOff: true, dependencies: [], applyPolicy: 'immediate', evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 5 a 50 cm H2O, inactivo»', status: 'D' }, policyEvidence: { status: 'P', note: 'Inmediato.' } },
+};
