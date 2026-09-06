@@ -278,8 +278,8 @@
     {
       "id": "U-33",
       "question": "Valor del flujo de base (bias flow) espiratorio del equipo y si ofrece disparo por presión además del disparo por flujo.",
-      "policy": "P: flujo de base de 10 L/min hacia el paciente durante la espiración (la válvula sostiene la PEEP hasta ese flujo; por encima la Pva cae por debajo de PEEP: deflexión de disparo); sólo disparo por flujo. Valor no editable.",
-      "status": "nueva (v0.3.1)",
+      "policy": "CERRADA (E-038, E-039): flujo de base 2–10 L/min (0,5) y disparo por presión −10…−0,25 cmH₂O documentados en la ficha 2014; implementados como ajustes con validación flowTrigger ≤ biasFlow. Queda P el valor inicial (2 L/min) y la referencia del umbral de presión a la PEEP programada.",
+      "status": "cerrada (v0.3.2)",
       "blocks": [
         "disparo por presión",
         "bias flow editable"
@@ -288,15 +288,15 @@
     {
       "id": "U-34",
       "question": "Si el equipo prohíbe Plimit > Pmáx o sólo lo advierte.",
-      "policy": "P: se permite con una advertencia no bloqueante (SC-09 depende de ello: Pmáx termina la inspiración antes de que Plimit actúe).",
-      "status": "nueva (v0.3.1)",
+      "policy": "CERRADA en lo público (E-040): ninguna fuente accesible impone Plimit ≤ Pmáx; se mantiene permitido con aviso no bloqueante. Sólo el manual de usuario completo (no accesible) podría cambiarlo.",
+      "status": "cerrada (v0.3.2, salvo manual)",
       "blocks": []
     },
     {
       "id": "U-35",
       "question": "Resistencia de la válvula espiratoria y cota del flujo espiratorio pico del equipo.",
-      "policy": "P: sin cota; la válvula es una fuente de presión ideal a PEEP (salvo el flujo de base de U-33) y el flujo pico espiratorio lo fija sólo la mecánica del paciente. Documentado en docs/03 §7.",
-      "status": "nueva (v0.3.1)",
+      "policy": "CERRADA (E-041): resistencia de la rama espiratoria como parámetro 0–6 cmH₂O·s/L (techo normativo ≤ 6 cmH₂O), 0 por omisión; acota el flujo espiratorio pico y eleva la Pva sobre PEEP durante la espiración. Queda U el valor real del R860 con su circuito.",
+      "status": "cerrada (v0.3.2)",
       "blocks": [
         "flujo espiratorio pico realista con R de válvula"
       ]

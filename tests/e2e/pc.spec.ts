@@ -94,7 +94,7 @@ test.describe('A/C PC y edición', () => {
     await expect.poll(async () => (await frame(page)).procedure.hold).not.toBeNull();
     await page.locator('#hold-run').dispatchEvent('click'); // doble pulsación: no cancela ni duplica
     await page.waitForTimeout(150);
-    expect((await frame(page)).procedure.hold?.procedureId).toBe('p1');
+    expect(((await frame(page)).procedure.hold as { procedureId?: string } | null)?.procedureId).toBe('p1');
     await expect(page.locator('#hold-cancel')).toBeVisible();
     await page.click('#hold-cancel');
     await expect(page.locator('.toast').last()).toContainText(/cancelad/);
@@ -108,5 +108,22 @@ test.describe('A/C PC y edición', () => {
     await expect(page.locator('#app-dialog')).toHaveAttribute('open', '');
     await page.keyboard.press('Escape');
     await expect(page.locator('#app-dialog')).not.toHaveAttribute('open', '');
+  });
+
+  test('menú de modo: flujo de base y disparo por presión; el disparo por flujo no puede superar el flujo de base', async ({ page }) => {
+    await open(page, { speed: 4 });
+    await page.click('[data-action="modes"]');
+    await expect(page.locator('[data-mode-field="biasFlow"]')).toHaveValue('2');
+    await expect(page.locator('[data-mode-field="pressureTrigger"]')).toHaveValue('-2');
+    await page.fill('[data-mode-field="flowTrigger"]', '5');
+    await page.dispatchEvent('[data-mode-field="flowTrigger"]', 'input');
+    await expect(page.locator('#mode-error')).toContainText('flujo de base');
+    await page.fill('[data-mode-field="biasFlow"]', '6');
+    await page.dispatchEvent('[data-mode-field="biasFlow"]', 'input');
+    await expect(page.locator('#mode-error')).not.toContainText('flujo de base');
+    await page.check('[data-mode-field="triggerByPressure"]');
+    await page.click('[data-action="confirmModes"]');
+    await expect.poll(async () => (await frame(page)).settings.triggerByPressure).toBe(true);
+    expect((await frame(page)).settings.biasFlow).toBeCloseTo(0.1, 6);
   });
 });

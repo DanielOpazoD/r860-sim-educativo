@@ -71,6 +71,9 @@ const SETTING: Record<string, string> = {
   pausePct: 'Pausa insp',
   assistControl: 'Disparo asistido',
   flowTrigger: 'Disparo por flujo',
+  biasFlow: 'Flujo de base',
+  triggerByPressure: 'Disparo por presión',
+  pressureTrigger: 'Umbral de presión',
   pinsp: 'Pinsp',
   riseMs: 'Rampa',
   mode: 'Modo',
@@ -91,6 +94,7 @@ function settingText(k: string, v: unknown): string {
     case 'pausePct':
       return `${Math.round(v * 100)} %`;
     case 'flowTrigger':
+    case 'biasFlow':
       return `${(v * 60).toFixed(1)} L/min`;
     case 'riseMs':
       return `${v} ms`;

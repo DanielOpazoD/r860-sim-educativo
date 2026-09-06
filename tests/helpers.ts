@@ -15,6 +15,9 @@ export const BENCH_SETTINGS: VcSettings = {
   pausePct: 0,
   assistControl: false,
   flowTrigger: 2 / 60,
+  biasFlow: 2 / 60,
+  triggerByPressure: false,
+  pressureTrigger: -2,
   pinsp: 10,
   riseMs: 100,
 };

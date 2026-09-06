@@ -95,8 +95,15 @@ export const HELP: Record<string, HelpEntry> = {
   'setting.triggerPressure': {
     title: 'Sensibilidad de disparo por presión',
     text: [
-      'Magnitud de la caída de presión necesaria para iniciar la asistencia. Un umbral menor requiere menos esfuerzo.',
-      'Se introduce como un número positivo. En este modelo representa el esfuerzo disponible después de vencer la carga de PEEP intrínseca.',
+      'Caída de presión por debajo de la PEEP que inicia la asistencia (por ejemplo −2 cmH₂O). Un umbral más cercano a cero requiere menos esfuerzo.',
+      'La presión sólo cae cuando el esfuerzo del paciente supera el flujo de base; con atrapamiento, parte del esfuerzo se gasta en vencer la PEEP intrínseca antes de que la presión baje.',
+    ],
+  },
+  'setting.biasFlow': {
+    title: 'Flujo de base',
+    text: [
+      'Flujo continuo que circula por el circuito durante la espiración. El disparo por flujo detecta la parte de ese flujo que el paciente desvía hacia sus pulmones, por eso el umbral de disparo no puede superar el flujo de base.',
+      'Mientras el esfuerzo del paciente pide menos que el flujo de base, la presión en la vía aérea se mantiene en PEEP; si pide más, la presión cae (deflexión de disparo).',
     ],
   },
   'setting.triggerType': {
@@ -177,6 +184,13 @@ export const HELP: Record<string, HelpEntry> = {
       'En VC pasivo, elevarla aumenta principalmente Ppico; no eleva por sí sola la presión elástica estática.',
     ],
     equation: 'Presión resistiva = R × flujo',
+  },
+  'patient.expValve': {
+    title: 'Resistencia de la rama espiratoria',
+    text: [
+      'Resistencia del circuito y la válvula espiratoria, en serie con la vía aérea. Mientras sale gas, la presión medida en la pieza en Y queda algo por encima de la PEEP, proporcional al flujo.',
+      'Las normas del sistema respiratorio limitan esta resistencia a unos 6 cmH₂O al flujo de referencia; 0 representa una válvula ideal.',
+    ],
   },
   'patient.expResistance': {
     title: 'Resistencia espiratoria',

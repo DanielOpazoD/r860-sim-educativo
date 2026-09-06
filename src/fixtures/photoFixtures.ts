@@ -139,6 +139,9 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
     pausePct: 0,
     assistControl: true,
     flowTrigger: 2 / 60,
+    biasFlow: 2 / 60,
+    triggerByPressure: false,
+    pressureTrigger: -2,
     pinsp: 10,
     riseMs: 100,
   };

@@ -86,6 +86,9 @@ const QUICK_LABEL: Record<SettingsKey, string> = {
   pausePct: 'Pausa inspiratoria',
   assistControl: 'Disparo asistido',
   flowTrigger: 'Disparo por flujo',
+  biasFlow: 'Flujo de base',
+  triggerByPressure: 'Disparo por presión (en vez de flujo)',
+  pressureTrigger: 'Umbral de presión',
   pinsp: 'Pinsp',
   riseMs: 'Rampa',
 };
@@ -100,6 +103,9 @@ const HELP_KEY: Record<SettingsKey, string> = {
   pausePct: 'setting.pause',
   assistControl: 'setting.assist',
   flowTrigger: 'setting.trigger',
+  biasFlow: 'setting.biasFlow',
+  triggerByPressure: 'setting.triggerType',
+  pressureTrigger: 'setting.triggerPressure',
   pinsp: 'setting.pinsp',
   riseMs: 'setting.rise',
 };
@@ -991,7 +997,7 @@ export function startApp(opts: AppOptions): void {
     const desc = pc
       ? 'Presión objetivo = PEEP + Pinsp durante el tiempo inspiratorio, con rampa. El flujo empieza alto y decae; el volumen depende de la compliance, la resistencia, el tiempo y el esfuerzo.'
       : 'Flujo constante calculado de VT, Tinsp y pausa. Plimit sostiene la presión el resto de la inspiración; Pmáx termina la inspiración.';
-    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('flowTrigger', s)}${fieldHTML('assistControl', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
+    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('assistControl', s)}${fieldHTML('flowTrigger', s)}${fieldHTML('biasFlow', s)}${fieldHTML('triggerByPressure', s)}${fieldHTML('pressureTrigger', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
   }
   function openModes(): void {
     if (!frame) return;

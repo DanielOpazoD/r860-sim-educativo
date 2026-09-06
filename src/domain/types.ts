@@ -66,6 +66,12 @@ export interface VcSettings {
   assistControl: boolean;
   /** Trigger por flujo, L/s interno. */
   flowTrigger: LitersPerSecond;
+  /** Flujo de base espiratorio, L/s interno. D ficha 2014 «2 a 10 L/min (0.5)» adulto. */
+  biasFlow: LitersPerSecond;
+  /** Disparo por presión en lugar de por flujo (D ficha 2014: ambos tipos existen). */
+  triggerByPressure: boolean;
+  /** Umbral de presión bajo PEEP (cmH2O negativos). D ficha 2014 «−10 a −3 (0.5); −3 a −0.25 (0.25)». */
+  pressureTrigger: CmH2O;
   /** A/C PC: presión inspiratoria SOBRE PEEP (cmH2O). D ficha 2014 «Pinsp 1–98». */
   pinsp: CmH2O;
   /** A/C PC: rampa de presión (ms). D ficha 2014 «Tiempo de rampa 0–500 ms (50)». */
@@ -99,6 +105,8 @@ export interface PatientParams {
   r2: number;
   /** Presión de referencia (0 en pruebas). */
   p0: CmH2O;
+  /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */
+  rExpValve?: CmH2OSecondsPerLiter;
 }
 
 export interface EffortParams {

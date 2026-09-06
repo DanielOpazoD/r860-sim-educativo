@@ -74,7 +74,7 @@ describe('PHY-08 · R, C y Pmus cambian señales y métricas distintas', () => {
   it('el esfuerzo dispara respiraciones asistidas (no espontáneas) sólo si supera el trigger', () => {
     const weak = benchSim({
       effort: { enabled: true, amplitude: 0.5, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 },
-      settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 5 / 60 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 5 / 60, biasFlow: 6 / 60 },
     });
     runUntilBreath(weak, 8);
     expect(weak.breaths.every((b) => b.type === 'mandatory')).toBe(true);

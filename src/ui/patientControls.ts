@@ -43,6 +43,16 @@ export const PHYS: Record<string, PhysSpec> = {
     get: (fr) => fr.truth.patient.rExp,
     cmd: (v) => ({ type: 'setPatient', params: { rExp: v } }),
   },
+  expValve: {
+    label: 'Resistencia rama espiratoria',
+    unit: 'cmH₂O·s/L',
+    min: 0,
+    max: 6,
+    step: 0.5,
+    help: 'patient.expValve',
+    get: (fr) => fr.truth.patient.rExpValve ?? 0,
+    cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
+  },
   effort: {
     label: 'Intensidad del esfuerzo',
     unit: 'cmH₂O',
@@ -95,7 +105,7 @@ export const PHYS: Record<string, PhysSpec> = {
   },
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
-export const PATIENT_EXTRA = ['patientRR', 'muscleTi', 'o2Tau', 'o2Bias'];
+export const PATIENT_EXTRA = ['expValve', 'patientRR', 'muscleTi', 'o2Tau', 'o2Bias'];
 /** Botones de eventos (pestaña «Eventos»): [id, icono, título, descripción, deshabilitado]. */
 export const FAULTS: [string, string, string, string, boolean][] = [
   ['resistance', 'wave', 'Resistencia ×2', 'Aumenta la carga resistiva', false],

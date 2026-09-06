@@ -224,10 +224,19 @@ export function validateAlarmLimitChanges(
 }
 
 /** Parámetros de paciente sintético admisibles para el integrador (P): positivos, finitos y con tau = R·C ≥ 1 ms. */
-export function validatePatientParams(p: { crs: number; rInsp: number; rExp: number; r2: number; p0: number }): string[] {
+export function validatePatientParams(p: {
+  crs: number;
+  rInsp: number;
+  rExp: number;
+  r2: number;
+  p0: number;
+  rExpValve?: number;
+}): string[] {
   const r: string[] = [];
   for (const [k, v] of Object.entries(p)) if (typeof v !== 'number' || !Number.isFinite(v)) r.push(`${k}: no numérico`);
   if (r.length) return r;
+  if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
+    r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
   if (p.crs < 1e-4 || p.crs > 1) r.push('Crs fuera de 0.1–1000 mL/cmH2O');
   if (p.rInsp < 0.1 || p.rInsp > 1000) r.push('Rinsp fuera de 0.1–1000 cmH2O·s/L');
   if (p.rExp < 0.1 || p.rExp > 1000) r.push('Rexp fuera de 0.1–1000 cmH2O·s/L');
@@ -271,5 +280,10 @@ export function validateVcSettings(s: VcSettings, limits: CrossLimits): Validati
       reasons.push(`La rampa (${s.riseMs} ms) no puede superar el tiempo inspiratorio (${d.tInspS.toFixed(2)} s).`);
   }
   if (s.pmax <= peep) reasons.push(`Pmáx (${s.pmax}) debe ser mayor que PEEP (${peep}).`);
+  // P (física del modelo): el disparo por flujo detecta el flujo de base desviado por el paciente; no puede exceder el flujo de base.
+  if (!s.triggerByPressure && s.flowTrigger > s.biasFlow + EPS)
+    reasons.push(
+      `El disparo por flujo (${lpsToLpm(s.flowTrigger).toFixed(1)} L/min) no puede superar el flujo de base (${lpsToLpm(s.biasFlow).toFixed(1)} L/min).`,
+    );
   return { ok: reasons.length === 0, reasons, warnings, derived: d };
 }

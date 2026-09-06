@@ -12,8 +12,8 @@ export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 export const PLATEAU_STABILITY_CMH2O = 0.5;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
-/** Flujo de base espiratorio (P, U-33): hasta este flujo hacia el paciente la válvula mantiene la PEEP; por encima, la Pva cae (deflexión de disparo). */
-export const EXP_BIAS_FLOW_LPS = 10 / 60;
+/** Flujo de base espiratorio por omisión (D rango 2–10 L/min ficha 2014; valor inicial P). Ajustable en `settings.biasFlow`. */
+export const EXP_BIAS_FLOW_LPS = 2 / 60;
 
 export type HoldKind = 'inspHold' | 'expHold';
 export interface HoldRequest {
@@ -419,16 +419,23 @@ export class VcController {
       }
       case 'exp': {
         const peep = this.peepTarget;
-        // La válvula espiratoria mantiene la PEEP hasta el flujo de base; un esfuerzo mayor hunde la Pva (P, U-33).
-        const { dV, qEnd, clamped } = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, EXP_BIAS_FLOW_LPS);
+        // La válvula espiratoria mantiene la PEEP hasta el flujo de base programado (D 2–10 L/min); un esfuerzo mayor hunde la Pva.
+        // La rama espiratoria + válvula añaden una resistencia en serie (D techo ≤ 6 cmH2O a 60 L/min; valor P): la Pva en la pieza en Y
+        // queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
+        const rValve = p.params.rExpValve ?? 0;
+        const { dV, qEnd, clamped } = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve);
         if (this.breath) this.breath.vtExp += Math.max(0, -dV);
         this.q = qEnd;
-        this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) : peep;
+        this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) + rValve * qEnd : peep - rValve * qEnd;
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
           this.manualRequested = false;
           this.transition = () => this.endExpiration('manual');
-        } else if (s.assistControl && this.tPhase + h >= TRIGGER_REFRACTORY_S && qEnd >= s.flowTrigger) {
+        } else if (
+          s.assistControl &&
+          this.tPhase + h >= TRIGGER_REFRACTORY_S &&
+          (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : qEnd >= s.flowTrigger)
+        ) {
           const bid = this.breath?.breathId ?? '';
           this.transition = () => {
             this.events.push({ type: 'trigger', breathId: bid, simTimeS: this.simT, qLps: qEnd });
