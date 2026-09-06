@@ -12,28 +12,44 @@ test.describe('A/C PC y edición', () => {
     await expect(page.locator('#scenario-sub')).toContainText('A/C PC');
     await expect.poll(async () => (await frame(page)).settings.mode).toBe('AC_PC');
     await expect(page.locator('#quick-controls [data-key]')).toHaveCount(6);
-    expect(await page.$$eval('#quick-controls [data-key]', (e) => e.map((x) => (x as HTMLElement).dataset.key))).toEqual(['fio2', 'pinsp', 'rr', 'ie', 'peep', 'pmax']);
+    expect(await page.$$eval('#quick-controls [data-key]', (e) => e.map((x) => (x as HTMLElement).dataset.key))).toEqual([
+      'fio2',
+      'pinsp',
+      'rr',
+      'ie',
+      'peep',
+      'pmax',
+    ]);
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value ?? 0, { timeout: 15_000 }).toBeCloseTo(15, 0); // PEEP 5 + Pinsp 10
     // BM-03 en el motor: C 50 mL/cmH2O · Pinsp 10 · Ti 1 s → VT ≈ 432 mL (1 − e^−2)
-    await expect.poll(async () => (await frame(page)).metrics.vte?.value ?? 0, { timeout: 15_000 }).toBeGreaterThan(0.40);
+    await expect.poll(async () => (await frame(page)).metrics.vte?.value ?? 0, { timeout: 15_000 }).toBeGreaterThan(0.4);
     expect((await frame(page)).metrics.vte?.value ?? 1).toBeLessThan(0.45);
   });
 
-  test('deslizador recorre sólo valores admitidos; ± y deslizador coinciden; escritura fuera de rejilla sugiere el más cercano', async ({ page }) => {
+  test('deslizador recorre sólo valores admitidos; ± y deslizador coinciden; escritura fuera de rejilla sugiere el más cercano', async ({
+    page,
+  }) => {
     await open(page, { speed: 4 });
     await page.click('[data-setting-quick="vt"]');
     const range = page.locator('#quick-range');
     await expect(range).toBeEnabled();
     expect(await range.getAttribute('step')).toBe('1');
     const start = Number(await range.inputValue());
-    await page.click('[data-action="editPlus"]'); await page.click('[data-action="editPlus"]');
+    await page.click('[data-action="editPlus"]');
+    await page.click('[data-action="editPlus"]');
     expect(Number(await range.inputValue())).toBe(start + 2);
     await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(550);
     // El deslizador por índice produce exactamente el mismo escalón que dos «−».
-    await range.evaluate((e: HTMLInputElement, v) => { e.value = String(v); e.dispatchEvent(new Event('input', { bubbles: true })); }, start);
+    await range.evaluate((e: HTMLInputElement, v) => {
+      e.value = String(v);
+      e.dispatchEvent(new Event('input', { bubbles: true }));
+    }, start);
     await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(500);
     // Arrastrar a un extremo nunca sale de la rejilla ni del dominio.
-    await range.evaluate((e: HTMLInputElement) => { e.value = e.max; e.dispatchEvent(new Event('input', { bubbles: true })); });
+    await range.evaluate((e: HTMLInputElement) => {
+      e.value = e.max;
+      e.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(2000);
     await expect(page.locator('#quick-validation')).toBeHidden();
     await page.fill('#quick-value', '287');
@@ -48,9 +64,15 @@ test.describe('A/C PC y edición', () => {
     await open(page, { speed: 4 });
     await page.click('[data-setting-quick="peep"]');
     const range = page.locator('#quick-range');
-    await range.evaluate((e: HTMLInputElement) => { e.value = '0'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+    await range.evaluate((e: HTMLInputElement) => {
+      e.value = '0';
+      e.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe('off');
-    await range.evaluate((e: HTMLInputElement) => { e.value = '1'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+    await range.evaluate((e: HTMLInputElement) => {
+      e.value = '1';
+      e.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(1);
   });
 

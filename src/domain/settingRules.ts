@@ -5,7 +5,11 @@ export type EvidenceStatus = 'D' | 'O' | 'P' | 'U';
 export type ApplyPolicy = 'nextBreath' | 'immediate' | 'standbyOnly' | 'unverified';
 
 /** Tramo numérico con extremos incluidos. Valores en unidad de PRESENTACIÓN del tramo (ver `displayFactor`). */
-export interface NumericSegment { min: number; max: number; step: number }
+export interface NumericSegment {
+  min: number;
+  max: number;
+  step: number;
+}
 
 export interface SettingRule {
   key: string;

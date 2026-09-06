@@ -36,23 +36,49 @@ export class SampleRing {
   private total = 0;
   constructor(capacity: number) {
     this.capacity = capacity;
-    this.buf = { t: new Float64Array(capacity), paw: new Float32Array(capacity), flow: new Float32Array(capacity), vol: new Float32Array(capacity), pmus: new Float32Array(capacity), breath: new Float32Array(capacity) };
+    this.buf = {
+      t: new Float64Array(capacity),
+      paw: new Float32Array(capacity),
+      flow: new Float32Array(capacity),
+      vol: new Float32Array(capacity),
+      pmus: new Float32Array(capacity),
+      breath: new Float32Array(capacity),
+    };
   }
   push(tMs: number, paw: number, flow: number, vol: number, pmus = 0, breath = 0): void {
     const i = this.head;
-    this.buf.t[i] = tMs; this.buf.paw[i] = paw; this.buf.flow[i] = flow; this.buf.vol[i] = vol; this.buf.pmus[i] = pmus; this.buf.breath[i] = breath;
+    this.buf.t[i] = tMs;
+    this.buf.paw[i] = paw;
+    this.buf.flow[i] = flow;
+    this.buf.vol[i] = vol;
+    this.buf.pmus[i] = pmus;
+    this.buf.breath[i] = breath;
     this.head = (i + 1) % this.capacity;
     this.count = Math.min(this.count + 1, this.capacity);
     this.total += 1;
   }
-  get totalPushed(): number { return this.total; }
+  get totalPushed(): number {
+    return this.total;
+  }
   /** Devuelve las últimas `n` muestras en orden temporal (copias). */
   last(n: number): { t: Float64Array; paw: Float32Array; flow: Float32Array; vol: Float32Array; pmus: Float32Array; breath: Float32Array } {
     const m = Math.min(n, this.count);
-    const out = { t: new Float64Array(m), paw: new Float32Array(m), flow: new Float32Array(m), vol: new Float32Array(m), pmus: new Float32Array(m), breath: new Float32Array(m) };
+    const out = {
+      t: new Float64Array(m),
+      paw: new Float32Array(m),
+      flow: new Float32Array(m),
+      vol: new Float32Array(m),
+      pmus: new Float32Array(m),
+      breath: new Float32Array(m),
+    };
     for (let k = 0; k < m; k++) {
       const idx = (this.head - m + k + this.capacity) % this.capacity;
-      out.t[k] = this.buf.t[idx] as number; out.paw[k] = this.buf.paw[idx] as number; out.flow[k] = this.buf.flow[idx] as number; out.vol[k] = this.buf.vol[idx] as number; out.pmus[k] = this.buf.pmus[idx] as number; out.breath[k] = this.buf.breath[idx] as number;
+      out.t[k] = this.buf.t[idx] as number;
+      out.paw[k] = this.buf.paw[idx] as number;
+      out.flow[k] = this.buf.flow[idx] as number;
+      out.vol[k] = this.buf.vol[idx] as number;
+      out.pmus[k] = this.buf.pmus[idx] as number;
+      out.breath[k] = this.buf.breath[idx] as number;
     }
     return out;
   }

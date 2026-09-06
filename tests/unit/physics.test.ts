@@ -58,7 +58,8 @@ describe('PHY-08 · R, C y Pmus cambian señales y métricas distintas', () => {
     const base = benchSim();
     base.command({ type: 'requestHold', kind: 'inspHold', durationS: 2 });
     runUntilBreath(base, 1);
-    const b0 = base.breaths[0]!; const p0 = base.procedures.last.inspHold!.values.pplat!.value!;
+    const b0 = base.breaths[0]!;
+    const p0 = base.procedures.last.inspHold!.values.pplat!.value!;
     const hiR = benchSim({ patient: { ...BENCH_PATIENT, rInsp: 20 } });
     hiR.command({ type: 'requestHold', kind: 'inspHold', durationS: 2 });
     runUntilBreath(hiR, 1);
@@ -71,10 +72,16 @@ describe('PHY-08 · R, C y Pmus cambian señales y métricas distintas', () => {
     expect(loC.procedures.last.inspHold!.values.pplat!.value!).toBeCloseTo(p0 + 10, 3);
   });
   it('el esfuerzo dispara respiraciones asistidas (no espontáneas) sólo si supera el trigger', () => {
-    const weak = benchSim({ effort: { enabled: true, amplitude: 0.5, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 }, settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 5 / 60 } });
+    const weak = benchSim({
+      effort: { enabled: true, amplitude: 0.5, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 5 / 60 },
+    });
     runUntilBreath(weak, 8);
     expect(weak.breaths.every((b) => b.type === 'mandatory')).toBe(true);
-    const strong = benchSim({ effort: { enabled: true, amplitude: 6, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 }, settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 2 / 60 } });
+    const strong = benchSim({
+      effort: { enabled: true, amplitude: 6, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 2 / 60 },
+    });
     runUntilBreath(strong, 12);
     expect(strong.breaths.some((b) => b.type === 'assisted')).toBe(true);
     expect(strong.breaths.some((b) => b.type === 'spontaneous')).toBe(false);
@@ -100,11 +107,18 @@ describe('PHY-10 · dominio de fallo del ensayo', () => {
     // Oclusión total de ensayo (Rinsp 400): la presión de arranque ya supera Pmáx; la inspiración termina en t = 0 sin volumen y sin NaN.
     const occl = benchSim({ patient: { ...BENCH_PATIENT, rInsp: 400, crs: 0.002 }, settings: { ...BENCH_SETTINGS, plimit: 60, pmax: 40 } });
     runUntilBreath(occl, 3);
-    for (const b of occl.breaths) { expect(b.pmaxReached).toBe(true); expect(b.vtInsp).toBe(0); expect(Number.isFinite(b.pmean)).toBe(true); }
+    for (const b of occl.breaths) {
+      expect(b.pmaxReached).toBe(true);
+      expect(b.vtInsp).toBe(0);
+      expect(Number.isFinite(b.pmean)).toBe(true);
+    }
     const sim2 = occl;
     {
       const f = sim2.frame();
-      for (const k of Object.keys(f.metrics)) { const v = f.metrics[k]!.value; if (v !== null) expect(Number.isFinite(v)).toBe(true); }
+      for (const k of Object.keys(f.metrics)) {
+        const v = f.metrics[k]!.value;
+        if (v !== null) expect(Number.isFinite(v)).toBe(true);
+      }
     }
   });
 });

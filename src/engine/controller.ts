@@ -14,7 +14,11 @@ export const PLATEAU_STABILITY_CMH2O = 0.5;
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 
 export type HoldKind = 'inspHold' | 'expHold';
-export interface HoldRequest { procedureId: string; kind: HoldKind; durationS: number }
+export interface HoldRequest {
+  procedureId: string;
+  kind: HoldKind;
+  durationS: number;
+}
 
 export interface HoldOutcome {
   procedureId: string;
@@ -114,7 +118,11 @@ export class VcController {
   private events: ControllerEvent[] = [];
   private transition: (() => void) | null = null;
 
-  constructor(private readonly patient: PatientModel, private readonly effort: EffortGenerator, settings: VcSettings) {
+  constructor(
+    private readonly patient: PatientModel,
+    private readonly effort: EffortGenerator,
+    settings: VcSettings,
+  ) {
     this.settings = { ...settings };
     this.timing = deriveVcTiming(this.settings);
   }
@@ -125,16 +133,36 @@ export class VcController {
     return e;
   }
 
-  get currentBreathId(): string | null { return this.breath?.breathId ?? null; }
-  get currentBreathSequence(): number { return this.breathSeq; }
-  get peepTarget(): number { return this.settings.peep === 'off' ? 0 : this.settings.peep; }
+  get currentBreathId(): string | null {
+    return this.breath?.breathId ?? null;
+  }
+  get currentBreathSequence(): number {
+    return this.breathSeq;
+  }
+  get peepTarget(): number {
+    return this.settings.peep === 'off' ? 0 : this.settings.peep;
+  }
   get currentPpeak(): number | null {
     if (!this.breath) return null;
     return Number.isFinite(this.breath.ppeak) ? this.breath.ppeak : null;
   }
   get holdState(): { kind: HoldKind; procedureId: string; phase: 'queued' | 'running'; elapsedS: number; durationS: number } | null {
-    if (this.hold) return { kind: this.hold.req.kind, procedureId: this.hold.req.procedureId, phase: 'running', elapsedS: this.tPhase, durationS: this.hold.req.durationS };
-    if (this.holdRequest) return { kind: this.holdRequest.kind, procedureId: this.holdRequest.procedureId, phase: 'queued', elapsedS: 0, durationS: this.holdRequest.durationS };
+    if (this.hold)
+      return {
+        kind: this.hold.req.kind,
+        procedureId: this.hold.req.procedureId,
+        phase: 'running',
+        elapsedS: this.tPhase,
+        durationS: this.hold.req.durationS,
+      };
+    if (this.holdRequest)
+      return {
+        kind: this.holdRequest.kind,
+        procedureId: this.holdRequest.procedureId,
+        phase: 'queued',
+        elapsedS: 0,
+        durationS: this.holdRequest.durationS,
+      };
     return null;
   }
 
@@ -191,8 +219,14 @@ export class VcController {
 
   /** Cancelación idempotente: sin bloqueo en cola ni en curso no hace nada y devuelve false. */
   cancelHold(): boolean {
-    if (this.hold) { this.finishHold(true, true); return true; }
-    if (this.holdRequest) { this.holdRequest = null; return true; }
+    if (this.hold) {
+      this.finishHold(true, true);
+      return true;
+    }
+    if (this.holdRequest) {
+      this.holdRequest = null;
+      return true;
+    }
     return false;
   }
 
@@ -209,7 +243,11 @@ export class VcController {
     let remaining = dt;
     let guard = 0;
     while (remaining > EPS && guard++ < 128) {
-      if (guard === 128) { this.events.push({ type: 'stepGuardExhausted', simTimeS: this.simT, phase: this.phase }); this.simT += remaining; break; }
+      if (guard === 128) {
+        this.events.push({ type: 'stepGuardExhausted', simTimeS: this.simT, phase: this.phase });
+        this.simT += remaining;
+        break;
+      }
       const tEvent = this.timeToScheduledEvent();
       const h = Math.min(remaining, tEvent);
       const used = this.integrate(h);
@@ -241,15 +279,22 @@ export class VcController {
   private timeToScheduledEvent(): number {
     const t = this.timing;
     switch (this.phase) {
-      case 'inspFlow': return Math.max(0, t.tFlowS - this.tBreath);
-      case 'inspLimited': return Math.max(0, t.tInspS - this.tBreath);
-      case 'inspPause': return Math.max(0, t.tInspS - this.tBreath);
-      case 'inspPressure': return Math.max(0, t.tInspS - this.tBreath);
+      case 'inspFlow':
+        return Math.max(0, t.tFlowS - this.tBreath);
+      case 'inspLimited':
+        return Math.max(0, t.tInspS - this.tBreath);
+      case 'inspPause':
+        return Math.max(0, t.tInspS - this.tBreath);
+      case 'inspPressure':
+        return Math.max(0, t.tInspS - this.tBreath);
       case 'holdInsp':
-      case 'holdExp': return Math.max(0, (this.hold?.req.durationS ?? 0) - this.tPhase);
+      case 'holdExp':
+        return Math.max(0, (this.hold?.req.durationS ?? 0) - this.tPhase);
       // El temporizador de FR gobierna la siguiente obligatoria: el tiempo no usado por una inspiración acortada (Pmáx) va a la espiración (P).
-      case 'exp': return Math.max(0, t.tCycleS - this.tBreath - this.tPhase);
-      default: return Number.POSITIVE_INFINITY;
+      case 'exp':
+        return Math.max(0, t.tCycleS - this.tBreath - this.tPhase);
+      default:
+        return Number.POSITIVE_INFINITY;
     }
   }
 
@@ -272,13 +317,23 @@ export class VcController {
         const paw1 = p.pawForFlow(qCmd, this.pmusAt(this.simT + h), p.v + qCmd * h);
         let frac = 1;
         let hit: 'plimit' | 'pmax' | null = null;
-        if (paw0 >= s.pmax) { frac = 0; hit = 'pmax'; }
-        else if (paw0 >= s.plimit) { frac = 0; hit = 'plimit'; }
-        else {
-          if (paw1 >= s.pmax) { frac = (s.pmax - paw0) / (paw1 - paw0); hit = 'pmax'; }
+        if (paw0 >= s.pmax) {
+          frac = 0;
+          hit = 'pmax';
+        } else if (paw0 >= s.plimit) {
+          frac = 0;
+          hit = 'plimit';
+        } else {
+          if (paw1 >= s.pmax) {
+            frac = (s.pmax - paw0) / (paw1 - paw0);
+            hit = 'pmax';
+          }
           if (paw1 >= s.plimit) {
             const f = (s.plimit - paw0) / (paw1 - paw0);
-            if (f < frac) { frac = f; hit = 'plimit'; }
+            if (f < frac) {
+              frac = f;
+              hit = 'plimit';
+            }
           }
         }
         const used = Math.max(0, Math.min(h, frac * h));
@@ -288,8 +343,13 @@ export class VcController {
         this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
         // En el instante del cruce la presión de vía aérea es exactamente el umbral: la válvula actúa allí (no se registra
         // la presión hipotética que habría producido el flujo completo).
-        if (hit === 'pmax') { this.paw = s.pmax; this.transition = () => this.onPmax(); }
-        else if (hit === 'plimit') { this.paw = s.plimit; this.transition = () => this.onPlimit(); }
+        if (hit === 'pmax') {
+          this.paw = s.pmax;
+          this.transition = () => this.onPmax();
+        } else if (hit === 'plimit') {
+          this.paw = s.plimit;
+          this.transition = () => this.onPlimit();
+        }
         return used;
       }
       case 'inspPressure': {
@@ -298,21 +358,30 @@ export class VcController {
         const targetAt = (tb: number): number => this.peepTarget + s.pinsp * (rise > 0 ? Math.min(1, tb / rise) : 1);
         const tb0 = this.tBreath;
         const nSub = rise > 0 && tb0 < rise ? Math.max(1, Math.ceil(h / 0.001)) : 1;
-        let dVtot = 0; let qLast = 0; let pawLast = targetAt(tb0 + h); const hs = h / nSub;
+        let dVtot = 0;
+        let qLast = 0;
+        let pawLast = targetAt(tb0 + h);
+        const hs = h / nSub;
         for (let i = 0; i < nSub; i++) {
-          const tb = tb0 + (i + 1) * hs; const tg = targetAt(tb);
+          const tb = tb0 + (i + 1) * hs;
+          const tg = targetAt(tb);
           const qFree = p.flowForPaw(tg, this.pmusAt(this.simT + i * hs), p.v);
           if (qFree > ACTUATOR_MAX_FLOW_LPS) {
             // El actuador no alcanza: fuente de flujo al tope; la presión queda por debajo del objetivo.
             const { dV } = p.integrateFlowSource(ACTUATOR_MAX_FLOW_LPS, hs);
-            dVtot += dV; qLast = ACTUATOR_MAX_FLOW_LPS; pawLast = p.pawForFlow(qLast, this.pmusAt(this.simT + (i + 1) * hs), p.v);
+            dVtot += dV;
+            qLast = ACTUATOR_MAX_FLOW_LPS;
+            pawLast = p.pawForFlow(qLast, this.pmusAt(this.simT + (i + 1) * hs), p.v);
           } else {
             const { dV, qEnd } = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs);
-            dVtot += dV; qLast = qEnd; pawLast = tg;
+            dVtot += dV;
+            qLast = qEnd;
+            pawLast = tg;
           }
         }
         if (this.breath) this.breath.vtInsp += dVtot;
-        this.q = qLast; this.paw = pawLast;
+        this.q = qLast;
+        this.paw = pawLast;
         if (this.paw >= s.pmax) this.transition = () => this.onPmax();
         return h;
       }
@@ -322,7 +391,10 @@ export class VcController {
           // La válvula inspiratoria no admite flujo negativo: sistema ocluido a presión elástica.
           this.q = 0;
           this.paw = p.pel() - this.pmusAt(this.simT + h);
-          if (this.paw >= s.pmax) { this.transition = () => this.onPmax(); return 0; }
+          if (this.paw >= s.pmax) {
+            this.transition = () => this.onPmax();
+            return 0;
+          }
           return h;
         }
         const { dV, qEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
@@ -385,8 +457,10 @@ export class VcController {
   private onScheduledEvent(): void {
     switch (this.phase) {
       case 'inspFlow':
-        if (this.timing.tPauseS > EPS) { this.phase = 'inspPause'; this.tPhase = 0; }
-        else this.endInspiration('time');
+        if (this.timing.tPauseS > EPS) {
+          this.phase = 'inspPause';
+          this.tPhase = 0;
+        } else this.endInspiration('time');
         break;
       case 'inspLimited':
       case 'inspPause':
@@ -411,16 +485,26 @@ export class VcController {
     const b = this.breath;
     if (b) {
       if (this.phase === 'inspPause') this.evaluateCyclePlateau(b);
-      else if (this.phase === 'inspPressure') b.pplatReason = 'noOcclusion'; // en PC el fin de inspiración no es una meseta válida sin oclusión (dossier §11)
-      else if (b.pplatCycle === null && b.pplatReason === null) b.pplatReason = b.plimitReached && this.timing.tPauseS > EPS ? 'plimitReached' : 'noPause';
-      if (cause === 'pmax') { b.pplatCycle = null; b.pplatReason = 'endedByPmax'; }
+      else if (this.phase === 'inspPressure')
+        b.pplatReason = 'noOcclusion'; // en PC el fin de inspiración no es una meseta válida sin oclusión (dossier §11)
+      else if (b.pplatCycle === null && b.pplatReason === null)
+        b.pplatReason = b.plimitReached && this.timing.tPauseS > EPS ? 'plimitReached' : 'noPause';
+      if (cause === 'pmax') {
+        b.pplatCycle = null;
+        b.pplatReason = 'endedByPmax';
+      }
       b.cause = cause;
     }
     if (this.holdRequest?.kind === 'inspHold') {
       if (cause === 'pmax') {
         const req = this.holdRequest;
         this.holdRequest = null;
-        this.events.push({ type: 'rejected', what: `hold:${req.procedureId}`, reason: 'Inspiración terminada por Pmáx: bloqueo no elegible (P)', simTimeS: this.simT });
+        this.events.push({
+          type: 'rejected',
+          what: `hold:${req.procedureId}`,
+          reason: 'Inspiración terminada por Pmáx: bloqueo no elegible (P)',
+          simTimeS: this.simT,
+        });
       } else {
         this.beginHold();
         return;
@@ -435,16 +519,31 @@ export class VcController {
     if (this.breath) this.breath.peepeEnd = this.paw;
     // El bloqueo espiratorio en cola ocluye al final de la espiración, la termine el temporizador, un disparo o una orden manual (P):
     // con esfuerzo la meseta será inestable y el resultado inválido con motivo, en vez de esperar indefinidamente.
-    if (this.holdRequest?.kind === 'expHold') { this.beginHold(); return; }
+    if (this.holdRequest?.kind === 'expHold') {
+      this.beginHold();
+      return;
+    }
     this.startBreath(next);
   }
 
   private evaluateCyclePlateau(b: BreathAccum): void {
     const tPause = this.timing.tPauseS;
-    if (tPause < MIN_PAUSE_FOR_PPLAT_S) { b.pplatCycle = null; b.pplatReason = 'pauseTooShort'; return; }
+    if (tPause < MIN_PAUSE_FOR_PPLAT_S) {
+      b.pplatCycle = null;
+      b.pplatReason = 'pauseTooShort';
+      return;
+    }
     const stab = stabilityOf(b.pauseSamples, tPause);
-    if (stab === null) { b.pplatCycle = null; b.pplatReason = 'insufficientSamples'; return; }
-    if (stab > PLATEAU_STABILITY_CMH2O) { b.pplatCycle = null; b.pplatReason = 'unstable'; return; }
+    if (stab === null) {
+      b.pplatCycle = null;
+      b.pplatReason = 'insufficientSamples';
+      return;
+    }
+    if (stab > PLATEAU_STABILITY_CMH2O) {
+      b.pplatCycle = null;
+      b.pplatReason = 'unstable';
+      return;
+    }
     b.pplatCycle = this.paw;
     b.pplatReason = null;
   }
@@ -462,7 +561,13 @@ export class VcController {
   private finishHold(cancelled: boolean, resume = true): void {
     const hold = this.hold;
     const b = this.breath;
-    if (!hold || !b) { this.hold = null; if (!hold) return; this.phase = 'exp'; this.tPhase = 0; return; }
+    if (!hold || !b) {
+      this.hold = null;
+      if (!hold) return;
+      this.phase = 'exp';
+      this.tPhase = 0;
+      return;
+    }
     this.hold = null;
     const outcome: HoldOutcome = {
       procedureId: hold.req.procedureId,
@@ -483,8 +588,10 @@ export class VcController {
     };
     this.events.push({ type: 'holdEnded', outcome });
     if (!resume) return; // espera: el llamador fija la fase
-    if (hold.req.kind === 'inspHold') { this.phase = 'exp'; this.tPhase = 0; }
-    else this.startBreath('mandatory');
+    if (hold.req.kind === 'inspHold') {
+      this.phase = 'exp';
+      this.tPhase = 0;
+    } else this.startBreath('mandatory');
   }
 
   private startBreath(type: BreathType): void {
@@ -494,9 +601,25 @@ export class VcController {
     const breathId = `b${this.breathSeq}`;
     this.flushPending(breathId);
     this.breath = {
-      breathId, sequence: this.breathSeq, type, startSimT: this.simT, vStart: this.patient.v, pawStart: this.paw,
-      ppeak: -Infinity, pawIntegral: 0, vtInsp: 0, vtExp: 0, tInspActual: 0, tExpActual: 0,
-      plimitReached: false, pmaxReached: false, pauseSamples: [], pplatCycle: null, pplatReason: null, peepeEnd: this.paw, cause: 'time',
+      breathId,
+      sequence: this.breathSeq,
+      type,
+      startSimT: this.simT,
+      vStart: this.patient.v,
+      pawStart: this.paw,
+      ppeak: -Infinity,
+      pawIntegral: 0,
+      vtInsp: 0,
+      vtExp: 0,
+      tInspActual: 0,
+      tExpActual: 0,
+      plimitReached: false,
+      pmaxReached: false,
+      pauseSamples: [],
+      pplatCycle: null,
+      pplatReason: null,
+      peepeEnd: this.paw,
+      cause: 'time',
     };
     this.phase = this.settings.mode === 'AC_PC' ? 'inspPressure' : 'inspFlow';
     this.tPhase = 0;
@@ -508,12 +631,23 @@ export class VcController {
     const duration = Math.max(EPS, this.simT - b.startSimT);
     this.lastPeepe = b.peepeEnd;
     const record: BreathRecord = {
-      breathId: b.breathId, sequence: b.sequence, type: b.type,
-      startSimTimeMs: sToMs(b.startSimT), endSimTimeMs: sToMs(this.simT),
-      cyclingCause: b.cause, tInspS: b.tInspActual, tExpS: b.tExpActual,
-      ppeak: b.ppeak, pplatCycle: b.pplatCycle, pplatCycleReason: b.pplatReason,
-      peepe: b.peepeEnd, pmean: b.pawIntegral / duration,
-      vtInsp: b.vtInsp, vtExp: b.vtExp, plimitReached: b.plimitReached, pmaxReached: b.pmaxReached,
+      breathId: b.breathId,
+      sequence: b.sequence,
+      type: b.type,
+      startSimTimeMs: sToMs(b.startSimT),
+      endSimTimeMs: sToMs(this.simT),
+      cyclingCause: b.cause,
+      tInspS: b.tInspActual,
+      tExpS: b.tExpActual,
+      ppeak: b.ppeak,
+      pplatCycle: b.pplatCycle,
+      pplatCycleReason: b.pplatReason,
+      peepe: b.peepeEnd,
+      pmean: b.pawIntegral / duration,
+      vtInsp: b.vtInsp,
+      vtExp: b.vtExp,
+      plimitReached: b.plimitReached,
+      pmaxReached: b.pmaxReached,
       truthVStartL: b.vStart,
     };
     this.events.push({ type: 'breathEnd', record });
@@ -529,7 +663,11 @@ export function stabilityOf(samples: { t: number; paw: number }[], windowS: numb
   const tFrom = Math.min(0.5, windowS * 0.3);
   const tail = samples.filter((s) => s.t >= tFrom - 1e-9);
   if (tail.length < 2) return null;
-  let mn = Infinity, mx = -Infinity;
-  for (const s of tail) { mn = Math.min(mn, s.paw); mx = Math.max(mx, s.paw); }
+  let mn = Infinity,
+    mx = -Infinity;
+  for (const s of tail) {
+    mn = Math.min(mn, s.paw);
+    mx = Math.max(mx, s.paw);
+  }
   return mx - mn;
 }

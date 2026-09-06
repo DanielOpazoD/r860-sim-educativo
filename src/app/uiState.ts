@@ -12,7 +12,12 @@ export type EditState =
   | { kind: 'selected'; key: SettingsKey; draftDisplay: number | 'off'; originalDisplay: number | 'off'; at: number }
   | { kind: 'editing'; key: SettingsKey; draftDisplay: number | 'off'; originalDisplay: number | 'off'; at: number };
 
-export interface EditPreview { valid: boolean; reasons: string[]; derived: DerivedTiming | null; changed: boolean }
+export interface EditPreview {
+  valid: boolean;
+  reasons: string[];
+  derived: DerivedTiming | null;
+  changed: boolean;
+}
 
 export type EditEvent =
   | { type: 'confirmed'; key: SettingsKey; changes: Partial<VcSettings> }
@@ -31,8 +36,12 @@ export class EditController {
     readonly timeoutMs: number,
   ) {}
 
-  on(l: (e: EditEvent) => void): void { this.listeners.push(l); }
-  private emit(e: EditEvent): void { for (const l of this.listeners) l(e); }
+  on(l: (e: EditEvent) => void): void {
+    this.listeners.push(l);
+  }
+  private emit(e: EditEvent): void {
+    for (const l of this.listeners) l(e);
+  }
 
   private toDisplay(key: SettingsKey, v: unknown): number | 'off' {
     if (v === 'off') return 'off';
@@ -48,8 +57,14 @@ export class EditController {
 
   /** Seleccionar carga una copia del valor activo; seleccionar otra tecla descarta el borrador anterior (P). */
   select(key: SettingsKey, now: number): boolean {
-    if (this.locked) { this.emit({ type: 'cancelled', key, reason: 'locked' }); return false; }
-    if (this.state.kind !== 'idle' && this.state.key === key) { this.state = { ...this.state, at: now }; return true; } // misma tecla: conserva el borrador
+    if (this.locked) {
+      this.emit({ type: 'cancelled', key, reason: 'locked' });
+      return false;
+    }
+    if (this.state.kind !== 'idle' && this.state.key === key) {
+      this.state = { ...this.state, at: now };
+      return true;
+    } // misma tecla: conserva el borrador
     if (this.state.kind !== 'idle' && this.state.key !== key) this.emit({ type: 'cancelled', key: this.state.key, reason: 'reselect' });
     const orig = this.toDisplay(key, this.getActive()[key]);
     this.state = { kind: 'selected', key, draftDisplay: orig, originalDisplay: orig, at: now };
@@ -90,7 +105,8 @@ export class EditController {
     const { key, draftDisplay, originalDisplay } = this.state;
     const rule = this.rules[key];
     const reasons: string[] = [];
-    if (draftDisplay !== 'off' && rule.unit !== 'boolean' && !isOnGrid(rule, draftDisplay)) reasons.push(`${rule.label}: ${draftDisplay} no está en la rejilla de escalones`);
+    if (draftDisplay !== 'off' && rule.unit !== 'boolean' && !isOnGrid(rule, draftDisplay))
+      reasons.push(`${rule.label}: ${draftDisplay} no está en la rejilla de escalones`);
     if (draftDisplay === 'off' && !rule.allowOff) reasons.push(`${rule.label}: Off no permitido`);
     const candidate: VcSettings = { ...this.getActive(), [key]: this.toInternal(key, draftDisplay) } as VcSettings;
     const v = validateVcSettings(candidate, this.limits);
@@ -104,7 +120,10 @@ export class EditController {
     if (this.state.kind === 'idle') return false;
     const key = this.state.key;
     const p = this.preview();
-    if (!p.valid) { this.emit({ type: 'rejected', key, reasons: p.reasons }); return false; }
+    if (!p.valid) {
+      this.emit({ type: 'rejected', key, reasons: p.reasons });
+      return false;
+    }
     const changes = { [key]: this.toInternal(key, this.state.draftDisplay) } as Partial<VcSettings>;
     this.state = { kind: 'idle' };
     if (p.changed) this.emit({ type: 'confirmed', key, changes });
@@ -134,27 +153,44 @@ export class EditController {
 /** Borrador transaccional del menú de modo: varios ajustes a la vez; cancelar restaura todo. */
 export class ModeMenuDraft {
   draft: VcSettings;
-  constructor(private readonly rules: Record<SettingsKey, SettingRule>, private readonly limits: CrossLimits, readonly original: VcSettings) {
+  constructor(
+    private readonly rules: Record<SettingsKey, SettingRule>,
+    private readonly limits: CrossLimits,
+    readonly original: VcSettings,
+  ) {
     this.draft = { ...original };
   }
   adjust(key: SettingsKey, direction: 1 | -1): void {
     const rule = this.rules[key];
     const cur = this.draft[key];
-    if (rule.unit === 'boolean') { (this.draft as unknown as Record<string, unknown>)[key] = direction > 0; return; }
+    if (rule.unit === 'boolean') {
+      (this.draft as unknown as Record<string, unknown>)[key] = direction > 0;
+      return;
+    }
     if (rule.allowOff) {
       const min = rule.domain[0]?.min ?? 0;
-      if (cur === 'off') { if (direction > 0) (this.draft as unknown as Record<string, unknown>)[key] = min / rule.displayFactor; return; }
+      if (cur === 'off') {
+        if (direction > 0) (this.draft as unknown as Record<string, unknown>)[key] = min / rule.displayFactor;
+        return;
+      }
       const d = (cur as number) * rule.displayFactor;
-      if (direction < 0 && Math.abs(d - min) < 1e-9) { (this.draft as unknown as Record<string, unknown>)[key] = 'off'; return; }
+      if (direction < 0 && Math.abs(d - min) < 1e-9) {
+        (this.draft as unknown as Record<string, unknown>)[key] = 'off';
+        return;
+      }
       (this.draft as unknown as Record<string, unknown>)[key] = stepDisplayValue(rule, d, direction) / rule.displayFactor;
       return;
     }
-    (this.draft as unknown as Record<string, unknown>)[key] = stepDisplayValue(rule, (cur as number) * rule.displayFactor, direction) / rule.displayFactor;
+    (this.draft as unknown as Record<string, unknown>)[key] =
+      stepDisplayValue(rule, (cur as number) * rule.displayFactor, direction) / rule.displayFactor;
   }
-  validate() { return validateVcSettings(this.draft, this.limits); }
+  validate() {
+    return validateVcSettings(this.draft, this.limits);
+  }
   changes(): Partial<VcSettings> {
     const out: Partial<VcSettings> = {};
-    for (const k of Object.keys(this.draft) as (keyof VcSettings)[]) if (this.draft[k] !== this.original[k]) (out as Record<string, unknown>)[k] = this.draft[k];
+    for (const k of Object.keys(this.draft) as (keyof VcSettings)[])
+      if (this.draft[k] !== this.original[k]) (out as Record<string, unknown>)[k] = this.draft[k];
     return out;
   }
 }

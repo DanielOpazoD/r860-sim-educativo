@@ -13,8 +13,13 @@ export class AlarmAudio {
 
   async enable(): Promise<boolean> {
     try {
-      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AC) { this.blockedReason = 'Web Audio no disponible en este navegador'; return false; }
+      const AC =
+        (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) {
+        this.blockedReason = 'Web Audio no disponible en este navegador';
+        return false;
+      }
       this.ctx = this.ctx ?? new AC();
       if (this.ctx.state === 'suspended') await this.ctx.resume();
       this.enabled = this.ctx.state === 'running';
@@ -32,17 +37,25 @@ export class AlarmAudio {
     const repeatMs = priority === 'high' ? 6000 : priority === 'medium' ? 12000 : 30000;
     if (this.lastPattern && this.lastPattern.priority === priority && nowMs - this.lastPattern.at < repeatMs) return;
     this.lastPattern = { priority, at: nowMs };
-    const tones = priority === 'high' ? [0, 0.18, 0.36, 0.54, 0.72, 1.3, 1.48, 1.66, 1.84, 2.02] : priority === 'medium' ? [0, 0.25, 0.5] : [0];
+    const tones =
+      priority === 'high' ? [0, 0.18, 0.36, 0.54, 0.72, 1.3, 1.48, 1.66, 1.84, 2.02] : priority === 'medium' ? [0, 0.25, 0.5] : [0];
     const freq = priority === 'high' ? 780 : priority === 'medium' ? 520 : 440;
     const t0 = this.ctx.currentTime;
     for (const off of tones) this.beep(t0 + off, freq, 0.12);
   }
 
   private beep(at: number, freq: number, dur: number): void {
-    const c = this.ctx; if (!c) return;
-    const o = c.createOscillator(); const g = c.createGain();
-    o.type = 'sine'; o.frequency.value = freq;
-    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(0.05, at + 0.015); g.gain.linearRampToValueAtTime(0, at + dur);
-    o.connect(g).connect(c.destination); o.start(at); o.stop(at + dur + 0.02);
+    const c = this.ctx;
+    if (!c) return;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(0.05, at + 0.015);
+    g.gain.linearRampToValueAtTime(0, at + dur);
+    o.connect(g).connect(c.destination);
+    o.start(at);
+    o.stop(at + dur + 0.02);
   }
 }

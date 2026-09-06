@@ -12,8 +12,31 @@ export interface MetricContext {
   tCycleS: number;
 }
 
-function sample(key: string, value: number | null, unit: string, ctx: { simTimeMs: number; breathId: string | null; quality: Quality; reason: string | null; windowMs: number | null; source?: MetricSample['source'] }): MetricSample {
-  return { key, value, unit, source: ctx.source ?? 'ventilator', simTimeMs: ctx.simTimeMs, breathId: ctx.breathId, procedureId: null, quality: ctx.quality, reason: ctx.reason, windowMs: ctx.windowMs };
+function sample(
+  key: string,
+  value: number | null,
+  unit: string,
+  ctx: {
+    simTimeMs: number;
+    breathId: string | null;
+    quality: Quality;
+    reason: string | null;
+    windowMs: number | null;
+    source?: MetricSample['source'];
+  },
+): MetricSample {
+  return {
+    key,
+    value,
+    unit,
+    source: ctx.source ?? 'ventilator',
+    simTimeMs: ctx.simTimeMs,
+    breathId: ctx.breathId,
+    procedureId: null,
+    quality: ctx.quality,
+    reason: ctx.reason,
+    windowMs: ctx.windowMs,
+  };
 }
 
 /**
@@ -38,7 +61,9 @@ export class MetricEngine {
     this.lastEndMs = null;
   }
 
-  get breathRecords(): readonly BreathRecord[] { return this.records; }
+  get breathRecords(): readonly BreathRecord[] {
+    return this.records;
+  }
 
   compute(ctx: MetricContext): Record<string, MetricSample> {
     const out: Record<string, MetricSample> = {};
@@ -48,7 +73,13 @@ export class MetricEngine {
       for (const k of ['ppeak', 'peepe', 'pplatCycle', 'pmean', 'vte', 'vti', 'leakPct', 'mve', 'rr', 'mveSpont', 'rrSpont', 'vteSpont']) {
         out[k] = sample(k, null, unitOf(k), { simTimeMs: t, breathId: null, quality: 'unavailable', reason: 'standby', windowMs: null });
       }
-      out.fio2 = sample('fio2', null, 'fraction', { simTimeMs: t, breathId: null, quality: 'unavailable', reason: 'standby', windowMs: null });
+      out.fio2 = sample('fio2', null, 'fraction', {
+        simTimeMs: t,
+        breathId: null,
+        quality: 'unavailable',
+        reason: 'standby',
+        windowMs: null,
+      });
       return out;
     }
     const staleMs = Math.max(3 * sToMs(ctx.tCycleS), 10 * MS_PER_S);
@@ -66,7 +97,12 @@ export class MetricEngine {
       const leak = last.vtInsp > 1e-6 ? Math.max(0, (last.vtInsp - last.vtExp) / last.vtInsp) : null;
       out.leakPct = sample('leakPct', leak, 'fraction', { ...base, source: 'derivedModel' });
       if (last.pplatCycle !== null) out.pplatCycle = sample('pplatCycle', last.pplatCycle, 'cmH2O', base);
-      else out.pplatCycle = sample('pplatCycle', null, 'cmH2O', { ...base, quality: stale ? 'stale' : 'unavailable', reason: last.pplatCycleReason ?? 'noPause' });
+      else
+        out.pplatCycle = sample('pplatCycle', null, 'cmH2O', {
+          ...base,
+          quality: stale ? 'stale' : 'unavailable',
+          reason: last.pplatCycleReason ?? 'noPause',
+        });
     } else {
       out.leakPct = sample('leakPct', null, 'fraction', base);
       out.pplatCycle = sample('pplatCycle', null, 'cmH2O', base);
@@ -79,28 +115,89 @@ export class MetricEngine {
       const rr = (win.length * S_PER_MIN * MS_PER_S) / sumPeriodMs;
       const mve = (sumVte * S_PER_MIN * MS_PER_S) / sumPeriodMs;
       const wq: Quality = stale ? 'stale' : 'valid';
-      out.rr = sample('rr', rr, 'perMin', { simTimeMs: t, breathId: bid, quality: wq, reason: stale ? 'sinRespiracionReciente' : null, windowMs: sumPeriodMs });
-      out.mve = sample('mve', mve, 'L/min', { simTimeMs: t, breathId: bid, quality: wq, reason: stale ? 'sinRespiracionReciente' : null, windowMs: sumPeriodMs });
+      out.rr = sample('rr', rr, 'perMin', {
+        simTimeMs: t,
+        breathId: bid,
+        quality: wq,
+        reason: stale ? 'sinRespiracionReciente' : null,
+        windowMs: sumPeriodMs,
+      });
+      out.mve = sample('mve', mve, 'L/min', {
+        simTimeMs: t,
+        breathId: bid,
+        quality: wq,
+        reason: stale ? 'sinRespiracionReciente' : null,
+        windowMs: sumPeriodMs,
+      });
     } else {
-      out.rr = sample('rr', null, 'perMin', { simTimeMs: t, breathId: bid, quality: 'inProgress', reason: 'ventanaInsuficiente', windowMs: null });
-      out.mve = sample('mve', null, 'L/min', { simTimeMs: t, breathId: bid, quality: 'inProgress', reason: 'ventanaInsuficiente', windowMs: null });
+      out.rr = sample('rr', null, 'perMin', {
+        simTimeMs: t,
+        breathId: bid,
+        quality: 'inProgress',
+        reason: 'ventanaInsuficiente',
+        windowMs: null,
+      });
+      out.mve = sample('mve', null, 'L/min', {
+        simTimeMs: t,
+        breathId: bid,
+        quality: 'inProgress',
+        reason: 'ventanaInsuficiente',
+        windowMs: null,
+      });
     }
     const spont = win.filter((r) => r.type === 'spontaneous');
-    out.rrSpont = sample('rrSpont', spont.length === 0 ? 0 : null, 'perMin', { simTimeMs: t, breathId: bid, quality: last ? 'valid' : 'inProgress', reason: last ? null : 'sinRespiracionCompleta', windowMs: null });
-    out.mveSpont = sample('mveSpont', spont.length === 0 ? 0 : null, 'L/min', { simTimeMs: t, breathId: bid, quality: last ? 'valid' : 'inProgress', reason: last ? null : 'sinRespiracionCompleta', windowMs: null });
-    out.vteSpont = sample('vteSpont', null, 'L', { simTimeMs: t, breathId: null, quality: 'unavailable', reason: 'sinRespiracionesEspontaneas', windowMs: null });
-    out.fio2 = sample('fio2', ctx.fio2Measured, 'fraction', { simTimeMs: t, breathId: null, quality: 'valid', reason: null, windowMs: null });
+    out.rrSpont = sample('rrSpont', spont.length === 0 ? 0 : null, 'perMin', {
+      simTimeMs: t,
+      breathId: bid,
+      quality: last ? 'valid' : 'inProgress',
+      reason: last ? null : 'sinRespiracionCompleta',
+      windowMs: null,
+    });
+    out.mveSpont = sample('mveSpont', spont.length === 0 ? 0 : null, 'L/min', {
+      simTimeMs: t,
+      breathId: bid,
+      quality: last ? 'valid' : 'inProgress',
+      reason: last ? null : 'sinRespiracionCompleta',
+      windowMs: null,
+    });
+    out.vteSpont = sample('vteSpont', null, 'L', {
+      simTimeMs: t,
+      breathId: null,
+      quality: 'unavailable',
+      reason: 'sinRespiracionesEspontaneas',
+      windowMs: null,
+    });
+    out.fio2 = sample('fio2', ctx.fio2Measured, 'fraction', {
+      simTimeMs: t,
+      breathId: null,
+      quality: 'valid',
+      reason: null,
+      windowMs: null,
+    });
     return out;
   }
 }
 
 function unitOf(k: string): string {
   switch (k) {
-    case 'ppeak': case 'peepe': case 'pplatCycle': case 'pmean': return 'cmH2O';
-    case 'vte': case 'vti': case 'vteSpont': return 'L';
-    case 'leakPct': return 'fraction';
-    case 'mve': case 'mveSpont': return 'L/min';
-    case 'rr': case 'rrSpont': return 'perMin';
-    default: return '';
+    case 'ppeak':
+    case 'peepe':
+    case 'pplatCycle':
+    case 'pmean':
+      return 'cmH2O';
+    case 'vte':
+    case 'vti':
+    case 'vteSpont':
+      return 'L';
+    case 'leakPct':
+      return 'fraction';
+    case 'mve':
+    case 'mveSpont':
+      return 'L/min';
+    case 'rr':
+    case 'rrSpont':
+      return 'perMin';
+    default:
+      return '';
   }
 }

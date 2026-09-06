@@ -27,12 +27,20 @@ export class EngineHost {
   /** Pausa exacta en tiempo simulado (capturas deterministas, VIS). */
   private autopauseAtMs: number | null = null;
 
-  constructor(private readonly post: (m: EngineToMain) => void, private readonly now: () => number = () => (typeof performance !== 'undefined' ? performance.now() : Date.now())) {}
+  constructor(
+    private readonly post: (m: EngineToMain) => void,
+    private readonly now: () => number = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
+  ) {}
 
   handle(m: MainToEngine): void {
     switch (m.type) {
       case 'init':
-        try { this.sim = new Simulator(m.init); } catch (e) { this.post({ type: 'commandResult', id: -1, accepted: false, reason: `init: ${(e as Error).message}` }); return; }
+        try {
+          this.sim = new Simulator(m.init);
+        } catch (e) {
+          this.post({ type: 'commandResult', id: -1, accepted: false, reason: `init: ${(e as Error).message}` });
+          return;
+        }
         this.speed = m.speed;
         this.running = m.running;
         this.pauseReason = m.running ? null : 'inicio';
@@ -45,15 +53,27 @@ export class EngineHost {
         this.postFrame();
         break;
       case 'command': {
-        if (!this.sim) { this.post({ type: 'commandResult', id: m.id, accepted: false, reason: 'Motor no inicializado' }); return; }
+        if (!this.sim) {
+          this.post({ type: 'commandResult', id: m.id, accepted: false, reason: 'Motor no inicializado' });
+          return;
+        }
         const r = this.sim.command(m.cmd, m.actor);
         this.post({ type: 'commandResult', id: m.id, accepted: r.accepted, ...(r.reason ? { reason: r.reason } : {}) });
         this.postFrame();
         break;
       }
       case 'control':
-        if (m.action === 'pause') { this.running = false; this.pauseReason = m.reason; this.sim?.noteEvent('pause', 'system', { paused: true, reason: m.reason }); }
-        else { this.running = true; this.pauseReason = null; this.lastNow = null; this.accMs = 0; this.sim?.noteEvent('pause', 'system', { paused: false }); }
+        if (m.action === 'pause') {
+          this.running = false;
+          this.pauseReason = m.reason;
+          this.sim?.noteEvent('pause', 'system', { paused: true, reason: m.reason });
+        } else {
+          this.running = true;
+          this.pauseReason = null;
+          this.lastNow = null;
+          this.accMs = 0;
+          this.sim?.noteEvent('pause', 'system', { paused: false });
+        }
         this.postFrame();
         break;
       case 'setSpeed':
@@ -76,15 +96,24 @@ export class EngineHost {
         break;
       case 'importSession': {
         const r = importSession(m.text);
-        if (!r.ok) { this.post({ type: 'importResult', id: m.id, ok: false, errors: r.errors }); return; }
+        if (!r.ok) {
+          this.post({ type: 'importResult', id: m.id, ok: false, errors: r.errors });
+          return;
+        }
         let replayed: Simulator;
-        try { replayed = replaySession(r.session); } catch (e) { this.post({ type: 'importResult', id: m.id, ok: false, errors: [`Reproducción fallida: ${(e as Error).message}`] }); return; }
+        try {
+          replayed = replaySession(r.session);
+        } catch (e) {
+          this.post({ type: 'importResult', id: m.id, ok: false, errors: [`Reproducción fallida: ${(e as Error).message}`] });
+          return;
+        }
         this.sim = replayed;
         this.scenarioPerturbations = []; // una sesión importada no hereda perturbaciones del escenario previo (regla 9)
         this.discontinuities = [];
         this.running = false;
         this.pauseReason = 'sesión importada (reproducida); pulse Reanudar';
-        this.accMs = 0; this.lastNow = null;
+        this.accMs = 0;
+        this.lastNow = null;
         this.post({ type: 'importResult', id: m.id, ok: true, warnings: r.warnings });
         this.postFrame();
         break;
@@ -123,7 +152,8 @@ export class EngineHost {
     }));
     this.running = true;
     this.pauseReason = null;
-    this.accMs = 0; this.lastNow = null;
+    this.accMs = 0;
+    this.lastNow = null;
     this.postFrame();
   }
 
@@ -147,7 +177,12 @@ export class EngineHost {
       this.lastNow = now;
       const plan = planSteps(this.accMs, sim.clock.dtMs, MAX_STEPS_PER_BATCH);
       if (plan.droppedMs > 0) {
-        const d: Discontinuity = { atSimTimeMs: sim.simTimeMs, droppedMs: plan.droppedMs, reason: 'presupuesto de cómputo superado o temporizador retenido', wallIso: new Date().toISOString() };
+        const d: Discontinuity = {
+          atSimTimeMs: sim.simTimeMs,
+          droppedMs: plan.droppedMs,
+          reason: 'presupuesto de cómputo superado o temporizador retenido',
+          wallIso: new Date().toISOString(),
+        };
         this.discontinuities.push(d);
         if (this.discontinuities.length > 50) this.discontinuities.shift();
         sim.noteEvent('discontinuity', 'system', d);
@@ -187,6 +222,13 @@ export class EngineHost {
 
   private postFrame(): void {
     if (!this.sim) return;
-    this.post({ type: 'frame', frame: this.sim.frame(), running: this.running, speed: this.speed, pauseReason: this.pauseReason, discontinuities: [...this.discontinuities] });
+    this.post({
+      type: 'frame',
+      frame: this.sim.frame(),
+      running: this.running,
+      speed: this.speed,
+      pauseReason: this.pauseReason,
+      discontinuities: [...this.discontinuities],
+    });
   }
 }

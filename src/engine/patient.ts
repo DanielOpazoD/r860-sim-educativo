@@ -50,10 +50,19 @@ export class PatientModel {
    * Integra un tramo con Paw impuesta constante y Pmus dada por función del tiempo (RK2/Heun, con sub-pasos si dt/tau es grande).
    * Devuelve el cambio de volumen (∫Q dt exacto por definición) y el flujo al final.
    */
-  integratePressureSource(paw: number, pmusAt: (tS: number) => number, t0: number, dt: number, nonNegativeFlow = false): { dV: number; qEnd: number } {
+  integratePressureSource(
+    paw: number,
+    pmusAt: (tS: number) => number,
+    t0: number,
+    dt: number,
+    nonNegativeFlow = false,
+  ): { dV: number; qEnd: number } {
     const tauMin = Math.min(this.params.rInsp, this.params.rExp) * this.params.crs;
     const nSub = Math.min(1000, Math.max(1, Math.ceil(dt / (0.2 * Math.max(1e-6, tauMin)))));
-    const f = (pw: number, pm: number, vv: number): number => { const q = this.flowForPaw(pw, pm, vv); return nonNegativeFlow ? Math.max(0, q) : q; };
+    const f = (pw: number, pm: number, vv: number): number => {
+      const q = this.flowForPaw(pw, pm, vv);
+      return nonNegativeFlow ? Math.max(0, q) : q;
+    };
     const h = dt / nSub;
     const v0 = this.v;
     let v = v0;

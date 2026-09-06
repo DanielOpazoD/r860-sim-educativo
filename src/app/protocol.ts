@@ -4,7 +4,12 @@ import type { EngineFrame, SimulatorInit } from '../engine/simulator';
 import type { SessionFile } from '../history/session';
 import type { Scenario } from '../scenarios';
 
-export interface Discontinuity { atSimTimeMs: number; droppedMs: number; reason: string; wallIso: string }
+export interface Discontinuity {
+  atSimTimeMs: number;
+  droppedMs: number;
+  reason: string;
+  wallIso: string;
+}
 
 export type MainToEngine =
   | { type: 'init'; init: SimulatorInit; speed: number; running: boolean; autopauseAtMs?: number }

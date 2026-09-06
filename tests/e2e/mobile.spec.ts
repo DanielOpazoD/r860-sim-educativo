@@ -11,7 +11,8 @@ test.describe('VIS-03 móvil · equipo desplazable y editor fuera del monitor', 
     await page.locator('[data-setting-quick="vt"]').tap();
     await expect(page.locator('#quick-editor')).toBeVisible();
     await expect(page.locator('#quick-editor')).toHaveClass(/mobile-editor/);
-    const box = await page.locator('#quick-value').boundingBox(); expect(box!.height).toBeGreaterThan(30);
+    const box = await page.locator('#quick-value').boundingBox();
+    expect(box!.height).toBeGreaterThan(30);
     await page.keyboard.press('Escape');
     await screenshot(page, info, 'vis-03-mobile');
   });

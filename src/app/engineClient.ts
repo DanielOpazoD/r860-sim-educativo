@@ -28,7 +28,9 @@ export class EngineClient {
   readonly ready: Promise<void>;
 
   constructor(opts: { forceInline?: boolean; readyTimeoutMs?: number } = {}) {
-    this.ready = new Promise<void>((res) => { this.readyResolve = res; });
+    this.ready = new Promise<void>((res) => {
+      this.readyResolve = res;
+    });
     let mode: 'worker' | 'inline' = 'inline';
     if (!opts.forceInline && typeof Worker !== 'undefined') {
       try {
@@ -36,7 +38,9 @@ export class EngineClient {
         this.worker.onmessage = (e: MessageEvent<EngineToMain>) => this.dispatch(e.data);
         this.worker.onerror = (e) => this.degrade(`error del Worker: ${(e as ErrorEvent).message || 'desconocido'}`);
         mode = 'worker';
-        const timer = setTimeout(() => { if (!this.readyDone) this.degrade('el Worker no respondió a tiempo'); }, opts.readyTimeoutMs ?? WORKER_READY_TIMEOUT_MS);
+        const timer = setTimeout(() => {
+          if (!this.readyDone) this.degrade('el Worker no respondió a tiempo');
+        }, opts.readyTimeoutMs ?? WORKER_READY_TIMEOUT_MS);
         void this.ready.then(() => clearTimeout(timer));
       } catch (e) {
         this.worker = null;
@@ -55,8 +59,10 @@ export class EngineClient {
   /** Degradación explícita: se cierra el Worker y se sigue en la página. Nunca silenciosa. */
   private degrade(reason: string): void {
     if (this.mode === 'inline') return;
-    this.worker?.terminate(); this.worker = null;
-    this.mode = 'inline'; this.degradedReason = reason;
+    this.worker?.terminate();
+    this.worker = null;
+    this.mode = 'inline';
+    this.degradedReason = reason;
     this.inline = new EngineHost((m) => this.dispatch(m));
     this.onDegraded?.(reason);
     if (!this.readyDone) this.dispatch({ type: 'ready' });
@@ -68,38 +74,68 @@ export class EngineClient {
   }
 
   private dispatch(m: EngineToMain): void {
-    if (m.type === 'ready') { this.readyDone = true; this.readyResolve?.(); return; }
-    if (m.type === 'frame') { for (const l of this.frameListeners) l(m); return; }
+    if (m.type === 'ready') {
+      this.readyDone = true;
+      this.readyResolve?.();
+      return;
+    }
+    if (m.type === 'frame') {
+      for (const l of this.frameListeners) l(m);
+      return;
+    }
     const cb = this.pending.get(m.id);
-    if (cb) { this.pending.delete(m.id); cb(m); }
+    if (cb) {
+      this.pending.delete(m.id);
+      cb(m);
+    }
   }
 
   onFrame(l: FrameListener): () => void {
     this.frameListeners.push(l);
-    return () => { this.frameListeners = this.frameListeners.filter((x) => x !== l); };
+    return () => {
+      this.frameListeners = this.frameListeners.filter((x) => x !== l);
+    };
   }
 
-  init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number): void { this.send({ type: 'init', init, speed, running, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) }); }
+  init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number): void {
+    this.send({ type: 'init', init, speed, running, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) });
+  }
 
   command(cmd: Command, actor: Actor = 'learner'): Promise<{ accepted: boolean; reason?: string }> {
     const id = this.nextId++;
     return new Promise((res) => {
-      this.pending.set(id, (m) => { if (m.type === 'commandResult') res({ accepted: m.accepted, ...(m.reason ? { reason: m.reason } : {}) }); });
+      this.pending.set(id, (m) => {
+        if (m.type === 'commandResult') res({ accepted: m.accepted, ...(m.reason ? { reason: m.reason } : {}) });
+      });
       this.send({ type: 'command', id, cmd, actor });
     });
   }
 
-  pause(reason: string): void { this.send({ type: 'control', action: 'pause', reason }); }
-  resume(): void { this.send({ type: 'control', action: 'resume', reason: '' }); }
-  setSpeed(speed: number): void { this.send({ type: 'setSpeed', speed }); }
-  visibility(hidden: boolean): void { this.send({ type: 'visibility', hidden }); }
-  requestFrame(): void { this.send({ type: 'requestFrame' }); }
-  loadScenario(scenario: Scenario, keepSettings = false): void { this.send({ type: 'loadScenario', scenario, keepSettings }); }
+  pause(reason: string): void {
+    this.send({ type: 'control', action: 'pause', reason });
+  }
+  resume(): void {
+    this.send({ type: 'control', action: 'resume', reason: '' });
+  }
+  setSpeed(speed: number): void {
+    this.send({ type: 'setSpeed', speed });
+  }
+  visibility(hidden: boolean): void {
+    this.send({ type: 'visibility', hidden });
+  }
+  requestFrame(): void {
+    this.send({ type: 'requestFrame' });
+  }
+  loadScenario(scenario: Scenario, keepSettings = false): void {
+    this.send({ type: 'loadScenario', scenario, keepSettings });
+  }
 
   exportSession(): Promise<SessionFile> {
     const id = this.nextId++;
     return new Promise((res) => {
-      this.pending.set(id, (m) => { if (m.type === 'session') res(m.file); });
+      this.pending.set(id, (m) => {
+        if (m.type === 'session') res(m.file);
+      });
       this.send({ type: 'exportSession', id });
     });
   }
@@ -107,7 +143,10 @@ export class EngineClient {
   importSession(text: string): Promise<{ ok: boolean; errors?: string[]; warnings?: string[] }> {
     const id = this.nextId++;
     return new Promise((res) => {
-      this.pending.set(id, (m) => { if (m.type === 'importResult') res({ ok: m.ok, ...(m.errors ? { errors: m.errors } : {}), ...(m.warnings ? { warnings: m.warnings } : {}) }); });
+      this.pending.set(id, (m) => {
+        if (m.type === 'importResult')
+          res({ ok: m.ok, ...(m.errors ? { errors: m.errors } : {}), ...(m.warnings ? { warnings: m.warnings } : {}) });
+      });
       this.send({ type: 'importSession', id, text });
     });
   }

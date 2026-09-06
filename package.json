@@ -1,6 +1,6 @@
 {
   "name": "r860-sim-educativo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "R860 Lab · Simulador EDUCATIVO web inspirado en GE Healthcare CARESCAPE R860. NO USO CLÍNICO.",
   "type": "module",
@@ -14,12 +14,19 @@
     "bench": "vitest run --reporter=verbose tests/bench",
     "e2e": "playwright test",
     "results:doc": "vitest run --reporter=json --outputFile=test-results/vitest.json; python3 scripts/results-doc.py",
-    "check": "npm run typecheck && npm run test"
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm run test",
+    "lint": "oxlint src tests",
+    "format": "prettier --write src tests",
+    "format:check": "prettier --check src tests",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@types/node": "^26.4.1",
+    "@vitest/coverage-v8": "^5.0.0",
     "fast-check": "4.9.0",
+    "oxlint": "^1.81.0",
+    "prettier": "^3.9.6",
     "typescript": "7.0.2",
     "vite": "8.2.2",
     "vitest": "5.0.0"

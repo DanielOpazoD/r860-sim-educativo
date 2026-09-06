@@ -1,7 +1,14 @@
 import type { AlarmLimits, AlarmPriority, AlarmResponse, AlarmState, BreathRecord, MetricSample } from '../domain/types';
 import { fractionToPercent, litersToMl } from '../domain/units';
 
-interface RuleDef { id: string; priority: AlarmPriority; message: string; responseAction: AlarmResponse; latching: boolean; source: string }
+interface RuleDef {
+  id: string;
+  priority: AlarmPriority;
+  message: string;
+  responseAction: AlarmResponse;
+  latching: boolean;
+  source: string;
+}
 
 /**
  * Reglas de alarma de esta etapa. PRIORIDADES, RETARDOS Y ENCLAVAMIENTOS SON PROPUESTAS (P), no tabla GE (U-11).
@@ -10,7 +17,14 @@ interface RuleDef { id: string; priority: AlarmPriority; message: string; respon
  * actualizar la pantalla; Pmáx limita la entrega en modos adaptativos. Fin de inspiración por Pmáx: D vía dossier [04].
  */
 export const ALARM_RULES: Record<string, RuleDef> = {
-  pmax: { id: 'pmax', priority: 'high', message: 'Pmáx alcanzada (Ppico alta)', responseAction: 'endInspiration', latching: true, source: 'ventilator.paw' },
+  pmax: {
+    id: 'pmax',
+    priority: 'high',
+    message: 'Pmáx alcanzada (Ppico alta)',
+    responseAction: 'endInspiration',
+    latching: true,
+    source: 'ventilator.paw',
+  },
   ppeakLow: { id: 'ppeakLow', priority: 'medium', message: 'Ppico baja', responseAction: 'none', latching: true, source: 'ventilator.paw' },
   vteLow: { id: 'vteLow', priority: 'medium', message: 'VTesp bajo', responseAction: 'none', latching: true, source: 'ventilator.flow' },
   vteHigh: { id: 'vteHigh', priority: 'medium', message: 'VTesp alto', responseAction: 'none', latching: true, source: 'ventilator.flow' },
@@ -21,12 +35,24 @@ export const ALARM_RULES: Record<string, RuleDef> = {
   fio2Low: { id: 'fio2Low', priority: 'medium', message: 'FiO2 baja', responseAction: 'none', latching: true, source: 'ventilator.o2' },
   fio2High: { id: 'fio2High', priority: 'medium', message: 'FiO2 alta', responseAction: 'none', latching: true, source: 'ventilator.o2' },
   peepeLow: { id: 'peepeLow', priority: 'medium', message: 'PEEPe baja', responseAction: 'none', latching: true, source: 'ventilator.paw' },
-  peepeHigh: { id: 'peepeHigh', priority: 'medium', message: 'PEEPe alta', responseAction: 'none', latching: true, source: 'ventilator.paw' },
+  peepeHigh: {
+    id: 'peepeHigh',
+    priority: 'medium',
+    message: 'PEEPe alta',
+    responseAction: 'none',
+    latching: true,
+    source: 'ventilator.paw',
+  },
 };
 
 const PRIORITY_RANK: Record<AlarmPriority, number> = { high: 3, medium: 2, informational: 1 };
 
-export interface AlarmBar { color: 'green' | 'red' | 'yellow' | 'blue' | 'grey'; message: string; activeCount: number; pendingAckCount: number }
+export interface AlarmBar {
+  color: 'green' | 'red' | 'yellow' | 'blue' | 'grey';
+  message: string;
+  activeCount: number;
+  pendingAckCount: number;
+}
 
 export class AlarmEngine {
   limits: AlarmLimits;
@@ -36,9 +62,21 @@ export class AlarmEngine {
     this.limits = { ...limits };
     for (const r of Object.values(ALARM_RULES)) {
       this.alarms.set(r.id, {
-        id: r.id, priority: r.priority, priorityEvidence: 'P', source: r.source, message: r.message,
-        conditionActive: false, onsetAtMs: null, resolvedAtMs: null, acknowledgedAtMs: null,
-        displayedValueAtOnset: null, rawValueAtOnset: null, threshold: null, conditionReason: '', responseAction: r.responseAction, latching: r.latching,
+        id: r.id,
+        priority: r.priority,
+        priorityEvidence: 'P',
+        source: r.source,
+        message: r.message,
+        conditionActive: false,
+        onsetAtMs: null,
+        resolvedAtMs: null,
+        acknowledgedAtMs: null,
+        displayedValueAtOnset: null,
+        rawValueAtOnset: null,
+        threshold: null,
+        conditionReason: '',
+        responseAction: r.responseAction,
+        latching: r.latching,
       });
     }
   }
@@ -51,12 +89,24 @@ export class AlarmEngine {
     return [...this.alarms.values()].map((a) => ({ ...a }));
   }
 
-  get(id: string): AlarmState | undefined { return this.alarms.get(id); }
+  get(id: string): AlarmState | undefined {
+    return this.alarms.get(id);
+  }
 
-  private activate(id: string, simTimeMs: number, raw: number | null, displayed: number | null, threshold: number | null, reason: string): void {
+  private activate(
+    id: string,
+    simTimeMs: number,
+    raw: number | null,
+    displayed: number | null,
+    threshold: number | null,
+    reason: string,
+  ): void {
     const a = this.alarms.get(id);
     if (!a) return;
-    if (a.conditionActive) { a.conditionReason = reason; return; }
+    if (a.conditionActive) {
+      a.conditionReason = reason;
+      return;
+    }
     a.conditionActive = true;
     a.onsetAtMs = simTimeMs;
     a.resolvedAtMs = null;
@@ -87,9 +137,23 @@ export class AlarmEngine {
     this.activate('pmax', simTimeMs, rawPaw, displayedPpeak, pmax, `Paw ${rawPaw.toFixed(2)} ≥ Pmáx ${pmax}`);
   }
 
-  private check(id: string, simTimeMs: number, value: number | null, limit: number | 'off', kind: 'low' | 'high', displayed: number | null): void {
+  private check(
+    id: string,
+    simTimeMs: number,
+    value: number | null,
+    limit: number | 'off',
+    kind: 'low' | 'high',
+    displayed: number | null,
+  ): void {
     // Off no es cero: la alarma no se evalúa; si estaba activa, se resuelve y se da por reconocida porque el usuario la desactivó (P).
-    if (limit === 'off') { const a = this.alarms.get(id); if (a?.conditionActive) { this.resolve(id, simTimeMs); a.acknowledgedAtMs = simTimeMs; } return; }
+    if (limit === 'off') {
+      const a = this.alarms.get(id);
+      if (a?.conditionActive) {
+        this.resolve(id, simTimeMs);
+        a.acknowledgedAtMs = simTimeMs;
+      }
+      return;
+    }
     if (value === null) return; // dato ausente: ni alarma ni valor normal (ALM-07)
     const out = kind === 'low' ? value < limit : value > limit;
     if (out) this.activate(id, simTimeMs, value, displayed, limit, `${kind === 'low' ? '<' : '>'} ${limit}`);
@@ -114,8 +178,22 @@ export class AlarmEngine {
   }
 
   onSensor(simTimeMs: number, fio2Measured: number | null): void {
-    this.check('fio2Low', simTimeMs, fio2Measured, this.limits.fio2Low, 'low', fio2Measured === null ? null : Math.round(fractionToPercent(fio2Measured)));
-    this.check('fio2High', simTimeMs, fio2Measured, this.limits.fio2High, 'high', fio2Measured === null ? null : Math.round(fractionToPercent(fio2Measured)));
+    this.check(
+      'fio2Low',
+      simTimeMs,
+      fio2Measured,
+      this.limits.fio2Low,
+      'low',
+      fio2Measured === null ? null : Math.round(fractionToPercent(fio2Measured)),
+    );
+    this.check(
+      'fio2High',
+      simTimeMs,
+      fio2Measured,
+      this.limits.fio2High,
+      'high',
+      fio2Measured === null ? null : Math.round(fractionToPercent(fio2Measured)),
+    );
   }
 
   /** En espera se resuelven las condiciones fisiológicas (no hay monitorización, D QRG p.14); las pendientes de reconocer permanecen. */
@@ -126,7 +204,9 @@ export class AlarmEngine {
   /** Estado de la banda (D: verde sin alarmas; color de la prioridad más alta; gris con alarma previa por reconocer). */
   bar(): AlarmBar {
     const active = [...this.alarms.values()].filter((a) => a.conditionActive);
-    const pending = [...this.alarms.values()].filter((a) => !a.conditionActive && a.latching && a.resolvedAtMs !== null && a.acknowledgedAtMs === null);
+    const pending = [...this.alarms.values()].filter(
+      (a) => !a.conditionActive && a.latching && a.resolvedAtMs !== null && a.acknowledgedAtMs === null,
+    );
     if (active.length) {
       active.sort((x, y) => PRIORITY_RANK[y.priority] - PRIORITY_RANK[x.priority] || (y.onsetAtMs ?? 0) - (x.onsetAtMs ?? 0));
       const top = active[0] as AlarmState;

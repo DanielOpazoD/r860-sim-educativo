@@ -34,10 +34,15 @@ describe('H1 · ↑O2: ajuste, mezclador y sensor vuelven juntos (regla 1)', () 
 
 describe('H2 · orden manual y disparo en el mismo sub-paso: sin respiraciones apiladas', () => {
   it('con esfuerzo fuerte y control asistido, una orden manual produce exactamente una respiración manual y ninguna espiración de un sub-paso', () => {
-    const sim = benchSim({ effort: { enabled: true, amplitude: 6, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 }, settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 2 / 60 } });
+    const sim = benchSim({
+      effort: { enabled: true, amplitude: 6, ratePerMin: 30, tiS: 0.6, phaseS: 0.3 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 2 / 60 },
+    });
     let issued = 0;
     for (let i = 0; i < 20_000 && sim.breaths.length < 30; i++) {
-      if (sim.controller.phase === 'exp' && issued < 5 && i % 700 === 0) { if (sim.command({ type: 'manualBreath' }).accepted) issued += 1; }
+      if (sim.controller.phase === 'exp' && issued < 5 && i % 700 === 0) {
+        if (sim.command({ type: 'manualBreath' }).accepted) issued += 1;
+      }
       sim.step();
     }
     expect(issued).toBeGreaterThan(0);
@@ -108,11 +113,14 @@ describe('H6 · validación de inicialización, comandos e importación', () => 
     expect(Number.isFinite(sim.controller.simT)).toBe(true);
   });
   it('importSession rechaza ajustes fuera de dominio y pacientes degenerados', () => {
-    const sim = benchSim(); runUntilBreath(sim, 1);
+    const sim = benchSim();
+    runUntilBreath(sim, 1);
     const good = exportSession(sim);
-    const bad1 = JSON.parse(JSON.stringify(good)); bad1.init.settings.rr = -5;
+    const bad1 = JSON.parse(JSON.stringify(good));
+    bad1.init.settings.rr = -5;
     expect(importSession(JSON.stringify(bad1)).ok).toBe(false);
-    const bad2 = JSON.parse(JSON.stringify(good)); bad2.init.patient.crs = 0;
+    const bad2 = JSON.parse(JSON.stringify(good));
+    bad2.init.patient.crs = 0;
     expect(importSession(JSON.stringify(bad2)).ok).toBe(false);
   });
 });
@@ -121,13 +129,20 @@ describe('H7 · importar una sesión no hereda perturbaciones del escenario prev
   it('tras cargar SC-02 (C cambia a 20 s) e importar una sesión de banco, la C importada permanece', () => {
     const posts: EngineToMain[] = [];
     let now = 0;
-    const host = new EngineHost((m) => posts.push(m), () => now);
+    const host = new EngineHost(
+      (m) => posts.push(m),
+      () => now,
+    );
     host.handle({ type: 'init', init: defaultInit(), speed: 1, running: true });
     host.handle({ type: 'loadScenario', scenario: SCENARIOS.find((s) => s.id === 'SC-02')!, keepSettings: false });
-    const sim = benchSim(); runUntilBreath(sim, 6); // 24 s > 20 s de la perturbación
+    const sim = benchSim();
+    runUntilBreath(sim, 6); // 24 s > 20 s de la perturbación
     host.handle({ type: 'importSession', id: 1, text: JSON.stringify(exportSession(sim)) });
     host.handle({ type: 'control', action: 'resume', reason: '' });
-    for (let i = 0; i < 10; i++) { now += 20; host.tick(now); }
+    for (let i = 0; i < 10; i++) {
+      now += 20;
+      host.tick(now);
+    }
     host.stop();
     const last = [...posts].reverse().find((m) => m.type === 'frame');
     expect(last && last.type === 'frame' && last.frame.truth.patient.crs).toBe(0.05);
@@ -137,15 +152,24 @@ describe('H7 · importar una sesión no hereda perturbaciones del escenario prev
 describe('H8 · Pplat de ciclo nunca es válida en una respiración terminada por Pmáx', () => {
   it('con pausa programada y Pmáx durante la pausa, pplatCycle es null con motivo endedByPmax', () => {
     // Esfuerzo espiratorio fuerte durante la pausa sube Paw = Pel − Pmus (Pmus negativa no existe en el generador): usamos Pmáx bajo.
-    const sim = benchSim({ patient: { ...BENCH_PATIENT, crs: 0.02 }, settings: { ...BENCH_SETTINGS, plimit: 60, pmax: 30, pausePct: 0.3 } });
+    const sim = benchSim({
+      patient: { ...BENCH_PATIENT, crs: 0.02 },
+      settings: { ...BENCH_SETTINGS, plimit: 60, pmax: 30, pausePct: 0.3 },
+    });
     runUntilBreath(sim, 2);
-    for (const b of sim.breaths) { expect(b.pplatCycle).toBeNull(); expect(b.pplatCycleReason).toBe('endedByPmax'); }
+    for (const b of sim.breaths) {
+      expect(b.pplatCycle).toBeNull();
+      expect(b.pplatCycleReason).toBe('endedByPmax');
+    }
   });
 });
 
 describe('H13 · bloqueo espiratorio con paciente que dispara continuamente', () => {
   it('se ejecuta al final de la espiración aunque la termine un disparo, y resulta inválido con motivo', () => {
-    const sim = benchSim({ effort: { enabled: true, amplitude: 8, ratePerMin: 30, tiS: 0.8, phaseS: 0.1 }, settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 1 / 60 } });
+    const sim = benchSim({
+      effort: { enabled: true, amplitude: 8, ratePerMin: 30, tiS: 0.8, phaseS: 0.1 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, flowTrigger: 1 / 60 },
+    });
     runUntilBreath(sim, 3);
     sim.command({ type: 'requestHold', kind: 'expHold', durationS: 3 });
     runUntilBreath(sim, 8);

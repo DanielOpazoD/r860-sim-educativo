@@ -39,14 +39,21 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await open(page, { autopause: 12000, instructor: 0, speed: 4 });
     await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 12000, null, { timeout: 20_000 });
     const f = await frame(page);
-    expect(f.simTimeMs).toBe(12000); expect(f.breathCount).toBe(3);
+    expect(f.simTimeMs).toBe(12000);
+    expect(f.breathCount).toBe(3);
     await expect(page.locator('#numeric-grid [data-metric="ppeak"] .numeric-value')).toHaveText('20');
     await expect(page.locator('#numeric-grid [data-metric="peepe"] .numeric-value')).toHaveText('5');
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('500');
     await expect(page.locator('#numeric-grid [data-metric="rr"] .numeric-value')).toHaveText('15');
     await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('—');
     await expect(page.locator('#phase-status')).toContainText('PAUSADA');
-    const drawn = await page.evaluate(() => { const c = document.getElementById('waves-canvas') as HTMLCanvasElement; const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 40) if (d[i]! > 0) n++; return n; });
+    const drawn = await page.evaluate(() => {
+      const c = document.getElementById('waves-canvas') as HTMLCanvasElement;
+      const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 40) if (d[i]! > 0) n++;
+      return n;
+    });
     expect(drawn).toBeGreaterThan(100);
     await page.waitForTimeout(300);
     await screenshot(page, info, 'vis-03-live-sc01-t12s', { scenario: 'SC-01' });
@@ -65,12 +72,16 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
   test('VIS-05 · vistas de bucles, tabla, tendencias y registro son funcionales', async ({ page }, info) => {
     await open(page, { autopause: 16000, instructor: 0, speed: 4 });
     await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
-    await page.click('[data-view="loops"]'); await page.click('[data-action="loopReference"]');
+    await page.click('[data-view="loops"]');
+    await page.click('[data-action="loopReference"]');
     await expect(page.locator('#loop-reference-label')).toContainText('Referencia');
     await screenshot(page, info, 'vis-05-loops');
-    await page.click('[data-view="data"]'); await expect(page.locator('#data-table-body tr')).toHaveCount(16);
+    await page.click('[data-view="data"]');
+    await expect(page.locator('#data-table-body tr')).toHaveCount(16);
     await expect(page.locator('#data-table-body')).toContainText('sensor del ventilador');
-    await page.click('[data-view="trends"]'); await page.waitForTimeout(200);
-    await page.click('[data-view="log"]'); await expect(page.locator('#device-event-log .event-log-row').first()).toBeVisible();
+    await page.click('[data-view="trends"]');
+    await page.waitForTimeout(200);
+    await page.click('[data-view="log"]');
+    await expect(page.locator('#device-event-log .event-log-row').first()).toBeVisible();
   });
 });

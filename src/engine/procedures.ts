@@ -18,8 +18,31 @@ export interface O2ProcedureState {
   endCause: 'timer' | 'user' | 'standby' | null;
 }
 
-function mkSample(key: string, value: number | null, unit: string, ctx: { simTimeMs: number; breathId: string | null; procedureId: string; quality: Quality; reason: string | null; windowMs: number | null }): MetricSample {
-  return { key, value, unit, source: 'procedure', simTimeMs: ctx.simTimeMs, breathId: ctx.breathId, procedureId: ctx.procedureId, quality: ctx.quality, reason: ctx.reason, windowMs: ctx.windowMs };
+function mkSample(
+  key: string,
+  value: number | null,
+  unit: string,
+  ctx: {
+    simTimeMs: number;
+    breathId: string | null;
+    procedureId: string;
+    quality: Quality;
+    reason: string | null;
+    windowMs: number | null;
+  },
+): MetricSample {
+  return {
+    key,
+    value,
+    unit,
+    source: 'procedure',
+    simTimeMs: ctx.simTimeMs,
+    breathId: ctx.breathId,
+    procedureId: ctx.procedureId,
+    quality: ctx.quality,
+    reason: ctx.reason,
+    windowMs: ctx.windowMs,
+  };
 }
 
 /**
@@ -34,18 +57,36 @@ export class ProcedureManager {
   last: Record<ProcedureKind, ProcedureResult | null> = { inspHold: null, expHold: null, manualBreath: null, increaseO2: null };
   o2: O2ProcedureState | null = null;
 
-  constructor(private readonly controller: VcController, private readonly wallTimeOf: (simTimeMs: number) => number) {}
+  constructor(
+    private readonly controller: VcController,
+    private readonly wallTimeOf: (simTimeMs: number) => number,
+  ) {}
 
-  private nextId(): string { this.seq += 1; return `p${this.seq}`; }
+  private nextId(): string {
+    this.seq += 1;
+    return `p${this.seq}`;
+  }
 
   requestHold(kind: HoldKind, durationS: number, simTimeMs: number): { accepted: boolean; reason?: string; procedureId?: string } {
-    if (this.current && (this.current.phase === 'queued' || this.current.phase === 'running')) return { accepted: false, reason: 'Otro procedimiento en cola o en curso (PRC-05)' };
+    if (this.current && (this.current.phase === 'queued' || this.current.phase === 'running'))
+      return { accepted: false, reason: 'Otro procedimiento en cola o en curso (PRC-05)' };
     const procedureId = this.nextId();
     const r = this.controller.requestHold({ procedureId, kind, durationS });
     if (!r.accepted) return { accepted: false, reason: r.reason };
     this.current = {
-      procedureId, kind, phase: 'queued', requestedAtMs: simTimeMs, startedAtMs: null, completedAtMs: null, wallTimeMs: null,
-      requestedDurationS: durationS, actualDurationS: null, breathId: null, quality: 'inProgress', reason: 'enCola', values: {},
+      procedureId,
+      kind,
+      phase: 'queued',
+      requestedAtMs: simTimeMs,
+      startedAtMs: null,
+      completedAtMs: null,
+      wallTimeMs: null,
+      requestedDurationS: durationS,
+      actualDurationS: null,
+      breathId: null,
+      quality: 'inProgress',
+      reason: 'enCola',
+      values: {},
     };
     return { accepted: true, procedureId };
   }
@@ -69,8 +110,17 @@ export class ProcedureManager {
       this.finishHold(ev.outcome, simTimeMs);
     } else if (ev.type === 'rejected' && this.current && ev.what === `hold:${this.current.procedureId}`) {
       // No elegible (p. ej. inspiración terminada por Pmáx): resultado inválido con motivo y hora, para que la interfaz lo muestre.
-      const cur = this.current; this.current = null;
-      this.last[cur.kind] = { ...cur, phase: 'invalid', completedAtMs: simTimeMs, wallTimeMs: this.wallTimeOf(simTimeMs), quality: 'invalid', reason: ev.reason, values: {} };
+      const cur = this.current;
+      this.current = null;
+      this.last[cur.kind] = {
+        ...cur,
+        phase: 'invalid',
+        completedAtMs: simTimeMs,
+        wallTimeMs: this.wallTimeOf(simTimeMs),
+        quality: 'invalid',
+        reason: ev.reason,
+        values: {},
+      };
     }
   }
 
@@ -80,33 +130,71 @@ export class ProcedureManager {
     const base = { simTimeMs, breathId: o.breathId, procedureId: o.procedureId, windowMs: sToMs(o.actualDurationS) };
     let quality: Quality = 'valid';
     let reason: string | null = null;
-    if (o.cancelled) { quality = 'invalid'; reason = 'canceladoPorUsuario'; }
-    else if (o.pmaxHit) { quality = 'invalid'; reason = 'pmaxDuranteBloqueo'; }
-    else if (o.actualDurationS < o.requestedDurationS - 1e-6) { quality = 'invalid'; reason = 'duracionInsuficiente'; }
-    else if (!Number.isFinite(o.stability) || o.stability > PLATEAU_STABILITY_CMH2O) { quality = 'invalid'; reason = 'mesetaInestable'; }
+    if (o.cancelled) {
+      quality = 'invalid';
+      reason = 'canceladoPorUsuario';
+    } else if (o.pmaxHit) {
+      quality = 'invalid';
+      reason = 'pmaxDuranteBloqueo';
+    } else if (o.actualDurationS < o.requestedDurationS - 1e-6) {
+      quality = 'invalid';
+      reason = 'duracionInsuficiente';
+    } else if (!Number.isFinite(o.stability) || o.stability > PLATEAU_STABILITY_CMH2O) {
+      quality = 'invalid';
+      reason = 'mesetaInestable';
+    }
     const values: Record<string, MetricSample> = {};
     if (o.kind === 'inspHold') {
       const pplat = quality === 'valid' ? o.pawEnd : null;
       values.pplat = mkSample('pplatHold', pplat, 'cmH2O', { ...base, quality, reason });
       const denom = o.pawEnd - o.peepeStart;
       if (quality === 'valid' && denom >= MIN_CSTAT_DENOMINATOR && o.vtInspL > 0) {
-        values.cstat = mkSample('cstatHold', o.vtInspL / denom, 'L/cmH2O', { ...base, quality: 'valid', reason: 'denominador=Pplat−PEEPe (sin PEEPtot medida)' });
-        values.driving = mkSample('drivingHold', denom, 'cmH2O', { ...base, quality: 'valid', reason: 'Pplat − PEEPe al inicio de esa inspiración (P)' });
+        values.cstat = mkSample('cstatHold', o.vtInspL / denom, 'L/cmH2O', {
+          ...base,
+          quality: 'valid',
+          reason: 'denominador=Pplat−PEEPe (sin PEEPtot medida)',
+        });
+        values.driving = mkSample('drivingHold', denom, 'cmH2O', {
+          ...base,
+          quality: 'valid',
+          reason: 'Pplat − PEEPe al inicio de esa inspiración (P)',
+        });
         values.vt = mkSample('vtHold', o.vtInspL, 'L', { ...base, quality: 'valid', reason: null });
       } else {
-        values.cstat = mkSample('cstatHold', null, 'L/cmH2O', { ...base, quality: 'invalid', reason: quality !== 'valid' ? reason : 'denominadorInsuficiente' });
-        values.driving = mkSample('drivingHold', null, 'cmH2O', { ...base, quality: 'invalid', reason: quality !== 'valid' ? reason : 'denominadorInsuficiente' });
+        values.cstat = mkSample('cstatHold', null, 'L/cmH2O', {
+          ...base,
+          quality: 'invalid',
+          reason: quality !== 'valid' ? reason : 'denominadorInsuficiente',
+        });
+        values.driving = mkSample('drivingHold', null, 'cmH2O', {
+          ...base,
+          quality: 'invalid',
+          reason: quality !== 'valid' ? reason : 'denominadorInsuficiente',
+        });
       }
     } else {
       const peepTot = quality === 'valid' ? o.pawEnd : null;
       values.peepTot = mkSample('peepTotHold', peepTot, 'cmH2O', { ...base, quality, reason });
-      values.peepi = mkSample('peepiHold', peepTot === null ? null : peepTot - o.peepeBeforeOcclusion, 'cmH2O', { ...base, quality, reason });
+      values.peepi = mkSample('peepiHold', peepTot === null ? null : peepTot - o.peepeBeforeOcclusion, 'cmH2O', {
+        ...base,
+        quality,
+        reason,
+      });
     }
     const result: ProcedureResult = {
-      procedureId: o.procedureId, kind: o.kind, phase: o.cancelled ? 'cancelled' : quality === 'valid' ? 'completed' : 'invalid',
-      requestedAtMs: cur?.requestedAtMs ?? simTimeMs, startedAtMs: sToMs(o.startSimTimeS), completedAtMs: simTimeMs,
-      wallTimeMs: this.wallTimeOf(simTimeMs), requestedDurationS: o.requestedDurationS, actualDurationS: o.actualDurationS,
-      breathId: o.breathId, quality, reason, values,
+      procedureId: o.procedureId,
+      kind: o.kind,
+      phase: o.cancelled ? 'cancelled' : quality === 'valid' ? 'completed' : 'invalid',
+      requestedAtMs: cur?.requestedAtMs ?? simTimeMs,
+      startedAtMs: sToMs(o.startSimTimeS),
+      completedAtMs: simTimeMs,
+      wallTimeMs: this.wallTimeOf(simTimeMs),
+      requestedDurationS: o.requestedDurationS,
+      actualDurationS: o.actualDurationS,
+      breathId: o.breathId,
+      quality,
+      reason,
+      values,
     };
     // Se conserva como «último» aunque sea inválido: el usuario debe ver el motivo; un resultado válido anterior queda en el historial.
     this.last[o.kind] = result;
@@ -117,7 +205,17 @@ export class ProcedureManager {
   startO2(simTimeMs: number, currentFio2: number, deltaFraction: number, durationMs: number): { accepted: boolean; reason?: string } {
     if (this.o2?.active) return { accepted: false, reason: '↑O2 ya en curso' };
     const target = Math.min(1, currentFio2 + deltaFraction);
-    this.o2 = { procedureId: this.nextId(), active: true, savedFio2: currentFio2, targetFio2: target, startedAtMs: simTimeMs, endsAtMs: simTimeMs + durationMs, userEditedDuring: false, restored: false, endCause: null };
+    this.o2 = {
+      procedureId: this.nextId(),
+      active: true,
+      savedFio2: currentFio2,
+      targetFio2: target,
+      startedAtMs: simTimeMs,
+      endsAtMs: simTimeMs + durationMs,
+      userEditedDuring: false,
+      restored: false,
+      endCause: null,
+    };
     this.controller.applySettings({ fio2: target });
     return { accepted: true };
   }
@@ -137,9 +235,19 @@ export class ProcedureManager {
       if (!o.userEditedDuring) this.controller.applySettings({ fio2: o.savedFio2 });
     }
     this.last.increaseO2 = {
-      procedureId: o.procedureId, kind: 'increaseO2', phase: cause === 'timer' ? 'completed' : 'cancelled', requestedAtMs: o.startedAtMs, startedAtMs: o.startedAtMs,
-      completedAtMs: simTimeMs, wallTimeMs: this.wallTimeOf(simTimeMs), requestedDurationS: msToS(o.endsAtMs - o.startedAtMs), actualDurationS: msToS(simTimeMs - o.startedAtMs),
-      breathId: null, quality: 'valid', reason: `fin:${cause}${o.userEditedDuring ? ';FiO2EditadaPorUsuario:noRestaurada' : ';restaurada'}`, values: {},
+      procedureId: o.procedureId,
+      kind: 'increaseO2',
+      phase: cause === 'timer' ? 'completed' : 'cancelled',
+      requestedAtMs: o.startedAtMs,
+      startedAtMs: o.startedAtMs,
+      completedAtMs: simTimeMs,
+      wallTimeMs: this.wallTimeOf(simTimeMs),
+      requestedDurationS: msToS(o.endsAtMs - o.startedAtMs),
+      actualDurationS: msToS(simTimeMs - o.startedAtMs),
+      breathId: null,
+      quality: 'valid',
+      reason: `fin:${cause}${o.userEditedDuring ? ';FiO2EditadaPorUsuario:noRestaurada' : ';restaurada'}`,
+      values: {},
     };
     return true;
   }

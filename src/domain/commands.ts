@@ -19,10 +19,32 @@ export type Command =
   | { type: 'setLungVolume'; vAbsL: number };
 
 export const COMMAND_TYPES: ReadonlySet<string> = new Set([
-  'confirmSettings', 'setAlarmLimits', 'enterStandby', 'startVentilation', 'requestHold', 'cancelProcedure', 'manualBreath',
-  'increaseO2Start', 'increaseO2Stop', 'acknowledgeAlarms', 'audioPause', 'setPatient', 'setEffort', 'setSensors', 'setLungVolume',
+  'confirmSettings',
+  'setAlarmLimits',
+  'enterStandby',
+  'startVentilation',
+  'requestHold',
+  'cancelProcedure',
+  'manualBreath',
+  'increaseO2Start',
+  'increaseO2Stop',
+  'acknowledgeAlarms',
+  'audioPause',
+  'setPatient',
+  'setEffort',
+  'setSensors',
+  'setLungVolume',
 ]);
 
-export interface CommandResult { accepted: boolean; reason?: string }
+export interface CommandResult {
+  accepted: boolean;
+  reason?: string;
+}
 
-export interface CommandLogEntry { simTimeMs: number; actor: Actor; command: Command; accepted: boolean; reason?: string }
+export interface CommandLogEntry {
+  simTimeMs: number;
+  actor: Actor;
+  command: Command;
+  accepted: boolean;
+  reason?: string;
+}

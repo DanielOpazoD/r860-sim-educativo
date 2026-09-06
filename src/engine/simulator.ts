@@ -1,7 +1,27 @@
 import type { Command, CommandLogEntry, CommandResult } from '../domain/commands';
-import type { Actor, AlarmLimits, AlarmState, BreathRecord, ControllerPhase, EffortParams, MetricSample, PatientParams, ProcedureResult, SensorParams, SessionEvent, VcSettings, VentilationState } from '../domain/types';
+import type {
+  Actor,
+  AlarmLimits,
+  AlarmState,
+  BreathRecord,
+  ControllerPhase,
+  EffortParams,
+  MetricSample,
+  PatientParams,
+  ProcedureResult,
+  SensorParams,
+  SessionEvent,
+  VcSettings,
+  VentilationState,
+} from '../domain/types';
 import { validateAlarmLimitChanges, validateDomains, validatePatientParams, validateVcSettings } from '../domain/validation';
-import { ALARM_LIMIT_RULES, VC_ADULT_CROSS_LIMITS, DEFAULT_ALARM_LIMITS, DEFAULT_VC_SETTINGS, VC_ADULT_RULES } from '../profiles/r860-es-photo-reference/settings';
+import {
+  ALARM_LIMIT_RULES,
+  VC_ADULT_CROSS_LIMITS,
+  DEFAULT_ALARM_LIMITS,
+  DEFAULT_VC_SETTINGS,
+  VC_ADULT_RULES,
+} from '../profiles/r860-es-photo-reference/settings';
 import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
 import { AlarmEngine, type AlarmBar } from './alarms';
 import { SimClock } from './clock';
@@ -47,11 +67,37 @@ export function defaultInit(overrides: Partial<SimulatorInit> = {}): SimulatorIn
   };
 }
 
-export interface LiveSignals { paw: number; flowLps: number; volTidalL: number; ppeakCurrent: number | null; phase: ControllerPhase }
+export interface LiveSignals {
+  paw: number;
+  flowLps: number;
+  volTidalL: number;
+  ppeakCurrent: number | null;
+  phase: ControllerPhase;
+}
 
-export interface Truth { vAbsL: number; pel: number; pmus: number; /** PEEP intrínseca verdadera al fin de la última espiración: Pel(V al inicio de la respiración en curso) − PEEP. */ peepiEndExp: number; patient: PatientParams; effort: EffortParams; sensors: SensorParams; fio2Delivered: number }
+export interface Truth {
+  vAbsL: number;
+  pel: number;
+  pmus: number;
+  /** PEEP intrínseca verdadera al fin de la última espiración: Pel(V al inicio de la respiración en curso) − PEEP. */ peepiEndExp: number;
+  patient: PatientParams;
+  effort: EffortParams;
+  sensors: SensorParams;
+  fio2Delivered: number;
+}
 
-export interface TrendPoint { tMs: number; ppeak: number; peepe: number; vte: number; vti: number; rr: number | null; mve: number | null; pplatHold: number | null; cstatHold: number | null; type: string }
+export interface TrendPoint {
+  tMs: number;
+  ppeak: number;
+  peepe: number;
+  vte: number;
+  vti: number;
+  rr: number | null;
+  mve: number | null;
+  pplatHold: number | null;
+  cstatHold: number | null;
+  type: string;
+}
 
 export interface EngineFrame {
   engineVersion: string;
@@ -66,7 +112,12 @@ export interface EngineFrame {
   metrics: Record<string, MetricSample>;
   alarms: AlarmState[];
   alarmBar: AlarmBar;
-  procedure: { current: ProcedureResult | null; hold: VcController['holdState']; last: ProcedureManager['last']; o2: O2ProcedureState | null };
+  procedure: {
+    current: ProcedureResult | null;
+    hold: VcController['holdState'];
+    last: ProcedureManager['last'];
+    o2: O2ProcedureState | null;
+  };
   breathCount: number;
   audioPauseUntilMs: number | null;
   truth: Truth;
@@ -104,9 +155,14 @@ export class Simulator {
   audioPauseUntilMs: number | null = null;
 
   constructor(init: SimulatorInit) {
-    const errs = [...validateDomains(init.settings, VC_ADULT_RULES), ...validateVcSettings(init.settings, VC_ADULT_CROSS_LIMITS).reasons, ...validatePatientParams(init.patient)];
+    const errs = [
+      ...validateDomains(init.settings, VC_ADULT_RULES),
+      ...validateVcSettings(init.settings, VC_ADULT_CROSS_LIMITS).reasons,
+      ...validatePatientParams(init.patient),
+    ];
     if (!(init.dtMs >= 0.5 && init.dtMs <= 20)) errs.push('dtMs fuera de 0.5–20 ms');
-    const al = validateAlarmLimitChanges(init.alarmLimits, ALARM_LIMIT_RULES, {}); if (!al.ok) errs.push(...al.reasons);
+    const al = validateAlarmLimitChanges(init.alarmLimits, ALARM_LIMIT_RULES, {});
+    if (!al.ok) errs.push(...al.reasons);
     if (!Number.isFinite(init.startWallTimeMs)) errs.push('startWallTimeMs no finito');
     if (errs.length) throw new Error(`Inicialización inválida: ${errs.join('; ')}`);
     this.init = init;
@@ -132,14 +188,31 @@ export class Simulator {
     this.drainController();
   }
 
-  get simTimeMs(): number { return this.clock.simTimeMs; }
-  get wallTimeMs(): number { return this.clock.wallTimeMs; }
-  get ventilationState(): VentilationState { return this.ventilation; }
-  get lastMetricsSnapshot(): Record<string, MetricSample> { return this.lastMetrics; }
+  get simTimeMs(): number {
+    return this.clock.simTimeMs;
+  }
+  get wallTimeMs(): number {
+    return this.clock.wallTimeMs;
+  }
+  get ventilationState(): VentilationState {
+    return this.ventilation;
+  }
+  get lastMetricsSnapshot(): Record<string, MetricSample> {
+    return this.lastMetrics;
+  }
 
   private logEvent(kind: SessionEvent['kind'], actor: Actor, payload: unknown): void {
     this.eventSeq += 1;
-    this.events.push({ sequence: this.eventSeq, simTimeMs: this.clock.simTimeMs, wallTimeIso: new Date(this.clock.wallTimeMs).toISOString(), kind, actor, payload, profileVersion: PROFILE.profileVersion, engineVersion: ENGINE_VERSION });
+    this.events.push({
+      sequence: this.eventSeq,
+      simTimeMs: this.clock.simTimeMs,
+      wallTimeIso: new Date(this.clock.wallTimeMs).toISOString(),
+      kind,
+      actor,
+      payload,
+      profileVersion: PROFILE.profileVersion,
+      engineVersion: ENGINE_VERSION,
+    });
     if (this.events.length > 5000) this.events.splice(0, this.events.length - 5000);
   }
 
@@ -150,7 +223,13 @@ export class Simulator {
 
   command(cmd: Command, actor: Actor = 'learner'): CommandResult {
     const res = this.execute(cmd, actor);
-    this.commandLog.push({ simTimeMs: this.clock.simTimeMs, actor, command: cmd, accepted: res.accepted, ...(res.reason ? { reason: res.reason } : {}) });
+    this.commandLog.push({
+      simTimeMs: this.clock.simTimeMs,
+      actor,
+      command: cmd,
+      accepted: res.accepted,
+      ...(res.reason ? { reason: res.reason } : {}),
+    });
     if (!res.accepted) this.logEvent('rejected', actor, { command: cmd.type, reason: res.reason });
     this.drainController();
     return res;
@@ -168,11 +247,20 @@ export class Simulator {
         for (const k of Object.keys(cmd.changes) as (keyof VcSettings)[]) (old as Record<string, unknown>)[k] = this.controller.settings[k];
         if ('fio2' in cmd.changes && cmd.changes.fio2 !== undefined && actor === 'learner') this.procedures.noteUserFio2Edit();
         this.controller.applySettings(cmd.changes);
-        this.logEvent('setting', actor, { changes: cmd.changes, old, policy: 'nextBreath salvo Pmáx/FiO2 inmediato (P)', derived: v.derived });
+        this.logEvent('setting', actor, {
+          changes: cmd.changes,
+          old,
+          policy: 'nextBreath salvo Pmáx/FiO2 inmediato (P)',
+          derived: v.derived,
+        });
         return { accepted: true };
       }
       case 'setAlarmLimits': {
-        const v = validateAlarmLimitChanges(cmd.changes, ALARM_LIMIT_RULES, this.alarms.limits as unknown as Record<string, number | 'off'>);
+        const v = validateAlarmLimitChanges(
+          cmd.changes,
+          ALARM_LIMIT_RULES,
+          this.alarms.limits as unknown as Record<string, number | 'off'>,
+        );
         if (!v.ok) return { accepted: false, reason: v.reasons.join(' ') };
         this.alarms.setLimits(v.clean as Partial<AlarmLimits>);
         this.logEvent('alarm', actor, { limits: v.clean });
@@ -196,9 +284,17 @@ export class Simulator {
         return { accepted: true };
       case 'requestHold': {
         if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
-        if ((cmd.kind !== 'inspHold' && cmd.kind !== 'expHold') || typeof cmd.durationS !== 'number' || !Number.isFinite(cmd.durationS) || cmd.durationS < 1 || cmd.durationS > 60) return { accepted: false, reason: 'Duración de bloqueo inválida (1–60 s; D rangos 2–40 / 2–60)' };
+        if (
+          (cmd.kind !== 'inspHold' && cmd.kind !== 'expHold') ||
+          typeof cmd.durationS !== 'number' ||
+          !Number.isFinite(cmd.durationS) ||
+          cmd.durationS < 1 ||
+          cmd.durationS > 60
+        )
+          return { accepted: false, reason: 'Duración de bloqueo inválida (1–60 s; D rangos 2–40 / 2–60)' };
         const r = this.procedures.requestHold(cmd.kind, cmd.durationS, this.clock.simTimeMs);
-        if (r.accepted) this.logEvent('procedure', actor, { kind: cmd.kind, durationS: cmd.durationS, procedureId: r.procedureId, phase: 'queued' });
+        if (r.accepted)
+          this.logEvent('procedure', actor, { kind: cmd.kind, durationS: cmd.durationS, procedureId: r.procedureId, phase: 'queued' });
         return r;
       }
       case 'cancelProcedure': {
@@ -214,7 +310,8 @@ export class Simulator {
       case 'increaseO2Start': {
         if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
         const delta = cmd.deltaFraction ?? PROFILE.increaseO2DeltaFraction;
-        if (typeof delta !== 'number' || !Number.isFinite(delta) || delta < 0.05 || delta > 1) return { accepted: false, reason: 'Incremento de O2 inválido (5–100 % sobre el ajuste; D ficha 2014)' };
+        if (typeof delta !== 'number' || !Number.isFinite(delta) || delta < 0.05 || delta > 1)
+          return { accepted: false, reason: 'Incremento de O2 inválido (5–100 % sobre el ajuste; D ficha 2014)' };
         const r = this.procedures.startO2(this.clock.simTimeMs, this.controller.settings.fio2, delta, PROFILE.increaseO2Ms);
         if (r.accepted) this.logEvent('procedure', actor, { kind: 'increaseO2', phase: 'started', target: this.controller.settings.fio2 });
         return r;
@@ -242,20 +339,37 @@ export class Simulator {
       }
       case 'setEffort': {
         const e = { ...this.effort.params, ...cmd.params };
-        if (typeof e.enabled !== 'boolean' || ![e.amplitude, e.ratePerMin, e.tiS, e.phaseS].every((x) => typeof x === 'number' && Number.isFinite(x)) || e.amplitude < 0 || e.amplitude > 50 || e.ratePerMin <= 0 || e.ratePerMin > 120 || e.tiS <= 0 || e.tiS > 5) return { accepted: false, reason: 'Parámetros de esfuerzo inválidos' };
+        if (
+          typeof e.enabled !== 'boolean' ||
+          ![e.amplitude, e.ratePerMin, e.tiS, e.phaseS].every((x) => typeof x === 'number' && Number.isFinite(x)) ||
+          e.amplitude < 0 ||
+          e.amplitude > 50 ||
+          e.ratePerMin <= 0 ||
+          e.ratePerMin > 120 ||
+          e.tiS <= 0 ||
+          e.tiS > 5
+        )
+          return { accepted: false, reason: 'Parámetros de esfuerzo inválidos' };
         this.effort.params = e;
         this.logEvent('scenario', actor, { effort: cmd.params });
         return { accepted: true };
       }
       case 'setSensors': {
         const sp = { ...this.o2.params, ...cmd.params };
-        if (![sp.fio2TauS, sp.fio2Bias].every((x) => typeof x === 'number' && Number.isFinite(x)) || sp.fio2TauS < 0.1 || sp.fio2TauS > 600 || Math.abs(sp.fio2Bias) > 0.5) return { accepted: false, reason: 'Parámetros de sensor inválidos' };
+        if (
+          ![sp.fio2TauS, sp.fio2Bias].every((x) => typeof x === 'number' && Number.isFinite(x)) ||
+          sp.fio2TauS < 0.1 ||
+          sp.fio2TauS > 600 ||
+          Math.abs(sp.fio2Bias) > 0.5
+        )
+          return { accepted: false, reason: 'Parámetros de sensor inválidos' };
         this.o2.params = sp;
         this.logEvent('scenario', actor, { sensors: cmd.params });
         return { accepted: true };
       }
       case 'setLungVolume':
-        if (!Number.isFinite(cmd.vAbsL) || cmd.vAbsL < -1 || cmd.vAbsL > 5) return { accepted: false, reason: 'Volumen fuera de rango de ensayo' };
+        if (!Number.isFinite(cmd.vAbsL) || cmd.vAbsL < -1 || cmd.vAbsL > 5)
+          return { accepted: false, reason: 'Volumen fuera de rango de ensayo' };
         this.patient.v = cmd.vAbsL;
         this.logEvent('scenario', actor, { vAbsL: cmd.vAbsL });
         return { accepted: true };
@@ -283,14 +397,36 @@ export class Simulator {
         if (this.breaths.length > 2000) this.breaths.shift();
         this.metrics.onBreath(ev.record);
         this.lastMetrics = this.metrics.compute(this.metricContext());
-        this.trends.push({ tMs: ev.record.endSimTimeMs, ppeak: ev.record.ppeak, peepe: ev.record.peepe, vte: ev.record.vtExp, vti: ev.record.vtInsp, rr: this.lastMetrics.rr?.value ?? null, mve: this.lastMetrics.mve?.value ?? null, pplatHold: this.procedures.last.inspHold?.values.pplat?.value ?? null, cstatHold: this.procedures.last.inspHold?.values.cstat?.value ?? null, type: ev.record.type });
+        this.trends.push({
+          tMs: ev.record.endSimTimeMs,
+          ppeak: ev.record.ppeak,
+          peepe: ev.record.peepe,
+          vte: ev.record.vtExp,
+          vti: ev.record.vtInsp,
+          rr: this.lastMetrics.rr?.value ?? null,
+          mve: this.lastMetrics.mve?.value ?? null,
+          pplatHold: this.procedures.last.inspHold?.values.pplat?.value ?? null,
+          cstatHold: this.procedures.last.inspHold?.values.cstat?.value ?? null,
+          type: ev.record.type,
+        });
         if (this.trends.length > 900) this.trends.shift();
         this.alarms.onBreath(ev.record, this.lastMetrics, t);
-        this.logEvent('breath', 'controller', { breathId: ev.record.breathId, type: ev.record.type, cause: ev.record.cyclingCause, vte: ev.record.vtExp, ppeak: ev.record.ppeak });
+        this.logEvent('breath', 'controller', {
+          breathId: ev.record.breathId,
+          type: ev.record.type,
+          cause: ev.record.cyclingCause,
+          vte: ev.record.vtExp,
+          ppeak: ev.record.ppeak,
+        });
         break;
       }
       case 'pmaxReached':
-        this.alarms.onPmaxReached(t, ev.paw, this.controller.currentPpeak === null ? null : Math.round(this.controller.currentPpeak), this.controller.settings.pmax);
+        this.alarms.onPmaxReached(
+          t,
+          ev.paw,
+          this.controller.currentPpeak === null ? null : Math.round(this.controller.currentPpeak),
+          this.controller.settings.pmax,
+        );
         this.logEvent('alarm', 'controller', { pmaxReached: ev.paw, breathId: ev.breathId });
         break;
       case 'plimitReached':
@@ -303,7 +439,17 @@ export class Simulator {
       case 'holdEnded':
       case 'rejected':
         this.procedures.onControllerEvent(ev, t);
-        this.logEvent('procedure', 'controller', ev.type === 'holdEnded' ? { holdEnded: ev.outcome.procedureId, cancelled: ev.outcome.cancelled, quality: this.procedures.last[ev.outcome.kind]?.quality } : ev);
+        this.logEvent(
+          'procedure',
+          'controller',
+          ev.type === 'holdEnded'
+            ? {
+                holdEnded: ev.outcome.procedureId,
+                cancelled: ev.outcome.cancelled,
+                quality: this.procedures.last[ev.outcome.kind]?.quality,
+              }
+            : ev,
+        );
         break;
       case 'settingsApplied':
         // Única fuente del objetivo del mezclador: todo cambio de FiO2 aplicado (usuario, ↑O2, restauración) llega por aquí.
@@ -316,7 +462,12 @@ export class Simulator {
   }
 
   private metricContext() {
-    return { simTimeMs: this.clock.simTimeMs, ventilating: this.ventilation === 'ventilating', fio2Measured: this.o2.measured, tCycleS: this.controller.timing.tCycleS };
+    return {
+      simTimeMs: this.clock.simTimeMs,
+      ventilating: this.ventilation === 'ventilating',
+      fio2Measured: this.o2.measured,
+      tCycleS: this.controller.timing.tCycleS,
+    };
   }
 
   /** Un paso fijo del reloj simulado. */
@@ -330,7 +481,14 @@ export class Simulator {
     this.procedures.step(this.clock.simTimeMs);
     this.drainController();
     const vol = this.patient.v - this.breathVStart;
-    this.ring.push(this.clock.simTimeMs, this.controller.paw, this.controller.q, vol, this.effort.pmusAt(this.clock.simTimeMs / 1000), this.controller.currentBreathSequence);
+    this.ring.push(
+      this.clock.simTimeMs,
+      this.controller.paw,
+      this.controller.q,
+      vol,
+      this.effort.pmusAt(this.clock.simTimeMs / 1000),
+      this.controller.currentBreathSequence,
+    );
     this.samplesSinceFrame += 1;
   }
 
@@ -353,17 +511,37 @@ export class Simulator {
       simTimeMs: t,
       wallTimeMs: this.clock.wallTimeMs,
       ventilation: this.ventilation,
-      live: { paw: this.controller.paw, flowLps: this.controller.q, volTidalL: this.patient.v - this.breathVStart, ppeakCurrent: this.controller.currentPpeak, phase: this.controller.phase },
+      live: {
+        paw: this.controller.paw,
+        flowLps: this.controller.q,
+        volTidalL: this.patient.v - this.breathVStart,
+        ppeakCurrent: this.controller.currentPpeak,
+        phase: this.controller.phase,
+      },
       settings: { ...this.controller.settings },
       pending: this.controller.pending ? { ...this.controller.pending } : null,
       alarmLimits: { ...this.alarms.limits },
       metrics: this.lastMetrics,
       alarms: this.alarms.list(),
       alarmBar: this.alarms.bar(),
-      procedure: { current: this.procedures.current, hold: this.controller.holdState, last: { ...this.procedures.last }, o2: this.procedures.o2 ? { ...this.procedures.o2 } : null },
+      procedure: {
+        current: this.procedures.current,
+        hold: this.controller.holdState,
+        last: { ...this.procedures.last },
+        o2: this.procedures.o2 ? { ...this.procedures.o2 } : null,
+      },
       breathCount: this.breaths.length,
       audioPauseUntilMs: this.audioPauseUntilMs,
-      truth: { vAbsL: this.patient.v, pel: this.patient.pel(), pmus: this.effort.pmusAt(t / 1000), peepiEndExp: Math.max(0, this.patient.pel(this.breathVStart) - this.controller.peepTarget), patient: { ...this.patient.params }, effort: { ...this.effort.params }, sensors: { ...this.o2.params }, fio2Delivered: this.o2.delivered },
+      truth: {
+        vAbsL: this.patient.v,
+        pel: this.patient.pel(),
+        pmus: this.effort.pmusAt(t / 1000),
+        peepiEndExp: Math.max(0, this.patient.pel(this.breathVStart) - this.controller.peepTarget),
+        patient: { ...this.patient.params },
+        effort: { ...this.effort.params },
+        sensors: { ...this.o2.params },
+        fio2Delivered: this.o2.delivered,
+      },
       samples: this.ring.last(n),
       eventsTail,
       trends: this.trends.slice(-600),

@@ -36,16 +36,20 @@ describe('escalones por tramo (D ficha 2014) en ambos sentidos', () => {
   it('propiedad: subir y bajar desde un valor en rejilla (no extremo) devuelve el mismo valor', () => {
     for (const rule of [VC_ADULT_RULES.vt, VC_ADULT_RULES.flowTrigger, VC_ADULT_RULES.rr, VC_ADULT_RULES.peep]) {
       const segs = rule.domain;
-      const min = segs[0]!.min, max = segs[segs.length - 1]!.max;
-      fc.assert(fc.property(fc.double({ min, max, noNaN: true }), (x) => {
-        // llevar a rejilla desde abajo
-        let v = min;
-        while (v < x - 1e-9 && v < max) v = stepDisplayValue(rule, v, 1);
-        if (v <= min + 1e-9 || v >= max - 1e-9) return true;
-        const up = stepDisplayValue(rule, v, 1);
-        const back = stepDisplayValue(rule, up, -1);
-        return Math.abs(back - v) < 1e-6 && isOnGrid(rule, v);
-      }), { numRuns: 300 });
+      const min = segs[0]!.min,
+        max = segs[segs.length - 1]!.max;
+      fc.assert(
+        fc.property(fc.double({ min, max, noNaN: true }), (x) => {
+          // llevar a rejilla desde abajo
+          let v = min;
+          while (v < x - 1e-9 && v < max) v = stepDisplayValue(rule, v, 1);
+          if (v <= min + 1e-9 || v >= max - 1e-9) return true;
+          const up = stepDisplayValue(rule, v, 1);
+          const back = stepDisplayValue(rule, up, -1);
+          return Math.abs(back - v) < 1e-6 && isOnGrid(rule, v);
+        }),
+        { numRuns: 300 },
+      );
     }
   });
 });
@@ -83,6 +87,10 @@ describe('rejilla de valores admitidos (deslizador por índice)', () => {
     expect(nearestGridValue(VC_ADULT_RULES.vt, 287)).toBe(285);
     expect(nearestGridValue(VC_ADULT_RULES.pinsp, 17.3)).toBe(17);
     expect(nearestGridValue(VC_ADULT_RULES.vt, 9000)).toBe(2000);
-    fc.assert(fc.property(fc.double({ min: -500, max: 5000, noNaN: true }), (x) => isOnGrid(VC_ADULT_RULES.vt, nearestGridValue(VC_ADULT_RULES.vt, x))));
+    fc.assert(
+      fc.property(fc.double({ min: -500, max: 5000, noNaN: true }), (x) =>
+        isOnGrid(VC_ADULT_RULES.vt, nearestGridValue(VC_ADULT_RULES.vt, x)),
+      ),
+    );
   });
 });

@@ -34,7 +34,8 @@ export function stepDisplayValue(rule: SettingRule, displayValue: number, direct
     let idx = vals.findIndex((v) => Math.abs(v - displayValue) < 1e-6);
     if (idx < 0) {
       // Valor fuera de rejilla: saltar al vecino más próximo en la dirección pedida.
-      idx = direction > 0 ? vals.findIndex((v) => v > displayValue) : vals.length - 1 - [...vals].reverse().findIndex((v) => v < displayValue);
+      idx =
+        direction > 0 ? vals.findIndex((v) => v > displayValue) : vals.length - 1 - [...vals].reverse().findIndex((v) => v < displayValue);
       if (idx < 0 || idx >= vals.length) return displayValue;
       return vals[idx] as number;
     }
@@ -70,10 +71,19 @@ export function stepDisplayValue(rule: SettingRule, displayValue: number, direct
 export function gridValues(rule: SettingRule): number[] {
   if (rule.values) return rule.values.map((v) => v * rule.displayFactor).sort((a, b) => a - b);
   const out: number[] = [];
-  for (const seg of [...rule.domain].sort((a, b) => a.min - b.min)) for (let v = seg.min; v <= seg.max + 1e-9; v += seg.step) { const r = Number(v.toFixed(6)); if (!out.length || Math.abs((out[out.length - 1] as number) - r) > 1e-9) out.push(r); }
+  for (const seg of [...rule.domain].sort((a, b) => a.min - b.min))
+    for (let v = seg.min; v <= seg.max + 1e-9; v += seg.step) {
+      const r = Number(v.toFixed(6));
+      if (!out.length || Math.abs((out[out.length - 1] as number) - r) > 1e-9) out.push(r);
+    }
   return out;
 }
-export function nearestGridValue(rule: SettingRule, displayValue: number): number { const vals = gridValues(rule); let best = vals[0] as number; for (const v of vals) if (Math.abs(v - displayValue) < Math.abs(best - displayValue)) best = v; return best; }
+export function nearestGridValue(rule: SettingRule, displayValue: number): number {
+  const vals = gridValues(rule);
+  let best = vals[0] as number;
+  for (const v of vals) if (Math.abs(v - displayValue) < Math.abs(best - displayValue)) best = v;
+  return best;
+}
 
 export interface DerivedTiming {
   tCycleS: number;
@@ -97,41 +107,83 @@ export function deriveVcTiming(s: Pick<VcSettings, 'rr' | 'ie' | 'vt' | 'pausePc
 }
 
 export interface CrossLimits {
-  tInspMinS: number; tInspMaxS: number; tExpMinS: number; tExpMaxS: number; flowMinLpm: number; flowMaxLpm: number;
+  tInspMinS: number;
+  tInspMaxS: number;
+  tExpMinS: number;
+  tExpMaxS: number;
+  flowMinLpm: number;
+  flowMaxLpm: number;
 }
 
-export interface ValidationResult { ok: boolean; reasons: string[]; derived: DerivedTiming }
+export interface ValidationResult {
+  ok: boolean;
+  reasons: string[];
+  derived: DerivedTiming;
+}
 
 /** Comprueba cada ajuste contra su regla (rango, rejilla, Off, booleano). Devuelve motivos; no aproxima. */
 export function validateDomains(s: VcSettings, rules: Record<Exclude<keyof VcSettings, 'mode'>, SettingRule>): string[] {
   const reasons: string[] = [];
-  for (const key of Object.keys(rules) as (Exclude<keyof VcSettings, 'mode'>)[]) {
+  for (const key of Object.keys(rules) as Exclude<keyof VcSettings, 'mode'>[]) {
     const rule = rules[key];
     const v = s[key];
-    if (v === 'off') { if (!rule.allowOff) reasons.push(`${rule.label}: Off no permitido`); continue; }
-    if (rule.unit === 'boolean') { if (typeof v !== 'boolean') reasons.push(`${rule.label}: debe ser booleano`); continue; }
-    if (typeof v !== 'number' || !Number.isFinite(v)) { reasons.push(`${rule.label}: valor no numérico`); continue; }
-    if (!isOnGrid(rule, v * rule.displayFactor)) reasons.push(`${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} no es un valor admitido (fuera de rango o de escalón).`);
+    if (v === 'off') {
+      if (!rule.allowOff) reasons.push(`${rule.label}: Off no permitido`);
+      continue;
+    }
+    if (rule.unit === 'boolean') {
+      if (typeof v !== 'boolean') reasons.push(`${rule.label}: debe ser booleano`);
+      continue;
+    }
+    if (typeof v !== 'number' || !Number.isFinite(v)) {
+      reasons.push(`${rule.label}: valor no numérico`);
+      continue;
+    }
+    if (!isOnGrid(rule, v * rule.displayFactor))
+      reasons.push(
+        `${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} no es un valor admitido (fuera de rango o de escalón).`,
+      );
   }
   return reasons;
 }
 
 /** Valida cambios de límites de alarma: claves conocidas, Off o número finito en rejilla, bajo < alto (P). */
-export function validateAlarmLimitChanges(changes: unknown, rules: Record<string, SettingRule>, current: Record<string, number | 'off'>): { ok: boolean; reasons: string[]; clean: Record<string, number | 'off'> } {
-  const reasons: string[] = []; const clean: Record<string, number | 'off'> = {};
-  if (!changes || typeof changes !== 'object' || Array.isArray(changes)) return { ok: false, reasons: ['Cambios de alarma inválidos.'], clean };
+export function validateAlarmLimitChanges(
+  changes: unknown,
+  rules: Record<string, SettingRule>,
+  current: Record<string, number | 'off'>,
+): { ok: boolean; reasons: string[]; clean: Record<string, number | 'off'> } {
+  const reasons: string[] = [];
+  const clean: Record<string, number | 'off'> = {};
+  if (!changes || typeof changes !== 'object' || Array.isArray(changes))
+    return { ok: false, reasons: ['Cambios de alarma inválidos.'], clean };
   for (const [k, v] of Object.entries(changes as Record<string, unknown>)) {
     const rule = rules[k];
-    if (!rule) { reasons.push(`Límite desconocido: ${k}.`); continue; }
-    if (v === 'off') { if (!rule.allowOff) reasons.push(`${rule.label}: Off no permitido.`); else clean[k] = 'off'; continue; }
-    if (typeof v !== 'number' || !Number.isFinite(v)) { reasons.push(`${rule.label}: valor no numérico.`); continue; }
-    if (!isOnGrid(rule, v * rule.displayFactor)) { reasons.push(`${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} no es un valor admitido.`); continue; }
+    if (!rule) {
+      reasons.push(`Límite desconocido: ${k}.`);
+      continue;
+    }
+    if (v === 'off') {
+      if (!rule.allowOff) reasons.push(`${rule.label}: Off no permitido.`);
+      else clean[k] = 'off';
+      continue;
+    }
+    if (typeof v !== 'number' || !Number.isFinite(v)) {
+      reasons.push(`${rule.label}: valor no numérico.`);
+      continue;
+    }
+    if (!isOnGrid(rule, v * rule.displayFactor)) {
+      reasons.push(`${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} no es un valor admitido.`);
+      continue;
+    }
     clean[k] = v;
   }
   const merged = { ...current, ...clean };
   for (const base of ['vte', 'mve', 'rr', 'fio2', 'peepe']) {
-    const lo = merged[`${base}Low`], hi = merged[`${base}High`];
-    if (typeof lo === 'number' && typeof hi === 'number' && lo >= hi) reasons.push(`${rules[`${base}Low`]?.label ?? base}: el límite bajo debe ser menor que el alto.`);
+    const lo = merged[`${base}Low`],
+      hi = merged[`${base}High`];
+    if (typeof lo === 'number' && typeof hi === 'number' && lo >= hi)
+      reasons.push(`${rules[`${base}Low`]?.label ?? base}: el límite bajo debe ser menor que el alto.`);
   }
   return { ok: reasons.length === 0, reasons, clean };
 }
@@ -170,7 +222,9 @@ export function validateVcSettings(s: VcSettings, limits: CrossLimits): Validati
   if (s.mode === 'AC_VC') {
     const qLpm = lpsToLpm(d.qTargetLps);
     if (!Number.isFinite(qLpm) || qLpm > limits.flowMaxLpm + EPS) {
-      reasons.push(`Ese volumen exige ${Number.isFinite(qLpm) ? qLpm.toFixed(1) : '∞'} L/min, más que el flujo máximo de ${limits.flowMaxLpm} L/min: aumenta el tiempo inspiratorio, reduce la pausa o baja el VT.`);
+      reasons.push(
+        `Ese volumen exige ${Number.isFinite(qLpm) ? qLpm.toFixed(1) : '∞'} L/min, más que el flujo máximo de ${limits.flowMaxLpm} L/min: aumenta el tiempo inspiratorio, reduce la pausa o baja el VT.`,
+      );
     }
     if (Number.isFinite(qLpm) && qLpm < limits.flowMinLpm - EPS) {
       reasons.push(`Ese volumen exige sólo ${qLpm.toFixed(1)} L/min, por debajo del flujo mínimo de ${limits.flowMinLpm} L/min.`);
@@ -178,7 +232,8 @@ export function validateVcSettings(s: VcSettings, limits: CrossLimits): Validati
     if (s.plimit <= peep) reasons.push(`Plimit (${s.plimit}) debe ser mayor que PEEP (${peep}).`);
   } else {
     if (peep + s.pinsp >= s.pmax) reasons.push(`PEEP + Pinsp (${peep + s.pinsp}) debe quedar por debajo de Pmáx (${s.pmax}).`);
-    if (s.riseMs / 1000 > d.tInspS) reasons.push(`La rampa (${s.riseMs} ms) no puede superar el tiempo inspiratorio (${d.tInspS.toFixed(2)} s).`);
+    if (s.riseMs / 1000 > d.tInspS)
+      reasons.push(`La rampa (${s.riseMs} ms) no puede superar el tiempo inspiratorio (${d.tInspS.toFixed(2)} s).`);
   }
   if (s.pmax <= peep) reasons.push(`Pmáx (${s.pmax}) debe ser mayor que PEEP (${peep}).`);
   return { ok: reasons.length === 0, reasons, derived: d };

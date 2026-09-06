@@ -3,7 +3,7 @@ import { PatientModel } from '../../src/engine/patient';
 import { litersToMl, lpsToLpm, complianceToMlPerCmH2O } from '../../src/domain/units';
 import { benchSim, runUntilBreath, BENCH_PATIENT, BENCH_SETTINGS } from '../helpers';
 
-const TOL_P = 0.5;   // cmH2O (tolerancia inicial del dossier §26)
+const TOL_P = 0.5; // cmH2O (tolerancia inicial del dossier §26)
 const TOL_VT = 0.01; // 1 % (dossier §26)
 
 describe('BM-01 · VC con flujo constante (banco lineal pasivo)', () => {
@@ -85,7 +85,14 @@ describe('BM-05 · Unidades', () => {
 });
 
 /** Solución numérica independiente (Euler fino) para la respiración limitada por presión de BM-06a. */
-function referenceLimitedVt(crs: number, r: number, peep: number, q: number, plimit: number, tInsp: number): { vt: number; tCross: number } {
+function referenceLimitedVt(
+  crs: number,
+  r: number,
+  peep: number,
+  q: number,
+  plimit: number,
+  tInsp: number,
+): { vt: number; tCross: number } {
   const h = 1e-5;
   let v = crs * peep;
   let t = 0;
@@ -181,7 +188,8 @@ describe('BM-08 · Convergencia con el paso de integración', () => {
     const s = { ...BENCH_SETTINGS, rr: 32, ie: 1 / 1.5, vt: 0.285 };
     const a = benchSim({ dtMs: 4, settings: s });
     const b = benchSim({ dtMs: 1, settings: s });
-    runUntilBreath(a, 2); runUntilBreath(b, 2);
+    runUntilBreath(a, 2);
+    runUntilBreath(b, 2);
     expect(a.breaths[1]!.tInspS).toBeCloseTo(0.75, 9);
     expect(b.breaths[1]!.tInspS).toBeCloseTo(0.75, 9);
     expect(a.breaths[1]!.vtInsp).toBeCloseTo(b.breaths[1]!.vtInsp, 9);

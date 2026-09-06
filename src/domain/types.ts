@@ -19,7 +19,22 @@ export interface MetricSample {
 }
 
 export type PatientType = 'adult' | 'pediatric' | 'neonatal';
-export type ModeId = 'AC_VC' | 'AC_PC' | 'CPAP_PS' | 'AC_PRVC' | 'SIMV_VC' | 'SIMV_PC' | 'SIMV_PRVC' | 'SBT' | 'NIV' | 'VS' | 'BILEVEL' | 'BILEVEL_VG' | 'APRV' | 'NCPAP' | 'O2_THERAPY';
+export type ModeId =
+  | 'AC_VC'
+  | 'AC_PC'
+  | 'CPAP_PS'
+  | 'AC_PRVC'
+  | 'SIMV_VC'
+  | 'SIMV_PC'
+  | 'SIMV_PRVC'
+  | 'SBT'
+  | 'NIV'
+  | 'VS'
+  | 'BILEVEL'
+  | 'BILEVEL_VG'
+  | 'APRV'
+  | 'NCPAP'
+  | 'O2_THERAPY';
 
 export type OffOr<T> = T | 'off';
 
