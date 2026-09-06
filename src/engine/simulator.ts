@@ -24,16 +24,7 @@ import {
   validateSettingsKeys,
   validateVcSettings,
 } from '../domain/validation';
-import {
-  ALARM_LIMIT_RULES,
-  VC_ADULT_CROSS_LIMITS,
-  DEFAULT_ALARM_LIMITS,
-  DEFAULT_VC_SETTINGS,
-  EXP_HOLD_RULE,
-  INSP_HOLD_RULE,
-  VC_ADULT_RULES,
-} from '../profiles/r860-es-photo-reference/settings';
-import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
+import type { ProfileSpec } from '../domain/profile';
 import { AlarmEngine, type AlarmBar } from './alarms';
 import { SimClock } from './clock';
 import { VcController, type ControllerEvent } from './controller';
@@ -45,6 +36,8 @@ import { O2Sensor, SampleRing } from './sensors';
 import { ENGINE_VERSION } from './version';
 
 export interface SimulatorInit {
+  /** Perfil de equipo; ausente en sesiones anteriores a 0.3.3 (se asume el de referencia). */
+  profileId?: string;
   dtMs: number;
   startWallTimeMs: number;
   seed: number;
@@ -56,26 +49,6 @@ export interface SimulatorInit {
   /** Volumen absoluto inicial (L) o 'equilibrium' (Crs·PEEP). */
   initialV: number | 'equilibrium';
   startVentilating: boolean;
-}
-
-export const DEFAULT_PATIENT: PatientParams = { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 };
-export const DEFAULT_EFFORT: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0 };
-export const DEFAULT_SENSORS: SensorParams = { fio2TauS: 6, fio2Bias: 0 };
-
-export function defaultInit(overrides: Partial<SimulatorInit> = {}): SimulatorInit {
-  return {
-    dtMs: 4,
-    startWallTimeMs: Date.UTC(2026, 7, 18, 21, 4, 5) + 4 * 3600_000, // 18-Ago-2026 21:04:05 hora local Chile (UTC-4) como referencia de pruebas
-    seed: 1,
-    patient: { ...DEFAULT_PATIENT },
-    effort: { ...DEFAULT_EFFORT },
-    sensors: { ...DEFAULT_SENSORS },
-    settings: { ...DEFAULT_VC_SETTINGS },
-    alarmLimits: { ...DEFAULT_ALARM_LIMITS },
-    initialV: 'equilibrium',
-    startVentilating: true,
-    ...overrides,
-  };
 }
 
 export interface LiveSignals {
@@ -165,17 +138,22 @@ export class Simulator {
   /** Pausa de audio (D 120 s) como estado del motor para que el replay la reproduzca; el audio sólo la lee. */
   audioPauseUntilMs: number | null = null;
 
-  constructor(init: SimulatorInit) {
+  constructor(
+    init: SimulatorInit,
+    readonly profile: ProfileSpec,
+  ) {
+    if (init.profileId !== undefined && init.profileId !== profile.profileId)
+      throw new Error(`Inicialización inválida: perfil ${init.profileId} distinto del inyectado ${profile.profileId}`);
     const errs = [
-      ...validateSettingsKeys(init.settings as unknown as Record<string, unknown>, VC_ADULT_RULES),
-      ...validateDomains(init.settings, VC_ADULT_RULES),
-      ...validateVcSettings(init.settings, VC_ADULT_CROSS_LIMITS).reasons,
+      ...validateSettingsKeys(init.settings as unknown as Record<string, unknown>, profile.rules),
+      ...validateDomains(init.settings, profile.rules),
+      ...validateVcSettings(init.settings, profile.crossLimits).reasons,
       ...validatePatientParams(init.patient),
       ...validateEffort(init.effort),
       ...validateSensors(init.sensors),
     ];
     if (!(init.dtMs >= 0.5 && init.dtMs <= 20)) errs.push('dtMs fuera de 0.5–20 ms');
-    const al = validateAlarmLimitChanges(init.alarmLimits, ALARM_LIMIT_RULES, {});
+    const al = validateAlarmLimitChanges(init.alarmLimits, profile.alarmLimitRules, {});
     if (!al.ok) errs.push(...al.reasons);
     if (!Number.isFinite(init.startWallTimeMs)) errs.push('startWallTimeMs no finito');
     if (errs.length) throw new Error(`Inicialización inválida: ${errs.join('; ')}`);
@@ -224,7 +202,7 @@ export class Simulator {
       kind,
       actor,
       payload,
-      profileVersion: PROFILE.profileVersion,
+      profileVersion: this.profile.profileVersion,
       engineVersion: ENGINE_VERSION,
     });
     if (this.events.length > 5000) this.events.splice(0, this.events.length - 5000);
@@ -253,11 +231,11 @@ export class Simulator {
     switch (cmd.type) {
       case 'confirmSettings': {
         if (!cmd.changes || typeof cmd.changes !== 'object') return { accepted: false, reason: 'Cambios inválidos' };
-        const keyErrs = validateSettingsKeys(cmd.changes as Record<string, unknown>, VC_ADULT_RULES);
+        const keyErrs = validateSettingsKeys(cmd.changes as Record<string, unknown>, this.profile.rules);
         if (keyErrs.length) return { accepted: false, reason: keyErrs.join(' ') };
         const next: VcSettings = { ...this.controller.settings, ...(this.controller.pending ?? {}), ...cmd.changes };
-        const dom = validateDomains(next, VC_ADULT_RULES);
-        const v = validateVcSettings(next, VC_ADULT_CROSS_LIMITS);
+        const dom = validateDomains(next, this.profile.rules);
+        const v = validateVcSettings(next, this.profile.crossLimits);
         if (dom.length || !v.ok) return { accepted: false, reason: [...dom, ...v.reasons].join('; ') };
         const old: Partial<VcSettings> = {};
         for (const k of Object.keys(cmd.changes) as (keyof VcSettings)[]) (old as Record<string, unknown>)[k] = this.controller.settings[k];
@@ -274,7 +252,7 @@ export class Simulator {
       case 'setAlarmLimits': {
         const v = validateAlarmLimitChanges(
           cmd.changes,
-          ALARM_LIMIT_RULES,
+          this.profile.alarmLimitRules,
           this.alarms.limits as unknown as Record<string, number | 'off'>,
         );
         if (!v.ok) return { accepted: false, reason: v.reasons.join(' ') };
@@ -301,7 +279,7 @@ export class Simulator {
       case 'requestHold': {
         if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
         if (cmd.kind !== 'inspHold' && cmd.kind !== 'expHold') return { accepted: false, reason: 'Tipo de bloqueo desconocido' };
-        const holdRule = cmd.kind === 'inspHold' ? INSP_HOLD_RULE : EXP_HOLD_RULE;
+        const holdRule = this.profile.holdRules[cmd.kind];
         const hd = holdRule.domain[0];
         if (typeof cmd.durationS !== 'number' || !Number.isFinite(cmd.durationS) || !isOnGrid(holdRule, cmd.durationS))
           return { accepted: false, reason: `Duración de bloqueo no admitida (${hd?.min}–${hd?.max} s en pasos de ${hd?.step} s)` };
@@ -322,11 +300,18 @@ export class Simulator {
       }
       case 'increaseO2Start': {
         if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
-        const delta = cmd.deltaFraction ?? PROFILE.increaseO2DeltaFraction;
+        const delta = cmd.deltaFraction ?? this.profile.increaseO2DeltaFraction;
         if (typeof delta !== 'number' || !Number.isFinite(delta) || delta < 0.05 || delta > 1)
           return { accepted: false, reason: 'Incremento de O2 inválido (5–100 % sobre el ajuste; D ficha 2014)' };
-        const r = this.procedures.startO2(this.clock.simTimeMs, this.controller.settings.fio2, delta, PROFILE.increaseO2Ms);
-        if (r.accepted) this.logEvent('procedure', actor, { kind: 'increaseO2', phase: 'started', target: this.controller.settings.fio2 });
+        const r = this.procedures.startO2(this.clock.simTimeMs, this.controller.settings.fio2, delta, this.profile.increaseO2Ms);
+        if (r.accepted)
+          this.logEvent('procedure', actor, {
+            kind: 'increaseO2',
+            phase: 'started',
+            target: this.controller.settings.fio2,
+            deltaFraction: delta,
+            durationMs: this.profile.increaseO2Ms,
+          });
         return r;
       }
       case 'increaseO2Stop': {
@@ -339,8 +324,8 @@ export class Simulator {
         this.logEvent('alarm', actor, { acknowledge: cmd.id ?? 'all' });
         return { accepted: true };
       case 'audioPause':
-        this.audioPauseUntilMs = this.clock.simTimeMs + PROFILE.audioPauseMs;
-        this.logEvent('audio', actor, { pauseMs: PROFILE.audioPauseMs, until: this.audioPauseUntilMs, evidence: 'D QRG 2020 p.4' });
+        this.audioPauseUntilMs = this.clock.simTimeMs + this.profile.audioPauseMs;
+        this.logEvent('audio', actor, { pauseMs: this.profile.audioPauseMs, until: this.audioPauseUntilMs, evidence: 'D QRG 2020 p.4' });
         return { accepted: true };
       case 'setPatient': {
         const p = { ...this.patient.params, ...cmd.params };
@@ -506,7 +491,7 @@ export class Simulator {
     const eventsTail = this.events.slice(-80);
     return {
       engineVersion: ENGINE_VERSION,
-      profileVersion: PROFILE.profileVersion,
+      profileVersion: this.profile.profileVersion,
       simTimeMs: t,
       wallTimeMs: this.clock.wallTimeMs,
       ventilation: this.ventilation,

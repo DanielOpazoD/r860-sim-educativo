@@ -3,7 +3,8 @@ import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../help
 import { EngineClient } from '../../src/app/engineClient';
 import { EngineHost } from '../../src/app/engineHost';
 import type { EngineToMain } from '../../src/app/protocol';
-import { Simulator, defaultInit } from '../../src/engine/simulator';
+import { Simulator } from '../../src/engine/simulator';
+import { R860_PROFILE, defaultInit } from '../../src/profiles';
 import { EXP_BIAS_FLOW_LPS } from '../../src/engine/controller';
 import { exportSession, importSession } from '../../src/history/session';
 
@@ -231,6 +232,6 @@ describe('R3-09 · bloqueo inspiratorio rechazado por Pmáx queda registrado', (
     expect(h?.quality).toBe('invalid');
     expect(h?.reason).toBeTruthy();
     expect(h?.wallTimeMs).not.toBeNull();
-    expect(new Simulator(sim.init).init).toBeTruthy();
+    expect(new Simulator(sim.init, R860_PROFILE).init).toBeTruthy();
   });
 });

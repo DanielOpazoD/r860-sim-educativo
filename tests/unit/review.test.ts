@@ -5,7 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import { EngineHost } from '../../src/app/engineHost';
 import type { EngineToMain } from '../../src/app/protocol';
-import { Simulator, defaultInit } from '../../src/engine/simulator';
+import { Simulator } from '../../src/engine/simulator';
+import { R860_PROFILE, defaultInit } from '../../src/profiles';
 import { exportSession, importSession, replaySession } from '../../src/history/session';
 import { SCENARIOS } from '../../src/scenarios';
 import { DEFAULT_ALARM_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
@@ -99,8 +100,8 @@ describe('H5 · una inspiración acortada por Pmáx no acorta el periodo obligat
 
 describe('H6 · validación de inicialización, comandos e importación', () => {
   it('el constructor rechaza FR negativa y un paciente con tau < 1 ms', () => {
-    expect(() => new Simulator(defaultInit({ settings: { ...BENCH_SETTINGS, rr: -5 } }))).toThrow(/Frecuencia|Tinsp|Texp/);
-    expect(() => new Simulator(defaultInit({ patient: { ...BENCH_PATIENT, rInsp: 1e-9 } }))).toThrow(/Rinsp|tau/);
+    expect(() => new Simulator(defaultInit({ settings: { ...BENCH_SETTINGS, rr: -5 } }), R860_PROFILE)).toThrow(/Frecuencia|Tinsp|Texp/);
+    expect(() => new Simulator(defaultInit({ patient: { ...BENCH_PATIENT, rInsp: 1e-9 } }), R860_PROFILE)).toThrow(/Rinsp|tau/);
   });
   it('requestHold con duración no numérica o fuera de rango se rechaza; setPatient con R diminuta se rechaza', () => {
     const sim = benchSim();

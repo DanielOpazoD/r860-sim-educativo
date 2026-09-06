@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
+import { assert as fcAssert, double as fcDouble, property as fcProperty } from 'fast-check';
 import { gridValues, isOnGrid, nearestGridValue, stepDisplayValue, validateVcSettings, deriveVcTiming } from '../../src/domain/validation';
 import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS, IE_VALUES } from '../../src/profiles/r860-es-photo-reference/settings';
 import { BENCH_SETTINGS } from '../helpers';
@@ -38,8 +38,8 @@ describe('escalones por tramo (D ficha 2014) en ambos sentidos', () => {
       const segs = rule.domain;
       const min = segs[0]!.min,
         max = segs[segs.length - 1]!.max;
-      fc.assert(
-        fc.property(fc.double({ min, max, noNaN: true }), (x) => {
+      fcAssert(
+        fcProperty(fcDouble({ min, max, noNaN: true }), (x) => {
           // llevar a rejilla desde abajo
           let v = min;
           while (v < x - 1e-9 && v < max) v = stepDisplayValue(rule, v, 1);
@@ -87,8 +87,8 @@ describe('rejilla de valores admitidos (deslizador por índice)', () => {
     expect(nearestGridValue(VC_ADULT_RULES.vt, 287)).toBe(285);
     expect(nearestGridValue(VC_ADULT_RULES.pinsp, 17.3)).toBe(17);
     expect(nearestGridValue(VC_ADULT_RULES.vt, 9000)).toBe(2000);
-    fc.assert(
-      fc.property(fc.double({ min: -500, max: 5000, noNaN: true }), (x) =>
+    fcAssert(
+      fcProperty(fcDouble({ min: -500, max: 5000, noNaN: true }), (x) =>
         isOnGrid(VC_ADULT_RULES.vt, nearestGridValue(VC_ADULT_RULES.vt, x)),
       ),
     );
