@@ -16,7 +16,8 @@ npm run dev        # http://127.0.0.1:5173
 ```
 
 ```bash
-npm run check      # tsc + Vitest
+npm run check      # oxlint + Prettier + tsc + Vitest
+npm run test:coverage
 npm run build      # bundle en dist/
 npx playwright install chromium   # una vez
 npm run e2e        # Playwright: 1440×1000, 1280×900, Pixel 7
@@ -26,11 +27,11 @@ Capturas de validación con metadatos (viewport, hora, semilla, tiempo simulado)
 
 ## Parámetros de URL
 
-`?scenario=SC-01` (SC-01…SC-12, SC-P referencia fotográfica) · `fixture=P1|P3` (transcripción de foto, sin motor) · `t0=2026-08-18T21:04:05-04:00` · `seed=1` · `dt=4` · `speed=2` · `paused=1` · `autopause=12000` · `view=waves|basic|loops|data|trends|log` · `instructor=0` · `inline=1` · `editTimeout=1500` (sólo pruebas).
+`?scenario=SC-01` (SC-01…SC-13, SC-13 en presión control; SC-P referencia fotográfica) · `fixture=P1|P3` (transcripción de foto, sin motor) · `t0=2026-08-18T21:04:05-04:00` · `seed=1` · `dt=4` · `speed=2` · `paused=1` · `autopause=12000` · `view=waves|basic|loops|data|trends|log` · `instructor=0` · `inline=1` · `editTimeout=1500` (sólo pruebas).
 
 ## Atajos
 
-Espacio pausa · C congela curvas · F captura PNG · A alarmas · H vista principal · ? guía · ↑/↓ ajustan el parámetro seleccionado · Enter confirma · Esc cancela · rueda sobre la perilla ajusta.
+Espacio pausa · C congela curvas · F captura PNG · A alarmas · H vista principal · ? guía · ↑/↓ ajustan el parámetro seleccionado · Enter confirma · Esc cancela · rueda sobre la perilla ajusta · el deslizador del editor recorre sólo valores admitidos.
 
 ## Estructura
 
@@ -51,4 +52,4 @@ LICENSES     licencia MIT del código de R860 Lab reutilizado
 
 ## Límites
 
-Modelo mecánico lineal adulto; sin intercambio gaseoso, fuga, circuito ni tubo. Sólo A/C VC habilitado (PC y CPAP/PS tras sus pruebas de banco). Sin pacientes reales, sin WebUSB/WebSerial/Bluetooth, sin extracción de firmware, sin afirmación de aval GE. Las denominaciones GE HealthCare, CARESCAPE y R860 identifican el equipo de referencia.
+Modelo mecánico lineal adulto; sin intercambio gaseoso, fuga, circuito ni tubo. A/C VC y A/C PC habilitados (CPAP/PS tras sus pruebas de banco); fisiología de las curvas y su verificación en `docs/03-fisiologia-curvas.md`. Sin pacientes reales, sin WebUSB/WebSerial/Bluetooth, sin extracción de firmware, sin afirmación de aval GE. Las denominaciones GE HealthCare, CARESCAPE y R860 identifican el equipo de referencia.

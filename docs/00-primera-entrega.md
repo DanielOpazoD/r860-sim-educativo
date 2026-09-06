@@ -36,9 +36,10 @@ Desactivadas con motivo visible (ver `gaps.json › disabledFeatures`): vista b�
 | --- | --- | --- |
 | Presente · curvas avanzadas (P1) | habilitada | selección/borrador, ventana de bloqueo abierta, escala |
 | Presente · curvas básicas (P3) | habilitada | ídem; mismo motor y misma base temporal |
-| Presente · básica sin curvas, dividida, tabulada | desactivadas (CFG-05) | — |
+| Presente · bucles, tabla, tendencias, registro | habilitadas desde v0.2 (reinterpretación, no observadas en fotos) | selección de bucle de referencia, filtro del registro |
+| Presente · dividida | desactivada (CFG-05) | — |
 | Pasado / Futuro | desactivados (etapas 4–6) | — |
-| Menú de modo | diálogo transaccional (A/C VC; otros modos listados con motivo) | nada hasta confirmar |
+| Menú de modo | diálogo transaccional (A/C VC y A/C PC desde v0.3; otros modos listados con motivo) | nada hasta confirmar |
 | Config. de alarmas | diálogo transaccional | nada hasta confirmar |
 | Lista de alarmas | diálogo | reconocimiento por alarma o todas |
 | Espera | diálogo de confirmación → estado con superposición «EN ESPERA» | métricas no disponibles; numeración de respiraciones continúa al reanudar |

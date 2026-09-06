@@ -253,12 +253,33 @@
       "policy": "P: diseño reinterpretado a partir de «R860 Lab» (MIT) — carcasa grafito, iconos vectoriales, editor emergente — declarado como interpretación, no réplica. La marca de simulación pasa a franja inferior, firma del bisel, encabezado de diálogos y marca de agua de capturas (decisión del usuario, 06-09-2026).",
       "status": "nueva (v0.2)",
       "blocks": []
+    },
+    {
+      "id": "U-30",
+      "question": "Forma real de la rampa de presión en A/C PC (lineal, exponencial o servocontrolada) y su relación exacta con el ajuste de tiempo de subida.",
+      "policy": "P: rampa lineal de PEEP a PEEP + Pinsp en riseMs; con riseMs = 0 el escalón es inmediato. Sin ensayo de banco frente al equipo.",
+      "status": "nueva (v0.3)",
+      "blocks": []
+    },
+    {
+      "id": "U-31",
+      "question": "Flujo inspiratorio máximo que entrega el actuador en presión control (tope de válvula) y su comportamiento con resistencia muy baja.",
+      "policy": "P: tope de 160 L/min (ficha 2014 flujo máximo); si el tope actúa, la presión queda por debajo del objetivo y se anota en el ciclo.",
+      "status": "nueva (v0.3)",
+      "blocks": []
+    },
+    {
+      "id": "U-32",
+      "question": "Comportamiento del equipo cuando el Trim Knob se gira rápido o se arrastra un deslizador táctil por varios tramos de paso.",
+      "policy": "P: el deslizador recorre la rejilla por índice, un valor por posición; no se interpola.",
+      "status": "nueva (v0.3)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [
     {
-      "feature": "Modos distintos de A/C VC",
-      "reason": "PC y CPAP/PS sólo tras pruebas de banco propias (BM-03 con rampa real, PHY-03); adaptativos U-09; opcionales U-15."
+      "feature": "Modos distintos de A/C VC y A/C PC",
+      "reason": "CPAP/PS sólo tras pruebas de banco propias (PHY-03: esfuerzo, disparo, ciclaje, respaldo); adaptativos U-09; opcionales U-15. A/C PC habilitado en v0.3 con BM-03 en el motor y PHY-02."
     },
     {
       "feature": "Nuevo paciente, pediátrico, neonatal, tipo/diámetro de tubo",

@@ -1,0 +1,14 @@
+{
+ "name": "vis-06-pc-sc13-t16s",
+ "project": "desktop-1440",
+ "viewport": {
+  "width": 1440,
+  "height": 1000
+ },
+ "t0": "2026-08-18T21:04:05-04:00",
+ "seed": 1,
+ "simTimeMs": 16000,
+ "wallTimeMs": 1787101461000,
+ "engine": "worker",
+ "mode": "AC_PC"
+}

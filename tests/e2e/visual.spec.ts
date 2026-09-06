@@ -84,4 +84,15 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await page.click('[data-view="log"]');
     await expect(page.locator('#device-event-log .event-log-row').first()).toBeVisible();
   });
+  test('VIS-06 · A/C PC: presión cuadrada con rampa, flujo decelerante y volumen exponencial; vista básica como P3', async ({
+    page,
+  }, info) => {
+    await open(page, { scenario: 'SC-13', autopause: 16000, instructor: 0, speed: 4 });
+    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
+    await expect(page.locator('#quick-mode')).toHaveText('A/C PC');
+    await screenshot(page, info, 'vis-06-pc-sc13-t16s', { mode: 'AC_PC' });
+    await page.click('[data-view="basic"]');
+    await expect(page.locator('#big-metrics .big-numeric')).toHaveCount(6);
+    await screenshot(page, info, 'vis-07-basic-p3-layout', { view: 'basic' });
+  });
 });
