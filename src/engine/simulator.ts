@@ -14,12 +14,23 @@ import type {
   VcSettings,
   VentilationState,
 } from '../domain/types';
-import { validateAlarmLimitChanges, validateDomains, validatePatientParams, validateVcSettings } from '../domain/validation';
+import {
+  isOnGrid,
+  validateAlarmLimitChanges,
+  validateDomains,
+  validateEffort,
+  validatePatientParams,
+  validateSensors,
+  validateSettingsKeys,
+  validateVcSettings,
+} from '../domain/validation';
 import {
   ALARM_LIMIT_RULES,
   VC_ADULT_CROSS_LIMITS,
   DEFAULT_ALARM_LIMITS,
   DEFAULT_VC_SETTINGS,
+  EXP_HOLD_RULE,
+  INSP_HOLD_RULE,
   VC_ADULT_RULES,
 } from '../profiles/r860-es-photo-reference/settings';
 import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
@@ -156,9 +167,12 @@ export class Simulator {
 
   constructor(init: SimulatorInit) {
     const errs = [
+      ...validateSettingsKeys(init.settings as unknown as Record<string, unknown>, VC_ADULT_RULES),
       ...validateDomains(init.settings, VC_ADULT_RULES),
       ...validateVcSettings(init.settings, VC_ADULT_CROSS_LIMITS).reasons,
       ...validatePatientParams(init.patient),
+      ...validateEffort(init.effort),
+      ...validateSensors(init.sensors),
     ];
     if (!(init.dtMs >= 0.5 && init.dtMs <= 20)) errs.push('dtMs fuera de 0.5–20 ms');
     const al = validateAlarmLimitChanges(init.alarmLimits, ALARM_LIMIT_RULES, {});
@@ -239,6 +253,8 @@ export class Simulator {
     switch (cmd.type) {
       case 'confirmSettings': {
         if (!cmd.changes || typeof cmd.changes !== 'object') return { accepted: false, reason: 'Cambios inválidos' };
+        const keyErrs = validateSettingsKeys(cmd.changes as Record<string, unknown>, VC_ADULT_RULES);
+        if (keyErrs.length) return { accepted: false, reason: keyErrs.join(' ') };
         const next: VcSettings = { ...this.controller.settings, ...(this.controller.pending ?? {}), ...cmd.changes };
         const dom = validateDomains(next, VC_ADULT_RULES);
         const v = validateVcSettings(next, VC_ADULT_CROSS_LIMITS);
@@ -284,14 +300,11 @@ export class Simulator {
         return { accepted: true };
       case 'requestHold': {
         if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
-        if (
-          (cmd.kind !== 'inspHold' && cmd.kind !== 'expHold') ||
-          typeof cmd.durationS !== 'number' ||
-          !Number.isFinite(cmd.durationS) ||
-          cmd.durationS < 1 ||
-          cmd.durationS > 60
-        )
-          return { accepted: false, reason: 'Duración de bloqueo inválida (1–60 s; D rangos 2–40 / 2–60)' };
+        if (cmd.kind !== 'inspHold' && cmd.kind !== 'expHold') return { accepted: false, reason: 'Tipo de bloqueo desconocido' };
+        const holdRule = cmd.kind === 'inspHold' ? INSP_HOLD_RULE : EXP_HOLD_RULE;
+        const hd = holdRule.domain[0];
+        if (typeof cmd.durationS !== 'number' || !Number.isFinite(cmd.durationS) || !isOnGrid(holdRule, cmd.durationS))
+          return { accepted: false, reason: `Duración de bloqueo no admitida (${hd?.min}–${hd?.max} s en pasos de ${hd?.step} s)` };
         const r = this.procedures.requestHold(cmd.kind, cmd.durationS, this.clock.simTimeMs);
         if (r.accepted)
           this.logEvent('procedure', actor, { kind: cmd.kind, durationS: cmd.durationS, procedureId: r.procedureId, phase: 'queued' });
@@ -339,30 +352,16 @@ export class Simulator {
       }
       case 'setEffort': {
         const e = { ...this.effort.params, ...cmd.params };
-        if (
-          typeof e.enabled !== 'boolean' ||
-          ![e.amplitude, e.ratePerMin, e.tiS, e.phaseS].every((x) => typeof x === 'number' && Number.isFinite(x)) ||
-          e.amplitude < 0 ||
-          e.amplitude > 50 ||
-          e.ratePerMin <= 0 ||
-          e.ratePerMin > 120 ||
-          e.tiS <= 0 ||
-          e.tiS > 5
-        )
-          return { accepted: false, reason: 'Parámetros de esfuerzo inválidos' };
+        const ee = validateEffort(e);
+        if (ee.length) return { accepted: false, reason: ee.join('; ') };
         this.effort.params = e;
         this.logEvent('scenario', actor, { effort: cmd.params });
         return { accepted: true };
       }
       case 'setSensors': {
         const sp = { ...this.o2.params, ...cmd.params };
-        if (
-          ![sp.fio2TauS, sp.fio2Bias].every((x) => typeof x === 'number' && Number.isFinite(x)) ||
-          sp.fio2TauS < 0.1 ||
-          sp.fio2TauS > 600 ||
-          Math.abs(sp.fio2Bias) > 0.5
-        )
-          return { accepted: false, reason: 'Parámetros de sensor inválidos' };
+        const se = validateSensors(sp);
+        if (se.length) return { accepted: false, reason: se.join('; ') };
         this.o2.params = sp;
         this.logEvent('scenario', actor, { sensors: cmd.params });
         return { accepted: true };

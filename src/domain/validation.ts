@@ -1,5 +1,5 @@
 import type { NumericSegment, SettingRule } from './settingRules';
-import type { VcSettings } from './types';
+import type { VcSettings, EffortParams, SensorParams } from './types';
 import { lpsToLpm, rrToCycleS } from './units';
 
 const EPS = 1e-9;
@@ -118,7 +118,42 @@ export interface CrossLimits {
 export interface ValidationResult {
   ok: boolean;
   reasons: string[];
+  /** Avisos no bloqueantes en lenguaje de usuario (p. ej. Plimit por encima de Pmáx). */
+  warnings: string[];
   derived: DerivedTiming;
+}
+
+export const VENT_MODES = ['AC_VC', 'AC_PC'] as const;
+
+/** Claves desconocidas o modo no admitido en un cambio de ajustes (la rejilla y los rangos se validan aparte). */
+export function validateSettingsKeys(changes: Record<string, unknown>, rules: Record<string, SettingRule>): string[] {
+  const r: string[] = [];
+  for (const k of Object.keys(changes)) {
+    if (k === 'mode') {
+      if (!(VENT_MODES as readonly string[]).includes(String(changes[k]))) r.push(`Modo no admitido: ${String(changes[k])}.`);
+    } else if (!(k in rules)) r.push(`Ajuste desconocido: ${k}.`);
+  }
+  return r;
+}
+
+export function validateEffort(e: EffortParams): string[] {
+  const r: string[] = [];
+  if (typeof e.enabled !== 'boolean') r.push('esfuerzo.enabled debe ser booleano');
+  if (![e.amplitude, e.ratePerMin, e.tiS, e.phaseS].every((x) => typeof x === 'number' && Number.isFinite(x)))
+    return [...r, 'esfuerzo: amplitud, frecuencia, Ti y desfase deben ser números finitos'];
+  if (e.amplitude < 0 || e.amplitude > 50) r.push('esfuerzo: amplitud fuera de 0–50 cmH2O');
+  if (e.ratePerMin <= 0 || e.ratePerMin > 120) r.push('esfuerzo: frecuencia fuera de 0–120/min');
+  if (e.tiS <= 0 || e.tiS > 5) r.push('esfuerzo: Ti fuera de 0–5 s');
+  return r;
+}
+
+export function validateSensors(sp: SensorParams): string[] {
+  const r: string[] = [];
+  if (![sp.fio2TauS, sp.fio2Bias].every((x) => typeof x === 'number' && Number.isFinite(x)))
+    return ['sensores: tau y sesgo de FiO2 deben ser números finitos'];
+  if (sp.fio2TauS < 0.1 || sp.fio2TauS > 600) r.push('sensores: tau de FiO2 fuera de 0.1–600 s');
+  if (Math.abs(sp.fio2Bias) > 0.5) r.push('sensores: sesgo de FiO2 fuera de ±0.5');
+  return r;
 }
 
 /** Comprueba cada ajuste contra su regla (rango, rejilla, Off, booleano). Devuelve motivos; no aproxima. */
@@ -202,15 +237,12 @@ export function validatePatientParams(p: { crs: number; rInsp: number; rExp: num
 }
 
 /**
- * Valida un juego completo de ajustes VC contra restricciones cruzadas (D rangos ficha 2014; relaciones P).
- * No aproxima: si algo es inválido, devuelve motivos legibles.
- */
-/**
  * Valida un juego completo de ajustes contra restricciones cruzadas (rangos D ficha 2014; relaciones P).
  * Los mensajes están escritos para el usuario; la procedencia de cada regla vive en las reglas y en evidence.json.
  */
 export function validateVcSettings(s: VcSettings, limits: CrossLimits): ValidationResult {
   const reasons: string[] = [];
+  const warnings: string[] = [];
   const d = deriveVcTiming(s);
   if (d.tInspS < limits.tInspMinS - EPS || d.tInspS > limits.tInspMaxS + EPS) {
     reasons.push(`El tiempo inspiratorio resultante (${d.tInspS.toFixed(2)} s) queda fuera de ${limits.tInspMinS}–${limits.tInspMaxS} s.`);
@@ -230,11 +262,14 @@ export function validateVcSettings(s: VcSettings, limits: CrossLimits): Validati
       reasons.push(`Ese volumen exige sólo ${qLpm.toFixed(1)} L/min, por debajo del flujo mínimo de ${limits.flowMinLpm} L/min.`);
     }
     if (s.plimit <= peep) reasons.push(`Plimit (${s.plimit}) debe ser mayor que PEEP (${peep}).`);
+    // P (U-34): no se sabe si el equipo prohíbe Plimit > Pmáx; se permite con aviso porque cambia qué límite actúa primero.
+    if (s.plimit > s.pmax)
+      warnings.push(`Plimit (${s.plimit}) está por encima de Pmáx (${s.pmax}): la inspiración terminará por Pmáx antes de limitarse.`);
   } else {
     if (peep + s.pinsp >= s.pmax) reasons.push(`PEEP + Pinsp (${peep + s.pinsp}) debe quedar por debajo de Pmáx (${s.pmax}).`);
     if (s.riseMs / 1000 > d.tInspS)
       reasons.push(`La rampa (${s.riseMs} ms) no puede superar el tiempo inspiratorio (${d.tInspS.toFixed(2)} s).`);
   }
   if (s.pmax <= peep) reasons.push(`Pmáx (${s.pmax}) debe ser mayor que PEEP (${peep}).`);
-  return { ok: reasons.length === 0, reasons, derived: d };
+  return { ok: reasons.length === 0, reasons, warnings, derived: d };
 }

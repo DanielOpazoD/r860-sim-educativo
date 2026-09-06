@@ -990,7 +990,7 @@ a {
   gap: 7px;
   margin: 16px 3px 0;
   font-size: 10px;
-  color: #7e93a8;
+  color: #9fb3c6; /* ≥ 4.5:1 sobre el fondo */
   line-height: 1.5;
 }
 .stage-footnote .icon {
@@ -1827,7 +1827,7 @@ a {
   width: 405px;
   position: absolute;
   left: calc(50% - 202px);
-  bottom: 99px;
+  bottom: 152px; /* por encima de la barra de vistas: las teclas de vista siguen accesibles mientras se edita */
   z-index: 35;
   background: linear-gradient(135deg, #224f7d, #12365e);
   border: 1px solid #99c9e3;
@@ -3681,7 +3681,7 @@ a {
   display: none;
 }
 .quick-editor {
-  max-height: 590px;
+  max-height: min(590px, calc(100% - 165px));
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #718fa5 transparent;
@@ -4060,4 +4060,173 @@ a {
   min-height: 44px;
   min-width: 64px;
   font-size: 16px;
+}
+
+/* ---- v0.3.1: retroalimentación y accesibilidad ---- */
+.engine-banner {
+  position: sticky;
+  top: 0;
+  z-index: 600;
+  background: #5b2b2b;
+  color: #ffe1e1;
+  border-bottom: 1px solid #a05050;
+  padding: 10px 24px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hold-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hold-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #7a3434;
+  color: #ffe6e6;
+  border: 1px solid #b85c5c;
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 34px;
+}
+.hold-cancel .icon {
+  width: 14px;
+  height: 14px;
+}
+.edit-countdown {
+  font-size: 11px;
+  color: #ffd98a;
+  margin-right: auto;
+}
+.edit-countdown:empty {
+  display: none;
+}
+.inline-validation.warn {
+  color: #ffd98a;
+}
+.mode-error.warn {
+  color: #ffd98a;
+}
+/* Barra táctil fija en móvil: accesos de 44 px fuera del monitor escalado (las teclas del monitor quedan pequeñas al escalar). */
+.mobile-toolbar {
+  display: none;
+}
+@media (max-width: 700px), (pointer: coarse) and (max-width: 900px) {
+  .mobile-toolbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 55;
+    gap: 4px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: #0f1a27f2;
+    border-top: 1px solid #33465b;
+    overflow-x: auto;
+  }
+  .mobile-toolbar button {
+    flex: 1 0 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 8px;
+    border: 1px solid #3475ad;
+    background: linear-gradient(#377db7, #123c78);
+    color: #d6ecfb;
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px 4px;
+  }
+  .mobile-toolbar button[aria-pressed='true'] {
+    background: linear-gradient(#6dd8cb, #3aa596);
+    color: #06202a;
+  }
+  .mobile-toolbar button .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .hold-panel.mobile-hold {
+    bottom: 68px;
+  }
+  .toast-stack {
+    top: 12px;
+    bottom: auto;
+    left: 12px;
+  }
+  body {
+    padding-bottom: 72px;
+  }
+  .info-button,
+  .numeric-info {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .monitor .numeric-info {
+    min-width: 0;
+    min-height: 0;
+  }
+}
+/* Tema claro del cromo de la página (el monitor del equipo permanece oscuro, como el aparato). */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f2f5f8;
+    --surface: #ffffff;
+    --surface2: #eef2f6;
+    --line: #c9d3dd;
+    --text: #17222d;
+    --muted: #4c5f72;
+    --dim: #5d7185;
+  }
+  body {
+    background: #eef2f6;
+    color: var(--text);
+  }
+  .app-top {
+    background: #ffffffe6;
+    border-bottom-color: #c9d3dd;
+  }
+  .stage-heading h1 {
+    color: #17222d;
+  }
+  .stage-sub,
+  .stage-footnote,
+  .knob-hint {
+    color: #46596c;
+  }
+  .instructor {
+    background: #ffffff;
+    border-color: #c9d3dd;
+    color: #17222d;
+  }
+  .instructor-header {
+    background: linear-gradient(120deg, #f4f7fa, #e9eef4);
+  }
+  .app-dialog {
+    background: #ffffff;
+    color: #17222d;
+    border-color: #b9c6d3;
+  }
+  .toast {
+    background: #ffffff;
+    color: #17222d;
+    border-color: #7f97ab;
+  }
+  .safety-strip {
+    background: #e2e8ee;
+    color: #2c3e50;
+  }
+  .safety-strip .version {
+    color: #46596c;
+  }
+  .mobile-toolbar {
+    background: #ffffffee;
+    border-top-color: #c9d3dd;
+  }
 }

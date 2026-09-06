@@ -87,14 +87,18 @@ test.describe('A/C PC y edición', () => {
     await expect(page.locator('.toast.warn').last()).toContainText('Bloqueo no válido');
   });
 
-  test('cancelar una solicitud en cola se anuncia', async ({ page }) => {
+  test('▶ es idempotente mientras hay solicitud; «Cancelar» la anula y se anuncia', async ({ page }) => {
     await open(page, { speed: 0.25 }); // a un cuarto de velocidad la solicitud sigue en cola cuando se pulsa por segunda vez
     await page.click('[data-action="expiratory"]');
     await page.click('#hold-run');
-    await expect(page.locator('#hold-run')).toHaveAttribute('aria-label', /Cancelar (solicitud|bloqueo)/);
-    await page.click('#hold-run');
+    await expect.poll(async () => (await frame(page)).procedure.hold).not.toBeNull();
+    await page.locator('#hold-run').dispatchEvent('click'); // doble pulsación: no cancela ni duplica
+    await page.waitForTimeout(150);
+    expect((await frame(page)).procedure.hold?.procedureId).toBe('p1');
+    await expect(page.locator('#hold-cancel')).toBeVisible();
+    await page.click('#hold-cancel');
     await expect(page.locator('.toast').last()).toContainText(/cancelad/);
-    await expect(page.locator('#hold-run')).toHaveAttribute('aria-label', 'Iniciar bloqueo');
+    await expect.poll(async () => (await frame(page)).procedure.hold).toBeNull();
   });
 
   test('Escape cierra primero el diálogo y el reloj del monitor muestra la hora del día', async ({ page }) => {

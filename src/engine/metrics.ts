@@ -167,11 +167,12 @@ export class MetricEngine {
       reason: 'sinRespiracionesEspontaneas',
       windowMs: null,
     });
-    out.fio2 = sample('fio2', ctx.fio2Measured, 'fraction', {
+    const fio2Ok = ctx.fio2Measured !== null && Number.isFinite(ctx.fio2Measured);
+    out.fio2 = sample('fio2', fio2Ok ? ctx.fio2Measured : null, 'fraction', {
       simTimeMs: t,
       breathId: null,
-      quality: 'valid',
-      reason: null,
+      quality: fio2Ok ? 'valid' : 'invalid',
+      reason: fio2Ok ? null : 'sensorNoFinito',
       windowMs: null,
     });
     return out;

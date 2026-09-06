@@ -38,7 +38,8 @@ export class EngineHost {
         try {
           this.sim = new Simulator(m.init);
         } catch (e) {
-          this.post({ type: 'commandResult', id: -1, accepted: false, reason: `init: ${(e as Error).message}` });
+          // Nunca silencioso: el cliente lo notifica por onDegraded y la interfaz lo muestra.
+          this.post({ type: 'initError', reason: (e as Error).message });
           return;
         }
         this.speed = m.speed;
@@ -119,7 +120,11 @@ export class EngineHost {
         break;
       }
       case 'loadScenario':
-        this.loadScenario(m.scenario, m.keepSettings);
+        try {
+          this.loadScenario(m.scenario, m.keepSettings);
+        } catch (e) {
+          this.post({ type: 'initError', reason: `escenario ${m.scenario?.id ?? '?'}: ${(e as Error).message}` });
+        }
         break;
       default:
         break;

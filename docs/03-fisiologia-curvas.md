@@ -110,7 +110,7 @@ Consecuencias didácticas:
 
 ## 4. Auto-PEEP y atrapamiento aéreo
 
-La espiración es pasiva y se resuelve como fuente de presión a PEEP: el volumen decae hacia el equilibrio con τ_exp = Rexp·C. Si el siguiente ciclo llega antes de 3–4 τ_exp, queda volumen sin espirar y su presión elástica se suma a la PEEP externa: PEEPtot = PEEPe + PEEPi, con PEEPi = V_atrapado/C. En el motor la auto-PEEP **emerge** del vaciamiento incompleto; no es un parámetro ajustable (P, escenario SC-03).
+La espiración es pasiva y se resuelve como fuente de presión a PEEP: el volumen decae hacia el equilibrio con τ_exp = Rexp·C. La válvula espiratoria mantiene la PEEP mientras el paciente no demande más de un **flujo de base de 10 L/min** hacia sí (P, U-33); si un esfuerzo pide más, el circuito pasa a fuente de flujo al tope y la **Pva cae por debajo de PEEP** (la deflexión que se observa antes de un disparo por flujo, o en un esfuerzo ineficaz). Con asistencia apagada, ese mismo tope limita lo que el paciente puede inhalar durante la espiración a 10 L/min × Tesp. Si el siguiente ciclo llega antes de 3–4 τ_exp, queda volumen sin espirar y su presión elástica se suma a la PEEP externa: PEEPtot = PEEPe + PEEPi, con PEEPi = V_atrapado/C. En el motor la auto-PEEP **emerge** del vaciamiento incompleto; no es un parámetro ajustable (P, escenario SC-03).
 
 Causas en el modelo: τ_exp larga (↑ Rexp o ↑ C), Tesp corto (↑ FR, I:E alto, Tinsp largo o pausa larga) o VT grande respecto de lo que cabe vaciar. Con FR 25, I:E 1:1 y Rexp 30 (SC-03): Tesp 1,2 s frente a τ_exp 1,5 s (< 1 τ), PEEPtot claramente > PEEP.
 
@@ -183,7 +183,9 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | R no lineal sólo como término opcional R2·\|Q\| | El tipo `PatientParams` admite R2 ≥ 0 (resolución cuadrática en `flowForPaw`), pero **ningún escenario ni control de la interfaz lo activa** (R2 = 0 en todos): en la práctica el modelo es lineal en R | P (existe); U (valores realistas de R2 con tubo endotraqueal) |
 | Sin compresibilidad del gas ni distensibilidad del circuito | VT entregado = VT alveolar; no hay volumen comprimido perdido en el circuito ni corrección por compliance de tubuladura | P |
 | Sin fuga | VTinsp = VTe siempre que la espiración sea completa (BM-07); no se simulan auto-disparo por fuga ni balance de fuga en PC | P (documentado en `02-diferencias`, defecto H1 de R860 Lab no heredado) |
-| Rampa de PC lineal y tope de 160 L/min como fuente de flujo | Forma de la subida y comportamiento con R muy baja son aproximaciones del simulador, no del equipo | P (tope D ficha 2014; forma U) |
+| Rampa de PC lineal y tope de 160 L/min dentro del integrador | Forma de la subida y comportamiento con R muy baja son aproximaciones del simulador, no del equipo; el tope se aplica en cada etapa del RK2, sin sobreimpulso dependiente de dt (R3-01) | P (tope D ficha 2014; forma U) |
+| Válvula espiratoria con flujo de base de 10 L/min y sin resistencia propia | Un esfuerzo en espiración hunde la Pva sólo por encima de 10 L/min; el flujo espiratorio máximo no está acotado (con Rexp muy baja se ven picos irreales) | P; U-33, U-35 |
+| Sin disparo por presión | Sólo disparo por flujo; la deflexión de presión se ve pero no dispara por sí misma | U-33 |
 | Esfuerzo como pulso semisinusoidal de Pmus independiente del reloj del ventilador | Reproduce disparo, asincronía por fase y mesetas inestables, no la modulación neural real ni la respuesta al CO₂ | P |
 | Sin adaptación de flujo tras Plimit en respiraciones sucesivas | El equipo real ajusta el flujo en las respiraciones siguientes (JB72469XX); aquí cada respiración se limita igual | U-19 |
 | Sin datos de pacientes reales | Todas las cifras son analíticas o sintéticas; el simulador no valida ajustes clínicos ni pretende fidelidad numérica con el equipo (U-18) | — |

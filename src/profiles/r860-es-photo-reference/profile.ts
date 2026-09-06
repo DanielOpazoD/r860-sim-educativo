@@ -19,7 +19,8 @@ export const PROFILE = {
   clinicalUse: false,
   unknownFeaturePolicy: 'disabled_with_reason',
   patientType: 'adult' as const,
-  enabledModes: ['AC_VC'] as const,
+  /** Modos habilitados. A/C PC desde v0.3 (BM-03 en el motor, PHY-02); CPAP/PS sólo tras PHY-03. */
+  enabledModes: ['AC_VC', 'AC_PC'] as const,
   /** Marca permanente exigida por el mandato. */
   banner: 'SIMULACIÓN EDUCATIVA · NO USO CLÍNICO',
   /** Plazo de cancelación de borrador (ms). U-07: valor PROPUESTO, no GE. */

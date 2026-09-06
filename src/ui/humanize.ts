@@ -11,7 +11,7 @@ const REASONS: Record<string, string> = {
   plimitReached: 'Plimit alcanzada: la pausa no fue una oclusión',
   endedByPmax: 'inspiración terminada por Pmáx',
   canceladoPorUsuario: 'cancelado por el usuario',
-  canceladoEnCola: 'cancelado antes de iniciar',
+  cancelledByStandby: 'detenido al pasar a espera',
   pmaxDuranteBloqueo: 'Pmáx alcanzada durante el bloqueo',
   duracionInsuficiente: 'duración insuficiente',
   denominadorInsuficiente: 'Pplat − PEEP demasiado pequeña para estimar',
@@ -70,7 +70,7 @@ const SETTING: Record<string, string> = {
   plimit: 'Plimit',
   pausePct: 'Pausa insp',
   assistControl: 'Disparo asistido',
-  flowTrigger: 'Trigger',
+  flowTrigger: 'Disparo por flujo',
   pinsp: 'Pinsp',
   riseMs: 'Rampa',
   mode: 'Modo',
@@ -133,13 +133,18 @@ export function eventSentence(e: SessionEvent): string {
       if (p.limits) return `${who} cambió límites de alarma`;
       return 'Alarma';
     case 'procedure':
-      if (p.kind === 'inspHold' || p.kind === 'expHold')
-        return `${who} solicitó bloqueo ${p.kind === 'inspHold' ? 'inspiratorio' : 'espiratorio'} de ${String(p.durationS)} s`;
+      if (p.type === 'holdStarted') return `Bloqueo ${p.kind === 'inspHold' ? 'inspiratorio' : 'espiratorio'} en curso`;
+      if (p.kind === 'inspHold' || p.kind === 'expHold') {
+        const which = p.kind === 'inspHold' ? 'inspiratorio' : 'espiratorio';
+        const d = typeof p.durationS === 'number' && Number.isFinite(p.durationS) ? ` de ${p.durationS} s` : '';
+        if (p.type === 'rejected') return `Bloqueo ${which} no elegible: ${humanReason(String(p.reason))}`;
+        if (p.cancel) return `${who} canceló el bloqueo ${which}`;
+        return `${who} solicitó bloqueo ${which}${d}`;
+      }
       if (p.holdEnded) return `Bloqueo terminado (${p.cancelled ? 'cancelado' : String(p.quality) === 'valid' ? 'válido' : 'no válido'})`;
       if (p.kind === 'manualBreath') return `${who} pidió una respiración manual`;
       if (p.kind === 'increaseO2') return p.phase === 'started' ? '↑O₂ iniciado (100 % por 120 s)' : '↑O₂ detenido';
       if (p.cancel) return `${who} canceló el procedimiento`;
-      if (p.type === 'holdStarted') return `Bloqueo ${p.kind === 'inspHold' ? 'inspiratorio' : 'espiratorio'} en curso`;
       if (p.type === 'rejected') return `Bloqueo no elegible: ${humanReason(String(p.reason))}`;
       return 'Procedimiento';
     case 'state':
@@ -157,10 +162,35 @@ export function eventSentence(e: SessionEvent): string {
     case 'discontinuity':
       return `Tiempo descartado: ${Math.round((p.droppedMs as number) ?? 0)} ms`;
     case 'rejected':
-      return `Orden rechazada (${String(p.command)}): ${String(p.reason)}`;
+      return `Orden rechazada (${String(p.command)}): ${learnerText(String(p.reason))}`;
     case 'mode':
       return 'Cambio de modo';
     default:
       return e.kind;
   }
+}
+
+/**
+ * Texto apto para el alumno: elimina marcas de evidencia «(P)/(D)/(O)/(U)» (pertenecen a la documentación) y
+ * sustituye la jerga de «rejilla» de los mensajes internos por palabras llanas. Idempotente.
+ */
+export function learnerText(s: string): string {
+  return s
+    .replace(/\s*\((?:P|D|O|U)\)/g, '')
+    .replace(/no está en la rejilla de escalones/g, 'no es un valor admitido')
+    .replace(/fuera de rango o rejilla/g, 'no es un valor admitido')
+    .replace(/\(fuera de rango o de escalón\)/g, '(fuera de rango o no coincide con el paso admitido)')
+    .replace(/rejilla de escalones/g, 'pasos admitidos')
+    .replace(/rejilla/g, 'paso admitido')
+    .replace(/\bTrigger flujo\b/g, 'Disparo por flujo')
+    .replace(/\bml\b/g, 'mL')
+    .trim();
+}
+/** Une motivos en frases completas separadas por punto (evita «...500 ml Ti 0,9 s...» encadenados). */
+export function joinSentences(reasons: string[]): string {
+  return reasons
+    .map((r) => learnerText(r))
+    .filter((r) => r.length > 0)
+    .map((r) => (/[.!?…]$/.test(r) ? r : `${r}.`))
+    .join(' ');
 }

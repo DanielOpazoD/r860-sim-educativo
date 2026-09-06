@@ -88,7 +88,7 @@ Ejecutadas (ver `docs/01-resultados.md` para la salida real):
 - Sesión: TIM-01, TIM-02, SEC-03; SEC-01 estático.
 - Interfaz (Playwright, tres proyectos: 1440×1000, 1280×900, Pixel 7): VIS-01/02/03/04, DAT-01/02, INT-01…06, PRC-01 (UI), ACC-01, TIM-03, SEC-01/02, móvil.
 
-No ejecutadas todavía: ALM-04 automatizada de extremo a extremo, PHY-02/03 (PC y CPAP/PS no habilitados), PHY-05 (fuga no modelada), PRC-04 (SBT), DAT-05/06 en UI, CFG-04, ACC-02 automatizada, L3 revisión experta.
+No ejecutadas todavía: ALM-04 automatizada de extremo a extremo, PHY-03 (CPAP/PS no habilitado; PHY-02 de PC pasa desde v0.3), PHY-05 (fuga no modelada), PRC-04 (SBT), DAT-05/06 en UI, CFG-04, ACC-02 automatizada, L3 revisión experta.
 
 ## 7. Brechas que bloquean funcionalidades
 
@@ -98,4 +98,4 @@ No ejecutadas todavía: ALM-04 automatizada de extremo a extremo, PHY-02/03 (PC 
 - **U-11/U-23**: sin catálogo de alarmas, Auto Limits, apnea y High Alert Audio permanecen desactivados; límites iniciales Off.
 - **U-14/U-15/U-16**: Futuro, oxigenoterapia, neonatal, energía y gases desactivados.
 - **U-19** (nueva): la compensación de flujo entre respiraciones en VC descrita por el curso JB72469XX no se implementa; el VT real queda por debajo del programado bajo Plimit y así se muestra.
-- PC y CPAP/PS se incorporarán sólo tras pasar sus pruebas de banco (BM-03 con rampa real; PHY-03 con esfuerzo/disparo/ciclaje y respaldo).
+- PC quedó habilitado en v0.3 tras BM-03 en el motor y PHY-02; CPAP/PS sólo tras PHY-03 (esfuerzo/disparo/ciclaje y respaldo).

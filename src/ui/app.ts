@@ -2,16 +2,15 @@
  * Interfaz de R860 Lab sobre el motor determinista de este proyecto.
  * Estructura de interacción derivada de «R860 Lab» v1.1 (src/app.js, MIT 2026) y reescrita en TypeScript:
  * la UI sólo envía comandos tipados; los borradores viven en EditController; requestAnimationFrame sólo dibuja.
+ * Las piezas puras viven aparte: metricsTable (mediciones), lesson (objetivos), exports (CSV/PNG/JSON), dialogs (plantillas).
  */
 import { EngineClient } from '../app/engineClient';
 import type { Discontinuity } from '../app/protocol';
 import { EditController } from '../app/uiState';
 import type { Command } from '../domain/commands';
 import type { SettingRule } from '../domain/settingRules';
-import type { AlarmLimits, AlarmState, MetricSample, OffOr, ProcedureResult, SettingsKey, VcSettings } from '../domain/types';
+import type { AlarmLimits, AlarmState, SettingsKey, VcSettings, VentMode } from '../domain/types';
 import { gridValues, isOnGrid, nearestGridValue, validateDomains, validateVcSettings, deriveVcTiming } from '../domain/validation';
-import { CHANNEL, eventSentence, humanReason, PRIORITY, QUALITY, SOURCE } from './humanize';
-import type { VentMode } from '../domain/types';
 import { defaultInit, type EngineFrame, type SimulatorInit } from '../engine/simulator';
 import { ENGINE_VERSION } from '../engine/version';
 import { frameFromFixture, PHOTO_FIXTURES } from '../fixtures/photoFixtures';
@@ -26,65 +25,56 @@ import {
 import { cyclePoints, drawGauge, drawLoop, drawMuscle, drawTrends, drawWave, format as f, type Point } from '../render/plots';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
 import { AlarmAudio } from './audio';
+import {
+  debriefHTML,
+  debriefText,
+  helpHTML,
+  menuHTML,
+  oxygenHTML,
+  patientHTML,
+  powerHTML,
+  scenariosHTML,
+  sessionHTML,
+  standbyHTML,
+  toolsHTML,
+} from './dialogs';
+import { $, $$, btn, esc, icon, put, trapTab } from './dom';
+import {
+  csvBlob,
+  downloadBlob,
+  paintSnapshot,
+  sessionBlob,
+  signalRows,
+  SIGNAL_HEADER,
+  textBlob,
+  TRENDS_HEADER,
+  trendsRows,
+} from './exports';
+import { clock, ieText, stamp, unitText, wallDate } from './format';
 import { HELP, type HelpEntry } from './help';
+import { CHANNEL, eventSentence, humanReason, joinSentences, learnerText, PRIORITY } from './humanize';
+import { nextCompletedTask } from './lesson';
+import {
+  ALL_METRICS,
+  BIG_METRICS,
+  limitPair,
+  METRIC_HELP,
+  METRICS,
+  metricInAlarm,
+  metricQuality as metricQualityOf,
+  metricValue as metricValueOf,
+  type MetricSpec,
+} from './metricsTable';
+import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, type PhysSpec } from './patientControls';
 
 type ViewId = 'waves' | 'basic' | 'loops' | 'data' | 'trends' | 'log';
-const $ = <T extends HTMLElement = HTMLElement>(s: string): T => document.querySelector(s) as T;
-const $$ = <T extends HTMLElement = HTMLElement>(s: string): T[] => [...document.querySelectorAll<T>(s)];
-const esc = (v: unknown): string =>
-  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
-const icon = (n: string): string => `<svg class="icon" aria-hidden="true"><use href="#i-${n}"/></svg>`;
-const clock = (tS: number): string => {
-  const t = Math.max(0, Math.floor(tS || 0));
-  return `${Math.floor(t / 60)
-    .toString()
-    .padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`;
-};
-const put = (sel: string | Element | null, v: string): void => {
-  const e = typeof sel === 'string' ? $(sel) : sel;
-  if (e && e.textContent !== v) e.textContent = v;
-};
-const btn = (label: string, action: string, cls = 'primary-button'): string =>
-  `<button class="${cls}" data-action="${action}">${label}</button>`;
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const wallDate = (ms: number): string => {
-  const d = new Date(ms);
-  return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-};
-
-interface MetricSpec {
-  key: string;
-  label: string;
-  unit: string;
-  factor: number;
-  decimals: number;
-  source: 'metric' | 'hold';
-}
-const METRICS: MetricSpec[] = [
-  { key: 'ppeak', label: 'Ppico', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'metric' },
-  { key: 'peepe', label: 'PEEPe', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'metric' },
-  { key: 'pplat', label: 'Pplat', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'hold' },
-  { key: 'pmean', label: 'Pmedia', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'metric' },
-  { key: 'mve', label: 'VMesp', unit: 'L/min', factor: 1, decimals: 1, source: 'metric' },
-  { key: 'rr', label: 'FR', unit: '/min', factor: 1, decimals: 0, source: 'metric' },
-  { key: 'vte', label: 'VTesp', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
-  { key: 'fio2', label: 'FiO₂', unit: '%', factor: 100, decimals: 0, source: 'metric' },
-  { key: 'mveSpont', label: 'VMesp espont', unit: 'L/min', factor: 1, decimals: 2, source: 'metric' },
-  { key: 'rrSpont', label: 'FR espont', unit: '/min', factor: 1, decimals: 0, source: 'metric' },
-  { key: 'cstat', label: 'Cstat', unit: 'mL/cmH₂O', factor: 1000, decimals: 0, source: 'hold' },
-  { key: 'driving', label: 'ΔP estática', unit: 'cmH₂O', factor: 1, decimals: 1, source: 'hold' },
-];
-const EXTRA_METRICS: MetricSpec[] = [
-  { key: 'vti', label: 'VT inspirado', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
-  { key: 'leakPct', label: 'Fuga volumétrica', unit: '%', factor: 100, decimals: 1, source: 'metric' },
-  { key: 'pplatCycle', label: 'Pplat de ciclo (pausa)', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'metric' },
-  { key: 'vteSpont', label: 'VTesp espontáneo', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
-];
+const VIEWS: ViewId[] = ['waves', 'basic', 'loops', 'data', 'trends', 'log'];
 const QUICK_KEYS_BY_MODE: Record<VentMode, SettingsKey[]> = {
   AC_VC: ['fio2', 'vt', 'rr', 'ie', 'peep', 'pmax'],
   AC_PC: ['fio2', 'pinsp', 'rr', 'ie', 'peep', 'pmax'],
 };
 const MODE_LABEL: Record<VentMode, string> = { AC_VC: 'A/C VC', AC_PC: 'A/C PC' };
+const modeLabel = (m: string): string => MODE_LABEL[m as VentMode] ?? m;
 const QUICK_LABEL: Record<SettingsKey, string> = {
   fio2: 'FiO₂',
   vt: 'Volumen tidal',
@@ -95,7 +85,7 @@ const QUICK_LABEL: Record<SettingsKey, string> = {
   plimit: 'Plimit',
   pausePct: 'Pausa inspiratoria',
   assistControl: 'Disparo asistido',
-  flowTrigger: 'Trigger de flujo',
+  flowTrigger: 'Disparo por flujo',
   pinsp: 'Pinsp',
   riseMs: 'Rampa',
 };
@@ -113,116 +103,45 @@ const HELP_KEY: Record<SettingsKey, string> = {
   pinsp: 'setting.pinsp',
   riseMs: 'setting.rise',
 };
-const METRIC_HELP: Record<string, string> = {
-  ppeak: 'metric.ppeak',
-  peepe: 'metric.peep',
-  pplat: 'metric.pplat',
-  pmean: 'metric.pmean',
-  mve: 'metric.mv',
-  rr: 'metric.rr',
-  vte: 'metric.vte',
-  fio2: 'setting.fio2',
-  mveSpont: 'metric.mvSpont',
-  rrSpont: 'metric.rrSpont',
-  cstat: 'metric.cstat',
-  driving: 'metric.driving',
-  vti: 'metric.vti',
-  leakPct: 'metric.leak',
-  pplatCycle: 'metric.pplat',
-  vteSpont: 'metric.vte',
+/** Modos ofrecidos y motivo de los no disponibles. Sólo se habilitan los declarados por el perfil. */
+const MODE_OPTIONS: [VentMode, string][] = [
+  ['AC_VC', 'A/C VC'],
+  ['AC_PC', 'A/C PC'],
+];
+const OTHER_MODES: [string, string][] = [
+  ['CPAP/PS', 'Próximamente: requiere validar esfuerzo, disparo, ciclaje y respaldo'],
+  ['A/C PRVC', 'No disponible: el algoritmo adaptativo del fabricante no está publicado'],
+  ['SIMV VC / PC', 'Próximamente'],
+  ['BiLevel / APRV / NIV', 'No disponible en este simulador'],
+];
+const PHASE_TEXT: Record<string, string> = {
+  inspFlow: 'Inspiración',
+  inspLimited: 'Inspiración · Plimit',
+  inspPause: 'Pausa inspiratoria',
+  inspPressure: 'Inspiración · presión',
+  exp: 'Espiración',
+  holdInsp: 'Bloqueo inspiratorio',
+  holdExp: 'Bloqueo espiratorio',
+  standby: 'En espera',
 };
-interface PhysSpec {
-  label: string;
-  unit: string;
-  min: number;
-  max: number;
-  step: number;
-  help: string;
-  get: (fr: EngineFrame) => number;
-  cmd: (v: number, fr: EngineFrame) => Command;
-}
-const PHYS: Record<string, PhysSpec> = {
-  compliance: {
-    label: 'Compliance estática (C)',
-    unit: 'mL/cmH₂O',
-    min: 5,
-    max: 150,
-    step: 1,
-    help: 'patient.compliance',
-    get: (fr) => fr.truth.patient.crs * 1000,
-    cmd: (v) => ({ type: 'setPatient', params: { crs: v / 1000 } }),
-  },
-  resistance: {
-    label: 'Resistencia inspiratoria',
-    unit: 'cmH₂O/L/s',
-    min: 2,
-    max: 100,
-    step: 1,
-    help: 'patient.resistance',
-    get: (fr) => fr.truth.patient.rInsp,
-    cmd: (v) => ({ type: 'setPatient', params: { rInsp: v } }),
-  },
-  expResistance: {
-    label: 'Resistencia espiratoria',
-    unit: 'cmH₂O/L/s',
-    min: 2,
-    max: 150,
-    step: 1,
-    help: 'patient.expResistance',
-    get: (fr) => fr.truth.patient.rExp,
-    cmd: (v) => ({ type: 'setPatient', params: { rExp: v } }),
-  },
-  effort: {
-    label: 'Intensidad del esfuerzo',
-    unit: 'cmH₂O',
-    min: 0,
-    max: 30,
-    step: 0.5,
-    help: 'patient.effort',
-    get: (fr) => (fr.truth.effort.enabled ? fr.truth.effort.amplitude : 0),
-    cmd: (v) => ({ type: 'setEffort', params: { enabled: v > 0, amplitude: v } }),
-  },
-  patientRR: {
-    label: 'Frecuencia del paciente',
-    unit: '/min',
-    min: 3,
-    max: 60,
-    step: 1,
-    help: 'patient.patientRR',
-    get: (fr) => fr.truth.effort.ratePerMin,
-    cmd: (v) => ({ type: 'setEffort', params: { ratePerMin: v } }),
-  },
-  muscleTi: {
-    label: 'Duración del esfuerzo',
-    unit: 's',
-    min: 0.3,
-    max: 3,
-    step: 0.1,
-    help: 'patient.muscleTi',
-    get: (fr) => fr.truth.effort.tiS,
-    cmd: (v) => ({ type: 'setEffort', params: { tiS: v } }),
-  },
-  o2Tau: {
-    label: 'Constante del sensor de O₂',
-    unit: 's',
-    min: 0.5,
-    max: 60,
-    step: 0.5,
-    help: 'setting.fio2',
-    get: (fr) => fr.truth.sensors.fio2TauS,
-    cmd: (v) => ({ type: 'setSensors', params: { fio2TauS: v } }),
-  },
-  o2Bias: {
-    label: 'Sesgo del sensor de O₂',
-    unit: '%',
-    min: -20,
-    max: 20,
-    step: 1,
-    help: 'setting.fio2',
-    get: (fr) => Math.round(fr.truth.sensors.fio2Bias * 100),
-    cmd: (v) => ({ type: 'setSensors', params: { fio2Bias: v / 100 } }),
-  },
+const EVENT_KIND: Record<string, string> = {
+  setting: 'ajuste',
+  alarm: 'alarma',
+  procedure: 'maniobra',
+  breath: 'ciclo',
+  state: 'estado',
+  scenario: 'escenario',
+  pause: 'reloj',
+  audio: 'audio',
+  discontinuity: 'reloj',
+  rejected: 'rechazo',
+  mode: 'modo',
 };
+/** Plazo para recibir el primer cuadro del motor antes de avisar (ms). */
+const FIRST_FRAME_TIMEOUT_MS = 5000;
+/** Últimos segundos del plazo de edición en los que se muestra la cuenta atrás. */
+const COUNTDOWN_WINDOW_MS = 10_000;
+const isMobile = (): boolean => window.matchMedia('(max-width:700px)').matches;
 
 export interface AppOptions {
   params: URLSearchParams;
@@ -275,12 +194,14 @@ export function startApp(opts: AppOptions): void {
     () => (frame ? { ...frame.settings, ...(frame.pending ?? {}) } : defaultInit().settings),
     editTimeoutMs,
   );
+  /** Tecla rápida que abrió el editor: recibe el foco al confirmar o cancelar. */
+  let quickOpener: HTMLElement | null = null;
 
   // ---------- utilidades ----------
   function toast(message: string, warn = false): void {
     const e = document.createElement('div');
     e.className = 'toast' + (warn ? ' warn' : '');
-    e.textContent = message;
+    e.textContent = learnerText(message);
     const stack = $('#toast-stack');
     stack.append(e);
     while (stack.children.length > 2) stack.firstElementChild?.remove();
@@ -290,22 +211,21 @@ export function startApp(opts: AppOptions): void {
     put('#global-notice', message);
     $('#global-notice').hidden = false;
   }
+  /** Aviso persistente sobre el estado del motor (sin Worker o sin arrancar). */
+  function engineBanner(message: string | null): void {
+    const b = $('#engine-banner');
+    b.hidden = !message;
+    put(b, message ?? '');
+  }
+  function versionTag(): void {
+    const how = client.mode === 'worker' ? 'Worker' : client.degradedReason ? 'en página (sin Worker)' : 'en página';
+    put('#version-tag', `v${ENGINE_VERSION} · Offline · ${how}`);
+  }
   async function send(cmd: Command, actor: 'learner' | 'instructor' = 'learner'): Promise<{ accepted: boolean; reason?: string }> {
     const r = await client.command(cmd, actor);
     if (!r.accepted) toast(r.reason ?? 'No se pudo aplicar.', true);
     return r;
   }
-  function download(blob: Blob, name: string): void {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-  }
-  const stamp = (): string => new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const simS = (): number => (frame?.simTimeMs ?? 0) / 1000;
   const helpEntry = (key: string): HelpEntry | null => HELP[key] ?? null;
   function helpContent(key: string): string {
@@ -339,90 +259,34 @@ export function startApp(opts: AppOptions): void {
 
   // ---------- valores ----------
   const ruleOf = (k: SettingsKey): SettingRule => VC_ADULT_RULES[k];
-  const unitText = (u: string): string => u.replace('cmH2O', 'cmH₂O');
   function displaySetting(k: SettingsKey, v: VcSettings[SettingsKey]): string {
     if (v === 'off') return 'Off';
     if (typeof v === 'boolean') return v ? 'On' : 'Off';
     if (k === 'ie') return ieText(v as number);
     return ((v as number) * ruleOf(k).displayFactor).toFixed(ruleOf(k).decimals);
   }
-  function ieText(ratio: number): string {
-    if (ratio <= 1 + 1e-9) {
-      const e = Math.round((1 / ratio) * 100) / 100;
-      return `1:${e}`;
-    }
-    return `${Math.round(ratio * 100) / 100}:1`;
-  }
-  function metricSample(key: string): MetricSample | null {
-    if (!frame) return null;
-    if (key === 'pplat' || key === 'cstat' || key === 'driving') {
-      const h = frame.procedure.last.inspHold;
-      return h?.values[key] ?? null;
-    }
-    return frame.metrics[key] ?? null;
-  }
-  function metricValue(spec: MetricSpec): number | null {
-    if (!frame || frame.ventilation === 'standby') return null;
-    const s = metricSample(spec.key);
-    return s && s.value !== null ? s.value * spec.factor : null;
-  }
-  function metricQuality(spec: MetricSpec): string {
-    if (!frame) return '';
-    if (frame.ventilation === 'standby') return 'En espera';
-    const s = metricSample(spec.key);
-    if (!s) return 'Sin dato';
-    if (spec.source === 'hold') {
-      const h = frame.procedure.last.inspHold;
-      if (!h) return 'Requiere un bloqueo inspiratorio válido';
-      return `Bloqueo a las ${wallDate(h.wallTimeMs ?? 0).slice(-8)} · hace ${clock(simS() - (h.completedAtMs ?? 0) / 1000)}${s.quality !== 'valid' ? ` · ${humanReason(s.reason)}` : ''}`;
-    }
-    return `${QUALITY[s.quality]}${s.reason ? ' · ' + humanReason(s.reason) : ''} · ${SOURCE[s.source]}${s.breathId ? ' · respiración ' + s.breathId.replace('b', '') : ''}${s.windowMs ? ' · ventana ' + (s.windowMs / 1000).toFixed(1) + ' s' : ''}`;
-  }
+  const metricValue = (spec: MetricSpec): number | null => metricValueOf(frame, spec);
+  const metricQuality = (spec: MetricSpec): string => metricQualityOf(frame, spec);
 
   // ---------- DOM inicial ----------
   function initDOM(): void {
+    // Casillas numéricas: un solo punto de entrada por Tab (tabindex itinerante); las flechas recorren las demás.
     $('#numeric-grid').innerHTML = METRICS.map(
-      (m) =>
-        `<button class="numeric" data-metric="${m.key}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits"></span><span class="numeric-age"></span></button>`,
+      (m, i) =>
+        `<button class="numeric" data-metric="${m.key}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits"></span><span class="numeric-age"></span></button>`,
     ).join('');
-    $('#big-metrics').innerHTML = [
-      ['fio2', 'FiO₂', '%'],
-      ['peepe', 'PEEPe', 'cmH₂O'],
-      ['ppeak', 'Presión pico', 'cmH₂O'],
-      ['mve', 'Volumen minuto', 'L/min'],
-      ['vte', 'Volumen tidal', 'mL'],
-      ['rr', 'Frecuencia resp.', '/min'],
-    ]
-      .map(
-        ([k, l, u]) =>
-          `<button class="big-numeric" data-metric="${k}"><span>${l}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><b>—</b><em>${u}</em><span class="numeric-limits"></span></button>`,
-      )
-      .join('');
-    const physHtml = (keys: string[]): string =>
-      keys
-        .map((k) => {
-          const sp = PHYS[k] as PhysSpec;
-          const id = `help-phys-${k}`;
-          return `<div class="phys-field"><div class="phys-field-header"><div class="parameter-label"><label for="phys-${k}">${sp.label}</label>${infoButton(sp.help, id)}</div><div class="phys-value"><input id="phys-${k}" data-phys-number="${k}" type="number" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="${sp.label}"><small>${sp.unit}</small></div></div><input type="range" data-phys-range="${k}" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="Deslizador ${sp.label}"><div class="phys-range-labels"><span>${sp.min}</span><span>${sp.max}</span></div>${infoPanel(sp.help, id)}</div>`;
-        })
-        .join('');
-    $('#patient-controls').innerHTML = physHtml(['compliance', 'resistance', 'expResistance', 'effort']);
+    $('#big-metrics').innerHTML = BIG_METRICS.map(
+      ([k, l, u], i) =>
+        `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><b>—</b><em>${u}</em><span class="numeric-limits"></span></button>`,
+    ).join('');
+    $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
     $('#patient-extra-controls').innerHTML =
-      physHtml(['patientRR', 'muscleTi', 'o2Tau', 'o2Bias']) +
+      physHtml(PATIENT_EXTRA, infoButton, infoPanel) +
       `<p class="settings-annotation">Fuga en Y, desconexión y compensaciones: no modeladas en esta etapa.</p>`;
-    $('#fault-grid').innerHTML = [
-      ['resistance', 'wave', 'Resistencia ×2', 'Aumenta la carga resistiva'],
-      ['compliance', 'lung', 'C ÷2', 'Aumenta la carga elástica'],
-      ['apnea', 'pause', 'Apnea', 'Interrumpe el esfuerzo'],
-      ['obstruction', 'lock', 'Oclusión', 'Resistencia extrema (Pmáx)'],
-      ['leak', 'wave', 'Fuga', 'No modelada en esta etapa'],
-      ['disconnect', 'plug', 'Desconexión', 'No modelada en esta etapa'],
-    ]
-      .map(
-        ([id, i, l, d]) =>
-          `<button data-event="${id}" id="event-${id}" ${id === 'leak' || id === 'disconnect' ? 'disabled' : ''}>${icon(i as string)}<b>${l}</b><small>${d}</small></button>`,
-      )
-      .join('');
+    $('#fault-grid').innerHTML = FAULTS.map(
+      ([id, i, l, d, off]) =>
+        `<button data-event="${id}" id="event-${id}" ${off ? 'disabled' : ''}>${icon(i)}<b>${l}</b><small>${d}</small></button>`,
+    ).join('');
     for (const b of $$('[data-help-key]')) {
       const panel = document.getElementById(b.dataset.helpTarget as string);
       if (panel && !panel.innerHTML.trim()) panel.innerHTML = helpContent(b.dataset.helpKey as string);
@@ -436,7 +300,7 @@ export function startApp(opts: AppOptions): void {
     resize();
     $('#workspace').classList.toggle('teacher-hidden', !teacherVisible);
     $('#teacher-toggle').innerHTML = icon('eye') + `<span>${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente</span>`;
-    put('#version-tag', `v${ENGINE_VERSION} · Offline · ${client.mode === 'worker' ? 'Worker' : 'en página'}`);
+    versionTag();
     put('#instructor-footer-text', '');
     $('#instructor-footer-text').innerHTML =
       `${SCENARIOS.length} escenarios · A/C VC adulto<br><b>Modelo mecánico, no paciente completo</b>`;
@@ -468,61 +332,19 @@ export function startApp(opts: AppOptions): void {
     $('#lesson-feedback').hidden = tasks.length === 0 || lessonDone.size !== tasks.length;
   }
   function evaluateLesson(): void {
-    const fr = frame;
-    if (!fr || !scenario.lesson || fixtureId) return;
-    const h = fr.procedure.last.inspHold,
-      e = fr.procedure.last.expHold;
-    const after = (r: ProcedureResult | null, since: number): boolean => !!r && (r.completedAtMs ?? -1) >= since;
-    const timing = deriveVcTiming(fr.settings);
-    const tests: Record<string, () => boolean> = {
-      validInsp: () =>
-        !!h &&
-        h.quality === 'valid' &&
-        after(h, lessonStartMs) &&
-        (scenario.id !== 'SC-P' || Math.abs((h.requestedDurationS ?? 0) - 3) < 0.02),
-      validExp: () => !!e && e.quality === 'valid' && after(e, lessonStartMs),
-      r20: () => fr.truth.patient.rInsp >= 20,
-      holdAfterPatient: () => !!h && h.quality === 'valid' && patientChangeMs >= 0 && (h.completedAtMs ?? 0) > patientChangeMs,
-      holdAfter20: () => !!h && h.quality === 'valid' && (h.completedAtMs ?? 0) > 20_000,
-      peepChanged: () => settingsChangeMs >= 0 && !!flags.peepChanged,
-      te3: () => timing.tExpS >= 3,
-      expAfterSettings: () => !!e && e.quality === 'valid' && settingsChangeMs >= 0 && (e.completedAtMs ?? 0) > settingsChangeMs,
-      vteBelowSet: () => (fr.metrics.vte?.value ?? 1) < fr.settings.vt * 0.9,
-      plimitChanged: () => !!flags.plimitChanged,
-      trigger1: () => Math.abs(fr.settings.flowTrigger * 60 - 1) < 1e-6,
-      assisted: () => (fr.metrics.rr?.value ?? 0) > fr.settings.rr + 0.5,
-      anyHold: () => !!h && after(h, lessonStartMs),
-      alarmSeen: () => !!flags.alarmSeen,
-      acknowledged: () => fr.alarms.some((a) => a.acknowledgedAtMs !== null),
-      alarmCleared: () => !!flags.alarmSeen && fr.alarmBar.color === 'green',
-      invalidHold: () => !!h && h.quality !== 'valid' && after(h, lessonStartMs),
-      noEffort: () => !fr.truth.effort.enabled || fr.truth.effort.amplitude === 0,
-      fio2Gap: () => fr.settings.fio2 >= 0.99 && (fr.metrics.fio2?.value ?? 1) < 0.985,
-      fio2Alarm: () => fr.alarms.some((a) => a.id === 'fio2Low' && a.conditionActive),
-      biasZero: () => !!flags.biasWasSet && fr.truth.sensors.fio2Bias === 0,
-      basic: () => !!flags.basic,
-      loops: () => !!flags.loops,
-      referenceLoop: () => !!flags.referenceLoop,
-      snapshot: () => !!flags.snapshot,
-      vtNear430: () => fr.settings.mode === 'AC_PC' && Math.abs((fr.metrics.vte?.value ?? 0) - 0.432) < 0.02,
-      vtDropPc: () =>
-        fr.settings.mode === 'AC_PC' &&
-        fr.simTimeMs > 30_000 &&
-        (fr.metrics.vte?.value ?? 1) < 0.38 &&
-        Math.abs((fr.metrics.ppeak?.value ?? 0) - 15) < 0.5,
-      ieOne: () => fr.settings.mode === 'AC_PC' && Math.abs(fr.settings.ie - 1) < 1e-6,
-    };
-    if (fr.truth.sensors.fio2Bias !== 0) flags.biasWasSet = true;
-    if (fr.alarms.some((a) => a.conditionActive)) flags.alarmActiveSeen = true;
-    for (const task of scenario.lesson.tasks) {
-      if (lessonDone.has(task.id)) continue;
-      if (tests[task.test]?.()) {
-        lessonDone.add(task.id);
-        renderLesson();
-        toast(`Objetivo realizado: ${task.text}`);
-      }
-      break;
-    }
+    if (!frame || !scenario.lesson || fixtureId) return;
+    const task = nextCompletedTask(scenario.lesson.tasks, lessonDone, {
+      frame,
+      scenarioId: scenario.id,
+      lessonStartMs,
+      patientChangeMs,
+      settingsChangeMs,
+      flags,
+    });
+    if (!task) return;
+    lessonDone.add(task.id);
+    renderLesson();
+    toast(`Objetivo realizado: ${task.text}`);
   }
 
   // ---------- teclas rápidas ----------
@@ -535,7 +357,7 @@ export function startApp(opts: AppOptions): void {
         `<button class="device-key quick-key mode-key" data-action="modes"><small>Modo actual</small><b id="quick-mode">${MODE_LABEL[fr.settings.mode]}</b></button>` +
         QUICK_KEYS.map(
           (k) =>
-            `<button class="device-key quick-key" data-setting-quick="${k}" data-key="${k}" aria-pressed="false"><small>${k === 'vt' ? 'Volumen tidal' : QUICK_LABEL[k]}</small><b data-quick-val="${k}"></b><em>${k === 'ie' ? '' : unitText(ruleOf(k).displayUnit)}</em></button>`,
+            `<button class="device-key quick-key" data-setting-quick="${k}" data-key="${k}" aria-pressed="false"><small>${QUICK_LABEL[k]}</small><b data-quick-val="${k}"></b><em>${k === 'ie' ? '' : unitText(ruleOf(k).displayUnit)}</em></button>`,
         ).join('') +
         `<button class="device-key quick-key standby-key" data-action="standby"><small>EN ESPERA</small>${icon('hand')}</button><button class="device-key quick-key power-key" data-action="powerInfo" aria-label="Estado de alimentación virtual">${icon('plug')}</button>`;
     }
@@ -565,12 +387,21 @@ export function startApp(opts: AppOptions): void {
   // ---------- editor rápido ----------
   function placeQuickEditor(): void {
     const editor = $('#quick-editor'),
-      mobile = window.matchMedia('(max-width:700px)').matches;
+      mobile = isMobile();
     const parent = mobile ? document.body : $('#monitor');
     if (editor.parentElement !== parent) parent.append(editor);
     editor.classList.toggle('mobile-editor', mobile);
   }
-  function openQuick(k: SettingsKey): void {
+  /** Oculta el editor y devuelve el foco a la tecla que lo abrió (accesibilidad de teclado). */
+  function hideQuickEditor(restoreFocus = true): void {
+    const editor = $('#quick-editor');
+    const hadFocus = editor.contains(document.activeElement);
+    editor.hidden = true;
+    put('#quick-countdown', '');
+    if (restoreFocus && hadFocus && quickOpener?.isConnected) quickOpener.focus({ preventScroll: true });
+    quickOpener = null;
+  }
+  function openQuick(k: SettingsKey, opener: HTMLElement | null = null): void {
     if (locked) {
       toast('Desbloquea los controles para modificar ajustes.');
       return;
@@ -578,13 +409,14 @@ export function startApp(opts: AppOptions): void {
     if (!frame) return;
     if (edit.state.kind !== 'idle' && edit.state.key === k) return;
     edit.select(k, performance.now());
+    quickOpener = opener ?? $(`[data-setting-quick="${k}"]`);
     collapseHelp();
     const rule = ruleOf(k),
       input = $<HTMLInputElement>('#quick-value'),
       range = $<HTMLInputElement>('#quick-range');
     put('#quick-editor-title', QUICK_LABEL[k]);
     put('#quick-unit', unitText(rule.displayUnit));
-    // El deslizador recorre SÓLO valores admitidos (índice sobre la rejilla, con Off como primer paso si procede); el campo numérico acepta escritura libre y se valida.
+    // El deslizador recorre SÓLO valores admitidos (índice sobre la lista de pasos, con Off como primer paso si procede); el campo numérico acepta escritura libre y se valida.
     const vals = gridValues(rule);
     const min = vals[0] ?? 0,
       max = vals[vals.length - 1] ?? 0;
@@ -617,7 +449,7 @@ export function startApp(opts: AppOptions): void {
   function renderQuick(): void {
     const st = edit.state;
     if (st.kind === 'idle') {
-      $('#quick-editor').hidden = true;
+      hideQuickEditor();
       updateQuick();
       return;
     }
@@ -634,12 +466,16 @@ export function startApp(opts: AppOptions): void {
     typing = false;
     put('#quick-unit', d === 'off' ? 'Off' : unitText(ruleOf(k).displayUnit));
     const p = edit.preview();
-    let msg = p.reasons.join(' ');
-    if (!p.valid && typeof d === 'number' && k !== 'ie' && !isOnGrid(ruleOf(k), d))
+    let msg = joinSentences(p.reasons);
+    if (typeof d === 'number' && Number.isNaN(d)) msg = 'Escribe un valor.';
+    else if (!p.valid && typeof d === 'number' && k !== 'ie' && !isOnGrid(ruleOf(k), d))
       msg = `${d} no es un valor admitido; el más cercano es ${nearestGridValue(ruleOf(k), d)} ${unitText(ruleOf(k).displayUnit)}.`;
-    put('#quick-validation', p.valid ? '' : msg);
-    $('#quick-validation').hidden = p.valid;
-    $('#quick-validation').classList.toggle('invalid', !p.valid);
+    const warnings = (p as { warnings?: string[] }).warnings ?? [];
+    const v = $('#quick-validation');
+    put(v, p.valid ? joinSentences(warnings) : msg);
+    v.hidden = p.valid && warnings.length === 0;
+    v.classList.toggle('invalid', !p.valid);
+    v.classList.toggle('warn', p.valid && warnings.length > 0);
     const t = p.derived;
     put(
       '#quick-timing',
@@ -648,6 +484,13 @@ export function startApp(opts: AppOptions): void {
     ($('[data-action="confirmEdit"]') as HTMLButtonElement).disabled = !p.valid || !p.changed;
     $('#trim-knob').style.setProperty('--knob-angle', `${knobAngle}deg`);
     updateQuick();
+  }
+  /** Cuenta atrás visible en los últimos segundos del plazo de edición. */
+  function renderCountdown(now: number): void {
+    const st = edit.state;
+    if (st.kind === 'idle') return;
+    const left = editTimeoutMs - (now - st.at);
+    put('#quick-countdown', left <= COUNTDOWN_WINDOW_MS ? `Se cancela por inactividad en ${Math.max(1, Math.ceil(left / 1000))} s` : '');
   }
   function stepQuick(dir: 1 | -1): void {
     if (edit.state.kind === 'idle') {
@@ -675,7 +518,7 @@ export function startApp(opts: AppOptions): void {
   }
   function cancelQuick(): void {
     if (edit.state.kind !== 'idle') edit.cancel();
-    $('#quick-editor').hidden = true;
+    hideQuickEditor();
     collapseHelp();
     if (frame) updateQuick();
   }
@@ -683,7 +526,7 @@ export function startApp(opts: AppOptions): void {
     if (e.type === 'confirmed') {
       void send({ type: 'confirmSettings', changes: e.changes }).then((r) => {
         if (r.accepted) {
-          $('#quick-editor').hidden = true;
+          hideQuickEditor();
           if ('peep' in e.changes) flags.peepChanged = true;
           if ('plimit' in e.changes) flags.plimitChanged = true;
           settingsChangeMs = frame?.simTimeMs ?? 0;
@@ -691,46 +534,51 @@ export function startApp(opts: AppOptions): void {
         }
       });
     }
-    if (e.type === 'rejected') toast(e.reasons.join(' '), true);
+    if (e.type === 'rejected') toast(joinSentences(e.reasons), true);
     if (e.type === 'cancelled') {
-      $('#quick-editor').hidden = true;
-      if (e.reason === 'timeout') toast('Ajuste cancelado por vencimiento del plazo de edición.', true);
+      hideQuickEditor();
+      if (e.reason === 'timeout') toast('El ajuste se canceló por inactividad. El valor anterior se mantiene.', true);
       if (frame) updateQuick();
     }
   });
 
   // ---------- bloqueos ----------
-  function holdOptions(kind: 'inspHold' | 'expHold'): number[] {
-    const r = kind === 'inspHold' ? INSP_HOLD_RULE : EXP_HOLD_RULE;
-    const out: number[] = [];
-    for (const seg of r.domain) for (let v = seg.min; v <= seg.max + 1e-9; v += seg.step) if (!out.includes(v)) out.push(v);
-    return out.filter((v) => [2, 3, 4, 5, 8, 10, 15, 20, 30, 40, 60].includes(v));
-  }
+  const holdRule = (kind: 'inspHold' | 'expHold'): SettingRule => (kind === 'inspHold' ? INSP_HOLD_RULE : EXP_HOLD_RULE);
   let lastHoldToastId: string | null = null;
   let holdOpenedAtMs = 0;
+  /** Solicitud en vuelo: ▶ es idempotente mientras se espera la respuesta del motor. */
+  let holdRequestInFlight = false;
   function placeHoldPanel(): void {
     const panel = $('#hold-panel'),
-      mobile = window.matchMedia('(max-width:700px)').matches;
+      mobile = isMobile();
     const parent = mobile ? document.body : $('.monitor-body');
     if (panel.parentElement !== parent) parent.append(panel);
     panel.classList.toggle('mobile-hold', mobile);
+    document.body.classList.toggle('hold-open', !panel.hidden && mobile);
   }
   function openHold(kind: 'inspHold' | 'expHold'): void {
     const fr = frame;
     const active = fr?.procedure.hold;
     holdType = active ? active.kind : kind;
-    cancelQuick();
+    if (edit.state.kind !== 'idle') {
+      cancelQuick();
+      toast('Ajuste cancelado al abrir el bloqueo. El valor anterior se mantiene.', true);
+    }
     holdOpenedAtMs = fr?.simTimeMs ?? 0;
     lastHoldToastId = fr?.procedure.last[holdType]?.procedureId ?? null;
-    placeHoldPanel();
     const sel = $<HTMLSelectElement>('#hold-duration');
     const cur = sel.value;
-    sel.innerHTML = holdOptions(holdType)
+    sel.innerHTML = gridValues(holdRule(holdType))
       .map((v) => `<option value="${v}" ${v === (Number(cur) || 3) ? 'selected' : ''}>${v} s</option>`)
       .join('');
     $('#hold-panel').hidden = false;
+    placeHoldPanel();
     updateHold();
     closeDialog();
+  }
+  function closeHoldPanel(): void {
+    $('#hold-panel').hidden = true;
+    document.body.classList.remove('hold-open');
   }
   function updateHold(): void {
     const fr = frame;
@@ -755,16 +603,23 @@ export function startApp(opts: AppOptions): void {
       v2 = insp ? h?.values.cstat : h?.values.peepi;
     put('#hold-value', h?.quality === 'valid' && v1?.value != null ? f(v1.value, 0) : '—');
     put('#hold-second', h?.quality === 'valid' && v2?.value != null ? f(insp ? v2.value * 1000 : v2.value, insp ? 0 : 1) : '—');
-    $('#hold-run').innerHTML = icon(active ? 'close' : 'play');
+    // ▶ sólo inicia; mientras hay una solicitud en cola o en curso queda deshabilitado y aparece «Cancelar».
+    const run = $<HTMLButtonElement>('#hold-run');
+    const busy = !!active || holdRequestInFlight;
     const lbl = active
       ? active.phase === 'queued'
-        ? 'Cancelar solicitud'
-        : 'Cancelar bloqueo'
+        ? 'Solicitud en cola'
+        : 'Bloqueo en curso'
       : !running
         ? 'Reanudar e iniciar bloqueo'
         : 'Iniciar bloqueo';
-    $('#hold-run').setAttribute('aria-label', lbl);
-    $('#hold-run').title = lbl;
+    run.setAttribute('aria-label', lbl);
+    run.title = lbl;
+    run.disabled = busy;
+    run.setAttribute('aria-disabled', String(busy));
+    const cancel = $<HTMLButtonElement>('#hold-cancel');
+    cancel.hidden = !active;
+    put(cancel.querySelector('span'), active?.phase === 'queued' ? 'Cancelar solicitud' : 'Cancelar bloqueo');
     ($('#hold-duration') as HTMLSelectElement).disabled = !!active;
     let text = !running ? 'Pulsa iniciar para reanudar y medir.' : 'Selecciona tiempo y pulsa iniciar.';
     if (active?.phase === 'running')
@@ -785,51 +640,48 @@ export function startApp(opts: AppOptions): void {
         h.quality !== 'valid',
       );
     }
-    put('#hold-status', text);
+    put('#hold-status', learnerText(text));
     $('#hold-status').classList.toggle('invalid', !!h && h.quality !== 'valid');
     $('#hold-panel').classList.toggle('is-occluding', active?.phase === 'running');
     $('#hold-panel').dataset.phase = active?.phase === 'running' ? 'occluding' : active ? 'waiting' : h ? 'measured' : 'ready';
   }
-
-  // ---------- métricas / alarmas / docente / registro ----------
-  function limitPair(fr: EngineFrame, key: string): string {
-    const L = fr.alarmLimits;
-    const fmt = (v: OffOr<number>, factor: number, d: number): string => (v === 'off' ? 'Off' : (v * factor).toFixed(d));
-    switch (key) {
-      case 'vte':
-        return `${fmt(L.vteHigh, 1000, 0)}\n${fmt(L.vteLow, 1000, 0)}`;
-      case 'mve':
-        return `${fmt(L.mveHigh, 1, 1)}\n${fmt(L.mveLow, 1, 1)}`;
-      case 'rr':
-        return `${fmt(L.rrHigh, 1, 0)}\n${fmt(L.rrLow, 1, 0)}`;
-      case 'peepe':
-        return L.peepeHigh === 'off' && L.peepeLow === 'off' ? 'Off' : `${fmt(L.peepeHigh, 1, 0)}\n${fmt(L.peepeLow, 1, 0)}`;
-      case 'ppeak':
-        return `${fr.settings.pmax}\n${fmt(L.ppeakLow, 1, 0)}`;
-      case 'fio2':
-        return `${fmt(L.fio2High, 100, 0)}\n${fmt(L.fio2Low, 100, 0)}`;
-      default:
-        return '';
+  async function runHold(): Promise<void> {
+    // Idempotente: repeticiones mientras hay solicitud en vuelo, en cola o en curso se ignoran (no cancelan).
+    if (holdRequestInFlight || frame?.procedure.hold) return;
+    holdRequestInFlight = true;
+    updateHold();
+    try {
+      const r = await send({
+        type: 'requestHold',
+        kind: holdType,
+        durationS: Number(($('#hold-duration') as HTMLSelectElement).value),
+      });
+      if (r.accepted) {
+        if (frozen) toggleFreeze();
+        if (!['waves', 'basic'].includes(view)) switchView('waves');
+        if (!running) client.resume();
+        collapseHelp();
+      }
+    } finally {
+      holdRequestInFlight = false;
+      updateHold();
     }
   }
+  async function cancelHold(): Promise<void> {
+    const active = frame?.procedure.hold;
+    if (!active) return;
+    const r = await send({ type: 'cancelProcedure' });
+    if (r.accepted) toast(active.phase === 'queued' ? 'Solicitud de bloqueo cancelada.' : 'Bloqueo cancelado.');
+  }
+
+  // ---------- métricas / alarmas / docente / registro ----------
   function updateMetrics(): void {
     const fr = frame as EngineFrame;
     for (const m of METRICS) {
       const el = $(`#numeric-grid [data-metric="${m.key}"]`);
       put(el.querySelector('.numeric-value'), f(metricValue(m), m.decimals));
       put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
-      const lim: Record<string, string[]> = {
-        vte: ['vteLow', 'vteHigh'],
-        mve: ['mveLow', 'mveHigh'],
-        rr: ['rrLow', 'rrHigh'],
-        peepe: ['peepeLow', 'peepeHigh'],
-        ppeak: ['pmax', 'ppeakLow'],
-        fio2: ['fio2Low', 'fio2High'],
-      };
-      el.classList.toggle(
-        'alarm-value',
-        !!lim[m.key] && fr.alarms.some((a) => a.conditionActive && (lim[m.key] as string[]).includes(a.id)),
-      );
+      el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
       const h = fr.procedure.last.inspHold;
       put(
         el.querySelector('.numeric-age'),
@@ -842,23 +694,37 @@ export function startApp(opts: AppOptions): void {
       put(e.querySelector('.numeric-limits'), limitPair(fr, spec.key));
     }
     if (view === 'data')
-      $('#data-table-body').innerHTML = [...METRICS, ...EXTRA_METRICS]
-        .map(
-          (m) =>
-            `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td><td>${f(metricValue(m), m.decimals)}</td><td>${m.unit}</td><td>${esc(metricQuality(m))}</td></tr>`,
-        )
-        .join('');
+      $('#data-table-body').innerHTML = ALL_METRICS.map(
+        (m) =>
+          `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td><td>${f(metricValue(m), m.decimals)}</td><td>${m.unit}</td><td>${esc(metricQuality(m))}</td></tr>`,
+      ).join('');
   }
   function alarmHTML(): string {
     const fr = frame as EngineFrame;
     const active = fr.alarms.filter((a) => a.conditionActive),
       pending = fr.alarms.filter((a) => !a.conditionActive && a.latching && a.resolvedAtMs !== null && a.acknowledgedAtMs === null);
     const row = (a: AlarmState): string =>
-      `<div class="alarm-row ${a.conditionActive ? (a.priority === 'high' ? 'high' : 'medium') : 'resolved'}"><span class="alarm-priority">${icon(a.conditionActive ? 'bell' : 'check')}</span><div><b>${esc(a.message)}</b><p>${esc(CHANNEL[a.source] ?? a.source)}${a.rawValueAtOnset !== null ? ` · valor al inicio ${f(a.rawValueAtOnset, 1)}` : ''}${a.threshold !== null ? ` · umbral ${f(a.threshold, 1)}` : ''}</p><small>${a.conditionActive ? 'ACTIVA' : 'RESUELTA · PENDIENTE DE RECONOCER'} · ${clock((a.onsetAtMs ?? 0) / 1000)}${a.acknowledgedAtMs !== null ? ' · reconocida' : ''} · prioridad ${PRIORITY[a.priority] ?? a.priority}</small></div></div>`;
+      `<div class="alarm-row ${a.conditionActive ? (a.priority === 'high' ? 'high' : 'medium') : 'resolved'}"><span class="alarm-priority">${icon(a.conditionActive ? 'bell' : 'check')}</span><div><b>${esc(learnerText(a.message))}</b><p>${esc(CHANNEL[a.source] ?? a.source)}${a.rawValueAtOnset !== null ? ` · valor al inicio ${f(a.rawValueAtOnset, 1)}` : ''}${a.threshold !== null ? ` · umbral ${f(a.threshold, 1)}` : ''}</p><small>${a.conditionActive ? 'ACTIVA' : 'RESUELTA · PENDIENTE DE RECONOCER'} · ${clock((a.onsetAtMs ?? 0) / 1000)}${a.acknowledgedAtMs !== null ? ' · reconocida' : ''} · prioridad ${PRIORITY[a.priority] ?? a.priority}</small></div></div>`;
     const items = [...active, ...pending];
     return items.length
       ? items.map(row).join('')
       : '<p class="empty-note">No hay alarmas activas ni eventos pendientes de reconocimiento.</p>';
+  }
+  /** Segunda línea de la banda: cuenta de activas y, si ya se reconocieron, lo dice sin ocultar que la condición sigue. */
+  function alarmDetailText(fr: EngineFrame): string {
+    const bar = fr.alarmBar;
+    const audioTxt = audio.enabled ? 'audio habilitado' : 'audio apagado';
+    if (fr.ventilation === 'standby') return 'En espera';
+    if (bar.activeCount) {
+      const acked = fr.alarms.filter((a) => a.conditionActive && a.acknowledgedAtMs !== null).length;
+      const n = bar.activeCount;
+      if (acked === n)
+        return `${n} reconocida${n === 1 ? '' : 's'} · ${n === 1 ? 'condición sigue activa' : 'condiciones siguen activas'} · ${audioTxt}`;
+      const ack = acked ? ` · ${acked} reconocida${acked === 1 ? '' : 's'}` : '';
+      return `${n} activa${n === 1 ? '' : 's'}${ack} · ${audioTxt}`;
+    }
+    if (bar.pendingAckCount) return 'Reconocer eventos anteriores';
+    return `${audioTxt[0]!.toUpperCase() + audioTxt.slice(1)} · Simulación`;
   }
   function updateAlarm(): void {
     const fr = frame as EngineFrame;
@@ -866,18 +732,8 @@ export function startApp(opts: AppOptions): void {
     const lev = bar.color === 'red' ? 'high' : bar.color === 'yellow' ? 'medium' : bar.color === 'grey' ? 'previous' : '';
     $('#alarm-band').className = 'alarm-band ' + lev;
     $('#bezel-light').className = 'bezel-light ' + (lev === 'previous' ? '' : lev);
-    put('#alarm-label', bar.color === 'grey' ? 'Alarmas resueltas' : bar.message);
-    const audioTxt = audio.enabled ? 'audio habilitado' : 'audio apagado';
-    put(
-      '#alarm-detail',
-      fr.ventilation === 'standby'
-        ? 'En espera'
-        : bar.activeCount
-          ? `${bar.activeCount} activa${bar.activeCount === 1 ? '' : 's'} · ${audioTxt}`
-          : bar.pendingAckCount
-            ? 'Reconocer eventos anteriores'
-            : `${audioTxt[0]!.toUpperCase() + audioTxt.slice(1)} · Simulación`,
-    );
+    put('#alarm-label', bar.color === 'grey' ? 'Alarmas resueltas' : learnerText(bar.message));
+    put('#alarm-detail', alarmDetailText(fr));
     const muteLeft = fr.audioPauseUntilMs !== null ? fr.audioPauseUntilMs - fr.simTimeMs : 0;
     put('#mute-time', muteLeft > 0 ? clock(Math.ceil(muteLeft / 1000)) : '');
     if (bar.activeCount) flags.alarmSeen = flags.alarmSeen || dialogKind === 'alarms';
@@ -919,7 +775,6 @@ export function startApp(opts: AppOptions): void {
     }
     ($('#undo-event') as HTMLButtonElement).disabled = eventUndo.length === 0;
   }
-  const eventText = (e: EngineFrame['eventsTail'][number]): string => eventSentence(e);
   function updateLogs(): void {
     const fr = frame as EngineFrame;
     const last = fr.eventsTail[fr.eventsTail.length - 1];
@@ -927,30 +782,20 @@ export function startApp(opts: AppOptions): void {
     if (sig === logSignature) return;
     logSignature = sig;
     const events = [...fr.eventsTail].reverse();
-    const KIND: Record<string, string> = {
-      setting: 'ajuste',
-      alarm: 'alarma',
-      procedure: 'maniobra',
-      breath: 'ciclo',
-      state: 'estado',
-      scenario: 'escenario',
-      pause: 'reloj',
-      audio: 'audio',
-      discontinuity: 'reloj',
-      rejected: 'rechazo',
-      mode: 'modo',
-    };
     $('#device-event-log').innerHTML = events
       .map(
         (e) =>
-          `<div class="event-log-row ${e.kind === 'alarm' ? 'alert-event' : ''}"><time>${clock(e.simTimeMs / 1000)}</time><span>${esc(KIND[e.kind] ?? e.kind)}</span><span>${esc(eventText(e))}</span></div>`,
+          `<div class="event-log-row ${e.kind === 'alarm' ? 'alert-event' : ''}"><time>${clock(e.simTimeMs / 1000)}</time><span>${esc(EVENT_KIND[e.kind] ?? e.kind)}</span><span>${esc(learnerText(eventSentence(e)))}</span></div>`,
       )
       .join('');
     put('#log-count', `${events.length} eventos visibles`);
     $('#teacher-log').innerHTML = events
       .filter((e) => e.kind !== 'breath')
       .slice(0, 8)
-      .map((e) => `<div class="teacher-event"><time>${clock(e.simTimeMs / 1000)}</time><span>${esc(eventText(e))}</span></div>`)
+      .map(
+        (e) =>
+          `<div class="teacher-event"><time>${clock(e.simTimeMs / 1000)}</time><span>${esc(learnerText(eventSentence(e)))}</span></div>`,
+      )
       .join('');
   }
   function updateUI(): void {
@@ -958,23 +803,13 @@ export function startApp(opts: AppOptions): void {
     if (!fr) return;
     put('#scenario-name', fixtureId ? `Referencia fotográfica ${fixtureId} (transcripción, sin motor)` : scenario.name);
     put('#scenario-sub', `Adulto virtual · ${MODE_LABEL[fr.settings.mode]}${fr.pending ? ' · ajustes pendientes' : ''}`);
-    const phase: Record<string, string> = {
-      inspFlow: 'Inspiración',
-      inspLimited: 'Inspiración · Plimit',
-      inspPause: 'Pausa inspiratoria',
-      inspPressure: 'Inspiración · presión',
-      exp: 'Espiración',
-      holdInsp: 'Bloqueo inspiratorio',
-      holdExp: 'Bloqueo espiratorio',
-      standby: 'En espera',
-    };
     put(
       '#phase-status',
       !running
         ? `SIMULACIÓN PAUSADA${pauseReason ? ' · ' + pauseReason : ''}`
         : fr.ventilation === 'standby'
           ? 'En espera'
-          : (phase[fr.live.phase] ?? fr.live.phase),
+          : (PHASE_TEXT[fr.live.phase] ?? fr.live.phase),
     );
     put('#monitor-clock', wallDate(fr.wallTimeMs).slice(-8, -3));
     put(
@@ -1072,8 +907,9 @@ export function startApp(opts: AppOptions): void {
     }
     requestAnimationFrame(tick);
   }
+  /** Cambiar de vista nunca toca el borrador de edición: el editor sigue abierto sobre la nueva vista. */
   function switchView(v: string): void {
-    if (!['waves', 'basic', 'loops', 'data', 'trends', 'log'].includes(v)) return;
+    if (!(VIEWS as string[]).includes(v)) return;
     view = v as ViewId;
     for (const e of $$('[data-view-panel]')) e.classList.toggle('active', e.dataset.viewPanel === v);
     for (const b of $$('[data-view]')) {
@@ -1128,26 +964,8 @@ export function startApp(opts: AppOptions): void {
     modeDraft = null;
     limitsDraft = null;
   }
-  function menu(): void {
-    openDialog(
-      'menu',
-      'Menú',
-      `<div class="menu-grid">${[
-        ['modes', 'wave', 'Modo y ajustes', 'Volumen, límites de presión y sincronización'],
-        ['alarmSetup', 'bell', 'Alarmas', 'Límites y condiciones activas'],
-        ['tools', 'lung', 'Mecánica y procedimientos', 'Bloqueos y mediciones'],
-        ['patient', 'person', 'Adulto virtual', 'Perfil sintético'],
-        ['session', 'download', 'Sesión y archivos', 'Guardar, continuar y exportar'],
-        ['scenarios', 'grid', 'Escenarios', 'Prácticas guiadas'],
-        ['help', 'book', 'Guía y alcance', 'Uso, modelo y fuentes'],
-      ]
-        .map(
-          ([a, i, l, d]) =>
-            `<button class="menu-entry" data-action="${a}">${icon(i as string)}<span><b>${l}</b><small>${d}</small></span>${icon('arrow')}</button>`,
-        )
-        .join('')}</div>`,
-    );
-  }
+  const closeBtn = btn('Cerrar', 'closeDialog', 'secondary-button');
+  const cancelBtn = btn('Cancelar', 'closeDialog', 'secondary-button');
   function fieldHTML(k: SettingsKey, s: VcSettings): string {
     const rule = ruleOf(k),
       id = `help-setting-${k}`,
@@ -1173,7 +991,7 @@ export function startApp(opts: AppOptions): void {
     const desc = pc
       ? 'Presión objetivo = PEEP + Pinsp durante el tiempo inspiratorio, con rampa. El flujo empieza alto y decae; el volumen depende de la compliance, la resistencia, el tiempo y el esfuerzo.'
       : 'Flujo constante calculado de VT, Tinsp y pausa. Plimit sostiene la presión el resto de la inspiración; Pmáx termina la inspiración.';
-    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('flowTrigger', s)}${fieldHTML('assistControl', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-error" class="mode-error" role="status"></div>`;
+    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('flowTrigger', s)}${fieldHTML('assistControl', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
   }
   function openModes(): void {
     if (!frame) return;
@@ -1182,18 +1000,22 @@ export function startApp(opts: AppOptions): void {
     renderModes();
   }
   function renderModes(): void {
-    const others = [
-      ['CPAP/PS', 'Próximamente: requiere validar esfuerzo, disparo, ciclaje y respaldo'],
-      ['A/C PRVC', 'No disponible: el algoritmo adaptativo del fabricante no está publicado'],
-      ['SIMV VC / PC', 'Próximamente'],
-      ['BiLevel / APRV / NIV', 'No disponible en este simulador'],
-    ];
     const m = (modeDraft as VcSettings).mode;
+    const enabled = PROFILE.enabledModes as readonly string[];
+    const options = MODE_OPTIONS.map(([id, label]) => {
+      const on = enabled.includes(id);
+      const why = on ? '' : 'Pendiente de banco de pruebas en este perfil';
+      return `<button class="mode-option ${m === id ? 'selected' : ''}" data-mode="${id}" aria-pressed="${m === id}" ${m === id ? 'aria-current="true"' : ''} ${on ? '' : `disabled title="${esc(why)}"`}><b>${label}</b>${on ? '' : `<small>${esc(why)}</small>`}</button>`;
+    }).join('');
+    const others = OTHER_MODES.map(
+      ([mm, why]) =>
+        `<button class="mode-option" disabled aria-pressed="false" title="${esc(why)}"><b>${mm}</b><small>${esc(why)}</small></button>`,
+    ).join('');
     openDialog(
       'modes',
       'Modo y ajustes de ventilación',
-      `<div class="mode-layout"><nav class="mode-list" aria-label="Modos ventilatorios"><button class="mode-option ${m === 'AC_VC' ? 'selected' : ''}" data-mode="AC_VC"><b>A/C VC</b></button><button class="mode-option ${m === 'AC_PC' ? 'selected' : ''}" data-mode="AC_PC"><b>A/C PC</b></button>${others.map(([mm, why]) => `<button class="mode-option" disabled title="${esc(why)}"><b>${mm}</b><small>${esc(why)}</small></button>`).join('')}</nav><div id="mode-fields">${modeFields()}</div></div>`,
-      btn('Cancelar', 'closeDialog', 'secondary-button') + btn('Confirmar ajustes', 'confirmModes'),
+      `<div class="mode-layout"><nav class="mode-list" aria-label="Modos ventilatorios">${options}${others}</nav><div id="mode-fields">${modeFields()}</div></div>`,
+      cancelBtn + btn('Confirmar ajustes', 'confirmModes'),
       'wide',
     );
     validateMode();
@@ -1201,13 +1023,16 @@ export function startApp(opts: AppOptions): void {
   function validateMode(): { ok: boolean; errors: string[] } {
     const s = modeDraft;
     if (!s) return { ok: false, errors: [] };
-    const errors = [...validateDomains(s, VC_ADULT_RULES), ...validateVcSettings(s, VC_ADULT_CROSS_LIMITS).reasons];
+    const cross = validateVcSettings(s, VC_ADULT_CROSS_LIMITS);
+    const errors = [...validateDomains(s, VC_ADULT_RULES), ...cross.reasons];
+    const warnings = (cross as { warnings?: string[] }).warnings ?? [];
     const t = deriveVcTiming(s);
     put(
       '#mode-timing',
       `Ti ${f(t.tInspS, 2)} s · Te ${f(t.tExpS, 2)} s · ciclo ${f(t.tCycleS, 2)} s · flujo ${f(t.qTargetLps * 60, 1)} L/min`,
     );
-    put('#mode-error', errors.join(' '));
+    put('#mode-error', joinSentences(errors));
+    put('#mode-warning', joinSentences(warnings));
     const b = document.querySelector<HTMLButtonElement>('[data-action="confirmModes"]');
     if (b) b.disabled = errors.length > 0;
     return { ok: errors.length === 0, errors };
@@ -1225,15 +1050,6 @@ export function startApp(opts: AppOptions): void {
     }
     validateMode();
   }
-  function showScenarios(): void {
-    openDialog(
-      'scenarios',
-      'Elige un escenario de entrenamiento',
-      `<p class="dialog-lead">Pulmones sintéticos y secuencias de práctica. Cargar uno inicia una sesión nueva; guarda la actual antes de reemplazarla.</p><div class="scenario-grid">${SCENARIOS.map((s) => `<button class="scenario-card ${scenario.id === s.id ? 'selected' : ''}" data-scenario="${s.id}"><div><span>${esc(s.category ?? 'Escenario')}</span><small>Nivel ${s.level ?? 1}</small></div><h3>${esc(s.name)}</h3><p>${esc(s.description)}</p><footer>${MODE_LABEL[(s.settings?.mode ?? 'AC_VC') as VentMode]} · C ${Math.round(s.patient.crs * 1000)} · R ${s.patient.rInsp}/${s.patient.rExp}</footer></button>`).join('')}</div>`,
-      btn('Cancelar', 'closeDialog', 'secondary-button'),
-      'wide',
-    );
-  }
   function loadScenario(id: string): void {
     const sc = findScenario(id);
     if (!sc) return;
@@ -1241,7 +1057,7 @@ export function startApp(opts: AppOptions): void {
     fixtureId = null;
     closeDialog();
     cancelQuick();
-    $('#hold-panel').hidden = true;
+    closeHoldPanel();
     locked = false;
     $('#lock-overlay').hidden = true;
     eventUndo.length = 0;
@@ -1338,77 +1154,48 @@ export function startApp(opts: AppOptions): void {
         continue;
       }
       const v = Number(raw);
-      if (!Number.isFinite(v) || !isOnGrid(r, v)) errors.push(`${r.label}: ${raw} fuera de rango o rejilla`);
+      if (!Number.isFinite(v) || !isOnGrid(r, v))
+        errors.push(
+          `${r.label}: ${raw} no es un valor admitido; el más cercano es ${nearestGridValue(r, Number.isFinite(v) ? v : 0)} ${unitText(r.displayUnit)}.`,
+        );
       else (limitsDraft as unknown as Record<string, unknown>)[k] = v / r.displayFactor;
     }
-    put('#limits-error', errors.join(' '));
+    put('#limits-error', joinSentences(errors));
     const b = document.querySelector<HTMLButtonElement>('[data-action="confirmLimits"]');
     if (b) b.disabled = errors.length > 0;
     return errors;
-  }
-  function patientDialog(): void {
-    openDialog(
-      'patient',
-      'Paciente virtual · adulto',
-      `<p class="dialog-lead">Perfil sintético de referencia (ID SIM-0001). No introduzcas información de personas reales.</p><div class="info-box">Población adulta · A/C VC · sin talla, peso ni tipo de tubo en esta etapa.</div><p class="settings-annotation">Esta versión no implementa perfiles pediátricos o neonatales, humidificador, tubo endotraqueal ni caja torácica separada.</p>`,
-      btn('Cerrar', 'closeDialog', 'secondary-button'),
-      'compact',
-    );
   }
   function standbyDialog(): void {
     if (frame?.ventilation === 'standby') {
       void send({ type: 'startVentilation' });
       return;
     }
-    openDialog(
-      'standby',
-      '¿Pasar a espera virtual?',
-      `<div class="notice-box">Se detendrá la entrega de respiraciones y la monitorización. El pulmón se vacía hacia presión ambiente; no se simulan consecuencias clínicas.</div><p><b>Pausar simulación</b> detiene el reloj completo. <b>Congelar curvas</b> detiene sólo el dibujo. <b>En espera</b> detiene la ventilación virtual, no el reloj.</p>`,
-      btn('Cancelar', 'closeDialog', 'secondary-button') + btn('Pasar a espera', 'confirmStandby'),
-      'compact',
-    );
+    openDialog('standby', '¿Pasar a espera virtual?', standbyHTML(), cancelBtn + btn('Pasar a espera', 'confirmStandby'), 'compact');
   }
   function oxygenDialog(): void {
     const o2 = frame?.procedure.o2;
     openDialog(
       'oxygen',
       'Oxígeno temporal',
-      `<div class="info-box">${o2?.active ? `Activo: ${Math.round(o2.targetFio2 * 100)} % · quedan ${clock(Math.ceil((o2.endsAtMs - (frame?.simTimeMs ?? 0)) / 1000))}.` : 'Elevar temporalmente FiO₂ al 100 % durante 120 segundos de simulación.'}</div><p>Al terminar regresa al ajuste vigente. Si confirmas otra FiO₂ durante el procedimiento, esa edición prevalece. El sensor de O₂ responde con retardo; no se calcula saturación.</p>`,
-      btn('Cancelar', 'closeDialog', 'secondary-button') +
-        (o2?.active ? btn('Finalizar incremento', 'stopOxygen') : btn('Iniciar 100 % · 120 s', 'startOxygen')),
+      oxygenHTML(o2, frame?.simTimeMs ?? 0),
+      cancelBtn + (o2?.active ? btn('Finalizar incremento', 'stopOxygen') : btn('Iniciar 100 % · 120 s', 'startOxygen')),
       'compact',
-    );
-  }
-  function tools(): void {
-    openDialog(
-      'tools',
-      'Mecánica y procedimientos',
-      `<div class="tools-grid">${[
-        ['inspiratory', 'Bloqueo inspiratorio', 'Mide Pplat y estima Cstat cuando la meseta es válida.'],
-        ['expiratory', 'Bloqueo espiratorio', 'Mide la presión total al final de la espiración y la PEEPi.'],
-        ['manual', 'Respiración manual', 'Solicita una respiración obligatoria adicional durante la espiración.'],
-        ['mechanics', 'Mecánica respiratoria', 'Consulta la última maniobra, su calidad y su hora.'],
-      ]
-        .map(([a, l, t]) => `<button class="tool-card" data-action="${a}"><h3>${l}</h3><p>${t}</p>${icon('arrow')}</button>`)
-        .join('')}</div>`,
     );
   }
   function mechanics(metric: string | null = null): void {
     if (metric) {
-      const entry = [...METRICS, ...EXTRA_METRICS].find((x) => x.key === metric);
+      const entry = ALL_METRICS.find((x) => x.key === metric);
       if (!entry) return;
       openDialog(
         'measurement',
         helpEntry(METRIC_HELP[metric] ?? '')?.title ?? entry.label,
         `<div class="measurement-summary"><strong>${f(metricValue(entry), entry.decimals)} <small>${entry.unit}</small></strong><span>${esc(metricQuality(entry))}</span></div><div class="measurement-explanation">${helpContent(METRIC_HELP[metric] ?? '')}</div>`,
-        btn('Cerrar', 'closeDialog', 'secondary-button'),
+        closeBtn,
         'compact',
       );
       return;
     }
-    const rows = [...METRICS, ...EXTRA_METRICS].filter((x) =>
-      ['pplat', 'cstat', 'driving', 'peepe', 'vti', 'vte', 'pplatCycle'].includes(x.key),
-    );
+    const rows = ALL_METRICS.filter((x) => ['pplat', 'cstat', 'driving', 'peepe', 'vti', 'vte', 'pplatCycle'].includes(x.key));
     openDialog(
       'mechanics',
       'Mecánica respiratoria',
@@ -1417,145 +1204,30 @@ export function startApp(opts: AppOptions): void {
       'wide',
     );
   }
-  function sessionDialog(): void {
-    openDialog(
-      'session',
-      'Sesión y exportaciones',
-      `<p class="dialog-lead">Los archivos contienen exclusivamente el escenario virtual y sus acciones. Todo se procesa en este navegador; no hay servidor ni telemetría.</p><div class="session-actions">${[
-        ['exportSession', 'download', 'Guardar sesión JSON', 'Inicialización y comandos para reproducir exactamente la sesión.'],
-        ['importSession', 'upload', 'Abrir sesión JSON', 'Se valida y se reproduce en pausa; no ejecuta código.'],
-        ['csv', 'table', 'Exportar tendencias CSV', 'Un registro por ciclo completo.'],
-        ['signalCSV', 'wave', 'Exportar señal CSV', 'Hasta 120 s de presión, flujo, volumen y esfuerzo a 50 Hz.'],
-        ['snapshot', 'camera', 'Captura PNG', 'Monitor renderizado con marca de simulación.'],
-        ['debrief', 'book', 'Resumen de práctica', 'Objetivos, ajustes y cronología de la sesión.'],
-      ]
-        .map(
-          ([a, i, l, d]) =>
-            `<button class="menu-entry" data-action="${a}">${icon(i as string)}<span><b>${l}</b><small>${d}</small></span></button>`,
-        )
-        .join(
-          '',
-        )}</div><div class="session-facts"><span>Escenario: <b>${esc(scenario.name)}</b></span><span>Tiempo: <b>${clock(simS())}</b></span><span>Motor ${ENGINE_VERSION} · perfil ${PROFILE.profileVersion}</span></div>`,
-      btn('Cerrar', 'closeDialog', 'secondary-button'),
-      'wide',
-    );
-  }
+  const debriefInput = () => ({
+    scenario,
+    tasks: scenario.lesson?.tasks ?? [],
+    done: lessonDone,
+    simS: simS(),
+    breathCount: frame?.breathCount ?? 0,
+  });
   async function exportSession(): Promise<void> {
     const file = await client.exportSession();
-    download(new Blob([JSON.stringify(file)], { type: 'application/json' }), `R860_sesion_${stamp()}.json`);
+    downloadBlob(sessionBlob(file), `R860_sesion_${stamp()}.json`);
     toast(`Sesión guardada (${file.commands.length} comandos, ${file.breaths.length} respiraciones).`);
-  }
-  function csvCell(v: unknown): string {
-    if (v === null || v === undefined) return '';
-    return `"${String(v).replace(/"/g, '""')}"`;
   }
   function exportCSV(signal: boolean): void {
     const fr = frame;
     if (!fr) return;
-    let header: string[], rows: unknown[][];
-    if (signal) {
-      header = ['tiempo_s', 'Paw_cmH2O', 'flujo_L_min', 'volumen_mL', 'Pmus_cmH2O', 'ciclo'];
-      rows = points.map((p) => [...p]);
-    } else {
-      header = [
-        'tiempo_s',
-        'tipo',
-        'Ppico_cmH2O',
-        'PEEPe_cmH2O',
-        'VTi_mL',
-        'VTe_mL',
-        'FR_min',
-        'VM_L_min',
-        'Pplat_bloqueo_cmH2O',
-        'Cstat_bloqueo_mL_cmH2O',
-      ];
-      rows = fr.trends.map((t) => [
-        t.tMs / 1000,
-        t.type,
-        t.ppeak,
-        t.peepe,
-        t.vti * 1000,
-        t.vte * 1000,
-        t.rr,
-        t.mve,
-        t.pplatHold,
-        t.cstatHold === null ? null : t.cstatHold * 1000,
-      ]);
-    }
-    download(
-      new Blob(['﻿' + [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }),
-      `R860_${signal ? 'senal' : 'tendencias'}_${stamp()}.csv`,
-    );
+    const rows = signal ? signalRows(points) : trendsRows(fr);
+    downloadBlob(csvBlob(signal ? SIGNAL_HEADER : TRENDS_HEADER, rows), `R860_${signal ? 'senal' : 'tendencias'}_${stamp()}.csv`);
     toast(`${rows.length} filas exportadas.`);
   }
   function snapshot(): void {
     const fr = frame;
     if (!fr) return;
     renderPlots();
-    const c = document.createElement('canvas');
-    c.width = 1600;
-    c.height = 1050;
-    const ctx = c.getContext('2d') as CanvasRenderingContext2D;
-    ctx.scale(1600 / 1120, 1050 / 735);
-    const bg = ctx.createLinearGradient(0, 0, 1120, 735);
-    bg.addColorStop(0, '#004bae');
-    bg.addColorStop(1, '#0349a1');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, 1120, 735);
-    const txt = (
-      s: string,
-      x: number,
-      y: number,
-      size: number,
-      color: string,
-      align: CanvasTextAlign = 'left',
-      weight = 'normal',
-    ): void => {
-      ctx.fillStyle = color;
-      ctx.textAlign = align;
-      ctx.font = `${weight} ${size}px Arial,sans-serif`;
-      ctx.fillText(s, x, y);
-    };
-    const bar = fr.alarmBar;
-    ctx.fillStyle = bar.color === 'red' ? '#b91d36' : bar.color === 'yellow' ? '#ba891c' : bar.color === 'grey' ? '#738090' : '#119c78';
-    ctx.fillRect(8, 7, 1104, 70);
-    txt(bar.message, 30, 33, 17, '#f4fff6');
-    txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, 10, '#d0f2e1');
-    const wc = $<HTMLCanvasElement>(view === 'basic' ? '#basic-wave-canvas' : '#waves-canvas');
-    ctx.drawImage(wc, 0, 0, wc.width, wc.height, 8, 88, 608, view === 'basic' ? 138 : 488);
-    METRICS.forEach((m, i) => {
-      const x = 645 + (i % 2) * 147,
-        y = 110 + Math.floor(i / 2) * 77;
-      txt(m.label, x, y, 12, '#a8defb');
-      txt(f(metricValue(m), m.decimals), x, y + 33, 32, '#eeffff', 'left', '600');
-      txt(m.unit, x, y + 50, 9, '#a8ddf5');
-    });
-    const g = $<HTMLCanvasElement>('#gauge-canvas');
-    ctx.drawImage(g, 0, 0, g.width, g.height, 971, 87, 140, 488);
-    const h = fr.procedure.last.inspHold;
-    if (h && !$('#hold-panel').hidden) {
-      ctx.fillStyle = '#246caf';
-      ctx.fillRect(750, 89, 354, 112);
-      ctx.strokeStyle = '#91c6e7';
-      ctx.strokeRect(750, 89, 354, 112);
-      txt('Bloqueo inspiratorio', 765, 109, 12, '#dcf5ff');
-      txt(
-        h.quality === 'valid'
-          ? `Pplat ${f(h.values.pplat?.value ?? null, 0)} cmH₂O · Cstat ${f((h.values.cstat?.value ?? 0) * 1000, 0)} mL/cmH₂O`
-          : `No válida: ${h.reason ?? ''}`,
-        765,
-        140,
-        16,
-        '#eefcff',
-      );
-      txt(wallDate(h.wallTimeMs ?? 0), 765, 170, 12, '#c3e5f7');
-    }
-    ctx.fillStyle = '#072d63';
-    ctx.fillRect(8, 583, 1104, 56);
-    txt(`Tiempo simulado ${clock(simS())} · ${scenario.name}`, 27, 615, 13, '#acd0e6');
-    txt('R860 LAB · datos de un modelo sintético · no reproduce firmware GE', 1100, 615, 12, '#c0e4f4', 'right');
-    let x = 8;
-    const items: [string, string][] = [
+    const quickItems: [string, string][] = [
       ['Modo actual', MODE_LABEL[fr.settings.mode]],
       ...QUICK_KEYS_BY_MODE[fr.settings.mode].map(
         (k) =>
@@ -1565,105 +1237,25 @@ export function startApp(opts: AppOptions): void {
           ],
       ),
     ];
-    items.forEach((v, i) => {
-      const width = i === 0 ? 169 : 155;
-      const gr = ctx.createLinearGradient(0, 645, 0, 725);
-      gr.addColorStop(0, '#266aac');
-      gr.addColorStop(1, '#0b3977');
-      ctx.fillStyle = gr;
-      ctx.fillRect(x, 645, width, 80);
-      txt(v[0], x + width / 2, 662, 11, '#acddfc', 'center');
-      txt(v[1], x + width / 2, 700, 24, '#edffff', 'center', '600');
-      x += width + 2;
+    const c = paintSnapshot(document.createElement('canvas'), {
+      frame: fr,
+      view,
+      waveCanvas: $<HTMLCanvasElement>(view === 'basic' ? '#basic-wave-canvas' : '#waves-canvas'),
+      gaugeCanvas: $<HTMLCanvasElement>('#gauge-canvas'),
+      holdVisible: !$('#hold-panel').hidden,
+      scenarioName: scenario.name,
+      quickItems,
     });
     c.toBlob((blob) => {
       if (!blob) {
         toast('No se pudo crear la imagen.', true);
         return;
       }
-      download(blob, `R860_monitor_${stamp()}.png`);
+      downloadBlob(blob, `R860_monitor_${stamp()}.png`);
       flags.snapshot = true;
       evaluateLesson();
       toast('Captura guardada.');
     }, 'image/png');
-  }
-  function debriefText(): string {
-    const fr = frame as EngineFrame;
-    const tasks = scenario.lesson?.tasks ?? [];
-    return `R860 LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${scenario.name}\nTiempo simulado: ${clock(simS())}\nModo: A/C VC\nObjetivos de interfaz: ${lessonDone.size}/${tasks.length}\n\n${tasks.map((x) => `${lessonDone.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
-  }
-  function debrief(): void {
-    const tasks = scenario.lesson?.tasks ?? [];
-    openDialog(
-      'debrief',
-      'Resumen de práctica',
-      `<div class="debrief-stat-grid"><div><b>${lessonDone.size}/${tasks.length}</b><span>Objetivos de interfaz</span></div><div><b>${clock(simS())}</b><span>Tiempo simulado</span></div><div><b>${frame?.breathCount ?? 0}</b><span>Ciclos completos</span></div></div><h3>${esc(scenario.lesson?.title ?? scenario.name)}</h3><div class="lesson-tasks">${tasks.map((x) => `<div class="task ${lessonDone.has(x.id) ? 'complete' : ''}"><span class="task-check">${icon(lessonDone.has(x.id) ? 'check' : 'minus')}</span><span>${esc(x.text)}</span></div>`).join('')}</div><div class="info-box"><b>${esc(scenario.question ?? '')}</b><p>${esc(scenario.answer ?? '')}</p></div><div class="notice-box">Este resumen registra acciones del simulador; no puntúa seguridad clínica ni acredita competencia.</div>`,
-      btn('Cerrar', 'closeDialog', 'secondary-button') + btn('Guardar resumen TXT', 'exportDebrief'),
-    );
-  }
-  const SOURCES: [string, string, string][] = [
-    [
-      'GE HealthCare · Quick Reference Guide JB77395XX (2020)',
-      'Interfaz, perilla, vistas, alarmas, ↑O2 y espera. Leída íntegra; hash en evidence.json.',
-      'https://s7d9.scene7.com/is/content/gehealthcare/1-1_quick-reference-guidepdf-3',
-    ],
-    [
-      'GE HealthCare · Troubleshooting Guide JB79437XX (2020)',
-      'VT no alcanzado por Plimit; alarma de Ppico evaluada antes de refrescar pantalla.',
-      'https://s7d9.scene7.com/is/content/gehealthcare/2-5_trouble-shooting-guidepdf-1',
-    ],
-    [
-      'GE Healthcare · Especificaciones técnicas JB23840CO (2014)',
-      'Rangos, escalones, bloqueos, familias de temporización y límites de alarma.',
-      'https://www.pvequip.cl/wp-content/uploads/2019/08/EETT-Ventilador-Carescape-R860.pdf',
-    ],
-    [
-      'GE HealthCare · Modos de ventilación invasiva JB72469XX (ES, 2020)',
-      'Comportamiento de Plimit en VC; cotas de PRVC.',
-      'https://landing1.gehealthcare.com/rs/005-SHS-767/images/CARESCAPE%20R860%20Modes%20Invasivos_Spanish.pdf',
-    ],
-    [
-      'MDN · Web Workers',
-      'Motor temporal separado de la interfaz.',
-      'https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers',
-    ],
-  ];
-  function help(tab = 'start'): void {
-    const texts: Record<string, string> = {
-      start: `<p class="dialog-lead">Un ventilador virtual para explorar la relación entre lo que ajustas, lo que hace el pulmón sintético y lo que muestra el monitor.</p><div class="help-list"><div><b>01 · Ventila</b><p>La sesión ya está ventilando. Selecciona un parámetro de la barra inferior. Ajusta con el deslizador, el número, las flechas o la perilla y <b>confirma</b>. Cancelar conserva el valor previo. El cambio se aplica en la próxima respiración.</p></div><div><b>02 · Cambia el pulmón</b><p>El panel derecho controla C, R, esfuerzo y sensor de O₂. Estos cambios actúan sobre el modelo, no sobre los ajustes del equipo. En «Eventos» puedes provocar y deshacer alteraciones.</p></div><div><b>03 · Mide y compara</b><p>Bloqueo insp/esp abre la maniobra; pulsa ▶ para solicitarla. El motor espera una fase elegible. Revisa el resultado, su validez y su hora. En Bucles, guarda un ciclo de referencia.</p></div><div><b>04 · Entrena y guarda</b><p>«Entrenar» contiene tres objetivos por escenario. Guarda JSON para reproducir y CSV/PNG para analizar. No hay subida de archivos a internet.</p></div></div><div class="info-box"><b>Tres acciones distintas:</b> Pausar detiene el reloj; Congelar curvas conserva una imagen mientras el motor sigue; En espera suspende la ventilación virtual. Al ocultar la pestaña se pausa la simulación y se reanuda manualmente.</div>`,
-      model: `<p class="dialog-lead">Mecánica consistente, alcance explícitamente limitado.</p><div class="equation">Paw + Pmus = V / C + R × Q<br>τesp = Rexp × C</div><p>Un compartimento lineal con resistencia inspiratoria y espiratoria independientes; volumen pulmonar continuo (no se reinicia al cambiar PEEP); esfuerzo muscular periódico; sensor de O₂ con retardo. Integración a paso fijo de 4 ms con sub-pasos exactos en los eventos y localización de los cruces de Plimit/Pmáx dentro del paso; muestras a 50 Hz para las curvas.</p><p><b>Modo:</b> A/C VC adulto. Plimit sostiene la presión el resto de la inspiración; Pmáx la termina. Otros modos se incorporarán sólo tras sus pruebas de banco.</p><p><b>Mediciones estáticas:</b> esfuerzo, Pmáx, duración insuficiente o cancelación invalidan una maniobra; el resultado conserva su hora y su motivo. FR y VMesp usan las últimas ocho respiraciones.</p><div class="notice-box"><b>No modela:</b> intercambio gaseoso, SpO₂, PaCO₂, hemodinámica, reclutamiento, fuga, circuito ni tubo. FiO₂ cambia su sensor virtual, no una saturación inventada. No predice respuestas de pacientes ni controla equipos.</div><p>El firmware del equipo fotografiado no está identificado. Cada regla lleva su marca de evidencia (documentado / observado / propuesto / no resuelto) en los archivos evidence.json y gaps.json del proyecto.</p>`,
-      keys: `<table class="info-table"><tbody>${[
-        ['Espacio', 'Pausar o reanudar el reloj de simulación'],
-        ['C', 'Congelar o reanudar curvas'],
-        ['F', 'Guardar captura PNG'],
-        ['A', 'Abrir alarmas'],
-        ['H', 'Vista principal de curvas'],
-        ['?', 'Abrir esta guía'],
-        ['↑ / ↓', 'Cambiar el parámetro seleccionado'],
-        ['Enter', 'Confirmar un ajuste rápido'],
-        ['Esc', 'Cancelar ajuste o cerrar ventana'],
-        ['Rueda sobre perilla', 'Modificar el parámetro seleccionado'],
-      ]
-        .map(([k, d]) => `<tr><td><kbd class="keyboard-key">${k}</kbd></td><td>${d}</td></tr>`)
-        .join(
-          '',
-        )}</tbody></table><div class="info-box">El audio está apagado inicialmente. Actívalo desde el icono superior. Los tonos son sintéticos. La pausa de audio dura 120 segundos del reloj simulado.</div>`,
-      sources: `<p class="dialog-lead">Fuentes primarias consultadas; se abren en internet sólo al seleccionarlas. El funcionamiento del simulador es completamente local.</p>${SOURCES.map(([title, desc, url]) => `<div class="source-entry"><a href="${url}" target="_blank" rel="noopener noreferrer">${title} ${icon('arrow')}</a><p>${desc}</p></div>`).join('')}<p>Referencia visual: las tres fotografías aportadas por el usuario (P1, P2, P3). Sistema visual e interacción derivados de «R860 Lab» (MIT).</p>`,
-    };
-    openDialog(
-      'help',
-      'Guía del simulador',
-      `<div class="help-tabs">${[
-        ['start', 'Primeros pasos'],
-        ['model', 'Modelo y límites'],
-        ['keys', 'Atajos y controles'],
-        ['sources', 'Fuentes'],
-      ]
-        .map(([k, l]) => `<button data-help-tab="${k}" class="${tab === k ? 'active' : ''}">${l}</button>`)
-        .join('')}</div>${texts[tab] ?? texts.start}`,
-      btn('Cerrar', 'closeDialog', 'secondary-button'),
-      'wide',
-    );
   }
   async function toggleAudio(): Promise<void> {
     if (!audio.enabled) {
@@ -1683,6 +1275,49 @@ export function startApp(opts: AppOptions): void {
   }
 
   // ---------- acciones ----------
+  async function confirmModes(): Promise<void> {
+    const r = validateMode();
+    if (!r.ok || !modeDraft || !frame) return;
+    const changes: Partial<VcSettings> = {};
+    const base = { ...frame.settings, ...(frame.pending ?? {}) };
+    for (const k of Object.keys(modeDraft) as (keyof VcSettings)[])
+      if (modeDraft[k] !== base[k]) (changes as Record<string, unknown>)[k] = modeDraft[k];
+    if (!Object.keys(changes).length) {
+      closeDialog();
+      return;
+    }
+    const res = await send({ type: 'confirmSettings', changes });
+    if (res.accepted) {
+      if ('plimit' in changes) flags.plimitChanged = true;
+      if ('peep' in changes) flags.peepChanged = true;
+      settingsChangeMs = frame.simTimeMs;
+      closeDialog();
+      toast('Ajustes confirmados. Se aplican en la próxima respiración.');
+    }
+  }
+  async function confirmLimits(): Promise<void> {
+    const errs = readLimits();
+    if (errs.length || !limitsDraft || !frame) return;
+    const changes: Partial<AlarmLimits> = {};
+    for (const k of Object.keys(limitsDraft) as (keyof AlarmLimits)[])
+      if (limitsDraft[k] !== frame.alarmLimits[k]) (changes as Record<string, unknown>)[k] = limitsDraft[k];
+    if (!Object.keys(changes).length) {
+      closeDialog();
+      return;
+    }
+    const r = await send({ type: 'setAlarmLimits', changes });
+    if (r.accepted) {
+      closeDialog();
+      toast('Límites de alarma actualizados.');
+    }
+  }
+  function setLocked(on: boolean): void {
+    locked = on;
+    $('#lock-overlay').hidden = !on;
+    $('#lock-key').setAttribute('aria-pressed', String(on));
+    edit.setLocked(on);
+    if (on) cancelQuick();
+  }
   async function action(a: string): Promise<void> {
     switch (a) {
       case 'home':
@@ -1690,33 +1325,16 @@ export function startApp(opts: AppOptions): void {
         switchView('waves');
         break;
       case 'menu':
-        menu();
+        openDialog('menu', 'Menú', menuHTML());
         break;
       case 'modes':
         openModes();
         break;
-      case 'confirmModes': {
-        const r = validateMode();
-        if (r.ok && modeDraft && frame) {
-          const changes: Partial<VcSettings> = {};
-          const base = { ...frame.settings, ...(frame.pending ?? {}) };
-          for (const k of Object.keys(modeDraft) as (keyof VcSettings)[])
-            if (modeDraft[k] !== base[k]) (changes as Record<string, unknown>)[k] = modeDraft[k];
-          if (Object.keys(changes).length) {
-            const res = await send({ type: 'confirmSettings', changes });
-            if (res.accepted) {
-              if ('plimit' in changes) flags.plimitChanged = true;
-              if ('peep' in changes) flags.peepChanged = true;
-              settingsChangeMs = frame.simTimeMs;
-              closeDialog();
-              toast('Ajustes confirmados. Se aplican en la próxima respiración.');
-            }
-          } else closeDialog();
-        }
+      case 'confirmModes':
+        await confirmModes();
         break;
-      }
       case 'scenarios':
-        showScenarios();
+        openDialog('scenarios', 'Elige un escenario de entrenamiento', scenariosHTML(SCENARIOS, scenario.id, modeLabel), cancelBtn, 'wide');
         break;
       case 'teacher':
         teacherVisible = !teacherVisible;
@@ -1748,22 +1366,9 @@ export function startApp(opts: AppOptions): void {
       case 'alarmSetup':
         alarmSetup();
         break;
-      case 'confirmLimits': {
-        const errs = readLimits();
-        if (!errs.length && limitsDraft && frame) {
-          const changes: Partial<AlarmLimits> = {};
-          for (const k of Object.keys(limitsDraft) as (keyof AlarmLimits)[])
-            if (limitsDraft[k] !== frame.alarmLimits[k]) (changes as Record<string, unknown>)[k] = limitsDraft[k];
-          if (Object.keys(changes).length) {
-            const r = await send({ type: 'setAlarmLimits', changes });
-            if (r.accepted) {
-              closeDialog();
-              toast('Límites de alarma actualizados.');
-            }
-          } else closeDialog();
-        }
+      case 'confirmLimits':
+        await confirmLimits();
         break;
-      }
       case 'mute':
         await send({ type: 'audioPause' });
         toast('Audio en pausa durante 120 s de simulación. Las condiciones activas siguen visibles.');
@@ -1780,25 +1385,13 @@ export function startApp(opts: AppOptions): void {
         break;
       case 'closeHold':
         if (frame?.procedure.hold) await send({ type: 'cancelProcedure' });
-        $('#hold-panel').hidden = true;
+        closeHoldPanel();
         break;
       case 'runHold':
-        if (frame?.procedure.hold) {
-          await send({ type: 'cancelProcedure' });
-          toast(frame.procedure.hold.phase === 'queued' ? 'Solicitud de bloqueo cancelada.' : 'Bloqueo cancelado.');
-        } else {
-          const r = await send({
-            type: 'requestHold',
-            kind: holdType,
-            durationS: Number(($('#hold-duration') as HTMLSelectElement).value),
-          });
-          if (r.accepted) {
-            if (frozen) toggleFreeze();
-            if (!['waves', 'basic'].includes(view)) switchView('waves');
-            if (!running) client.resume();
-            collapseHelp();
-          }
-        }
+        await runHold();
+        break;
+      case 'cancelHold':
+        await cancelHold();
         break;
       case 'manual': {
         const r = await send({ type: 'manualBreath' });
@@ -1834,17 +1427,10 @@ export function startApp(opts: AppOptions): void {
         else toast('Selecciona primero un parámetro de la barra inferior.');
         break;
       case 'lock':
-        locked = !locked;
-        $('#lock-overlay').hidden = !locked;
-        $('#lock-key').setAttribute('aria-pressed', String(locked));
-        edit.setLocked(locked);
-        cancelQuick();
+        setLocked(!locked);
         break;
       case 'unlock':
-        locked = false;
-        $('#lock-overlay').hidden = true;
-        $('#lock-key').setAttribute('aria-pressed', 'false');
-        edit.setLocked(false);
+        setLocked(false);
         break;
       case 'standby':
         standbyDialog();
@@ -1858,16 +1444,10 @@ export function startApp(opts: AppOptions): void {
         closeDialog();
         break;
       case 'powerInfo':
-        openDialog(
-          'power',
-          'Entorno de simulación',
-          `<div class="info-box">Ejecución local en tu navegador. Sin conexión a un ventilador, red hospitalaria, USB ni puertos físicos.</div><p>Este icono conserva la referencia visual de alimentación. No simula baterías, consumo eléctrico ni autonomía.</p>`,
-          '',
-          'compact',
-        );
+        openDialog('power', 'Entorno de simulación', powerHTML(), '', 'compact');
         break;
       case 'patient':
-        patientDialog();
+        openDialog('patient', 'Paciente virtual · adulto', patientHTML(), closeBtn, 'compact');
         break;
       case 'resetPatient':
         await setPhys(
@@ -1906,13 +1486,19 @@ export function startApp(opts: AppOptions): void {
         dirty = true;
         break;
       case 'tools':
-        tools();
+        openDialog('tools', 'Mecánica y procedimientos', toolsHTML());
         break;
       case 'mechanics':
         mechanics();
         break;
       case 'session':
-        sessionDialog();
+        openDialog(
+          'session',
+          'Sesión y exportaciones',
+          sessionHTML(scenario.name, simS(), ENGINE_VERSION, PROFILE.profileVersion),
+          closeBtn,
+          'wide',
+        );
         break;
       case 'exportSession':
         await exportSession();
@@ -1930,16 +1516,16 @@ export function startApp(opts: AppOptions): void {
         snapshot();
         break;
       case 'debrief':
-        debrief();
+        openDialog('debrief', 'Resumen de práctica', debriefHTML(debriefInput()), closeBtn + btn('Guardar resumen TXT', 'exportDebrief'));
         break;
       case 'exportDebrief':
-        download(new Blob([debriefText()], { type: 'text/plain;charset=utf-8' }), `R860_practica_${stamp()}.txt`);
+        if (frame) downloadBlob(textBlob(debriefText(debriefInput(), frame)), `R860_practica_${stamp()}.txt`);
         break;
       case 'help':
-        help('start');
+        openDialog('help', 'Guía del simulador', helpHTML('start'), closeBtn, 'wide');
         break;
       case 'model':
-        help('model');
+        openDialog('help', 'Guía del simulador', helpHTML('model'), closeBtn, 'wide');
         break;
       case 'closeDialog':
         closeDialog();
@@ -1950,6 +1536,24 @@ export function startApp(opts: AppOptions): void {
   }
 
   // ---------- eventos DOM ----------
+  /** Flechas dentro de una rejilla de casillas con tabindex itinerante (numéricas y datos grandes). */
+  function roveGrid(e: KeyboardEvent, t: HTMLElement): boolean {
+    const grid = t.closest<HTMLElement>('#numeric-grid,#big-metrics');
+    if (!grid || !['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return false;
+    const tiles = [...grid.querySelectorAll<HTMLElement>('[data-metric]')];
+    const i = tiles.indexOf(t);
+    if (i < 0) return false;
+    const cols = 2;
+    const step: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols };
+    let j = e.key === 'Home' ? 0 : e.key === 'End' ? tiles.length - 1 : i + (step[e.key] ?? 0);
+    j = Math.max(0, Math.min(tiles.length - 1, j));
+    for (const x of tiles) x.tabIndex = -1;
+    const target = tiles[j] as HTMLElement;
+    target.tabIndex = 0;
+    target.focus();
+    e.preventDefault();
+    return true;
+  }
   function bind(): void {
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
@@ -1971,15 +1575,15 @@ export function startApp(opts: AppOptions): void {
       }
       if (el.dataset.view) switchView(el.dataset.view);
       if (el.dataset.instructor) switchInstructor(el.dataset.instructor);
-      if (el.dataset.settingQuick) openQuick(el.dataset.settingQuick as SettingsKey);
+      if (el.dataset.settingQuick) openQuick(el.dataset.settingQuick as SettingsKey, el);
       if (el.dataset.scenario) loadScenario(el.dataset.scenario);
-      if (el.dataset.mode && modeDraft) {
+      if (el.dataset.mode && modeDraft && !(el as HTMLButtonElement).disabled) {
         modeDraft.mode = el.dataset.mode as VentMode;
         renderModes();
       }
       if (el.dataset.event) void fault(el.dataset.event);
       if (el.dataset.metric) mechanics(el.dataset.metric);
-      if (el.dataset.helpTab) help(el.dataset.helpTab);
+      if (el.dataset.helpTab) openDialog('help', 'Guía del simulador', helpHTML(el.dataset.helpTab), closeBtn, 'wide');
     });
     document.addEventListener('input', (e) => {
       const el = e.target as HTMLInputElement;
@@ -2076,6 +1680,8 @@ export function startApp(opts: AppOptions): void {
         return;
       }
       const t = e.target as HTMLElement;
+      // El editor rápido atrapa Tab mientras está abierto (como el diálogo modal).
+      if (edit.state.kind !== 'idle' && !$('#quick-editor').hidden && trapTab(e, $('#quick-editor'))) return;
       if (
         edit.state.kind !== 'idle' &&
         (!t.closest('button') || e.key === 'Escape') &&
@@ -2088,6 +1694,7 @@ export function startApp(opts: AppOptions): void {
         if (e.key === 'Escape') cancelQuick();
         return;
       }
+      if (t.dataset.metric && roveGrid(e, t)) return;
       if (t.closest('input,select,textarea,button,summary,a') || $<HTMLDialogElement>('#app-dialog').open) return;
       const map: Record<string, string> = { ' ': 'pause', c: 'freeze', f: 'snapshot', a: 'alarms', h: 'home', '?': 'help' };
       const key = e.key.toLowerCase();
@@ -2120,13 +1727,36 @@ export function startApp(opts: AppOptions): void {
         notice('Simulación pausada al ocultar la pestaña. Pulsa Reanudar para continuar sin saltos de tiempo.');
       }
     });
-    setInterval(() => edit.tick(performance.now()), 500);
+    setInterval(() => {
+      const now = performance.now();
+      edit.tick(now);
+      renderCountdown(now);
+    }, 500);
     window.addEventListener('resize', () => {
       if (edit.state.kind !== 'idle') placeQuickEditor();
+      if (!$('#hold-panel').hidden) placeHoldPanel();
     });
   }
 
   // ---------- arranque ----------
+  /** Degradación del motor (sin Worker o sin arrancar): aviso persistente y etiqueta de versión honesta. */
+  function onDegraded(reason: string): void {
+    const text = learnerText(reason);
+    const failedInit = /inici|init|par[áa]metro|inv[áa]lid|\bdt\b/i.test(reason);
+    engineBanner(
+      failedInit && frame === null
+        ? `No se pudo iniciar la simulación: ${text}. Revisa los parámetros de la dirección o recarga la página.`
+        : `El motor de simulación se ejecuta sin Worker: ${text}. La simulación continúa en la página; puede perder fluidez.`,
+    );
+    versionTag();
+  }
+  function wireDegraded(): void {
+    // Compatibilidad con ambas formas de la interfaz: propiedad asignable o método de suscripción.
+    const c = client as unknown as { onDegraded: unknown };
+    if (typeof c.onDegraded === 'function') (c.onDegraded as (cb: (r: string) => void) => void).call(client, onDegraded);
+    else c.onDegraded = onDegraded;
+    if (client.degradedReason) onDegraded(client.degradedReason);
+  }
   function startEngine(): void {
     const t0 = params.get('t0');
     const init: SimulatorInit = defaultInit({
@@ -2145,10 +1775,19 @@ export function startApp(opts: AppOptions): void {
     const autopause = params.get('autopause') ? Number(params.get('autopause')) : undefined;
     client.init(init, speed, params.get('paused') !== '1', autopause);
     if (scenario.perturbations.length) client.loadScenario(scenario, false);
+    setTimeout(() => {
+      if (frame === null && !fixtureId) {
+        engineBanner(
+          'No se pudo iniciar la simulación: el motor no envió ningún dato en 5 segundos. Recarga la página o revisa los parámetros de la dirección.',
+        );
+        put('#phase-status', 'Motor sin respuesta');
+      }
+    }, FIRST_FRAME_TIMEOUT_MS);
   }
   initDOM();
   bind();
   renderLesson();
+  wireDegraded();
   client.onFrame((m) => {
     if (fixtureId) return;
     ingest(m.frame, m);
@@ -2193,6 +1832,9 @@ export function startApp(opts: AppOptions): void {
     },
     get points() {
       return points.length;
+    },
+    get degraded() {
+      return client.degradedReason;
     },
   };
 }

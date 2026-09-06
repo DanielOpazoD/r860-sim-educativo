@@ -14,10 +14,15 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
+      # vitest.config.ts fija umbrales de cobertura medidos (unidad + banco); falla ante regresiones.
       - run: npm run test:coverage
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
+      # El resumen de cobertura lo produce el reporter json-summary de vitest.config.ts: si falta, CI debe fallar.
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: resultados, path: "test-results/**/*.json\ncoverage/coverage-summary.json", if-no-files-found: ignore }
+        with: { name: cobertura, path: coverage/coverage-summary.json, if-no-files-found: error }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: resultados, path: "test-results/**/*.json", if-no-files-found: ignore }

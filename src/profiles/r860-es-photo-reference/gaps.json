@@ -274,6 +274,32 @@
       "policy": "P: el deslizador recorre la rejilla por índice, un valor por posición; no se interpola.",
       "status": "nueva (v0.3)",
       "blocks": []
+    },
+    {
+      "id": "U-33",
+      "question": "Valor del flujo de base (bias flow) espiratorio del equipo y si ofrece disparo por presión además del disparo por flujo.",
+      "policy": "P: flujo de base de 10 L/min hacia el paciente durante la espiración (la válvula sostiene la PEEP hasta ese flujo; por encima la Pva cae por debajo de PEEP: deflexión de disparo); sólo disparo por flujo. Valor no editable.",
+      "status": "nueva (v0.3.1)",
+      "blocks": [
+        "disparo por presión",
+        "bias flow editable"
+      ]
+    },
+    {
+      "id": "U-34",
+      "question": "Si el equipo prohíbe Plimit > Pmáx o sólo lo advierte.",
+      "policy": "P: se permite con una advertencia no bloqueante (SC-09 depende de ello: Pmáx termina la inspiración antes de que Plimit actúe).",
+      "status": "nueva (v0.3.1)",
+      "blocks": []
+    },
+    {
+      "id": "U-35",
+      "question": "Resistencia de la válvula espiratoria y cota del flujo espiratorio pico del equipo.",
+      "policy": "P: sin cota; la válvula es una fuente de presión ideal a PEEP (salvo el flujo de base de U-33) y el flujo pico espiratorio lo fija sólo la mecánica del paciente. Documentado en docs/03 §7.",
+      "status": "nueva (v0.3.1)",
+      "blocks": [
+        "flujo espiratorio pico realista con R de válvula"
+      ]
     }
   ],
   "disabledFeatures": [

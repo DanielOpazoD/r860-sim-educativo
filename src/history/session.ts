@@ -1,9 +1,16 @@
 import { COMMAND_TYPES, type Command, type CommandLogEntry } from '../domain/commands';
 import type { Actor, BreathRecord } from '../domain/types';
 import { Simulator, type SimulatorInit } from '../engine/simulator';
-import { ENGINE_VERSION, SESSION_SCHEMA_VERSION } from '../engine/version';
+import { ACCEPTED_ENGINE_VERSIONS, ENGINE_VERSION, SESSION_SCHEMA_VERSION } from '../engine/version';
 import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
-import { validateDomains, validatePatientParams, validateVcSettings } from '../domain/validation';
+import {
+  validateDomains,
+  validateEffort,
+  validatePatientParams,
+  validateSensors,
+  validateSettingsKeys,
+  validateVcSettings,
+} from '../domain/validation';
 import { VC_ADULT_CROSS_LIMITS, VC_ADULT_RULES } from '../profiles/r860-es-photo-reference/settings';
 
 export interface SessionFile {
@@ -103,8 +110,11 @@ export function importSession(text: string): ImportResult {
   for (const k of Object.keys(o)) if (!allowed.has(k)) errors.push(`Clave desconocida: ${k}`);
   if (o.schemaVersion !== SESSION_SCHEMA_VERSION) errors.push(`schemaVersion no soportada: ${String(o.schemaVersion)}`);
   if (o.profileId !== PROFILE.profileId) errors.push(`profileId distinto: ${String(o.profileId)}`);
-  if (typeof o.engineVersion === 'string' && o.engineVersion !== ENGINE_VERSION)
-    warnings.push(`Sesión creada con motor ${o.engineVersion}; la reproducción puede no ser idéntica`);
+  if (typeof o.engineVersion === 'string' && o.engineVersion !== ENGINE_VERSION) {
+    if (ACCEPTED_ENGINE_VERSIONS.includes(o.engineVersion))
+      warnings.push(`Sesión creada con motor ${o.engineVersion}; la reproducción puede no ser idéntica`);
+    else errors.push(`engineVersion no soportada: ${o.engineVersion}`);
+  }
   const init = o.init as Record<string, unknown> | undefined;
   if (!init || typeof init !== 'object') errors.push('init ausente');
   else {
@@ -114,12 +124,17 @@ export function importSession(text: string): ImportResult {
       if (!init[k] || typeof init[k] !== 'object') errors.push(`init.${k} ausente`);
     if (init.settings && typeof init.settings === 'object') {
       const st = init.settings as SimulatorInit['settings'];
-      if (st.mode !== 'AC_VC') errors.push('init.settings.mode debe ser AC_VC');
+      const ke = validateSettingsKeys(st as unknown as Record<string, unknown>, VC_ADULT_RULES);
+      if (ke.length) errors.push(...ke.map((r) => `init.settings: ${r}`));
       else {
         errors.push(...validateDomains(st, VC_ADULT_RULES).map((r) => `init.settings: ${r}`));
         errors.push(...validateVcSettings(st, VC_ADULT_CROSS_LIMITS).reasons.map((r) => `init.settings: ${r}`));
       }
     }
+    if (init.effort && typeof init.effort === 'object')
+      errors.push(...validateEffort(init.effort as SimulatorInit['effort']).map((r) => `init.${r}`));
+    if (init.sensors && typeof init.sensors === 'object')
+      errors.push(...validateSensors(init.sensors as SimulatorInit['sensors']).map((r) => `init.${r}`));
     if (init.patient && typeof init.patient === 'object')
       errors.push(...validatePatientParams(init.patient as SimulatorInit['patient']).map((r) => `init.patient: ${r}`));
     if (!(init.initialV === 'equilibrium' || (typeof init.initialV === 'number' && init.initialV >= -1 && init.initialV <= 5)))

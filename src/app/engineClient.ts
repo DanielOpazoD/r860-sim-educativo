@@ -64,6 +64,10 @@ export class EngineClient {
     this.mode = 'inline';
     this.degradedReason = reason;
     this.inline = new EngineHost((m) => this.dispatch(m));
+    // Las órdenes pendientes no pueden quedar colgadas: se responden como rechazadas con el motivo.
+    const pend = [...this.pending.values()];
+    this.pending.clear();
+    for (const cb of pend) cb({ type: 'commandResult', id: -1, accepted: false, reason: `motor degradado: ${reason}` });
     this.onDegraded?.(reason);
     if (!this.readyDone) this.dispatch({ type: 'ready' });
   }
@@ -81,6 +85,11 @@ export class EngineClient {
     }
     if (m.type === 'frame') {
       for (const l of this.frameListeners) l(m);
+      return;
+    }
+    if (m.type === 'initError') {
+      this.degradedReason = `no se pudo iniciar la simulación: ${m.reason}`;
+      this.onDegraded?.(this.degradedReason);
       return;
     }
     const cb = this.pending.get(m.id);

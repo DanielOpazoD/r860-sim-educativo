@@ -107,7 +107,7 @@ export class ProcedureManager {
     if (ev.type === 'holdStarted' && this.current && this.current.procedureId === ev.procedureId) {
       this.current = { ...this.current, phase: 'running', startedAtMs: simTimeMs, quality: 'inProgress', reason: 'enCurso' };
     } else if (ev.type === 'holdEnded') {
-      this.finishHold(ev.outcome, simTimeMs);
+      this.finishHold(ev.outcome);
     } else if (ev.type === 'rejected' && this.current && ev.what === `hold:${this.current.procedureId}`) {
       // No elegible (p. ej. inspiración terminada por Pmáx): resultado inválido con motivo y hora, para que la interfaz lo muestre.
       const cur = this.current;
@@ -124,7 +124,7 @@ export class ProcedureManager {
     }
   }
 
-  private finishHold(o: HoldOutcome, _clockMs: number): void {
+  private finishHold(o: HoldOutcome): void {
     const cur = this.current && this.current.procedureId === o.procedureId ? this.current : null;
     const simTimeMs = sToMs(o.endSimTimeS); // hora exacta del fin de la maniobra, no la del paso del reloj
     const base = { simTimeMs, breathId: o.breathId, procedureId: o.procedureId, windowMs: sToMs(o.actualDurationS) };
@@ -132,7 +132,7 @@ export class ProcedureManager {
     let reason: string | null = null;
     if (o.cancelled) {
       quality = 'invalid';
-      reason = 'canceladoPorUsuario';
+      reason = o.cancelReason === 'standby' ? 'cancelledByStandby' : 'canceladoPorUsuario';
     } else if (o.pmaxHit) {
       quality = 'invalid';
       reason = 'pmaxDuranteBloqueo';
@@ -147,12 +147,21 @@ export class ProcedureManager {
     if (o.kind === 'inspHold') {
       const pplat = quality === 'valid' ? o.pawEnd : null;
       values.pplat = mkSample('pplatHold', pplat, 'cmH2O', { ...base, quality, reason });
-      const denom = o.pawEnd - o.peepeStart;
+      // Denominador: PEEPtot si hay un bloqueo espiratorio válido medido con la misma PEEP programada (P, E-035); si no, PEEPe con motivo.
+      const prevExp = this.last.expHold;
+      const peepTotPrev =
+        prevExp && prevExp.quality === 'valid' && Math.abs((prevExp.values.peepe?.value ?? Number.NaN) - o.peepeStart) < 1e-9
+          ? (prevExp.values.peepTot?.value ?? null)
+          : null;
+      const denom = o.pawEnd - (peepTotPrev ?? o.peepeStart);
       if (quality === 'valid' && denom >= MIN_CSTAT_DENOMINATOR && o.vtInspL > 0) {
         values.cstat = mkSample('cstatHold', o.vtInspL / denom, 'L/cmH2O', {
           ...base,
           quality: 'valid',
-          reason: 'denominador=Pplat−PEEPe (sin PEEPtot medida)',
+          reason:
+            peepTotPrev === null
+              ? 'denominador=Pplat−PEEPe (sin PEEPtot medida)'
+              : 'denominador=Pplat−PEEPtot (bloqueo espiratorio previo)',
         });
         values.driving = mkSample('drivingHold', denom, 'cmH2O', {
           ...base,
@@ -175,6 +184,7 @@ export class ProcedureManager {
     } else {
       const peepTot = quality === 'valid' ? o.pawEnd : null;
       values.peepTot = mkSample('peepTotHold', peepTot, 'cmH2O', { ...base, quality, reason });
+      values.peepe = mkSample('peepeAtHold', o.peepeBeforeOcclusion, 'cmH2O', { ...base, quality, reason });
       values.peepi = mkSample('peepiHold', peepTot === null ? null : peepTot - o.peepeBeforeOcclusion, 'cmH2O', {
         ...base,
         quality,

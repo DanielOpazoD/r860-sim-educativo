@@ -56,12 +56,15 @@ export class PatientModel {
     t0: number,
     dt: number,
     nonNegativeFlow = false,
-  ): { dV: number; qEnd: number } {
+    maxFlow = Number.POSITIVE_INFINITY,
+  ): { dV: number; qEnd: number; clamped: boolean } {
     const tauMin = Math.min(this.params.rInsp, this.params.rExp) * this.params.crs;
     const nSub = Math.min(1000, Math.max(1, Math.ceil(dt / (0.2 * Math.max(1e-6, tauMin)))));
+    // El tope de flujo (válvula/actuador) se aplica dentro de cada etapa del RK2, no en un paso aparte: así no hay
+    // sobreimpulso dependiente de dt cuando el flujo libre cruza el tope a mitad de paso (revisión E24).
     const f = (pw: number, pm: number, vv: number): number => {
       const q = this.flowForPaw(pw, pm, vv);
-      return nonNegativeFlow ? Math.max(0, q) : q;
+      return Math.min(maxFlow, nonNegativeFlow ? Math.max(0, q) : q);
     };
     const h = dt / nSub;
     const v0 = this.v;
@@ -76,7 +79,8 @@ export class PatientModel {
       q = k2;
     }
     this.v = v;
-    return { dV: v - v0, qEnd: f(paw, pmusAt(t), v) || q };
+    const qFree = this.flowForPaw(paw, pmusAt(t), v);
+    return { dV: v - v0, qEnd: f(paw, pmusAt(t), v) || q, clamped: qFree > maxFlow };
   }
 
   /** Integra un tramo con flujo impuesto constante (exacto: V lineal en t). */

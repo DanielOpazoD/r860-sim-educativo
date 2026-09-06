@@ -12,6 +12,8 @@ export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 export const PLATEAU_STABILITY_CMH2O = 0.5;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
+/** Flujo de base espiratorio (P, U-33): hasta este flujo hacia el paciente la válvula mantiene la PEEP; por encima, la Pva cae (deflexión de disparo). */
+export const EXP_BIAS_FLOW_LPS = 10 / 60;
 
 export type HoldKind = 'inspHold' | 'expHold';
 export interface HoldRequest {
@@ -34,6 +36,8 @@ export interface HoldOutcome {
   stability: number;
   pmaxHit: boolean;
   cancelled: boolean;
+  /** Motivo de la cancelación (usuario o paso a espera). */
+  cancelReason: 'user' | 'standby' | null;
   /** Bloqueo insp: VT inspirado de esa respiración (L) y PEEPe al inicio de la inspiración. */
   vtInspL: number;
   peepeStart: number;
@@ -200,7 +204,7 @@ export class VcController {
 
   enterStandby(): void {
     if (this.phase === 'standby') return;
-    if (this.hold) this.finishHold(true, false);
+    if (this.hold) this.finishHold(true, false, 'standby');
     this.holdRequest = null;
     this.manualRequested = false;
     this.breath = null; // la respiración en curso se descarta (causa standby); no se registra como completa
@@ -362,24 +366,21 @@ export class VcController {
         let qLast = 0;
         let pawLast = targetAt(tb0 + h);
         const hs = h / nSub;
+        let dVexp = 0;
         for (let i = 0; i < nSub; i++) {
           const tb = tb0 + (i + 1) * hs;
           const tg = targetAt(tb);
-          const qFree = p.flowForPaw(tg, this.pmusAt(this.simT + i * hs), p.v);
-          if (qFree > ACTUATOR_MAX_FLOW_LPS) {
-            // El actuador no alcanza: fuente de flujo al tope; la presión queda por debajo del objetivo.
-            const { dV } = p.integrateFlowSource(ACTUATOR_MAX_FLOW_LPS, hs);
-            dVtot += dV;
-            qLast = ACTUATOR_MAX_FLOW_LPS;
-            pawLast = p.pawForFlow(qLast, this.pmusAt(this.simT + (i + 1) * hs), p.v);
-          } else {
-            const { dV, qEnd } = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs);
-            dVtot += dV;
-            qLast = qEnd;
-            pawLast = tg;
-          }
+          // Fuente de presión con tope de flujo del actuador dentro del integrador: si el tope actúa, la presión queda por debajo del objetivo.
+          const { dV, qEnd, clamped } = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, false, ACTUATOR_MAX_FLOW_LPS);
+          if (dV >= 0) dVtot += dV;
+          else dVexp -= dV; // flujo negativo (válvula espiratoria activa tras bajar la PEEP): cuenta como espirado, nunca VTi negativo
+          qLast = qEnd;
+          pawLast = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + (i + 1) * hs), p.v) : tg;
         }
-        if (this.breath) this.breath.vtInsp += dVtot;
+        if (this.breath) {
+          this.breath.vtInsp += dVtot;
+          this.breath.vtExp += dVexp;
+        }
         this.q = qLast;
         this.paw = pawLast;
         if (this.paw >= s.pmax) this.transition = () => this.onPmax();
@@ -418,10 +419,11 @@ export class VcController {
       }
       case 'exp': {
         const peep = this.peepTarget;
-        const { dV, qEnd } = p.integratePressureSource(peep, this.pmusAt, this.simT, h);
+        // La válvula espiratoria mantiene la PEEP hasta el flujo de base; un esfuerzo mayor hunde la Pva (P, U-33).
+        const { dV, qEnd, clamped } = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, EXP_BIAS_FLOW_LPS);
         if (this.breath) this.breath.vtExp += Math.max(0, -dV);
         this.q = qEnd;
-        this.paw = peep;
+        this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) : peep;
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
           this.manualRequested = false;
@@ -558,7 +560,7 @@ export class VcController {
     this.events.push({ type: 'holdStarted', procedureId: req.procedureId, kind: req.kind, simTimeS: this.simT });
   }
 
-  private finishHold(cancelled: boolean, resume = true): void {
+  private finishHold(cancelled: boolean, resume = true, cancelReason: 'user' | 'standby' | null = cancelled ? 'user' : null): void {
     const hold = this.hold;
     const b = this.breath;
     if (!hold || !b) {
@@ -582,6 +584,7 @@ export class VcController {
       stability: stabilityOf(hold.samples, this.simT - hold.tStart) ?? Number.POSITIVE_INFINITY,
       pmaxHit: hold.pmaxHit,
       cancelled,
+      cancelReason,
       vtInspL: b.vtInsp,
       peepeStart: b.pawStart,
       peepeBeforeOcclusion: hold.peepeBefore,

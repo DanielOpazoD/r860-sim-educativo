@@ -27,4 +27,5 @@ export type EngineToMain =
   | { type: 'commandResult'; id: number; accepted: boolean; reason?: string }
   | { type: 'session'; id: number; file: SessionFile }
   | { type: 'importResult'; id: number; ok: boolean; errors?: string[]; warnings?: string[] }
-  | { type: 'ready' };
+  | { type: 'ready' }
+  | { type: 'initError'; reason: string };

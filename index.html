@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es-CL">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light">
 <meta name="description" content="Simulador educativo de ventilación mecánica inspirado en la interfaz CARESCAPE R860. Sin conexión con equipos, sin datos de pacientes reales.">
 <title>R860 Lab — Simulador de ventilación</title>
 <link rel="stylesheet" href="./src/ui/styles.css">
@@ -60,6 +60,7 @@
   </div>
 </header>
 <div class="global-notice" id="global-notice" hidden role="status"></div>
+<div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
   <section class="stage" aria-label="Ventilador virtual">
     <div class="stage-heading"><div><span class="live-dot" id="live-dot"></span><h1 id="scenario-name">Banco lineal pasivo</h1><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></div><button class="text-button" id="teacher-toggle" data-action="teacher"><svg class="icon"><use href="#i-eye"/></svg><span>Ocultar panel docente</span></button></div>
@@ -73,7 +74,7 @@
             <button class="device-key top-key" data-action="patient"><span>Adulto</span><svg class="icon"><use href="#i-person"/></svg></button>
             <div class="alarm-band" id="alarm-band">
               <button class="alarm-silence" data-action="mute" title="Pausa de audio: 120 s de simulación" aria-label="Silenciar alarma durante 120 segundos"><small id="mute-time"></small><svg class="icon"><use href="#i-bell"/></svg></button>
-              <button class="alarm-message" data-action="alarms"><span id="alarm-label">Sin alarmas</span><small id="alarm-detail">Monitorización simulada</small></button>
+              <button class="alarm-message" data-action="alarms"><span id="alarm-label" role="alert" aria-live="assertive">Sin alarmas</span><small id="alarm-detail" role="status" aria-live="polite">Monitorización simulada</small></button>
               <button class="alarm-setup" data-action="alarmSetup"><span>Config. de alarmas</span><svg class="icon"><use href="#i-gear"/></svg></button>
             </div>
             <button class="device-key top-key compact" id="o2-key" data-action="oxygen" title="Oxígeno temporal: 100% por 120 s"><svg class="icon"><use href="#i-oxygen"/></svg><small id="o2-time"></small></button>
@@ -100,8 +101,8 @@
             <aside class="pressure-column"><canvas id="gauge-canvas" width="140" height="490" aria-label="Presión instantánea, PEEP, Ppico y límite Pmáx" role="img"></canvas></aside>
             <div class="hold-panel" id="hold-panel" hidden>
               <div class="hold-title"><b id="hold-title">Bloqueo inspiratorio</b><button type="button" class="info-button" id="hold-help-button" data-help-key="procedure.inspiratory" data-help-target="hold-help" aria-controls="hold-help" aria-expanded="false" aria-label="Información sobre bloqueo inspiratorio" title="Información"><svg class="icon"><use href="#i-info"/></svg></button><button data-action="closeHold" aria-label="Cerrar panel de maniobra"><svg class="icon"><use href="#i-close"/></svg></button></div>
-              <div class="hold-panel-body"><label>Tiempo<select id="hold-duration"></select></label><button class="hold-play" data-action="runHold" id="hold-run" aria-label="Iniciar bloqueo"><svg class="icon"><use href="#i-play"/></svg></button><div class="hold-result"><span id="hold-value-label">Pplat</span><b id="hold-value">—</b><small id="hold-value-unit">cmH₂O</small></div><div class="hold-result"><span id="hold-second-label">Cstat</span><b id="hold-second">—</b><small id="hold-second-unit">mL/cmH₂O</small></div></div>
-              <div id="hold-help" class="parameter-help" hidden></div><div class="hold-status" id="hold-status">Selecciona tiempo y pulsa iniciar.</div>
+              <div class="hold-panel-body"><label>Tiempo<select id="hold-duration"></select></label><div class="hold-buttons"><button class="hold-play" data-action="runHold" id="hold-run" aria-label="Iniciar bloqueo"><svg class="icon"><use href="#i-play"/></svg></button><button class="hold-cancel" data-action="cancelHold" id="hold-cancel" hidden><svg class="icon"><use href="#i-close"/></svg><span>Cancelar</span></button></div><div class="hold-result"><span id="hold-value-label">Pplat</span><b id="hold-value">—</b><small id="hold-value-unit">cmH₂O</small></div><div class="hold-result"><span id="hold-second-label">Cstat</span><b id="hold-second">—</b><small id="hold-second-unit">mL/cmH₂O</small></div></div>
+              <div id="hold-help" class="parameter-help" hidden></div><div class="hold-status" id="hold-status" role="status" aria-live="polite">Selecciona tiempo y pulsa iniciar.</div>
             </div>
             <div class="standby-overlay" id="standby-overlay" hidden><svg class="icon"><use href="#i-hand"/></svg><h2>EN ESPERA</h2><p>Ventilación virtual detenida.<br>Los ajustes pueden modificarse antes de iniciar.</p><div><button class="primary-button" data-action="startVentilation">Iniciar ventilación</button></div><small>No conectar a equipos ni utilizar con pacientes reales.</small></div>
             <div class="lock-overlay" id="lock-overlay" hidden><svg class="icon"><use href="#i-lock"/></svg><span>Controles bloqueados</span><button class="device-small" data-action="unlock">Desbloquear</button></div>
@@ -117,17 +118,17 @@
             <button class="nav-key" data-view="log" title="Registro de eventos" aria-label="Registro de eventos"><svg class="icon"><use href="#i-list"/></svg></button>
             <div class="nav-divider"></div>
             <button class="nav-key" data-action="tools" title="Mecánica y procedimientos" aria-label="Mecánica y procedimientos"><svg class="icon"><use href="#i-lung"/></svg></button>
-            <span class="monitor-clock" id="monitor-clock">00:00</span><span class="phase-status" id="phase-status">Inicializando</span>
+            <span class="monitor-clock" id="monitor-clock">00:00</span><span class="phase-status" id="phase-status" role="status" aria-live="polite">Inicializando</span>
           </nav>
           <footer class="quick-controls" id="quick-controls"></footer>
           <div class="quick-editor" id="quick-editor" hidden role="dialog" aria-labelledby="quick-editor-title">
             <div class="editor-top"><div><small>AJUSTE EN EDICIÓN</small><h2 id="quick-editor-title">Volumen tidal</h2></div><div class="editor-header-actions"><button type="button" class="info-button" id="quick-help-button" data-help-key="setting.vt" data-help-target="quick-explanation" aria-controls="quick-explanation" aria-expanded="false" aria-label="Información sobre el parámetro" title="Información"><svg class="icon"><use href="#i-info"/></svg></button><button class="close-button" data-action="cancelEdit" aria-label="Cancelar edición"><svg class="icon"><use href="#i-close"/></svg></button></div></div>
             <div class="editor-value"><button class="step-button" data-action="editMinus" aria-label="Disminuir"><svg class="icon"><use href="#i-minus"/></svg></button><input type="number" id="quick-value" aria-label="Valor del ajuste"><span id="quick-unit">mL</span><button class="step-button" data-action="editPlus" aria-label="Aumentar"><svg class="icon"><use href="#i-plus"/></svg></button></div>
             <input type="range" id="quick-range" aria-label="Deslizador de ajuste"><div id="quick-explanation" class="parameter-help" hidden></div><div id="quick-validation" class="inline-validation" role="status" hidden></div>
-            <div class="editor-actions"><button class="secondary-button" data-action="cancelEdit">Cancelar</button><button class="primary-button" data-action="confirmEdit">Confirmar</button></div>
+            <div class="editor-actions"><span class="edit-countdown" id="quick-countdown" role="status" aria-live="polite"></span><button class="secondary-button" data-action="cancelEdit">Cancelar</button><button class="primary-button" data-action="confirmEdit">Confirmar</button></div>
             <small class="knob-hint">Rueda / ↑ ↓ para ajustar · Enter para confirmar · Esc para cancelar</small>
           </div>
-          <div class="pending-ribbon" id="pending-ribbon" hidden>Ajustes confirmados · aplicación en la próxima respiración</div>
+          <div class="pending-ribbon" id="pending-ribbon" hidden role="status" aria-live="polite">Ajustes confirmados · aplicación en la próxima respiración</div>
         </section>
       </div>
       <div class="bezel-bottom"><span class="power-led"></span><div class="hard-keys"><button class="hard-key" data-action="mute" title="Pausa de audio" aria-label="Pausa de audio"><svg class="icon"><use href="#i-muted"/></svg></button><button class="hard-key" data-action="oxygen" title="O₂ temporal" aria-label="O₂ temporal"><svg class="icon"><use href="#i-oxygen"/></svg></button><button class="hard-key" data-action="snapshot" title="Captura PNG del monitor" aria-label="Captura PNG del monitor"><svg class="icon"><use href="#i-camera"/></svg></button><button class="hard-key" id="lock-key" data-action="lock" title="Bloquear controles" aria-label="Bloquear controles" aria-pressed="false"><svg class="icon"><use href="#i-lock"/></svg></button></div><div class="bezel-signature">R860 <span>LAB</span><small>SIMULACIÓN EDUCATIVA</small></div><button class="hard-key home-key" data-action="home" aria-label="Volver a curvas" title="Vista principal"><svg class="icon"><use href="#i-home"/></svg></button><button class="trim-knob" id="trim-knob" data-action="knob" aria-label="Perilla: confirmar ajuste. Usa la rueda o las flechas para modificarlo." title="Selecciona un parámetro. Gira con la rueda; pulsa para confirmar."><span></span></button></div>
@@ -136,7 +137,18 @@
     <div class="signal-inspector" id="signal-inspector" hidden><span id="inspector-label">Mueve el cursor sobre una curva congelada para medir la señal.</span><input type="range" min="0" max="1000" value="1000" id="history-slider" aria-label="Revisar curvas anteriores"></div>
     <div class="stage-footnote"><svg class="icon"><use href="#i-help"/></svg><span>Selecciona un parámetro inferior, modifica y confirma. <button data-action="help">Ver guía de uso</button></span><span id="engine-note">Motor 250 Hz · Señal 50 Hz</span></div>
   </section>
-  <aside class="instructor" id="instructor" aria-label="Panel docente">
+  <nav class="mobile-toolbar" aria-label="Accesos rápidos en pantallas táctiles">
+  <button data-view="basic" aria-label="Datos grandes"><svg class="icon"><use href="#i-grid"/></svg><span>Datos</span></button>
+  <button data-view="waves" aria-label="Curvas y datos"><svg class="icon"><use href="#i-wave"/></svg><span>Curvas</span></button>
+  <button data-view="loops" aria-label="Bucles"><svg class="icon"><use href="#i-loop"/></svg><span>Bucles</span></button>
+  <button data-view="trends" aria-label="Tendencias"><svg class="icon"><use href="#i-chart"/></svg><span>Tend.</span></button>
+  <button data-action="inspiratory" aria-label="Bloqueo inspiratorio"><svg class="icon"><use href="#i-pause"/></svg><span>Bloq. insp</span></button>
+  <button data-action="expiratory" aria-label="Bloqueo espiratorio"><svg class="icon"><use href="#i-pause"/></svg><span>Bloq. esp</span></button>
+  <button data-action="manual" aria-label="Respiración manual"><svg class="icon"><use href="#i-hand"/></svg><span>Manual</span></button>
+  <button data-action="alarms" aria-label="Alarmas"><svg class="icon"><use href="#i-bell"/></svg><span>Alarmas</span></button>
+  <button data-action="modes" aria-label="Modo y ajustes"><svg class="icon"><use href="#i-menu"/></svg><span>Modo</span></button>
+</nav>
+<aside class="instructor" id="instructor" aria-label="Panel docente">
     <div class="instructor-header"><div><span class="panel-kicker">FUERA DEL EQUIPO</span><h2>Laboratorio de mecánica</h2></div><svg class="icon"><use href="#i-lung"/></svg></div>
     <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="learn">Entrenar</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button></div>
     <section class="instructor-pane active" id="instructor-patient">
@@ -157,7 +169,7 @@
     <footer class="instructor-footer"><svg class="icon"><use href="#i-book"/></svg><span id="instructor-footer-text">Escenarios sintéticos · A/C VC<br><b>Modelo mecánico, no paciente completo</b></span></footer>
   </aside>
 </main>
-<footer class="safety-strip"><strong>SIMULACIÓN EDUCATIVA · NO USO CLÍNICO</strong><span>No es un producto de GE HealthCare ni controla equipos médicos.</span><button data-action="model">Modelo, alcance y fuentes</button><span class="version" id="version-tag">v0.2.0 · Offline</span></footer>
+<footer class="safety-strip"><strong>SIMULACIÓN EDUCATIVA · NO USO CLÍNICO</strong><span>No es un producto de GE HealthCare ni controla equipos médicos.</span><button data-action="model">Modelo, alcance y fuentes</button><span class="version" id="version-tag">v0.3.0 · Offline</span></footer>
 <dialog id="app-dialog" class="app-dialog" aria-labelledby="dialog-title"><header class="dialog-header"><div><small id="dialog-eyebrow"></small><h2 id="dialog-title"></h2></div><button class="close-button" data-action="closeDialog" aria-label="Cerrar ventana"><svg class="icon"><use href="#i-close"/></svg></button></header><div class="dialog-content" id="dialog-content"></div><footer class="dialog-footer" id="dialog-footer"></footer></dialog>
 <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
 <input id="session-input" type="file" accept=".json,application/json" hidden>

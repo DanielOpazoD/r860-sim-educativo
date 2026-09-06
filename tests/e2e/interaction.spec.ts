@@ -56,7 +56,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.waitForTimeout(2600);
     await expect(page.locator('#quick-editor')).toBeHidden();
     await expect(page.locator('[data-quick-val="rr"]')).toHaveText('15');
-    await expect(page.locator('.toast').last()).toContainText('vencimiento');
+    await expect(page.locator('.toast').last()).toContainText('inactividad');
     const f = await frame(page);
     expect(f.settings.rr).toBe(15);
     expect(f.pending).toBeNull();
@@ -83,8 +83,8 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await open(page, { speed: 4, instructor: 0 });
     const before = await frame(page);
     for (let i = 0; i < 50; i++) {
-      await page.locator('[data-view="basic"]').dispatchEvent('click');
-      await page.locator('[data-view="waves"]').dispatchEvent('click');
+      await page.locator('.monitor-nav [data-view="basic"]').dispatchEvent('click');
+      await page.locator('.monitor-nav [data-view="waves"]').dispatchEvent('click');
     }
     await page.waitForTimeout(500);
     const after = await frame(page);
