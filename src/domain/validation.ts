@@ -102,7 +102,7 @@ export function validateDomains(s: VcSettings, rules: Record<Exclude<keyof VcSet
     if (v === 'off') { if (!rule.allowOff) reasons.push(`${rule.label}: Off no permitido`); continue; }
     if (rule.unit === 'boolean') { if (typeof v !== 'boolean') reasons.push(`${rule.label}: debe ser booleano`); continue; }
     if (typeof v !== 'number' || !Number.isFinite(v)) { reasons.push(`${rule.label}: valor no numérico`); continue; }
-    if (!isOnGrid(rule, v * rule.displayFactor)) reasons.push(`${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} fuera de rango o de rejilla`);
+    if (!isOnGrid(rule, v * rule.displayFactor)) reasons.push(`${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} no es un valor admitido (fuera de rango o de escalón).`);
   }
   return reasons;
 }
@@ -124,24 +124,33 @@ export function validatePatientParams(p: { crs: number; rInsp: number; rExp: num
  * Valida un juego completo de ajustes VC contra restricciones cruzadas (D rangos ficha 2014; relaciones P).
  * No aproxima: si algo es inválido, devuelve motivos legibles.
  */
+/**
+ * Valida un juego completo de ajustes contra restricciones cruzadas (rangos D ficha 2014; relaciones P).
+ * Los mensajes están escritos para el usuario; la procedencia de cada regla vive en las reglas y en evidence.json.
+ */
 export function validateVcSettings(s: VcSettings, limits: CrossLimits): ValidationResult {
   const reasons: string[] = [];
   const d = deriveVcTiming(s);
   if (d.tInspS < limits.tInspMinS - EPS || d.tInspS > limits.tInspMaxS + EPS) {
-    reasons.push(`Tinsp derivado ${d.tInspS.toFixed(2)} s fuera de ${limits.tInspMinS}–${limits.tInspMaxS} s (D ficha 2014)`);
+    reasons.push(`El tiempo inspiratorio resultante (${d.tInspS.toFixed(2)} s) queda fuera de ${limits.tInspMinS}–${limits.tInspMaxS} s.`);
   }
   if (d.tExpS < limits.tExpMinS - EPS || d.tExpS > limits.tExpMaxS + EPS) {
-    reasons.push(`Texp derivado ${d.tExpS.toFixed(2)} s fuera de ${limits.tExpMinS}–${limits.tExpMaxS} s (D ficha 2014)`);
-  }
-  const qLpm = lpsToLpm(d.qTargetLps);
-  if (!Number.isFinite(qLpm) || qLpm > limits.flowMaxLpm + EPS) {
-    reasons.push(`Flujo necesario ${Number.isFinite(qLpm) ? qLpm.toFixed(1) : '∞'} L/min supera el máximo ${limits.flowMaxLpm} L/min: VT no alcanzable con este Tinsp y pausa (D rango de flujo; regla P)`);
-  }
-  if (Number.isFinite(qLpm) && qLpm < limits.flowMinLpm - EPS) {
-    reasons.push(`Flujo necesario ${qLpm.toFixed(1)} L/min bajo el mínimo ${limits.flowMinLpm} L/min (D rango de flujo; regla P)`);
+    reasons.push(`El tiempo espiratorio resultante (${d.tExpS.toFixed(2)} s) queda fuera de ${limits.tExpMinS}–${limits.tExpMaxS} s.`);
   }
   const peep = s.peep === 'off' ? 0 : s.peep;
-  if (s.pmax <= peep) reasons.push(`Pmáx (${s.pmax}) debe ser mayor que PEEP (${peep}) (regla P)`);
-  if (s.plimit <= peep) reasons.push(`Plimit (${s.plimit}) debe ser mayor que PEEP (${peep}) (regla P)`);
+  if (s.mode === 'AC_VC') {
+    const qLpm = lpsToLpm(d.qTargetLps);
+    if (!Number.isFinite(qLpm) || qLpm > limits.flowMaxLpm + EPS) {
+      reasons.push(`Ese volumen exige ${Number.isFinite(qLpm) ? qLpm.toFixed(1) : '∞'} L/min, más que el flujo máximo de ${limits.flowMaxLpm} L/min: aumenta el tiempo inspiratorio, reduce la pausa o baja el VT.`);
+    }
+    if (Number.isFinite(qLpm) && qLpm < limits.flowMinLpm - EPS) {
+      reasons.push(`Ese volumen exige sólo ${qLpm.toFixed(1)} L/min, por debajo del flujo mínimo de ${limits.flowMinLpm} L/min.`);
+    }
+    if (s.plimit <= peep) reasons.push(`Plimit (${s.plimit}) debe ser mayor que PEEP (${peep}).`);
+  } else {
+    if (peep + s.pinsp >= s.pmax) reasons.push(`PEEP + Pinsp (${peep + s.pinsp}) debe quedar por debajo de Pmáx (${s.pmax}).`);
+    if (s.riseMs / 1000 > d.tInspS) reasons.push(`La rampa (${s.riseMs} ms) no puede superar el tiempo inspiratorio (${d.tInspS.toFixed(2)} s).`);
+  }
+  if (s.pmax <= peep) reasons.push(`Pmáx (${s.pmax}) debe ser mayor que PEEP (${peep}).`);
   return { ok: reasons.length === 0, reasons, derived: d };
 }

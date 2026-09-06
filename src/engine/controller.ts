@@ -10,6 +10,8 @@ export const TRIGGER_REFRACTORY_S = 0.25;
 export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 /** Estabilidad máxima (máx−mín de Paw en la ventana evaluada) para meseta válida (P). */
 export const PLATEAU_STABILITY_CMH2O = 0.5;
+/** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
+export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 
 export type HoldKind = 'inspHold' | 'expHold';
 export interface HoldRequest { procedureId: string; kind: HoldKind; durationS: number }
@@ -24,7 +26,7 @@ export interface HoldOutcome {
   requestedDurationS: number;
   pawStart: number;
   pawEnd: number;
-  /** máx−mín de Paw en el último 30 % de la ventana. */
+  /** máx−mín de Paw en la ventana evaluada (toda la ventana tras un arranque de min(0.5 s, 30 %)). */
   stability: number;
   pmaxHit: boolean;
   cancelled: boolean;
@@ -79,7 +81,7 @@ interface HoldRun {
 }
 
 const EPS = 1e-9;
-const INSP_PHASES: ReadonlySet<ControllerPhase> = new Set(['inspFlow', 'inspLimited', 'inspPause']);
+const INSP_PHASES: ReadonlySet<ControllerPhase> = new Set(['inspFlow', 'inspLimited', 'inspPause', 'inspPressure']);
 
 /**
  * Controlador de respiración A/C VC (P · dossier §13), familia de temporización «I:E, control de flujo apagado»
@@ -242,6 +244,7 @@ export class VcController {
       case 'inspFlow': return Math.max(0, t.tFlowS - this.tBreath);
       case 'inspLimited': return Math.max(0, t.tInspS - this.tBreath);
       case 'inspPause': return Math.max(0, t.tInspS - this.tBreath);
+      case 'inspPressure': return Math.max(0, t.tInspS - this.tBreath);
       case 'holdInsp':
       case 'holdExp': return Math.max(0, (this.hold?.req.durationS ?? 0) - this.tPhase);
       // El temporizador de FR gobierna la siguiente obligatoria: el tiempo no usado por una inspiración acortada (Pmáx) va a la espiración (P).
@@ -288,6 +291,30 @@ export class VcController {
         if (hit === 'pmax') { this.paw = s.pmax; this.transition = () => this.onPmax(); }
         else if (hit === 'plimit') { this.paw = s.plimit; this.transition = () => this.onPlimit(); }
         return used;
+      }
+      case 'inspPressure': {
+        // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma lineal P).
+        const rise = s.riseMs / 1000;
+        const targetAt = (tb: number): number => this.peepTarget + s.pinsp * (rise > 0 ? Math.min(1, tb / rise) : 1);
+        const tb0 = this.tBreath;
+        const nSub = rise > 0 && tb0 < rise ? Math.max(1, Math.ceil(h / 0.001)) : 1;
+        let dVtot = 0; let qLast = 0; let pawLast = targetAt(tb0 + h); const hs = h / nSub;
+        for (let i = 0; i < nSub; i++) {
+          const tb = tb0 + (i + 1) * hs; const tg = targetAt(tb);
+          const qFree = p.flowForPaw(tg, this.pmusAt(this.simT + i * hs), p.v);
+          if (qFree > ACTUATOR_MAX_FLOW_LPS) {
+            // El actuador no alcanza: fuente de flujo al tope; la presión queda por debajo del objetivo.
+            const { dV } = p.integrateFlowSource(ACTUATOR_MAX_FLOW_LPS, hs);
+            dVtot += dV; qLast = ACTUATOR_MAX_FLOW_LPS; pawLast = p.pawForFlow(qLast, this.pmusAt(this.simT + (i + 1) * hs), p.v);
+          } else {
+            const { dV, qEnd } = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs);
+            dVtot += dV; qLast = qEnd; pawLast = tg;
+          }
+        }
+        if (this.breath) this.breath.vtInsp += dVtot;
+        this.q = qLast; this.paw = pawLast;
+        if (this.paw >= s.pmax) this.transition = () => this.onPmax();
+        return h;
       }
       case 'inspLimited': {
         const qCheck = p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v);
@@ -363,6 +390,7 @@ export class VcController {
         break;
       case 'inspLimited':
       case 'inspPause':
+      case 'inspPressure':
         this.endInspiration('time');
         break;
       case 'holdInsp':
@@ -383,6 +411,7 @@ export class VcController {
     const b = this.breath;
     if (b) {
       if (this.phase === 'inspPause') this.evaluateCyclePlateau(b);
+      else if (this.phase === 'inspPressure') b.pplatReason = 'noOcclusion'; // en PC el fin de inspiración no es una meseta válida sin oclusión (dossier §11)
       else if (b.pplatCycle === null && b.pplatReason === null) b.pplatReason = b.plimitReached && this.timing.tPauseS > EPS ? 'plimitReached' : 'noPause';
       if (cause === 'pmax') { b.pplatCycle = null; b.pplatReason = 'endedByPmax'; }
       b.cause = cause;
@@ -469,7 +498,7 @@ export class VcController {
       ppeak: -Infinity, pawIntegral: 0, vtInsp: 0, vtExp: 0, tInspActual: 0, tExpActual: 0,
       plimitReached: false, pmaxReached: false, pauseSamples: [], pplatCycle: null, pplatReason: null, peepeEnd: this.paw, cause: 'time',
     };
-    this.phase = 'inspFlow';
+    this.phase = this.settings.mode === 'AC_PC' ? 'inspPressure' : 'inspFlow';
     this.tPhase = 0;
     this.tBreath = 0;
     this.events.push({ type: 'breathStart', breathId, breathType: type, simTimeS: this.simT, vStartL: this.patient.v });

@@ -15,6 +15,20 @@ export const IE_VALUES: number[] = (() => {
 })();
 
 export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRule> = {
+  pinsp: {
+    key: 'pinsp', label: 'Pinsp', unit: 'cmH2O', displayUnit: 'cmH2O', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_PC'],
+    domain: [{ min: 1, max: 98, step: 1 }], allowOff: false, dependencies: ['peep', 'pmax'], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Rango de presión inspiratoria (Pinsp): 1 a 98 cm H2O (incrementos de 1)»; JB72469XX: «Presión inspiratoria por encima de PEEP»', status: 'D' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  riseMs: {
+    key: 'riseMs', label: 'Rampa', unit: 's', displayUnit: 'ms', displayFactor: 1, decimals: 0,
+    allowedPatientTypes: ['adult'], allowedModes: ['AC_PC'],
+    domain: [{ min: 0, max: 500, step: 50 }], allowOff: false, dependencies: [], applyPolicy: 'nextBreath',
+    evidence: { sourceId: 'R03', locator: 'p.2 «Tiempo de Rampa: 0 a 500 ms … Activo en … A/C PC … (incrementos de 50 ms)»', status: 'D', note: 'Forma lineal de la rampa: P (JB72469XX sólo dice «alto flujo inicial… luego disminuye»).' },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
   fio2: {
     key: 'fio2', label: 'FiO2', unit: 'fraction', displayUnit: '%', displayFactor: 100, decimals: 0,
     allowedPatientTypes: ['adult'], allowedModes: ['AC_VC'],
@@ -89,7 +103,7 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
   },
 };
 
-/** Límites cruzados adulto invasivo (D ficha 2014: Tinsp 0.25–15 s; Texp 0.25–29.9 s; flujo 2–160 L/min). */
+/** Límites cruzados adulto invasivo (D ficha 2014: Tinsp 0.25–15 s; Texp 0.25–29.9 s; flujo 2–160 L/min; el tope de flujo también acota el actuador virtual en PC). */
 export const VC_ADULT_CROSS_LIMITS: CrossLimits = {
   tInspMinS: 0.25, tInspMaxS: 15, tExpMinS: 0.25, tExpMaxS: 29.9, flowMinLpm: 2, flowMaxLpm: 160,
 };
@@ -127,6 +141,8 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
   pausePct: 0,
   assistControl: true,
   flowTrigger: 2 / 60,
+  pinsp: 10,
+  riseMs: 100,
 };
 
 /** Límites de alarma iniciales: Off salvo lo que exige el motor (P). Rangos editables D ficha 2014 p.3. */

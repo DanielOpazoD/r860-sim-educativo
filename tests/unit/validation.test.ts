@@ -54,12 +54,12 @@ describe('restricciones cruzadas (P sobre rangos D)', () => {
   it('VT 2 L con Tinsp 0.5 s exige 240 L/min > 160: inválido con explicación, sin aproximar', () => {
     const r = validateVcSettings({ ...BENCH_SETTINGS, vt: 2, rr: 30, ie: 1 / 3 }, VC_ADULT_CROSS_LIMITS);
     expect(r.ok).toBe(false);
-    expect(r.reasons.join(' ')).toMatch(/Flujo necesario/);
+    expect(r.reasons.join(' ')).toMatch(/L\/min/);
   });
   it('FR 120 con I:E 4:1 deja Texp 0.1 s < 0.25: inválido', () => {
     const r = validateVcSettings({ ...BENCH_SETTINGS, rr: 120, ie: 4 }, VC_ADULT_CROSS_LIMITS);
     expect(r.ok).toBe(false);
-    expect(r.reasons.join(' ')).toMatch(/Texp/);
+    expect(r.reasons.join(' ')).toMatch(/espiratorio/);
   });
   it('Pmáx ≤ PEEP es inválido; el banco es válido y deriva flujo 0.5 L/s', () => {
     expect(validateVcSettings({ ...BENCH_SETTINGS, pmax: 5 }, VC_ADULT_CROSS_LIMITS).ok).toBe(false);

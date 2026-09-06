@@ -42,7 +42,7 @@ function fx(key: string, value: number | null, unit: string, reason: string | nu
 /** Construye un cuadro de motor «congelado» a partir de la fixture: sin física, sólo transcripción. */
 export function frameFromFixture(f: PhotoFixture): EngineFrame {
   const ieParts = f.set.ie.split(':').map(Number) as [number, number];
-  const settings: VcSettings = { mode: 'AC_VC', fio2: f.set.fio2Pct / 100, vt: f.set.vtMl / 1000, rr: f.set.rrPerMin, ie: ieParts[0] / ieParts[1], peep: f.set.peepCmH2O, pmax: f.set.pmaxCmH2O, plimit: f.set.pmaxCmH2O, pausePct: 0, assistControl: true, flowTrigger: 2 / 60 };
+  const settings: VcSettings = { mode: 'AC_VC', fio2: f.set.fio2Pct / 100, vt: f.set.vtMl / 1000, rr: f.set.rrPerMin, ie: ieParts[0] / ieParts[1], peep: f.set.peepCmH2O, pmax: f.set.pmaxCmH2O, plimit: f.set.pmaxCmH2O, pausePct: 0, assistControl: true, flowTrigger: 2 / 60, pinsp: 10, riseMs: 100 };
   const limits: AlarmLimits = {
     ppeakLow: f.limits.ppeakLow ?? 'off', vteLow: f.limits.vteLow / 1000, vteHigh: f.limits.vteHigh / 1000, mveLow: f.limits.mveLow, mveHigh: f.limits.mveHigh,
     rrLow: f.limits.rrLow, rrHigh: f.limits.rrHigh, fio2Low: f.limits.fio2Low / 100, fio2High: f.limits.fio2High / 100, peepeLow: 'off', peepeHigh: 'off',

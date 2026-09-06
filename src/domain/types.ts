@@ -23,9 +23,14 @@ export type ModeId = 'AC_VC' | 'AC_PC' | 'CPAP_PS' | 'AC_PRVC' | 'SIMV_VC' | 'SI
 
 export type OffOr<T> = T | 'off';
 
-/** Ajustes programados de A/C VC (familia de temporización «I:E, control de flujo apagado», O en P1/P3 + D ficha 2014). */
+export type VentMode = 'AC_VC' | 'AC_PC';
+
+/**
+ * Ajustes programados (familia de temporización «I:E, control de flujo apagado», O en P1/P3 + D ficha 2014).
+ * A/C VC usa vt/plimit/pausePct; A/C PC usa pinsp/riseMs. Los demás son comunes.
+ */
 export interface VcSettings {
-  mode: 'AC_VC';
+  mode: VentMode;
   /** Fracción 0.21..1 */
   fio2: Fraction;
   /** Litros */
@@ -46,7 +51,12 @@ export interface VcSettings {
   assistControl: boolean;
   /** Trigger por flujo, L/s interno. */
   flowTrigger: LitersPerSecond;
+  /** A/C PC: presión inspiratoria SOBRE PEEP (cmH2O). D ficha 2014 «Pinsp 1–98». */
+  pinsp: CmH2O;
+  /** A/C PC: rampa de presión (ms). D ficha 2014 «Tiempo de rampa 0–500 ms (50)». */
+  riseMs: number;
 }
+export type VentSettings = VcSettings;
 
 export type SettingsKey = Exclude<keyof VcSettings, 'mode'>;
 
@@ -163,7 +173,7 @@ export interface AlarmState {
 }
 
 export type VentilationState = 'standby' | 'ventilating';
-export type ControllerPhase = 'standby' | 'inspFlow' | 'inspLimited' | 'inspPause' | 'holdInsp' | 'exp' | 'holdExp';
+export type ControllerPhase = 'standby' | 'inspFlow' | 'inspLimited' | 'inspPause' | 'inspPressure' | 'holdInsp' | 'exp' | 'holdExp';
 
 export type Actor = 'learner' | 'instructor' | 'controller' | 'scenario' | 'system';
 
