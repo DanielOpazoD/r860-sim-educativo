@@ -1,0 +1,34 @@
+MIT License — Código original de R860 Lab, 2026
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of the original software code and associated software documentation files
+(the "Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above notice and this permission notice shall be included in all copies
+or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+ACLARACIONES DE ALCANCE
+
+La licencia anterior se refiere únicamente al código original entregado.
+No concede derechos sobre marcas, fotografías del usuario, documentos del
+fabricante u otros materiales de terceros mencionados o incluidos en el
+archivo de investigación. Los derechos de esos materiales pertenecen a sus
+titulares. «GE HealthCare» y «CARESCAPE R860» identifican el equipo de referencia;
+no implican afiliación, autorización ni aval de su fabricante.
+
+El software es exclusivamente educativo. No es un dispositivo médico,
+no ha sido validado clínicamente y no debe usarse para indicar tratamiento
+ni controlar equipos. Su motor es una aproximación mecánica simplificada.
+No contiene firmware ni algoritmos propietarios del fabricante.

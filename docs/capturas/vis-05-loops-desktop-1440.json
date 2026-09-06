@@ -1,5 +1,5 @@
 {
- "name": "vis-01-p1-advanced",
+ "name": "vis-05-loops",
  "project": "desktop-1440",
  "viewport": {
   "width": 1440,
@@ -7,8 +7,7 @@
  },
  "t0": "2026-08-18T21:04:05-04:00",
  "seed": 1,
- "simTimeMs": 0,
- "wallTimeMs": 1787101445000,
- "engine": "worker",
- "fixture": "P1"
+ "simTimeMs": 16000,
+ "wallTimeMs": 1787101461000,
+ "engine": "worker"
 }

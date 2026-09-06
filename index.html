@@ -1,14 +1,166 @@
 <!doctype html>
 <html lang="es-CL">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Simulador educativo · inspirado en CARESCAPE R860 · NO USO CLÍNICO</title>
-    <link rel="stylesheet" href="./src/ui/r860/styles.css" />
-    <link rel="stylesheet" href="./src/ui/instructor/instructor.css" />
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="./src/main.ts"></script>
-  </body>
-</html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
+<meta name="description" content="Simulador educativo de ventilación mecánica inspirado en la interfaz CARESCAPE R860. Sin conexión con equipos, sin datos de pacientes reales.">
+<title>R860 Lab — Simulador de ventilación</title>
+<link rel="stylesheet" href="./src/ui/styles.css">
+</head>
+<body>
+<svg class="svg-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01" stroke-width="3"/></symbol>
+<symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 13h4l3-8 5 15 3-9h5"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V3h6v2M8 10h8M8 14h8M8 18h5"/></symbol>
+<symbol id="i-person" viewBox="0 0 24 24"><circle cx="9" cy="5" r="2.5"/><path d="M5 20v-7H3.5V9A2 2 0 0 1 5.5 7h7A2 2 0 0 1 14.5 9v4H13v7M9 14v6"/><circle cx="19" cy="9" r="1.8"/><path d="m16 14 1-2h4l1 5h-2v4m-2-4v4"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5l-2 3Zm5 3h4M12 2v2M2 5l2 2m16 0 2-2"/></symbol>
+<symbol id="i-muted" viewBox="0 0 24 24"><path d="M6 6a5 5 0 0 0-1 3v5l-2 3h14l-2-3V9a5 5 0 0 0-5-5m-2 16h4M3 2l18 20"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><path d="m9 3 .5 3-2 .9L5 5l-2 3 2.5 2v3L3 15l2 3 2.5-1.9 2 .9.5 3h4l.5-3 2-.9L19 18l2-3-2.5-2v-3L21 8l-2-3-2.5 1.9-2-.9L14 3Z"/><circle cx="11.9" cy="12" r="3.3"/></symbol>
+<symbol id="i-oxygen" viewBox="0 0 24 24"><path d="m9 5 4-4 4 4H9Z"/><circle cx="9" cy="14" r="6"/><path d="M17 12c5-3 7 2 2 6l-2 2h5"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 4v16M16 4v16" stroke-width="3"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 14 8-14 8Z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></symbol>
+<symbol id="i-loop" viewBox="0 0 24 24"><path d="M3 21V3m0 18h19M7 17c1-12 12-14 12-7s-10 11-12 7Z"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h19M6 16l4-6 4 3 7-8"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3Z"/><circle cx="12" cy="13" r="4"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4M12 14v4"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m2 11 10-9 10 9M5 9v13h14V9M9 22v-8h6v8"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M7 12V5a1.5 1.5 0 0 1 3 0v6-7a1.5 1.5 0 0 1 3 0v7-6a1.5 1.5 0 0 1 3 0v7-4a1.5 1.5 0 0 1 3 0v9c0 7-10 7-12 3l-4-6c-1-2 1-4 3-2l1 1Z"/></symbol>
+<symbol id="i-plug" viewBox="0 0 24 24"><path d="M8 3v5m8-5v5M5 8h14v4a7 7 0 0 1-7 7v4M8 8h8"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 9a9 9 0 1 1 0 7M3 3v6h6M12 7v6l4 2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M4 12h16"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 17v4h16v-4"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 8c0-4 7-4 7 0 0 3-4 2-4 6M12 18h.01"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="m3 9 5 0 5-5v16l-5-5H3ZM17 8a6 6 0 0 1 0 8M20 5a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5C9 3 5 3 2 4v16c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Zm0 0v16"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 9a9 9 0 1 1 0 7M4 3v6h6"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-lung" viewBox="0 0 24 24"><path d="M12 2v9m0-3L8 12m4-4 4 4M9 6C6 3 1 13 2 19c1 4 7 1 7-2V6Zm6 0c3-3 8 7 7 13-1 4-7 1-7-2V6Z"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01"/></symbol>
+</defs></svg>
+<a class="skip-link" href="#monitor">Ir al ventilador</a>
+<header class="app-top">
+  <a class="wordmark" href="#" data-action="home" aria-label="R860 Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>R860<span>LAB</span></strong></a>
+  <div class="product-caption">Simulación de ventilación<span>Inspirado en CARESCAPE R860</span></div>
+  <div class="top-actions">
+    <button class="button subtle" data-action="scenarios"><svg class="icon"><use href="#i-grid"/></svg><span>Escenarios</span></button>
+    <button class="button subtle" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Guía</span></button>
+    <button class="button subtle" data-action="session"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
+    <div class="toolbar-divider"></div>
+    <button class="button simulation-pause" id="sim-pause" data-action="pause" aria-label="Pausar simulación"><svg class="icon"><use href="#i-pause"/></svg><span>Pausar</span></button>
+    <label class="speed-control"><span class="sr-only">Velocidad de simulación</span><select id="sim-speed" title="Velocidad del tiempo simulado"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    <button class="button icon-only" id="sound-toggle" data-action="sound" aria-label="Activar audio de alarmas" title="Activar audio de alarmas" aria-pressed="false"><svg class="icon"><use href="#i-muted"/></svg></button>
+    <button class="button icon-only" data-action="fullscreen" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icon"><use href="#i-expand"/></svg></button>
+  </div>
+</header>
+<div class="global-notice" id="global-notice" hidden role="status"></div>
+<main class="workspace" id="workspace">
+  <section class="stage" aria-label="Ventilador virtual">
+    <div class="stage-heading"><div><span class="live-dot" id="live-dot"></span><h1 id="scenario-name">Banco lineal pasivo</h1><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></div><button class="text-button" id="teacher-toggle" data-action="teacher"><svg class="icon"><use href="#i-eye"/></svg><span>Ocultar panel docente</span></button></div>
+    <p class="mobile-hint">Vista de equipo: gira el dispositivo o desplaza horizontalmente. El panel docente está más abajo.</p>
+    <div class="device-scroll"><div class="device-shell" id="device-shell">
+      <div class="bezel-top"><span class="bezel-model">CARESCAPE <b>R860</b> <span>REFERENCIA VISUAL</span></span><span class="bezel-tag">SIMULADOR</span><span class="bezel-light" id="bezel-light"></span></div>
+      <div class="screen-window" id="screen-window">
+        <section class="monitor" id="monitor" aria-label="Pantalla de simulación R860" tabindex="-1">
+          <header class="monitor-top">
+            <button class="device-key top-key" data-action="menu"><span>Menú</span><svg class="icon"><use href="#i-menu"/></svg></button>
+            <button class="device-key top-key" data-action="patient"><span>Adulto</span><svg class="icon"><use href="#i-person"/></svg></button>
+            <div class="alarm-band" id="alarm-band">
+              <button class="alarm-silence" data-action="mute" title="Pausa de audio: 120 s de simulación" aria-label="Silenciar alarma durante 120 segundos"><small id="mute-time"></small><svg class="icon"><use href="#i-bell"/></svg></button>
+              <button class="alarm-message" data-action="alarms"><span id="alarm-label">Sin alarmas</span><small id="alarm-detail">Monitorización simulada</small></button>
+              <button class="alarm-setup" data-action="alarmSetup"><span>Config. de alarmas</span><svg class="icon"><use href="#i-gear"/></svg></button>
+            </div>
+            <button class="device-key top-key compact" id="o2-key" data-action="oxygen" title="Oxígeno temporal: 100% por 120 s"><svg class="icon"><use href="#i-oxygen"/></svg><small id="o2-time"></small></button>
+            <button class="device-key top-key compact" data-action="inspiratory"><span>Bloqueo<br>insp</span></button>
+            <button class="device-key top-key compact" data-action="expiratory"><span>Bloqueo<br>esp</span></button>
+            <button class="device-key top-key compact" data-action="manual"><span>Resp<br>manual</span></button>
+          </header>
+          <div class="monitor-body">
+            <div class="data-workspaces">
+              <div class="device-view view-waves active" id="view-waves" data-view-panel="waves">
+                <canvas id="waves-canvas" width="608" height="491" role="img" aria-label="Curvas dinámicas de presión, flujo y volumen"></canvas>
+                <div class="numeric-grid" id="numeric-grid"></div>
+              </div>
+              <div class="device-view view-basic" id="view-basic" data-view-panel="basic"><div class="big-metrics" id="big-metrics"></div><canvas id="basic-wave-canvas" width="934" height="138" aria-label="Curva de presión en vista de datos grandes" role="img"></canvas></div>
+              <div class="device-view view-loops" id="view-loops" data-view-panel="loops">
+                <div class="device-view-header"><h2>Espirometría</h2><span id="loop-reference-label">Sin referencia</span><button class="device-small" data-action="loopReference">Guardar referencia</button><button class="device-small" data-action="clearLoop">Borrar</button></div>
+                <div class="loops-grid"><canvas id="pv-canvas" width="455" height="380" aria-label="Bucle presión-volumen" role="img"></canvas><canvas id="fv-canvas" width="455" height="380" aria-label="Bucle flujo-volumen" role="img"></canvas></div>
+                <p class="device-note">Bucle actual + último ciclo completo. La referencia es un ciclo medido, no una curva precalculada.</p>
+              </div>
+              <div class="device-view view-data" id="view-data" data-view-panel="data"><div class="device-view-header"><h2>Datos del paciente virtual</h2><span>Medición, calidad y procedencia</span></div><div class="data-table-scroll"><table class="device-table"><thead><tr><th>Parámetro</th><th>Valor</th><th>Unidad</th><th>Calidad / origen</th></tr></thead><tbody id="data-table-body"></tbody></table></div></div>
+              <div class="device-view view-trends" id="view-trends" data-view-panel="trends"><div class="device-view-header"><h2>Tendencias</h2><span>Un punto por ciclo · últimos 10 min</span><button class="device-small" data-action="csv">Exportar CSV</button></div><canvas id="trends-canvas" width="934" height="432" aria-label="Tendencias de presión, volumen y frecuencia" role="img"></canvas></div>
+              <div class="device-view view-log" id="view-log" data-view-panel="log"><div class="device-view-header"><h2>Registro de eventos</h2><span id="log-count"></span><button class="device-small" data-action="session">Guardar sesión</button></div><div class="event-log" id="device-event-log"></div></div>
+            </div>
+            <aside class="pressure-column"><canvas id="gauge-canvas" width="140" height="490" aria-label="Presión instantánea, PEEP, Ppico y límite Pmáx" role="img"></canvas></aside>
+            <div class="hold-panel" id="hold-panel" hidden>
+              <div class="hold-title"><b id="hold-title">Bloqueo inspiratorio</b><button type="button" class="info-button" id="hold-help-button" data-help-key="procedure.inspiratory" data-help-target="hold-help" aria-controls="hold-help" aria-expanded="false" aria-label="Información sobre bloqueo inspiratorio" title="Información"><svg class="icon"><use href="#i-info"/></svg></button><button data-action="closeHold" aria-label="Cerrar panel de maniobra"><svg class="icon"><use href="#i-close"/></svg></button></div>
+              <div class="hold-panel-body"><label>Tiempo<select id="hold-duration"></select></label><button class="hold-play" data-action="runHold" id="hold-run" aria-label="Iniciar bloqueo"><svg class="icon"><use href="#i-play"/></svg></button><div class="hold-result"><span id="hold-value-label">Pplat</span><b id="hold-value">—</b><small id="hold-value-unit">cmH₂O</small></div><div class="hold-result"><span id="hold-second-label">Cstat</span><b id="hold-second">—</b><small id="hold-second-unit">mL/cmH₂O</small></div></div>
+              <div id="hold-help" class="parameter-help" hidden></div><div class="hold-status" id="hold-status">Selecciona tiempo y pulsa iniciar.</div>
+            </div>
+            <div class="standby-overlay" id="standby-overlay" hidden><svg class="icon"><use href="#i-hand"/></svg><h2>EN ESPERA</h2><p>Ventilación virtual detenida.<br>Los ajustes pueden modificarse antes de iniciar.</p><div><button class="primary-button" data-action="startVentilation">Iniciar ventilación</button></div><small>No conectar a equipos ni utilizar con pacientes reales.</small></div>
+            <div class="lock-overlay" id="lock-overlay" hidden><svg class="icon"><use href="#i-lock"/></svg><span>Controles bloqueados</span><button class="device-small" data-action="unlock">Desbloquear</button></div>
+            <div class="frozen-ribbon" id="frozen-ribbon" hidden>CURVAS CONGELADAS · La ventilación continúa</div>
+          </div>
+          <nav class="monitor-nav" aria-label="Vistas del monitor">
+            <button class="nav-key history-nav" data-view="trends" title="Tendencias" aria-label="Tendencias"><svg class="icon"><use href="#i-history"/></svg></button>
+            <div class="nav-divider"></div>
+            <button class="nav-key" data-view="basic" title="Datos grandes" aria-label="Datos grandes"><svg class="icon"><use href="#i-grid"/></svg></button>
+            <button class="nav-key chosen" data-view="waves" title="Curvas y datos" aria-label="Curvas y datos"><svg class="icon"><use href="#i-wave"/></svg></button>
+            <button class="nav-key" data-view="loops" title="Bucles" aria-label="Bucles"><svg class="icon"><use href="#i-loop"/></svg></button>
+            <button class="nav-key" data-view="data" title="Tabla de mediciones" aria-label="Tabla de mediciones"><svg class="icon"><use href="#i-table"/></svg></button>
+            <button class="nav-key" data-view="log" title="Registro de eventos" aria-label="Registro de eventos"><svg class="icon"><use href="#i-list"/></svg></button>
+            <div class="nav-divider"></div>
+            <button class="nav-key" data-action="tools" title="Mecánica y procedimientos" aria-label="Mecánica y procedimientos"><svg class="icon"><use href="#i-lung"/></svg></button>
+            <span class="monitor-clock" id="monitor-clock">00:00</span><span class="phase-status" id="phase-status">Inicializando</span>
+          </nav>
+          <footer class="quick-controls" id="quick-controls"></footer>
+          <div class="quick-editor" id="quick-editor" hidden role="dialog" aria-labelledby="quick-editor-title">
+            <div class="editor-top"><div><small>AJUSTE PENDIENTE</small><h2 id="quick-editor-title">Volumen tidal</h2></div><div class="editor-header-actions"><button type="button" class="info-button" id="quick-help-button" data-help-key="setting.vt" data-help-target="quick-explanation" aria-controls="quick-explanation" aria-expanded="false" aria-label="Información sobre el parámetro" title="Información"><svg class="icon"><use href="#i-info"/></svg></button><button class="close-button" data-action="cancelEdit" aria-label="Cancelar edición"><svg class="icon"><use href="#i-close"/></svg></button></div></div>
+            <div class="editor-value"><button class="step-button" data-action="editMinus" aria-label="Disminuir"><svg class="icon"><use href="#i-minus"/></svg></button><input type="number" id="quick-value" aria-label="Valor del ajuste"><span id="quick-unit">mL</span><button class="step-button" data-action="editPlus" aria-label="Aumentar"><svg class="icon"><use href="#i-plus"/></svg></button></div>
+            <input type="range" id="quick-range" aria-label="Deslizador de ajuste"><div id="quick-explanation" class="parameter-help" hidden></div><div id="quick-validation" class="inline-validation" role="status" hidden></div>
+            <div class="editor-actions"><button class="secondary-button" data-action="cancelEdit">Cancelar</button><button class="primary-button" data-action="confirmEdit">Confirmar</button></div>
+            <small class="knob-hint">Rueda / ↑ ↓ para ajustar · Enter para confirmar · Esc para cancelar</small>
+          </div>
+          <div class="pending-ribbon" id="pending-ribbon" hidden>Ajustes confirmados · aplicación en la próxima respiración</div>
+        </section>
+      </div>
+      <div class="bezel-bottom"><span class="power-led"></span><div class="hard-keys"><button class="hard-key" data-action="mute" title="Pausa de audio" aria-label="Pausa de audio"><svg class="icon"><use href="#i-muted"/></svg></button><button class="hard-key" data-action="oxygen" title="O₂ temporal" aria-label="O₂ temporal"><svg class="icon"><use href="#i-oxygen"/></svg></button><button class="hard-key" data-action="snapshot" title="Captura PNG del monitor" aria-label="Captura PNG del monitor"><svg class="icon"><use href="#i-camera"/></svg></button><button class="hard-key" id="lock-key" data-action="lock" title="Bloquear controles" aria-label="Bloquear controles" aria-pressed="false"><svg class="icon"><use href="#i-lock"/></svg></button></div><div class="bezel-signature">R860 <span>LAB</span><small>SIMULACIÓN EDUCATIVA</small></div><button class="hard-key home-key" data-action="home" aria-label="Volver a curvas" title="Vista principal"><svg class="icon"><use href="#i-home"/></svg></button><button class="trim-knob" id="trim-knob" data-action="knob" aria-label="Perilla: confirmar ajuste. Usa la rueda o las flechas para modificarlo." title="Selecciona un parámetro. Gira con la rueda; pulsa para confirmar."><span></span></button></div>
+    </div></div>
+    <div class="signal-toolbar"><div class="signal-actions"><button class="button small" id="freeze-button" data-action="freeze"><svg class="icon"><use href="#i-pause"/></svg><span>Congelar curvas</span></button><label class="inline-select">Ventana<select id="wave-window"><option value="6">6 s</option><option value="12" selected>12 s</option><option value="24">24 s</option></select></label><label class="inline-select">Trazado<select id="wave-style"><option value="sweep">Barrido</option><option value="scroll">Continuo</option></select></label></div><span class="simulation-clock" id="simulation-clock">Sesión 00:00</span></div>
+    <div class="signal-inspector" id="signal-inspector" hidden><span id="inspector-label">Mueve el cursor sobre una curva congelada para medir la señal.</span><input type="range" min="0" max="1000" value="1000" id="history-slider" aria-label="Revisar curvas anteriores"></div>
+    <div class="stage-footnote"><svg class="icon"><use href="#i-help"/></svg><span>Selecciona un parámetro inferior, modifica y confirma. <button data-action="help">Ver guía de uso</button></span><span id="engine-note">Motor 250 Hz · Señal 50 Hz</span></div>
+  </section>
+  <aside class="instructor" id="instructor" aria-label="Panel docente">
+    <div class="instructor-header"><div><span class="panel-kicker">FUERA DEL EQUIPO</span><h2>Laboratorio de mecánica</h2></div><svg class="icon"><use href="#i-lung"/></svg></div>
+    <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="learn">Entrenar</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button></div>
+    <section class="instructor-pane active" id="instructor-patient">
+      <div class="model-note">Mecánica del paciente virtual</div>
+      <div id="patient-controls"></div>
+      <details class="advanced-patient"><summary>Esfuerzo, sensor de O₂ y más parámetros</summary><div id="patient-extra-controls"></div></details>
+      <div class="truth-grid"><div><span class="truth-label">Constante de tiempo<button type="button" class="info-button" data-help-key="teacher.tau" data-help-target="help-truth-tau" aria-controls="help-truth-tau" aria-expanded="false" aria-label="Información sobre constante de tiempo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-tau">—<small>s</small></b></div><div><span class="truth-label">PEEPi del modelo<button type="button" class="info-button" data-help-key="teacher.auto" data-help-target="help-truth-auto" aria-controls="help-truth-auto" aria-expanded="false" aria-label="Información sobre PEEPi del modelo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-auto">—<small>cmH₂O</small></b></div><div><span class="truth-label">Volumen absoluto</span><b id="truth-vabs">—<small>mL</small></b></div><div><span class="truth-label">O₂ entregado / sensor</span><b id="truth-o2">—<small>%</small></b></div></div>
+      <div class="truth-help-panels"><div class="parameter-help" id="help-truth-tau" hidden></div><div class="parameter-help" id="help-truth-auto" hidden></div></div><div class="mini-muscle"><div><span>Esfuerzo muscular</span><b id="muscle-value">0,0 cmH₂O</b></div><canvas id="muscle-canvas" width="560" height="110" aria-label="Presión muscular del paciente virtual" role="img"></canvas></div>
+      <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica del escenario</button>
+    </section>
+    <section class="instructor-pane" id="instructor-learn">
+      <div class="lesson-count" id="lesson-count">0 de 3 objetivos</div><h3 class="lesson-title" id="lesson-title"></h3><p class="lesson-text" id="lesson-text"></p><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa las curvas y el registro para explicar qué cambió.</div>
+      <details class="reflection" id="reflection"><summary id="reflection-question"></summary><p id="reflection-answer"></p></details>
+      <button class="button full" data-action="debrief"><svg class="icon"><use href="#i-book"/></svg>Resumen de práctica</button><button class="button full subtle" data-action="scenarios">Elegir otro escenario<svg class="icon"><use href="#i-arrow"/></svg></button>
+      <p class="truth-disclaimer">Objetivos de manejo del simulador; no califican seguridad clínica, competencia profesional ni aptitud de extubación.</p>
+    </section>
+    <section class="instructor-pane" id="instructor-events"><p class="lesson-text">Introduce cambios durante la ventilación. Cada acción queda en el registro y puede revertirse.</p><div class="fault-grid" id="fault-grid"></div><button class="button full" data-action="undoEvent" id="undo-event"><svg class="icon"><use href="#i-history"/></svg>Deshacer último evento</button><h3 class="small-section-title">Últimos eventos</h3><div class="teacher-log" id="teacher-log"></div></section>
+    <footer class="instructor-footer"><svg class="icon"><use href="#i-book"/></svg><span id="instructor-footer-text">Escenarios sintéticos · A/C VC<br><b>Modelo mecánico, no paciente completo</b></span></footer>
+  </aside>
+</main>
+<footer class="safety-strip"><strong>SIMULACIÓN EDUCATIVA · NO USO CLÍNICO</strong><span>No es un producto de GE HealthCare ni controla equipos médicos.</span><button data-action="model">Modelo, alcance y fuentes</button><span class="version" id="version-tag">v0.2.0 · Offline</span></footer>
+<dialog id="app-dialog" class="app-dialog" aria-labelledby="dialog-title"><header class="dialog-header"><div><small id="dialog-eyebrow"></small><h2 id="dialog-title"></h2></div><button class="close-button" data-action="closeDialog" aria-label="Cerrar ventana"><svg class="icon"><use href="#i-close"/></svg></button></header><div class="dialog-content" id="dialog-content"></div><footer class="dialog-footer" id="dialog-footer"></footer></dialog>
+<div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
+<input id="session-input" type="file" accept=".json,application/json" hidden>
+<noscript><div class="noscript">Este simulador necesita JavaScript. No usa internet ni requiere instalar paquetes.</div></noscript>
+<script type="module" src="./src/main.ts"></script>
+</body></html>

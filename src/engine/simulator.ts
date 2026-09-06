@@ -49,7 +49,9 @@ export function defaultInit(overrides: Partial<SimulatorInit> = {}): SimulatorIn
 
 export interface LiveSignals { paw: number; flowLps: number; volTidalL: number; ppeakCurrent: number | null; phase: ControllerPhase }
 
-export interface Truth { vAbsL: number; pel: number; pmus: number; patient: PatientParams; effort: EffortParams; sensors: SensorParams; fio2Delivered: number }
+export interface Truth { vAbsL: number; pel: number; pmus: number; /** PEEP intrínseca verdadera al fin de la última espiración: Pel(V al inicio de la respiración en curso) − PEEP. */ peepiEndExp: number; patient: PatientParams; effort: EffortParams; sensors: SensorParams; fio2Delivered: number }
+
+export interface TrendPoint { tMs: number; ppeak: number; peepe: number; vte: number; vti: number; rr: number | null; mve: number | null; pplatHold: number | null; cstatHold: number | null; type: string }
 
 export interface EngineFrame {
   engineVersion: string;
@@ -68,8 +70,9 @@ export interface EngineFrame {
   breathCount: number;
   audioPauseUntilMs: number | null;
   truth: Truth;
-  samples: { t: Float64Array; paw: Float32Array; flow: Float32Array; vol: Float32Array };
+  samples: { t: Float64Array; paw: Float32Array; flow: Float32Array; vol: Float32Array; pmus: Float32Array; breath: Float32Array };
   eventsTail: SessionEvent[];
+  trends: TrendPoint[];
 }
 
 /**
@@ -90,6 +93,8 @@ export class Simulator {
   readonly events: SessionEvent[] = [];
   readonly commandLog: CommandLogEntry[] = [];
   readonly breaths: BreathRecord[] = [];
+  /** Tendencias por respiración (1 punto por ciclo completo; últimos 900). */
+  readonly trends: TrendPoint[] = [];
   private eventSeq = 0;
   private ventilation: VentilationState = 'standby';
   private lastMetrics: Record<string, MetricSample> = {};
@@ -272,6 +277,8 @@ export class Simulator {
         if (this.breaths.length > 2000) this.breaths.shift();
         this.metrics.onBreath(ev.record);
         this.lastMetrics = this.metrics.compute(this.metricContext());
+        this.trends.push({ tMs: ev.record.endSimTimeMs, ppeak: ev.record.ppeak, peepe: ev.record.peepe, vte: ev.record.vtExp, vti: ev.record.vtInsp, rr: this.lastMetrics.rr?.value ?? null, mve: this.lastMetrics.mve?.value ?? null, pplatHold: this.procedures.last.inspHold?.values.pplat?.value ?? null, cstatHold: this.procedures.last.inspHold?.values.cstat?.value ?? null, type: ev.record.type });
+        if (this.trends.length > 900) this.trends.shift();
         this.alarms.onBreath(ev.record, this.lastMetrics, t);
         this.logEvent('breath', 'controller', { breathId: ev.record.breathId, type: ev.record.type, cause: ev.record.cyclingCause, vte: ev.record.vtExp, ppeak: ev.record.ppeak });
         break;
@@ -317,7 +324,7 @@ export class Simulator {
     this.procedures.step(this.clock.simTimeMs);
     this.drainController();
     const vol = this.patient.v - this.breathVStart;
-    this.ring.push(this.clock.simTimeMs, this.controller.paw, this.controller.q, vol);
+    this.ring.push(this.clock.simTimeMs, this.controller.paw, this.controller.q, vol, this.effort.pmusAt(this.clock.simTimeMs / 1000), this.controller.currentBreathSequence);
     this.samplesSinceFrame += 1;
   }
 
@@ -334,7 +341,7 @@ export class Simulator {
     }
     const n = this.samplesSinceFrame;
     this.samplesSinceFrame = 0;
-    const eventsTail = this.events.slice(-20);
+    const eventsTail = this.events.slice(-80);
     return {
       engineVersion: ENGINE_VERSION,
       profileVersion: PROFILE.profileVersion,
@@ -351,9 +358,10 @@ export class Simulator {
       procedure: { current: this.procedures.current, hold: this.controller.holdState, last: { ...this.procedures.last }, o2: this.procedures.o2 ? { ...this.procedures.o2 } : null },
       breathCount: this.breaths.length,
       audioPauseUntilMs: this.audioPauseUntilMs,
-      truth: { vAbsL: this.patient.v, pel: this.patient.pel(), pmus: this.effort.pmusAt(t / 1000), patient: { ...this.patient.params }, effort: { ...this.effort.params }, sensors: { ...this.o2.params }, fio2Delivered: this.o2.delivered },
+      truth: { vAbsL: this.patient.v, pel: this.patient.pel(), pmus: this.effort.pmusAt(t / 1000), peepiEndExp: Math.max(0, this.patient.pel(this.breathVStart) - this.controller.peepTarget), patient: { ...this.patient.params }, effort: { ...this.effort.params }, sensors: { ...this.o2.params }, fio2Delivered: this.o2.delivered },
       samples: this.ring.last(n),
       eventsTail,
+      trends: this.trends.slice(-600),
     };
   }
 }

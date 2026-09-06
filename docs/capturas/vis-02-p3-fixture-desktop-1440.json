@@ -1,5 +1,5 @@
 {
- "name": "vis-03-live-sc01-t12s",
+ "name": "vis-02-p3-fixture",
  "project": "desktop-1440",
  "viewport": {
   "width": 1440,
@@ -7,8 +7,8 @@
  },
  "t0": "2026-08-18T21:04:05-04:00",
  "seed": 1,
- "simTimeMs": 12000,
- "wallTimeMs": 1787101457000,
+ "simTimeMs": 0,
+ "wallTimeMs": 1787146270000,
  "engine": "worker",
- "scenario": "SC-01"
+ "fixture": "P3"
 }

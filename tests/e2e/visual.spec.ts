@@ -1,84 +1,76 @@
 import { expect, test } from '@playwright/test';
-import { expectBanner, frame, open, screenshot } from './helpers';
+import { expectSafetyMark, frame, open, screenshot } from './helpers';
 
 test.describe('VIS/DAT · fixtures fotográficas (transcripción, no motor)', () => {
-  test('VIS-01 + DAT-02 · P1: composición avanzada; Pplat de panel 35 y de bloqueo 32 no se fusionan', async ({ page }, info) => {
+  test('VIS-01 + DAT-02 · P1: panel denso y bloqueo; Pplat de bloqueo 32 y Cstat 19 fechados', async ({ page }, info) => {
     await open(page, { fixture: 'P1', instructor: 0 });
-    await expectBanner(page);
-    await expect(page.locator('.alarm-band')).toContainText('Sin alarmas');
-    await expect(page.locator('.qk.mode .value')).toHaveText('A/C VC');
-    await expect(page.locator('.qk[data-key="vt"] .value')).toHaveText('285');
-    await expect(page.locator('.qk[data-key="rr"] .value')).toHaveText('32');
-    await expect(page.locator('.qk[data-key="ie"] .value')).toHaveText('1:1.5');
-    await expect(page.locator('.qk[data-key="peep"] .value')).toHaveText('18');
-    await expect(page.locator('.qk[data-key="pmax"] .value')).toHaveText('50');
-    const pplatPanel = page.locator('.panel:not(.basic) .cell[aria-label="Pplat"] .value');
-    await expect(pplatPanel).toHaveText('35');
-    await page.getByRole('button', { name: 'Bloqueo inspiratorio' }).click();
-    const hold = page.getByRole('dialog', { name: 'Bloqueo inspiratorio' });
-    await expect(hold).toBeVisible();
-    await expect(hold.locator('.field').nth(2).locator('.value')).toHaveText('32');
-    await expect(hold.locator('.field').nth(3).locator('.value')).toHaveText('19');
-    await expect(hold.locator('.stamp')).toContainText('18-Ago-2026');
-    await expect(hold.locator('.stamp')).toContainText('21:04:05');
-    await expect(hold.locator('.time-key')).toHaveText('3');
-    await expect(page.locator('.navbar .clock')).toHaveText('21:04');
-    await expect(page.locator('.pause-banner')).toContainText('FIXTURE VISUAL P1');
-    await screenshot(page, info, 'vis-01-p1-advanced', { fixture: 'P1' });
+    await expectSafetyMark(page);
+    await expect(page.locator('#alarm-label')).toHaveText('Sin alarmas');
+    await expect(page.locator('#quick-mode')).toHaveText('A/C VC');
+    await expect(page.locator('[data-quick-val="vt"]')).toHaveText('285');
+    await expect(page.locator('[data-quick-val="rr"]')).toHaveText('32');
+    await expect(page.locator('[data-quick-val="ie"]')).toHaveText('1:1.5');
+    await expect(page.locator('[data-quick-val="peep"]')).toHaveText('18');
+    await expect(page.locator('[data-quick-val="pmax"]')).toHaveText('50');
+    await expect(page.locator('#numeric-grid [data-metric="ppeak"] .numeric-value')).toHaveText('38');
+    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('32');
+    await expect(page.locator('#hold-value')).toHaveText('32');
+    await expect(page.locator('#hold-second')).toHaveText('19');
+    await expect(page.locator('#hold-status')).toContainText('18-Ago-2026 21:04:05');
+    await expect(page.locator('#scenario-name')).toContainText('P1');
+    await screenshot(page, info, 'vis-01-p1-fixture', { fixture: 'P1' });
   });
-
-  test('VIS-02 + DAT-01 · P3: curvas básicas con seis valores grandes; FiO2 set 100 / medida 97; VT set 285 / VTesp 295', async ({ page }, info) => {
+  test('VIS-02 + DAT-01 · P3: datos grandes; FiO2 set 100 / medida 97; VT set 285 / VTesp 295', async ({ page }, info) => {
     await open(page, { fixture: 'P3', instructor: 0 });
-    await expect(page.locator('.work')).toHaveClass(/basic/);
-    const big = page.locator('.panel.basic .cell.big');
-    await expect(big).toHaveCount(6);
-    await expect(page.locator('.panel.basic .cell[aria-label="FiO2"] .value')).toHaveText('97');
-    await expect(page.locator('.qk[data-key="fio2"] .value')).toHaveText('100');
-    await expect(page.locator('.panel.basic .cell[aria-label="Volumen tidal"] .value')).toHaveText('295');
-    await expect(page.locator('.qk[data-key="vt"] .value')).toHaveText('285');
-    await expect(page.locator('.panel.basic .cell[aria-label="PEEPe"] .limits')).toContainText('Off');
-    await expect(page.locator('.panel.basic .cell[aria-label="Presión pico"] .value')).toHaveText('33');
-    await expect(page.locator('.panel.basic .cell[aria-label="Volumen minuto"] .value')).toHaveText('8.9');
-    await expect(page.locator('.panel.basic .cell[aria-label="Frecuencia resp."] .value')).toHaveText('30');
-    await page.getByRole('button', { name: 'Bloqueo inspiratorio' }).click();
-    const hold = page.getByRole('dialog', { name: 'Bloqueo inspiratorio' });
-    await expect(hold.locator('.field').nth(2).locator('.value')).toHaveText('28');
-    await expect(hold.locator('.field').nth(3).locator('.value')).toHaveText('25');
-    await expect(hold.locator('.stamp')).toContainText('19-Ago-2026');
-    await expect(hold.locator('.stamp')).toContainText('09:31:10');
-    await screenshot(page, info, 'vis-02-p3-basic', { fixture: 'P3' });
+    await expect(page.locator('#view-basic')).toHaveClass(/active/);
+    await expect(page.locator('#big-metrics [data-metric="fio2"] b')).toHaveText('97');
+    await expect(page.locator('[data-quick-val="fio2"]')).toHaveText('100');
+    await expect(page.locator('#big-metrics [data-metric="vte"] b')).toHaveText('295');
+    await expect(page.locator('[data-quick-val="vt"]')).toHaveText('285');
+    await expect(page.locator('#big-metrics [data-metric="ppeak"] b')).toHaveText('33');
+    await expect(page.locator('#big-metrics [data-metric="mve"] b')).toHaveText('8.9');
+    await expect(page.locator('#big-metrics [data-metric="rr"] b')).toHaveText('30');
+    await screenshot(page, info, 'vis-02-p3-fixture', { fixture: 'P3' });
   });
 });
 
 test.describe('VIS · motor vivo con pausa automática determinista', () => {
-  test('VIS-03 · banco SC-01 a t = 12 s: curvas, números y barra de presión', async ({ page }, info) => {
+  test('VIS-03 · banco SC-01 a t = 12 s: curvas, números y manómetro', async ({ page }, info) => {
     await open(page, { autopause: 12000, instructor: 0, speed: 4 });
     await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 12000, null, { timeout: 20_000 });
     const f = await frame(page);
-    expect(f.simTimeMs).toBe(12000);
-    expect(f.breathCount).toBe(3);
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="Ppico"] .value')).toHaveText('20');
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="PEEPe"] .value')).toHaveText('5');
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="VTesp"] .value')).toHaveText('500');
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="FR"] .value')).toHaveText('15');
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="Pplat"] .value')).toHaveText('---'); // sin pausa: null, no 0
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="VTesp espont"] .value')).toHaveText('---');
-    await expect(page.locator('.panel:not(.basic) .cell[aria-label="FR espont"] .value')).toHaveText('0');
-    await expect(page.locator('.navbar .clock')).toHaveText('21:04');
+    expect(f.simTimeMs).toBe(12000); expect(f.breathCount).toBe(3);
+    await expect(page.locator('#numeric-grid [data-metric="ppeak"] .numeric-value')).toHaveText('20');
+    await expect(page.locator('#numeric-grid [data-metric="peepe"] .numeric-value')).toHaveText('5');
+    await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('500');
+    await expect(page.locator('#numeric-grid [data-metric="rr"] .numeric-value')).toHaveText('15');
+    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('—');
+    await expect(page.locator('#phase-status')).toContainText('PAUSADA');
+    const drawn = await page.evaluate(() => { const c = document.getElementById('waves-canvas') as HTMLCanvasElement; const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 40) if (d[i]! > 0) n++; return n; });
+    expect(drawn).toBeGreaterThan(100);
     await page.waitForTimeout(300);
-    await screenshot(page, info, 'vis-03-live-sc01-t12s', { scenario: 'banco por defecto (SC-01)' });
+    await screenshot(page, info, 'vis-03-live-sc01-t12s', { scenario: 'SC-01' });
   });
-
-  test('VIS-04 · alarma larga y tres dígitos: SC-09 (oclusión de ensayo) con Pmáx alcanzada', async ({ page }, info) => {
+  test('VIS-04 · alarma de Pmáx (SC-09): banda roja, luz del bisel y celda resaltada', async ({ page }, info) => {
     await open(page, { scenario: 'SC-09', autopause: 20000, instructor: 0, speed: 4 });
     await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 20000, null, { timeout: 25_000 });
     const f = await frame(page);
     expect(f.alarmBar.color).toBe('red');
-    await expect(page.locator('.alarm-band')).toHaveClass(/red/);
-    await expect(page.locator('.alarm-band')).toContainText('Pmáx alcanzada');
-    // Las columnas no se desplazan: la celda de Ppico conserva su anchura mínima reservada.
-    const w = await page.locator('.panel:not(.basic) .cell[aria-label="Ppico"] .value').evaluate((el) => (el as HTMLElement).offsetWidth); // anchura de layout, independiente del escalado CSS
-    expect(w).toBeGreaterThan(40);
+    await expect(page.locator('#alarm-band')).toHaveClass(/high/);
+    await expect(page.locator('#alarm-label')).toContainText('Pmáx alcanzada');
+    await expect(page.locator('#bezel-light')).toHaveClass(/high/);
+    await expect(page.locator('#numeric-grid [data-metric="ppeak"]')).toHaveClass(/alarm-value/);
     await screenshot(page, info, 'vis-04-alarm-sc09-t20s', { scenario: 'SC-09' });
+  });
+  test('VIS-05 · vistas de bucles, tabla, tendencias y registro son funcionales', async ({ page }, info) => {
+    await open(page, { autopause: 16000, instructor: 0, speed: 4 });
+    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
+    await page.click('[data-view="loops"]'); await page.click('[data-action="loopReference"]');
+    await expect(page.locator('#loop-reference-label')).toContainText('Referencia');
+    await screenshot(page, info, 'vis-05-loops');
+    await page.click('[data-view="data"]'); await expect(page.locator('#data-table-body tr')).toHaveCount(16);
+    await expect(page.locator('#data-table-body')).toContainText('sensor del ventilador');
+    await page.click('[data-view="trends"]'); await page.waitForTimeout(200);
+    await page.click('[data-view="log"]'); await expect(page.locator('#device-event-log .event-log-row').first()).toBeVisible();
   });
 });

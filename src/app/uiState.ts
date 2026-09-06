@@ -77,6 +77,13 @@ export class EditController {
     return true;
   }
 
+  /** Valor escrito directamente (campo numérico o deslizador). Se valida en preview(); no se aproxima en silencio. */
+  setDraftDisplay(value: number | 'off', now: number): boolean {
+    if (this.locked || this.state.kind === 'idle') return false;
+    this.state = { kind: 'editing', key: this.state.key, draftDisplay: value, originalDisplay: this.state.originalDisplay, at: now };
+    return true;
+  }
+
   /** Vista previa antes de confirmar: valida rango, rejilla y consecuencias cruzadas (Tinsp, flujo). */
   preview(): EditPreview {
     if (this.state.kind === 'idle') return { valid: false, reasons: [], derived: null, changed: false };

@@ -90,8 +90,11 @@ export class ProcedureManager {
       const denom = o.pawEnd - o.peepeStart;
       if (quality === 'valid' && denom >= MIN_CSTAT_DENOMINATOR && o.vtInspL > 0) {
         values.cstat = mkSample('cstatHold', o.vtInspL / denom, 'L/cmH2O', { ...base, quality: 'valid', reason: 'denominador=Pplat−PEEPe (sin PEEPtot medida)' });
+        values.driving = mkSample('drivingHold', denom, 'cmH2O', { ...base, quality: 'valid', reason: 'Pplat − PEEPe al inicio de esa inspiración (P)' });
+        values.vt = mkSample('vtHold', o.vtInspL, 'L', { ...base, quality: 'valid', reason: null });
       } else {
         values.cstat = mkSample('cstatHold', null, 'L/cmH2O', { ...base, quality: 'invalid', reason: quality !== 'valid' ? reason : 'denominadorInsuficiente' });
+        values.driving = mkSample('drivingHold', null, 'cmH2O', { ...base, quality: 'invalid', reason: quality !== 'valid' ? reason : 'denominadorInsuficiente' });
       }
     } else {
       const peepTot = quality === 'valid' ? o.pawEnd : null;

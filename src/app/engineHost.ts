@@ -64,14 +64,8 @@ export class EngineHost {
           this.running = false;
           this.pauseReason = 'segundo plano';
           this.sim?.noteEvent('pause', 'system', { paused: true, reason: 'pestaña oculta', wallIso: new Date().toISOString() });
-        } else if (!m.hidden && this.pauseReason === 'segundo plano') {
-          // Política P: reanudar sin recuperar el tiempo perdido; la discontinuidad queda registrada y visible.
-          this.running = true;
-          this.pauseReason = null;
-          this.lastNow = null;
-          this.accMs = 0;
-          this.sim?.noteEvent('pause', 'system', { paused: false, reason: 'pestaña visible; sin recuperación de tiempo' });
         }
+        // Política P: al volver la pestaña la simulación sigue pausada; la reanudación es manual y no se recupera el tiempo perdido.
         this.postFrame();
         break;
       case 'requestFrame':

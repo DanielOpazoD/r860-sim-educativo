@@ -67,8 +67,9 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
     procedure: { current: null, hold: null, last: { inspHold: hold, expHold: null, manualBreath: null, increaseO2: null }, o2: null },
     breathCount: 0,
     audioPauseUntilMs: null,
-    truth: { vAbsL: 0, pel: 0, pmus: 0, patient: { crs: 0, rInsp: 0, rExp: 0, r2: 0, p0: 0 }, effort: { enabled: false, amplitude: 0, ratePerMin: 0, tiS: 0, phaseS: 0 }, sensors: { fio2TauS: 0, fio2Bias: 0 }, fio2Delivered: f.set.fio2Pct / 100 },
-    samples: { t: new Float64Array(0), paw: new Float32Array(0), flow: new Float32Array(0), vol: new Float32Array(0) },
+    truth: { vAbsL: 0, pel: 0, pmus: 0, peepiEndExp: 0, patient: { crs: 0, rInsp: 0, rExp: 0, r2: 0, p0: 0 }, effort: { enabled: false, amplitude: 0, ratePerMin: 0, tiS: 0, phaseS: 0 }, sensors: { fio2TauS: 0, fio2Bias: 0 }, fio2Delivered: f.set.fio2Pct / 100 },
+    samples: { t: new Float64Array(0), paw: new Float32Array(0), flow: new Float32Array(0), vol: new Float32Array(0), pmus: new Float32Array(0), breath: new Float32Array(0) },
     eventsTail: [],
+    trends: [],
   };
 }

@@ -56,3 +56,17 @@ Un agente revisor independiente leyó el motor contra las 12 reglas críticas y 
 | 13 | Varios: pausa pre-empted por Plimit mal etiquetada; flujo inverso dentro de un sub-paso limitado; bloqueo espiratorio nunca ejecutado con paciente que dispara; pausa de audio no reproducible en replay | Corregidos (válvula unidireccional en la integración; U-28; la pausa de audio es estado del motor) |
 
 También señaló dos pruebas vacías: BM-08 usaba una referencia numérica del mismo orden de error que el paso fino (ahora usa la solución analítica) y PHY-10 pasaba con inspiraciones de duración cero (ahora exige volumen y tiempo positivos y trata la oclusión total como caso aparte).
+
+## v0.2 · adopción del sistema visual y de interacción de «R860 Lab» (06-09-2026)
+
+A petición del usuario se conservó el motor, el protocolo y las pruebas de este proyecto y se sustituyó la capa de interfaz por el diseño de R860 Lab v1.1 (código MIT; nota de licencia en `LICENSES/R860-LAB-MIT.txt`): `assets/styles.css`, los símbolos SVG de `index.html`, la estructura de interacción de `src/app.js`, el estilo de dibujo de `src/plots.js` y los textos de ayuda de `src/help.js`, portados a TypeScript sobre los cuadros del motor propio.
+
+Desviaciones respecto al dossier que esto implica:
+
+- **Marca de simulación**: el mandato pedía «SIMULACIÓN EDUCATIVA · NO USO CLÍNICO» siempre visible en el marco. El usuario pidió eliminar las franjas llamativas. Se conserva de forma discreta: franja inferior de la página, firma del bisel, encabezado de cada diálogo, marca de agua de las capturas PNG y aviso en la superposición de espera. Registrado como U-29.
+- **Cromado exterior, iconos y otras vistas** (bucles, tabla, tendencias, registro): reinterpretación de R860 Lab, no observación de las fotografías. Las vistas ya no están desactivadas: se alimentan de los mismos cuadros del motor (bucles y tendencias por ciclo, tabla con calidad y origen, registro de eventos).
+- **Pestaña oculta**: la reanudación pasa a ser manual (aviso + botón Reanudar), como en R860 Lab.
+- **Etiquetas**: se conservan las observadas (Ppico, PEEPe, Pplat, Pmedia, VMesp, FR, VTesp, FiO₂, Bloqueo insp/esp, EN ESPERA, punto decimal); se añaden ΔP estática y Cstat de bloqueo con antigüedad («Med. mm:ss»).
+- **Códigos D/P/U fuera de la interfaz del alumno**: la procedencia vive en evidence.json, gaps.json y en la guía; los diálogos hablan en lenguaje clínico.
+
+Defectos de R860 Lab documentados en su memoria técnica (H1 balance de fuga en PC, H2 restauración JSON laxa, H3 cronómetro SBT, H4 FR/VM antiguas, H5 panel de maniobra tapando controles) no se heredan: PC/SBT/fuga no existen aquí; la importación se valida (SEC-03, H6); FR/VM llevan calidad «antiguo» y ventana publicada; el panel de maniobra se cierra al cambiar de vista con una acción explícita.

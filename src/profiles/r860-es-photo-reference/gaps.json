@@ -246,21 +246,16 @@
       "policy": "P: ocluye al final de la espiración la termine quien la termine; con esfuerzo la meseta resulta inestable e inválida con motivo.",
       "status": "nueva (revisión adversarial)",
       "blocks": []
+    },
+    {
+      "id": "U-29",
+      "question": "Aspecto de vistas no fotografiadas (bucles, tabla, tendencias, registro) y del cromado exterior.",
+      "policy": "P: diseño reinterpretado a partir de «R860 Lab» (MIT) — carcasa grafito, iconos vectoriales, editor emergente — declarado como interpretación, no réplica. La marca de simulación pasa a franja inferior, firma del bisel, encabezado de diálogos y marca de agua de capturas (decisión del usuario, 06-09-2026).",
+      "status": "nueva (v0.2)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [
-    {
-      "feature": "Vista básica sin curvas",
-      "reason": "Composición no observada (U-04); CFG-05."
-    },
-    {
-      "feature": "Pantalla dividida (bucles) y vista tabulada",
-      "reason": "Etapa 4 de la hoja de ruta; bucles no implementados."
-    },
-    {
-      "feature": "Espacios Pasado (tendencias, capturas) y Futuro (SBT, FRC, SpiroDynamics, metabolismo, cálculos)",
-      "reason": "Etapas 4–6; U-14."
-    },
     {
       "feature": "Modos distintos de A/C VC",
       "reason": "PC y CPAP/PS sólo tras pruebas de banco propias (BM-03 con rampa real, PHY-03); adaptativos U-09; opcionales U-15."
@@ -278,16 +273,20 @@
       "reason": "U-11, U-16."
     },
     {
-      "feature": "Captura de pantalla del equipo",
-      "reason": "Etapa 4; las capturas de validación se hacen con Playwright."
-    },
-    {
       "feature": "Apagado/encendido y batería",
       "reason": "U-16; la aplicación permanece recuperable."
     },
     {
       "feature": "Fuga, circuito, espacio muerto, sensores con ruido/retraso de presión y flujo",
       "reason": "Modelo mínimo P0; SC-07/SC-08 pendientes."
+    },
+    {
+      "feature": "Espacio Futuro (SBT, FRC, SpiroDynamics, metabolismo, cálculos)",
+      "reason": "Etapas 5–6; U-14."
+    },
+    {
+      "feature": "Fuga y desconexión en Eventos del panel docente",
+      "reason": "Sin submodelo de circuito/fuga en P0 (U-10); botones visibles pero desactivados con motivo."
     }
   ]
 }
