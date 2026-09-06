@@ -126,7 +126,9 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   ctx.restore();
   const tick = max / 3; for (let i = 0; i <= 3; i++) { const v = i * tick; line(ctx, x, yf(v), x + bw, yf(v), '#96d9e399', 1); text(ctx, format(v), x - 8, yf(v) + 4, 11, '#84d6f6', 'right'); }
   const marker = (value: number | null, label: string, color: string): void => { if (value === null || !Number.isFinite(value)) return; const y = yf(value); line(ctx, x - 2, y, x + bw + 2, y, color, 3); text(ctx, label, x + bw + 7, y + 3, 10, color); };
-  marker(s.pmax, 'Pmáx', '#ff75a0'); marker(s.ppeak, 'Ppico', '#c9f9ff'); marker(s.peep, 'PEEP', '#81e1e1');
+  marker(s.pmax, 'Pmáx', '#ff75a0');
+  if (s.ppeak !== null && Math.abs(s.ppeak - s.pmax) < max * 0.04) { const y = yf(s.ppeak); line(ctx, x - 2, y, x + bw + 2, y, '#c9f9ff', 3); text(ctx, 'Ppico', x - 6, y + 14, 10, '#c9f9ff', 'right'); } else marker(s.ppeak, 'Ppico', '#c9f9ff');
+  marker(s.peep, 'PEEP', '#81e1e1');
   text(ctx, 'VTesp', w / 2, 420, 10, '#9adaff', 'center'); text(ctx, format(s.standby ? null : s.vteMl, 0), w / 2, 449, 29, '#e0feff', 'center', '600'); text(ctx, `FiO₂ ${format(s.fio2Pct, 0)} %`, w / 2, 477, 12, '#ace9ff', 'center');
 }
 

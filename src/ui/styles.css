@@ -3896,3 +3896,19 @@ to {
   width:32px;
   height:32px
 }
+
+/* [adaptado] Vista básica como en la foto P3: curvas estrechas a la izquierda y seis valores grandes en 2×3 con límites. */
+.monitor .view-basic { flex-direction: row; gap: 8px; }
+.monitor .view-basic > canvas { width: 330px; height: 491px; flex: 0 0 330px; }
+.monitor .big-metrics { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 6px 14px; padding: 12px 10px 4px 14px; }
+.monitor .big-numeric { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 12px; align-items: end; justify-content: start; padding: 2px 8px; }
+.monitor .big-numeric > span:first-child { grid-column: 1; grid-row: 1; margin-bottom: 2px; font-size: 16px; }
+.monitor .big-numeric b { grid-column: 1; grid-row: 2; font-size: 54px; font-weight: 500; }
+.monitor .big-numeric em { grid-column: 2; grid-row: 1; justify-self: end; align-self: end; margin: 0; font-size: 12px; }
+.monitor .big-numeric .numeric-limits { grid-column: 2; grid-row: 2; align-self: end; margin: 0 0 8px 0; font-size: 13px; color: #98dcff; white-space: pre-line; line-height: 1.15; }
+/* [adaptado] Dígitos algo más ligeros, como los del equipo. */
+.monitor .numeric-value, .monitor .quick-key b { font-weight: 500; }
+/* [adaptado] Ventana de bloqueo fuera del monitor escalado en móvil. */
+.hold-panel.mobile-hold { position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto; width: auto; max-width: none; z-index: 60; font-size: 15px; transform: none; }
+.hold-panel.mobile-hold .hold-panel-body { flex-wrap: wrap; gap: 10px; }
+.hold-panel.mobile-hold select, .hold-panel.mobile-hold .hold-play { min-height: 44px; min-width: 64px; font-size: 16px; }

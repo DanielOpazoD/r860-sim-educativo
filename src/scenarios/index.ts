@@ -39,7 +39,7 @@ export const SCENARIOS: Scenario[] = [
     id: 'SC-01', name: 'Banco lineal pasivo', synthetic: true, category: 'Fundamentos', level: 1,
     lesson: { title: 'La presión tiene dos componentes', text: 'En este pulmón pasivo, elevar R aumenta sobre todo la presión resistiva; reducir C aumenta la elástica. Un bloqueo permite separarlas.', tasks: [{ id: 'plateau', text: 'Realiza un bloqueo inspiratorio válido.', test: 'validInsp' }, { id: 'r', text: 'Duplica la resistencia inspiratoria hasta ≥ 20.', test: 'r20' }, { id: 'repeat', text: 'Repite el bloqueo después del cambio.', test: 'holdAfterPatient' }] },
     question: '¿Qué ocurre con Ppico y Pplat cuando sólo aumenta la resistencia?', answer: 'En volumen controlado con flujo constante, Ppico sube por R × flujo; Pplat casi no cambia si no hay atrapamiento. La compliance del pulmón sintético es la misma.',
-    description: 'C = 0.05 L/cmH2O; Rinsp = Rexp = 10; esfuerzo 0; sin fuga. Ajustes de banco: VT 0.5 L, PEEP 5, Tinsp 1 s (BM-01/02).',
+    description: 'C = 50 mL/cmH2O; Rinsp = Rexp = 10; sin esfuerzo ni fuga. VT 500 mL, PEEP 5, Tinsp 1 s.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 }, effort: passive, sensors: idealSensors,
     settings: { vt: 0.5, rr: 15, ie: 1 / 3, peep: 5, pmax: 40, plimit: 35, pausePct: 0 }, initialV: 'equilibrium', perturbations: [],
     observe: 'Relaciones analíticas VC y coherencia de unidades.', caution: 'No se denomina «paciente normal» ni constituye configuración de tratamiento.',
@@ -48,7 +48,7 @@ export const SCENARIOS: Scenario[] = [
     id: 'SC-02', name: 'Menor distensibilidad', synthetic: true, category: 'Mecánica restrictiva', level: 2,
     lesson: { title: 'El mismo volumen, otra presión', text: 'A los 20 s la C baja a 20 mL/cmH2O. El mismo VT exige más presión elástica. La etiqueta describe mecánica, no un paciente con SDRA.', tasks: [{ id: 'meseta', text: 'Mide Pplat con un bloqueo inspiratorio antes del cambio.', test: 'validInsp' }, { id: 'after', text: 'Repite el bloqueo después de los 20 s.', test: 'holdAfter20' }, { id: 'peep', text: 'Cambia la PEEP y observa que Pplat sube en la misma cantidad.', test: 'peepChanged' }] },
     question: '¿Por qué Ppico y Pplat suben juntos al bajar C?', answer: 'La presión elástica VT/C sube para ambas; la resistiva no cambia. La diferencia Ppico − Pplat se conserva.',
-    description: 'Como SC-01 pero C = 0.02 L/cmH2O desde t = 20 s.',
+    description: 'Mismo pulmón que el banco lineal, pero la C baja a 20 mL/cmH2O a los 20 s.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 }, effort: passive, sensors: idealSensors,
     settings: { vt: 0.5, rr: 15, ie: 1 / 3, peep: 5, pmax: 40, plimit: 35, pausePct: 0 }, initialV: 'equilibrium',
     perturbations: [{ atSimTimeMs: 20_000, patient: { crs: 0.02 }, note: 'C 0.05 → 0.02' }],
@@ -112,6 +112,17 @@ export const SCENARIOS: Scenario[] = [
     observe: 'Separar objetivo, entrega y medición.', caution: 'Escenario sintético; no asociado a fallas reales del equipo fotografiado.',
   },
 ];
+
+SCENARIOS.push({
+  id: 'SC-13', name: 'Presión control: la misma mecánica, otra variable controlada', synthetic: true, category: 'Modos', level: 2,
+  description: 'A/C PC con Pinsp 10 sobre PEEP 5, Tinsp 1 s, C 50 y R 10 (τ = 0,5 s). El flujo decae exponencialmente y el VT sale de la mecánica: ≈ 432 mL.',
+  patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 }, effort: passive, sensors: idealSensors,
+  settings: { mode: 'AC_PC', pinsp: 10, riseMs: 100, rr: 15, ie: 1 / 3, peep: 5, pmax: 40 }, initialV: 'equilibrium',
+  perturbations: [{ atSimTimeMs: 30_000, patient: { rInsp: 20 }, note: 'Rinsp 10 → 20' }],
+  observe: 'El flujo pico baja a la mitad y el VT cae; la presión no cambia.', caution: 'La rampa lineal y el tope de flujo son aproximaciones del simulador.',
+  lesson: { title: 'En PC la presión es la consigna y el volumen la consecuencia', text: 'A los 30 s la resistencia se duplica: el flujo pico (ΔP/R) cae a la mitad y el VT baja aunque Pinsp no cambie. Compara con VC, donde ocurre lo contrario.', tasks: [{ id: 'vt', text: 'Observa VTesp ≈ 430 mL con Pinsp 10 antes de los 30 s.', test: 'vtNear430' }, { id: 'drop', text: 'Tras los 30 s, comprueba que VTesp cae y Ppico se mantiene.', test: 'vtDropPc' }, { id: 'ti', text: 'Alarga el tiempo inspiratorio (I:E 1:1) y observa el VT acercarse a C·ΔP = 500 mL.', test: 'ieOne' }] },
+  question: '¿Por qué en PC un Tinsp más largo aumenta el VT sólo hasta cierto punto?', answer: 'Porque el volumen sigue V = C·ΔP·(1 − e^(−t/τ)): tras 3–5 constantes de tiempo el flujo ya es casi cero y no entra más gas.',
+});
 
 /** Referencia visual de las fotografías P1/P3 (O): sólo los AJUSTES visibles; C y R son artificiales; las lecturas se calculan. */
 SCENARIOS.push({

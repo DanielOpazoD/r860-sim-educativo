@@ -66,6 +66,15 @@ export function stepDisplayValue(rule: SettingRule, displayValue: number, direct
   return Number(snapped.toFixed(6));
 }
 
+/** Lista ordenada de valores mostrados admitidos por una regla (para deslizadores que sólo recorren valores válidos). */
+export function gridValues(rule: SettingRule): number[] {
+  if (rule.values) return rule.values.map((v) => v * rule.displayFactor).sort((a, b) => a - b);
+  const out: number[] = [];
+  for (const seg of [...rule.domain].sort((a, b) => a.min - b.min)) for (let v = seg.min; v <= seg.max + 1e-9; v += seg.step) { const r = Number(v.toFixed(6)); if (!out.length || Math.abs((out[out.length - 1] as number) - r) > 1e-9) out.push(r); }
+  return out;
+}
+export function nearestGridValue(rule: SettingRule, displayValue: number): number { const vals = gridValues(rule); let best = vals[0] as number; for (const v of vals) if (Math.abs(v - displayValue) < Math.abs(best - displayValue)) best = v; return best; }
+
 export interface DerivedTiming {
   tCycleS: number;
   tInspS: number;

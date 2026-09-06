@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { isOnGrid, stepDisplayValue, validateVcSettings, deriveVcTiming } from '../../src/domain/validation';
+import { gridValues, isOnGrid, nearestGridValue, stepDisplayValue, validateVcSettings, deriveVcTiming } from '../../src/domain/validation';
 import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS, IE_VALUES } from '../../src/profiles/r860-es-photo-reference/settings';
 import { BENCH_SETTINGS } from '../helpers';
 
@@ -67,5 +67,22 @@ describe('restricciones cruzadas (P sobre rangos D)', () => {
     expect(v.ok).toBe(true);
     expect(v.derived.qTargetLps).toBeCloseTo(0.5, 9);
     expect(deriveVcTiming({ rr: 32, ie: 1 / 1.5, vt: 0.285, pausePct: 0 }).tInspS).toBeCloseTo(0.75, 9);
+  });
+});
+
+describe('rejilla de valores admitidos (deslizador por índice)', () => {
+  it('gridValues enumera cada tramo con su paso y sin duplicar fronteras', () => {
+    const vt = gridValues(VC_ADULT_RULES.vt);
+    expect(vt[0]).toBe(VC_ADULT_RULES.vt.domain[0]?.min);
+    expect(vt[vt.length - 1]).toBe(2000);
+    expect(new Set(vt).size).toBe(vt.length);
+    for (let i = 1; i < vt.length; i++) expect(vt[i]).toBeGreaterThan(vt[i - 1] as number);
+    for (const v of vt) expect(isOnGrid(VC_ADULT_RULES.vt, v)).toBe(true);
+  });
+  it('nearestGridValue devuelve un valor admitido y el más cercano', () => {
+    expect(nearestGridValue(VC_ADULT_RULES.vt, 287)).toBe(285);
+    expect(nearestGridValue(VC_ADULT_RULES.pinsp, 17.3)).toBe(17);
+    expect(nearestGridValue(VC_ADULT_RULES.vt, 9000)).toBe(2000);
+    fc.assert(fc.property(fc.double({ min: -500, max: 5000, noNaN: true }), (x) => isOnGrid(VC_ADULT_RULES.vt, nearestGridValue(VC_ADULT_RULES.vt, x))));
   });
 });

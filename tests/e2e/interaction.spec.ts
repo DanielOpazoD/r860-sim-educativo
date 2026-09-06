@@ -30,7 +30,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
   test('INT-02b · valor escrito fuera de rejilla se rechaza con explicación, no se aproxima', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
     await page.click('[data-setting-quick="vt"]'); await page.fill('#quick-value', '287');
-    await expect(page.locator('#quick-validation')).toContainText('rejilla');
+    await expect(page.locator('#quick-validation')).toContainText('no es un valor admitido');
     await expect(page.locator('[data-action="confirmEdit"]')).toBeDisabled();
     await page.fill('#quick-value', '300'); await expect(page.locator('[data-action="confirmEdit"]')).toBeEnabled();
     await page.keyboard.press('Escape');
