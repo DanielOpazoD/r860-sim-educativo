@@ -107,6 +107,26 @@ export function validateDomains(s: VcSettings, rules: Record<Exclude<keyof VcSet
   return reasons;
 }
 
+/** Valida cambios de límites de alarma: claves conocidas, Off o número finito en rejilla, bajo < alto (P). */
+export function validateAlarmLimitChanges(changes: unknown, rules: Record<string, SettingRule>, current: Record<string, number | 'off'>): { ok: boolean; reasons: string[]; clean: Record<string, number | 'off'> } {
+  const reasons: string[] = []; const clean: Record<string, number | 'off'> = {};
+  if (!changes || typeof changes !== 'object' || Array.isArray(changes)) return { ok: false, reasons: ['Cambios de alarma inválidos.'], clean };
+  for (const [k, v] of Object.entries(changes as Record<string, unknown>)) {
+    const rule = rules[k];
+    if (!rule) { reasons.push(`Límite desconocido: ${k}.`); continue; }
+    if (v === 'off') { if (!rule.allowOff) reasons.push(`${rule.label}: Off no permitido.`); else clean[k] = 'off'; continue; }
+    if (typeof v !== 'number' || !Number.isFinite(v)) { reasons.push(`${rule.label}: valor no numérico.`); continue; }
+    if (!isOnGrid(rule, v * rule.displayFactor)) { reasons.push(`${rule.label}: ${(v * rule.displayFactor).toFixed(rule.decimals + 1)} ${rule.displayUnit} no es un valor admitido.`); continue; }
+    clean[k] = v;
+  }
+  const merged = { ...current, ...clean };
+  for (const base of ['vte', 'mve', 'rr', 'fio2', 'peepe']) {
+    const lo = merged[`${base}Low`], hi = merged[`${base}High`];
+    if (typeof lo === 'number' && typeof hi === 'number' && lo >= hi) reasons.push(`${rules[`${base}Low`]?.label ?? base}: el límite bajo debe ser menor que el alto.`);
+  }
+  return { ok: reasons.length === 0, reasons, clean };
+}
+
 /** Parámetros de paciente sintético admisibles para el integrador (P): positivos, finitos y con tau = R·C ≥ 1 ms. */
 export function validatePatientParams(p: { crs: number; rInsp: number; rExp: number; r2: number; p0: number }): string[] {
   const r: string[] = [];

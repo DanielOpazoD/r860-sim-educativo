@@ -57,7 +57,7 @@ export class EngineHost {
         this.postFrame();
         break;
       case 'setSpeed':
-        this.speed = Math.max(0.1, Math.min(4, m.speed));
+        if (typeof m.speed === 'number' && Number.isFinite(m.speed)) this.speed = Math.max(0.1, Math.min(4, m.speed));
         break;
       case 'visibility':
         if (m.hidden && this.running) {

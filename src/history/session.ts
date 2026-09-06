@@ -21,6 +21,8 @@ export interface SessionFile {
 
 export const MAX_SESSION_BYTES = 2 * 1024 * 1024;
 export const MAX_COMMANDS = 10_000;
+/** Tope de duración reproducible (4 h de tiempo simulado) para que un archivo no pueda bloquear el motor. */
+export const MAX_REPLAY_MS = 4 * 3600_000;
 
 export function exportSession(sim: Simulator): SessionFile {
   return {
@@ -77,6 +79,8 @@ export function importSession(text: string): ImportResult {
     if (init.patient && typeof init.patient === 'object') errors.push(...validatePatientParams(init.patient as SimulatorInit['patient']).map((r) => `init.patient: ${r}`));
     if (!(init.initialV === 'equilibrium' || (typeof init.initialV === 'number' && init.initialV >= -1 && init.initialV <= 5))) errors.push('init.initialV inválido');
   }
+  if (typeof o.finalSimTimeMs !== 'number' || !Number.isFinite(o.finalSimTimeMs) || o.finalSimTimeMs < 0 || o.finalSimTimeMs > MAX_REPLAY_MS) errors.push(`finalSimTimeMs debe ser un número entre 0 y ${MAX_REPLAY_MS} ms`);
+  if (!Array.isArray(o.breaths)) errors.push('breaths debe ser un arreglo');
   const cmds = o.commands;
   if (!Array.isArray(cmds)) errors.push('commands debe ser un arreglo');
   else {
@@ -87,6 +91,10 @@ export function importSession(text: string): ImportResult {
       if (typeof e.simTimeMs !== 'number') errors.push(`commands[${i}].simTimeMs`);
       const cmd = e.command as Record<string, unknown> | undefined;
       if (!cmd || typeof cmd.type !== 'string' || !COMMAND_TYPES.has(cmd.type)) errors.push(`commands[${i}].command.type no permitido`);
+      else if (typeof e.simTimeMs === 'number' && (e.simTimeMs < 0 || e.simTimeMs > MAX_REPLAY_MS)) errors.push(`commands[${i}].simTimeMs fuera de rango`);
+      else if (['confirmSettings', 'setAlarmLimits'].includes(cmd.type) && (!cmd.changes || typeof cmd.changes !== 'object')) errors.push(`commands[${i}]: changes ausente`);
+      else if (['setPatient', 'setEffort', 'setSensors'].includes(cmd.type) && (!cmd.params || typeof cmd.params !== 'object')) errors.push(`commands[${i}]: params ausente`);
+      else if (cmd.type === 'requestHold' && (typeof cmd.durationS !== 'number' || !['inspHold', 'expHold'].includes(String(cmd.kind)))) errors.push(`commands[${i}]: bloqueo inválido`);
       if (!['learner', 'instructor', 'scenario', 'system', 'controller'].includes(String(e.actor))) errors.push(`commands[${i}].actor inválido`);
     });
   }

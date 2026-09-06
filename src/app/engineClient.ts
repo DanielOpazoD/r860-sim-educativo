@@ -8,9 +8,17 @@ import type { EngineToMain, MainToEngine } from './protocol';
 
 export type FrameListener = (m: Extract<EngineToMain, { type: 'frame' }>) => void;
 
-/** Cliente tipado del motor. Usa un Worker; si falla (p. ej. file://), cae a un anfitrión en la página y lo declara. */
+/** Tiempo máximo de espera del saludo «ready» del Worker antes de degradar al modo en página (ms). */
+export const WORKER_READY_TIMEOUT_MS = 4000;
+
+/**
+ * Cliente tipado del motor. Usa un Worker; si el Worker falla o no saluda a tiempo, cae a un anfitrión en la página,
+ * cambia `mode` a 'inline' y lo notifica por `onDegraded` para que la interfaz lo muestre.
+ */
 export class EngineClient {
-  readonly mode: 'worker' | 'inline';
+  mode: 'worker' | 'inline';
+  degradedReason: string | null = null;
+  onDegraded: ((reason: string) => void) | null = null;
   private worker: Worker | null = null;
   private inline: EngineHost | null = null;
   private nextId = 1;
@@ -19,17 +27,20 @@ export class EngineClient {
   private readyResolve: (() => void) | null = null;
   readonly ready: Promise<void>;
 
-  constructor(opts: { forceInline?: boolean } = {}) {
+  constructor(opts: { forceInline?: boolean; readyTimeoutMs?: number } = {}) {
     this.ready = new Promise<void>((res) => { this.readyResolve = res; });
     let mode: 'worker' | 'inline' = 'inline';
     if (!opts.forceInline && typeof Worker !== 'undefined') {
       try {
         this.worker = new Worker(new URL('../workers/engine.worker.ts', import.meta.url), { type: 'module' });
         this.worker.onmessage = (e: MessageEvent<EngineToMain>) => this.dispatch(e.data);
-        this.worker.onerror = () => { /* se degrada al iniciar si no llega 'ready' */ };
+        this.worker.onerror = (e) => this.degrade(`error del Worker: ${(e as ErrorEvent).message || 'desconocido'}`);
         mode = 'worker';
-      } catch {
+        const timer = setTimeout(() => { if (!this.readyDone) this.degrade('el Worker no respondió a tiempo'); }, opts.readyTimeoutMs ?? WORKER_READY_TIMEOUT_MS);
+        void this.ready.then(() => clearTimeout(timer));
+      } catch (e) {
         this.worker = null;
+        this.degradedReason = `no se pudo crear el Worker: ${(e as Error).message}`;
       }
     }
     if (!this.worker) {
@@ -39,13 +50,25 @@ export class EngineClient {
     this.mode = mode;
   }
 
+  private readyDone = false;
+
+  /** Degradación explícita: se cierra el Worker y se sigue en la página. Nunca silenciosa. */
+  private degrade(reason: string): void {
+    if (this.mode === 'inline') return;
+    this.worker?.terminate(); this.worker = null;
+    this.mode = 'inline'; this.degradedReason = reason;
+    this.inline = new EngineHost((m) => this.dispatch(m));
+    this.onDegraded?.(reason);
+    if (!this.readyDone) this.dispatch({ type: 'ready' });
+  }
+
   private send(m: MainToEngine): void {
     if (this.worker) this.worker.postMessage(m);
     else this.inline?.handle(m);
   }
 
   private dispatch(m: EngineToMain): void {
-    if (m.type === 'ready') { this.readyResolve?.(); return; }
+    if (m.type === 'ready') { this.readyDone = true; this.readyResolve?.(); return; }
     if (m.type === 'frame') { for (const l of this.frameListeners) l(m); return; }
     const cb = this.pending.get(m.id);
     if (cb) { this.pending.delete(m.id); cb(m); }

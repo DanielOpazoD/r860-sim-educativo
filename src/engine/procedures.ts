@@ -68,8 +68,9 @@ export class ProcedureManager {
     } else if (ev.type === 'holdEnded') {
       this.finishHold(ev.outcome, simTimeMs);
     } else if (ev.type === 'rejected' && this.current && ev.what === `hold:${this.current.procedureId}`) {
-      this.last[this.current.kind] = this.last[this.current.kind]; // el resultado previo se conserva
-      this.current = null;
+      // No elegible (p. ej. inspiración terminada por Pmáx): resultado inválido con motivo y hora, para que la interfaz lo muestre.
+      const cur = this.current; this.current = null;
+      this.last[cur.kind] = { ...cur, phase: 'invalid', completedAtMs: simTimeMs, wallTimeMs: this.wallTimeOf(simTimeMs), quality: 'invalid', reason: ev.reason, values: {} };
     }
   }
 

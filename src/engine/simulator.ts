@@ -1,7 +1,7 @@
 import type { Command, CommandLogEntry, CommandResult } from '../domain/commands';
 import type { Actor, AlarmLimits, AlarmState, BreathRecord, ControllerPhase, EffortParams, MetricSample, PatientParams, ProcedureResult, SensorParams, SessionEvent, VcSettings, VentilationState } from '../domain/types';
-import { validateDomains, validatePatientParams, validateVcSettings } from '../domain/validation';
-import { VC_ADULT_CROSS_LIMITS, DEFAULT_ALARM_LIMITS, DEFAULT_VC_SETTINGS, VC_ADULT_RULES } from '../profiles/r860-es-photo-reference/settings';
+import { validateAlarmLimitChanges, validateDomains, validatePatientParams, validateVcSettings } from '../domain/validation';
+import { ALARM_LIMIT_RULES, VC_ADULT_CROSS_LIMITS, DEFAULT_ALARM_LIMITS, DEFAULT_VC_SETTINGS, VC_ADULT_RULES } from '../profiles/r860-es-photo-reference/settings';
 import { PROFILE } from '../profiles/r860-es-photo-reference/profile';
 import { AlarmEngine, type AlarmBar } from './alarms';
 import { SimClock } from './clock';
@@ -106,6 +106,7 @@ export class Simulator {
   constructor(init: SimulatorInit) {
     const errs = [...validateDomains(init.settings, VC_ADULT_RULES), ...validateVcSettings(init.settings, VC_ADULT_CROSS_LIMITS).reasons, ...validatePatientParams(init.patient)];
     if (!(init.dtMs >= 0.5 && init.dtMs <= 20)) errs.push('dtMs fuera de 0.5–20 ms');
+    const al = validateAlarmLimitChanges(init.alarmLimits, ALARM_LIMIT_RULES, {}); if (!al.ok) errs.push(...al.reasons);
     if (!Number.isFinite(init.startWallTimeMs)) errs.push('startWallTimeMs no finito');
     if (errs.length) throw new Error(`Inicialización inválida: ${errs.join('; ')}`);
     this.init = init;
@@ -170,10 +171,13 @@ export class Simulator {
         this.logEvent('setting', actor, { changes: cmd.changes, old, policy: 'nextBreath salvo Pmáx/FiO2 inmediato (P)', derived: v.derived });
         return { accepted: true };
       }
-      case 'setAlarmLimits':
-        this.alarms.setLimits(cmd.changes);
-        this.logEvent('alarm', actor, { limits: cmd.changes });
+      case 'setAlarmLimits': {
+        const v = validateAlarmLimitChanges(cmd.changes, ALARM_LIMIT_RULES, this.alarms.limits as unknown as Record<string, number | 'off'>);
+        if (!v.ok) return { accepted: false, reason: v.reasons.join(' ') };
+        this.alarms.setLimits(v.clean as Partial<AlarmLimits>);
+        this.logEvent('alarm', actor, { limits: v.clean });
         return { accepted: true };
+      }
       case 'enterStandby':
         if (this.ventilation === 'standby') return { accepted: false, reason: 'Ya en espera' };
         this.procedures.onStandby(this.clock.simTimeMs);
@@ -209,7 +213,9 @@ export class Simulator {
       }
       case 'increaseO2Start': {
         if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
-        const r = this.procedures.startO2(this.clock.simTimeMs, this.controller.settings.fio2, cmd.deltaFraction ?? PROFILE.increaseO2DeltaFraction, PROFILE.increaseO2Ms);
+        const delta = cmd.deltaFraction ?? PROFILE.increaseO2DeltaFraction;
+        if (typeof delta !== 'number' || !Number.isFinite(delta) || delta < 0.05 || delta > 1) return { accepted: false, reason: 'Incremento de O2 inválido (5–100 % sobre el ajuste; D ficha 2014)' };
+        const r = this.procedures.startO2(this.clock.simTimeMs, this.controller.settings.fio2, delta, PROFILE.increaseO2Ms);
         if (r.accepted) this.logEvent('procedure', actor, { kind: 'increaseO2', phase: 'started', target: this.controller.settings.fio2 });
         return r;
       }
@@ -336,9 +342,8 @@ export class Simulator {
 
   frame(): EngineFrame {
     const t = this.clock.simTimeMs;
-    if (this.ventilation !== 'ventilating' || Object.keys(this.lastMetrics).length === 0 || this.lastMetrics.fio2) {
-      this.lastMetrics = this.metrics.compute(this.metricContext());
-    }
+    // Las métricas por respiración cambian al cerrar cada ciclo; FiO2 y la calidad «antiguo» dependen del tiempo: se recalculan en cada cuadro.
+    this.lastMetrics = this.metrics.compute(this.metricContext());
     const n = this.samplesSinceFrame;
     this.samplesSinceFrame = 0;
     const eventsTail = this.events.slice(-80);
