@@ -15,7 +15,6 @@ import type {
   VentilationState,
 } from '../domain/types';
 import {
-  isOnGrid,
   validateAlarmLimitChanges,
   validateDomains,
   validateEffort,
@@ -24,6 +23,7 @@ import {
   validateSettingsKeys,
   validateVcSettings,
 } from '../domain/validation';
+import { executeCommand, type CommandContext } from './commandHandlers';
 import type { ProfileSpec } from '../domain/profile';
 import { AlarmEngine, type AlarmBar } from './alarms';
 import { SimClock } from './clock';
@@ -227,139 +227,33 @@ export class Simulator {
     return res;
   }
 
+  /** Vista del simulador que ven los manejadores de comandos (ver commandHandlers.ts). */
+  private commandContext(): CommandContext {
+    return {
+      profile: this.profile,
+      controller: this.controller,
+      patient: this.patient,
+      effort: this.effort,
+      o2: this.o2,
+      alarms: this.alarms,
+      procedures: this.procedures,
+      metrics: this.metrics,
+      simTimeMs: this.clock.simTimeMs,
+      ventilation: () => this.ventilation,
+      setVentilation: (v) => {
+        this.ventilation = v;
+      },
+      setAudioPauseUntil: (ms) => {
+        this.audioPauseUntilMs = ms;
+        return ms;
+      },
+      logEvent: (k, a, p) => this.logEvent(k, a, p),
+      drainController: () => this.drainController(),
+    };
+  }
+
   private execute(cmd: Command, actor: Actor): CommandResult {
-    switch (cmd.type) {
-      case 'confirmSettings': {
-        if (!cmd.changes || typeof cmd.changes !== 'object') return { accepted: false, reason: 'Cambios inválidos' };
-        const keyErrs = validateSettingsKeys(cmd.changes as Record<string, unknown>, this.profile.rules);
-        if (keyErrs.length) return { accepted: false, reason: keyErrs.join(' ') };
-        const next: VcSettings = { ...this.controller.settings, ...(this.controller.pending ?? {}), ...cmd.changes };
-        const dom = validateDomains(next, this.profile.rules);
-        const v = validateVcSettings(next, this.profile.crossLimits);
-        if (dom.length || !v.ok) return { accepted: false, reason: [...dom, ...v.reasons].join('; ') };
-        const old: Partial<VcSettings> = {};
-        for (const k of Object.keys(cmd.changes) as (keyof VcSettings)[]) (old as Record<string, unknown>)[k] = this.controller.settings[k];
-        if ('fio2' in cmd.changes && cmd.changes.fio2 !== undefined && actor === 'learner') this.procedures.noteUserFio2Edit();
-        this.controller.applySettings(cmd.changes);
-        this.logEvent('setting', actor, {
-          changes: cmd.changes,
-          old,
-          policy: 'nextBreath salvo Pmáx/FiO2 inmediato (P)',
-          derived: v.derived,
-        });
-        return { accepted: true };
-      }
-      case 'setAlarmLimits': {
-        const v = validateAlarmLimitChanges(
-          cmd.changes,
-          this.profile.alarmLimitRules,
-          this.alarms.limits as unknown as Record<string, number | 'off'>,
-        );
-        if (!v.ok) return { accepted: false, reason: v.reasons.join(' ') };
-        this.alarms.setLimits(v.clean as Partial<AlarmLimits>);
-        this.logEvent('alarm', actor, { limits: v.clean });
-        return { accepted: true };
-      }
-      case 'enterStandby':
-        if (this.ventilation === 'standby') return { accepted: false, reason: 'Ya en espera' };
-        this.procedures.onStandby(this.clock.simTimeMs);
-        this.controller.enterStandby();
-        this.drainController(); // cerrar bloqueos/ajustes pendientes ANTES de apagar monitorización
-        this.alarms.onStandby(this.clock.simTimeMs);
-        this.metrics.reset();
-        this.ventilation = 'standby';
-        this.logEvent('state', actor, { ventilation: 'standby' });
-        return { accepted: true };
-      case 'startVentilation':
-        if (this.ventilation === 'ventilating') return { accepted: false, reason: 'Ya ventilando' };
-        this.ventilation = 'ventilating';
-        this.controller.startVentilation();
-        this.logEvent('state', actor, { ventilation: 'ventilating' });
-        return { accepted: true };
-      case 'requestHold': {
-        if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
-        if (cmd.kind !== 'inspHold' && cmd.kind !== 'expHold') return { accepted: false, reason: 'Tipo de bloqueo desconocido' };
-        const holdRule = this.profile.holdRules[cmd.kind];
-        const hd = holdRule.domain[0];
-        if (typeof cmd.durationS !== 'number' || !Number.isFinite(cmd.durationS) || !isOnGrid(holdRule, cmd.durationS))
-          return { accepted: false, reason: `Duración de bloqueo no admitida (${hd?.min}–${hd?.max} s en pasos de ${hd?.step} s)` };
-        const r = this.procedures.requestHold(cmd.kind, cmd.durationS, this.clock.simTimeMs);
-        if (r.accepted)
-          this.logEvent('procedure', actor, { kind: cmd.kind, durationS: cmd.durationS, procedureId: r.procedureId, phase: 'queued' });
-        return r;
-      }
-      case 'cancelProcedure': {
-        const ok = this.procedures.cancel(cmd.procedureId);
-        if (ok) this.logEvent('procedure', actor, { cancel: cmd.procedureId ?? 'current' });
-        return ok ? { accepted: true } : { accepted: false, reason: 'No hay procedimiento que cancelar (idempotente)' };
-      }
-      case 'manualBreath': {
-        const r = this.controller.requestManualBreath();
-        if (r.accepted) this.logEvent('procedure', actor, { kind: 'manualBreath' });
-        return r;
-      }
-      case 'increaseO2Start': {
-        if (this.ventilation !== 'ventilating') return { accepted: false, reason: 'En espera: no elegible' };
-        const delta = cmd.deltaFraction ?? this.profile.increaseO2DeltaFraction;
-        if (typeof delta !== 'number' || !Number.isFinite(delta) || delta < 0.05 || delta > 1)
-          return { accepted: false, reason: 'Incremento de O2 inválido (5–100 % sobre el ajuste; D ficha 2014)' };
-        const r = this.procedures.startO2(this.clock.simTimeMs, this.controller.settings.fio2, delta, this.profile.increaseO2Ms);
-        if (r.accepted)
-          this.logEvent('procedure', actor, {
-            kind: 'increaseO2',
-            phase: 'started',
-            target: this.controller.settings.fio2,
-            deltaFraction: delta,
-            durationMs: this.profile.increaseO2Ms,
-          });
-        return r;
-      }
-      case 'increaseO2Stop': {
-        const ok = this.procedures.endO2(this.clock.simTimeMs, 'user');
-        if (ok) this.logEvent('procedure', actor, { kind: 'increaseO2', phase: 'stopped' });
-        return ok ? { accepted: true } : { accepted: false, reason: '↑O2 no está en curso' };
-      }
-      case 'acknowledgeAlarms':
-        this.alarms.acknowledge(this.clock.simTimeMs, cmd.id);
-        this.logEvent('alarm', actor, { acknowledge: cmd.id ?? 'all' });
-        return { accepted: true };
-      case 'audioPause':
-        this.audioPauseUntilMs = this.clock.simTimeMs + this.profile.audioPauseMs;
-        this.logEvent('audio', actor, { pauseMs: this.profile.audioPauseMs, until: this.audioPauseUntilMs, evidence: 'D QRG 2020 p.4' });
-        return { accepted: true };
-      case 'setPatient': {
-        const p = { ...this.patient.params, ...cmd.params };
-        const pe = validatePatientParams(p);
-        if (pe.length) return { accepted: false, reason: `Parámetros de paciente inválidos: ${pe.join('; ')}` };
-        this.patient.params = p;
-        this.logEvent('scenario', actor, { patient: cmd.params });
-        return { accepted: true };
-      }
-      case 'setEffort': {
-        const e = { ...this.effort.params, ...cmd.params };
-        const ee = validateEffort(e);
-        if (ee.length) return { accepted: false, reason: ee.join('; ') };
-        this.effort.params = e;
-        this.logEvent('scenario', actor, { effort: cmd.params });
-        return { accepted: true };
-      }
-      case 'setSensors': {
-        const sp = { ...this.o2.params, ...cmd.params };
-        const se = validateSensors(sp);
-        if (se.length) return { accepted: false, reason: se.join('; ') };
-        this.o2.params = sp;
-        this.logEvent('scenario', actor, { sensors: cmd.params });
-        return { accepted: true };
-      }
-      case 'setLungVolume':
-        if (!Number.isFinite(cmd.vAbsL) || cmd.vAbsL < -1 || cmd.vAbsL > 5)
-          return { accepted: false, reason: 'Volumen fuera de rango de ensayo' };
-        this.patient.v = cmd.vAbsL;
-        this.logEvent('scenario', actor, { vAbsL: cmd.vAbsL });
-        return { accepted: true };
-      default:
-        return { accepted: false, reason: 'Comando desconocido' };
-    }
+    return executeCommand(this.commandContext(), cmd, actor);
   }
 
   private drainController(): void {
