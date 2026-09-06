@@ -1,0 +1,202 @@
+/**
+ * Panel docente: fisiología del paciente virtual, eventos (fallos) con deshacer, verdad del modelo, escenarios y lección.
+ * Los cambios de paciente se envían como instructor; la pila de deshacer guarda los comandos inversos.
+ */
+import type { Command } from '../domain/commands';
+import type { EngineFrame } from '../engine/simulator';
+import { format as f } from '../render/plots';
+import { findScenario, SCENARIOS } from '../scenarios';
+import type { AppContext } from './context';
+import { $, $$, icon, put } from './dom';
+import type { HoldPanel } from './holdPanel';
+import { infoButton, infoPanel } from './helpPanels';
+import type { MetricsView } from './metricsView';
+import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, type PhysSpec } from './patientControls';
+import type { PlotsView } from './plotsView';
+import type { QuickEditor } from './quickEditor';
+
+export interface InstructorPanel {
+  readonly teacherVisible: boolean;
+  /** Construye controles de paciente y rejilla de eventos. */
+  init(): void;
+  /** Estado inicial del botón de mostrar/ocultar y pie del panel (tras medir el monitor, como en el arranque original). */
+  initChrome(): void;
+  updateTeacher(): void;
+  setPhys(cmds: Command[], undo: Command[] | null): Promise<boolean>;
+  fault(kind: string): Promise<void>;
+  loadScenario(id: string): void;
+  switchInstructor(tab: string): void;
+  toggleTeacher(): void;
+  resetPatient(): Promise<void>;
+  undoEvent(): Promise<void>;
+  /** Arrastre de un deslizador fisiológico: sincroniza la casilla numérica y el relleno. */
+  physRangeInput(el: HTMLInputElement): void;
+  /** Cambio confirmado de un control fisiológico (deslizador o número). */
+  physChange(el: HTMLInputElement | HTMLSelectElement): void;
+}
+
+export function createInstructorPanel(
+  ctx: AppContext,
+  deps: { quick: QuickEditor; hold: HoldPanel; metrics: MetricsView; plots: PlotsView; initialVisible: boolean },
+): InstructorPanel {
+  let teacherVisible = deps.initialVisible;
+  const eventUndo: Command[][] = [];
+  let apneaApplied = false;
+
+  function renderToggle(): void {
+    $('#workspace').classList.toggle('teacher-hidden', !teacherVisible);
+    $('#teacher-toggle').innerHTML = icon('eye') + `<span>${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente</span>`;
+  }
+  function updateTeacher(): void {
+    const fr = ctx.frame as EngineFrame;
+    for (const [k, sp] of Object.entries(PHYS)) {
+      const n = $<HTMLInputElement>(`[data-phys-number="${k}"]`),
+        r = $<HTMLInputElement>(`[data-phys-range="${k}"]`);
+      const v = sp.get(fr);
+      if (document.activeElement !== n && document.activeElement !== r) {
+        n.value = String(Math.round(v * 100) / 100);
+        r.value = String(v);
+      }
+      r.style.setProperty('--fill', `${(100 * (Number(r.value) - sp.min)) / (sp.max - sp.min)}%`);
+    }
+    const p = fr.truth.patient;
+    put('#truth-tau', `${f(p.rExp * p.crs, 2)} s`);
+    put('#truth-auto', `${f(fr.truth.peepiEndExp, 1)} cmH₂O`);
+    put('#truth-vabs', `${f(fr.truth.vAbsL * 1000, 0)} mL`);
+    put('#truth-o2', `${f(fr.truth.fio2Delivered * 100, 0)} / ${f((fr.metrics.fio2?.value ?? 0) * 100, 1)} %`);
+    put('#muscle-value', `${f(fr.truth.pmus, 1)} cmH₂O`);
+    for (const [id, on] of [
+      ['apnea', apneaApplied && (!fr.truth.effort.enabled || fr.truth.effort.amplitude === 0)],
+      ['obstruction', fr.truth.patient.rInsp >= 300],
+    ] as [string, boolean][]) {
+      const e = document.getElementById(`event-${id}`);
+      e?.classList.toggle('active', on);
+      e?.setAttribute('aria-pressed', String(on));
+    }
+    ($('#undo-event') as HTMLButtonElement).disabled = eventUndo.length === 0;
+  }
+  async function setPhys(cmds: Command[], undo: Command[] | null): Promise<boolean> {
+    let ok = true;
+    for (const c of cmds) {
+      const r = await ctx.send(c, 'instructor');
+      ok = ok && r.accepted;
+    }
+    if (ok && undo) eventUndo.push(undo);
+    return ok;
+  }
+  async function fault(kind: string): Promise<void> {
+    const fr = ctx.frame;
+    if (!fr) return;
+    const p = fr.truth.patient,
+      e = fr.truth.effort;
+    if (kind === 'resistance')
+      await setPhys(
+        [{ type: 'setPatient', params: { rInsp: Math.min(100, p.rInsp * 2), rExp: Math.min(150, p.rExp * 2) } }],
+        [{ type: 'setPatient', params: { rInsp: p.rInsp, rExp: p.rExp } }],
+      );
+    else if (kind === 'compliance')
+      await setPhys(
+        [{ type: 'setPatient', params: { crs: Math.max(0.005, p.crs / 2) } }],
+        [{ type: 'setPatient', params: { crs: p.crs } }],
+      );
+    else if (kind === 'apnea') {
+      const on = e.enabled && e.amplitude > 0;
+      apneaApplied = on;
+      await setPhys(
+        [{ type: 'setEffort', params: on ? { enabled: false } : { enabled: true, amplitude: e.amplitude > 0 ? e.amplitude : 6 } }],
+        [{ type: 'setEffort', params: { enabled: e.enabled, amplitude: e.amplitude } }],
+      );
+    } else if (kind === 'obstruction') {
+      const on = p.rInsp >= 300;
+      await setPhys([{ type: 'setPatient', params: { rInsp: on ? 10 : 400 } }], [{ type: 'setPatient', params: { rInsp: p.rInsp } }]);
+    } else ctx.toast('Fuga y desconexión no están modeladas en esta etapa.', true);
+  }
+  function loadScenario(id: string): void {
+    const sc = findScenario(id);
+    if (!sc) return;
+    ctx.setScenario(sc);
+    ctx.dialog.close();
+    deps.quick.cancelQuick();
+    deps.hold.closeHoldPanel();
+    ctx.clearLock();
+    eventUndo.length = 0;
+    deps.metrics.resetLog();
+    deps.plots.reset();
+    if (ctx.frozen) ctx.toggleFreeze();
+    ctx.client.loadScenario(sc, false);
+    ctx.lesson.reset();
+    ctx.switchView('waves');
+    $('#global-notice').hidden = true;
+    ctx.toast(`${sc.name}: ${sc.observe}`);
+  }
+  return {
+    get teacherVisible() {
+      return teacherVisible;
+    },
+    init() {
+      $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
+      $('#patient-extra-controls').innerHTML =
+        physHtml(PATIENT_EXTRA, infoButton, infoPanel) +
+        `<p class="settings-annotation">Fuga en Y, desconexión y compensaciones: no modeladas en esta etapa.</p>`;
+      $('#fault-grid').innerHTML = FAULTS.map(
+        ([id, i, l, d, off]) =>
+          `<button data-event="${id}" id="event-${id}" ${off ? 'disabled' : ''}>${icon(i)}<b>${l}</b><small>${d}</small></button>`,
+      ).join('');
+    },
+    initChrome() {
+      renderToggle();
+      put('#instructor-footer-text', '');
+      $('#instructor-footer-text').innerHTML =
+        `${SCENARIOS.length} escenarios · A/C VC adulto<br><b>Modelo mecánico, no paciente completo</b>`;
+    },
+    updateTeacher,
+    setPhys,
+    fault,
+    loadScenario,
+    switchInstructor(tab) {
+      for (const e of $$('[data-instructor]')) {
+        const on = e.dataset.instructor === tab;
+        e.classList.toggle('active', on);
+        e.setAttribute('aria-selected', String(on));
+      }
+      for (const id of ['patient', 'learn', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
+    },
+    toggleTeacher() {
+      teacherVisible = !teacherVisible;
+      renderToggle();
+    },
+    async resetPatient() {
+      const scenario = ctx.scenario;
+      await setPhys(
+        [
+          { type: 'setPatient', params: { ...scenario.patient } },
+          { type: 'setEffort', params: { ...scenario.effort } },
+          { type: 'setSensors', params: { ...scenario.sensors } },
+        ],
+        null,
+      );
+      ctx.toast('Mecánica inicial restablecida. Los ajustes ventilatorios se mantienen.');
+    },
+    async undoEvent() {
+      const u = eventUndo.pop();
+      if (u) await setPhys(u, null);
+      else ctx.toast('No hay eventos para deshacer.');
+    },
+    physRangeInput(el) {
+      const k = el.dataset.physRange as string;
+      $<HTMLInputElement>(`[data-phys-number="${k}"]`).value = el.value;
+      const sp = PHYS[k] as PhysSpec;
+      el.style.setProperty('--fill', `${(100 * (Number(el.value) - sp.min)) / (sp.max - sp.min)}%`);
+    },
+    physChange(el) {
+      const k = ((el as HTMLInputElement).dataset.physRange ?? (el as HTMLInputElement).dataset.physNumber) as string;
+      const sp = PHYS[k] as PhysSpec;
+      const frame = ctx.frame;
+      if (frame)
+        void setPhys([sp.cmd(Number(el.value), frame)], null).then(() => {
+          el.blur();
+          if (ctx.frame) updateTeacher();
+        });
+    },
+  };
+}

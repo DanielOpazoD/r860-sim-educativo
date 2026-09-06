@@ -42,7 +42,7 @@ Invariantes: `null ≠ 0 ≠ Off`; seleccionar ≠ aplicar; el volumen absoluto 
 
 ## 4. Interfaz
 
-`src/ui/app.ts` es la raíz de composición: lee los parámetros, crea el cliente del motor, construye un contexto compartido (`AppContext`) y ensambla módulos por responsabilidad (editor rápido, ventana de bloqueo, diálogo de modo, alarmas, panel docente, vista de curvas, teclado, acciones). Cada módulo posee su estado y su DOM y sólo conoce a los demás por el contexto. Las funciones puras viven aparte: `format.ts`, `humanize.ts` (lenguaje del alumno), `metricsTable.ts`, `lesson.ts`, `exports.ts`, `dialogs.ts`, `patientControls.ts`.
+`src/ui/app.ts` es la raíz de composición: lee los parámetros, crea el cliente del motor, construye un contexto compartido (`AppContext`) y ensambla módulos por responsabilidad: `quickEditor.ts`, `holdPanel.ts`, `modeDialog.ts`, `alarmsUi.ts`, `metricsView.ts`, `plotsView.ts`, `views.ts`, `instructorPanel.ts`, `actions.ts`, `keyboard.ts`, con `dialogHost.ts`, `lessonTracker.ts`, `helpPanels.ts` y `labels.ts` como apoyo. Cada módulo se crea con una fábrica `createX(ctx, deps)`, posee su estado y su DOM, y las dependencias entre módulos forman un grafo acíclico explícito (quickEditor ← holdPanel/modeDialog ← instructorPanel ← actions/keyboard ← app), verificado por `import/no-cycle`. `app.ts` queda en unas 325 líneas. Las funciones puras viven aparte: `format.ts`, `humanize.ts` (lenguaje del alumno), `metricsTable.ts`, `lesson.ts`, `exports.ts`, `dialogs.ts`, `patientControls.ts`.
 
 La interfaz depende del perfil inyectado (`ctx.profile`), no del módulo del R860; la única referencia al perfil concreto está en `src/profiles/index.ts`.
 
