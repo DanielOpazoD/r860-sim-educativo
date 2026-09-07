@@ -327,6 +327,13 @@ export class PatientModel {
     return null;
   }
 
+  /**
+   * Evaluaciones del solucionador del nodo desde que se creó el modelo. Cuesta un entero por evaluación y da un
+   * guardián de rendimiento determinista: contar el trabajo no depende de la máquina ni de la instrumentación de
+   * cobertura, al revés que medir tiempo de reloj. Las ramas lineales se resuelven en forma cerrada y no lo mueven.
+   */
+  solverEvals = 0;
+
   /** Presión del nodo cuando el circuito interpone una resistencia en serie: por ella pasa el flujo total de las ramas. */
   nodePressureWithSeries(paw: number, pmus: number, rSeries: number, v: number = this.v, v2: number = this.v2): number {
     if (!(rSeries > 0)) return paw;
@@ -334,8 +341,10 @@ export class PatientModel {
       const exacto = this.solveNodeLinear(pmus, v, v2, 1 / rSeries, -paw / rSeries, 0);
       if (exacto !== null) return exacto;
     }
-    const g = (py: number): number =>
-      this.branch1Flow(py, pmus, v) + (this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0) - (paw - py) / rSeries;
+    const g = (py: number): number => {
+      this.solverEvals++;
+      return this.branch1Flow(py, pmus, v) + (this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0) - (paw - py) / rSeries;
+    };
     let lo = Math.min(paw, this.pel(v), this.hasSecond ? this.pel2(v2) : paw) - pmus - 1;
     let hi = Math.max(paw, this.pel(v), this.hasSecond ? this.pel2(v2) : paw) - pmus + 1;
     for (let i = 0; i < 60 && g(lo) > 0; i++) lo -= Math.max(1, Math.abs(lo));
@@ -357,7 +366,10 @@ export class PatientModel {
       const exacto = this.solveNodeLinear(pmus, v, v2, 0, 0, qTotal);
       if (exacto !== null) return exacto;
     }
-    const f = (py: number): number => this.branch1Flow(py, pmus, v) + this.branch2Flow(py, pmus, v2);
+    const f = (py: number): number => {
+      this.solverEvals++;
+      return this.branch1Flow(py, pmus, v) + this.branch2Flow(py, pmus, v2);
+    };
     let lo = Math.min(this.pel(v), this.pel2(v2)) - pmus - 1;
     let hi = Math.max(this.pel(v), this.pel2(v2)) - pmus + 1;
     for (let i = 0; i < 60 && f(lo) > qTotal; i++) lo -= Math.max(1, Math.abs(lo));

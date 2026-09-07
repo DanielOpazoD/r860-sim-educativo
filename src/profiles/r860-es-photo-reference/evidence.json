@@ -10,77 +10,767 @@
     "U": "No resuelto: se mantiene desconocido; la función queda oculta o desactivada con motivo."
   },
   "sources": [
-    { "id": "P1", "kind": "foto", "file": "IMG_0278.jpeg", "status": "O", "note": "Referencia principal: vista de curvas avanzadas, panel denso, ventana de bloqueo 18-Ago-2026 21:04:05." },
-    { "id": "P2", "kind": "foto", "file": "IMG_0284.jpeg", "status": "O", "note": "Acercamiento del panel, mando y denominación CARESCAPE R860; bloqueo 19-Ago-2026 00:46:13." },
-    { "id": "P3", "kind": "foto", "file": "IMG_0297.jpeg", "status": "O", "note": "Rectificada; vista de curvas básicas con seis valores grandes; bloqueo 19-Ago-2026 09:31:10." },
-    { "id": "DOSSIER", "kind": "html", "title": "CARESCAPE R860 · Investigación y especificación para un simulador web · v1.0 · 06-09-2026", "status": "consultado íntegro (texto extraído + JSON incrustado r860-spec)", "note": "Es la especificación de este proyecto; sus citas a manuales no leídos por mí se marcan D-secundario." },
-    { "id": "R02", "kind": "pdf", "title": "CARESCAPE R860 Ventilator · Quick Reference Guide · JB77395XX · March 2020 · 16 pp", "url": "https://s7d9.scene7.com/is/content/gehealthcare/1-1_quick-reference-guidepdf-3", "access": { "date": "2026-09-06", "method": "descarga directa + pdftotext -layout", "sha256": "475137402a759351be8c6d7bd1411e338da94b1b977d51604d2dff4ed20b8bb4", "pages": 16, "readFully": true } },
-    { "id": "BIBLIO", "kind": "bibliografia", "title": "Mecánica respiratoria bajo ventilación: modelo viscoelástico de dos compartimentos (Mount; Bates; D'Angelo) y resistencia de Rohrer", "url": "" },
-    { "id": "R03", "kind": "pdf", "title": "CARESCAPE R860 · Especificaciones técnicas · JB23840CO · 2014 · 8 pp (copia PVEquip, Chile)", "url": "https://www.pvequip.cl/wp-content/uploads/2019/08/EETT-Ventilador-Carescape-R860.pdf", "access": { "date": "2026-09-06", "method": "descarga directa + pdftotext -layout", "sha256": "1535476a4d60da0f7f8bcee715e340adfac68346fea1a223ff14f5db247a93b3", "pages": 8, "readFully": true, "caveat": "Los iconos de población (adulto/pediátrico/neonatal) no sobreviven a la extracción de texto; para asignar tramos a adulto se sigue la lectura visual del dossier §10." } },
-    { "id": "R07", "kind": "pdf", "title": "CARESCAPE R860 Ventilator · Troubleshooting Quick Reference Guide · JB79437XX · April 2020 · 4 pp", "url": "https://s7d9.scene7.com/is/content/gehealthcare/2-5_trouble-shooting-guidepdf-1", "access": { "date": "2026-09-06", "method": "descarga directa + pdftotext -layout", "sha256": "c6028c9bb381035948dcdbd52baa77bbdf297745925751ef01b4289e768e4936", "pages": 4, "readFully": true } },
-    { "id": "R23", "kind": "pdf", "title": "CARESCAPE R860 · Modos de Ventilación Invasiva (curso, español) · JB72469XX · abril 2020 · 49 diapositivas", "url": "https://landing1.gehealthcare.com/rs/005-SHS-767/images/CARESCAPE%20R860%20Modes%20Invasivos_Spanish.pdf", "access": { "date": "2026-09-06", "method": "descarga directa + pdftotext -layout", "sha256": "c38d74bf732a5f5eb509025d34b574d06df7c13b3c3e95fad18f6837185090f4", "pages": 49, "readFully": true, "caveat": "Material de formación (no URM); traducción con erratas; se usa para comportamiento cualitativo, no para cifras." } },
-    { "id": "R04", "kind": "web", "title": "CARESCAPE R860 · Quick Reference Guide · Software Revision 10 · 2065492-001 (copia ManualMachine)", "url": "https://manualmachine.com/ge/r860/2497968-user-manual/", "access": { "date": "2026-09-06", "status": "FALLIDO (HTTP 403)", "note": "Sólo disponible a través del dossier; sus citas quedan D-secundario." } },
-    { "id": "R05", "kind": "web", "title": "CARESCAPE R860 · User's Reference Manual · SW10 · 2065490-001 (copia ManualsLib)", "url": "https://www.manualslib.com/manual/2898130/Datex-Ohmeda-Carescape-R860.html", "access": { "date": "2026-09-06", "status": "no intentado en esta sesión", "note": "Citas sólo vía dossier (D-secundario)." } },
-    { "id": "R21", "kind": "pdf", "title": "CARESCAPE R860 · User's Reference Manual · Rev F (ruta oficial GE vía ASPR)", "url": "https://www.gehealthcare.com/-/jssmedia/files/us--carescape-r860-user-manual-urm-rev-f.pdf", "access": { "date": "2026-09-06", "status": "FALLIDO (HTTP 502)", "note": "Coincide con U-17 del dossier; integridad no verificada." } },
-    { "id": "R24", "kind": "pdf", "title": "CARESCAPE R860 · Invasive Modes of Ventilation (inglés) · JB72469XX · April 2020", "url": "https://www.gehealthcare.com/-/jssmedia/825b7ec09a56479d8469160697015530.pdf?la=en-us", "access": { "date": "2026-09-06", "status": "FALLIDO (HTTP 502 en en-us y en-ca)", "note": "Se usó la edición en español (R23)." } }
+    {
+      "id": "P1",
+      "kind": "foto",
+      "file": "IMG_0278.jpeg",
+      "status": "O",
+      "note": "Referencia principal: vista de curvas avanzadas, panel denso, ventana de bloqueo 18-Ago-2026 21:04:05."
+    },
+    {
+      "id": "P2",
+      "kind": "foto",
+      "file": "IMG_0284.jpeg",
+      "status": "O",
+      "note": "Acercamiento del panel, mando y denominación CARESCAPE R860; bloqueo 19-Ago-2026 00:46:13."
+    },
+    {
+      "id": "P3",
+      "kind": "foto",
+      "file": "IMG_0297.jpeg",
+      "status": "O",
+      "note": "Rectificada; vista de curvas básicas con seis valores grandes; bloqueo 19-Ago-2026 09:31:10."
+    },
+    {
+      "id": "DOSSIER",
+      "kind": "html",
+      "title": "CARESCAPE R860 · Investigación y especificación para un simulador web · v1.0 · 06-09-2026",
+      "status": "consultado íntegro (texto extraído + JSON incrustado r860-spec)",
+      "note": "Es la especificación de este proyecto; sus citas a manuales no leídos por mí se marcan D-secundario."
+    },
+    {
+      "id": "R02",
+      "kind": "pdf",
+      "title": "CARESCAPE R860 Ventilator · Quick Reference Guide · JB77395XX · March 2020 · 16 pp",
+      "url": "https://s7d9.scene7.com/is/content/gehealthcare/1-1_quick-reference-guidepdf-3",
+      "access": {
+        "date": "2026-09-06",
+        "method": "descarga directa + pdftotext -layout",
+        "sha256": "475137402a759351be8c6d7bd1411e338da94b1b977d51604d2dff4ed20b8bb4",
+        "pages": 16,
+        "readFully": true
+      }
+    },
+    {
+      "id": "BIBLIO",
+      "kind": "bibliografia",
+      "title": "Mecánica respiratoria bajo ventilación: modelo viscoelástico de dos compartimentos (Mount; Bates; D'Angelo) y resistencia de Rohrer",
+      "url": ""
+    },
+    {
+      "id": "R03",
+      "kind": "pdf",
+      "title": "CARESCAPE R860 · Especificaciones técnicas · JB23840CO · 2014 · 8 pp (copia PVEquip, Chile)",
+      "url": "https://www.pvequip.cl/wp-content/uploads/2019/08/EETT-Ventilador-Carescape-R860.pdf",
+      "access": {
+        "date": "2026-09-06",
+        "method": "descarga directa + pdftotext -layout",
+        "sha256": "1535476a4d60da0f7f8bcee715e340adfac68346fea1a223ff14f5db247a93b3",
+        "pages": 8,
+        "readFully": true,
+        "caveat": "Los iconos de población (adulto/pediátrico/neonatal) no sobreviven a la extracción de texto; para asignar tramos a adulto se sigue la lectura visual del dossier §10."
+      }
+    },
+    {
+      "id": "R07",
+      "kind": "pdf",
+      "title": "CARESCAPE R860 Ventilator · Troubleshooting Quick Reference Guide · JB79437XX · April 2020 · 4 pp",
+      "url": "https://s7d9.scene7.com/is/content/gehealthcare/2-5_trouble-shooting-guidepdf-1",
+      "access": {
+        "date": "2026-09-06",
+        "method": "descarga directa + pdftotext -layout",
+        "sha256": "c6028c9bb381035948dcdbd52baa77bbdf297745925751ef01b4289e768e4936",
+        "pages": 4,
+        "readFully": true
+      }
+    },
+    {
+      "id": "R23",
+      "kind": "pdf",
+      "title": "CARESCAPE R860 · Modos de Ventilación Invasiva (curso, español) · JB72469XX · abril 2020 · 49 diapositivas",
+      "url": "https://landing1.gehealthcare.com/rs/005-SHS-767/images/CARESCAPE%20R860%20Modes%20Invasivos_Spanish.pdf",
+      "access": {
+        "date": "2026-09-06",
+        "method": "descarga directa + pdftotext -layout",
+        "sha256": "c38d74bf732a5f5eb509025d34b574d06df7c13b3c3e95fad18f6837185090f4",
+        "pages": 49,
+        "readFully": true,
+        "caveat": "Material de formación (no URM); traducción con erratas; se usa para comportamiento cualitativo, no para cifras."
+      }
+    },
+    {
+      "id": "R04",
+      "kind": "web",
+      "title": "CARESCAPE R860 · Quick Reference Guide · Software Revision 10 · 2065492-001 (copia ManualMachine)",
+      "url": "https://manualmachine.com/ge/r860/2497968-user-manual/",
+      "access": {
+        "date": "2026-09-06",
+        "status": "FALLIDO (HTTP 403)",
+        "note": "Sólo disponible a través del dossier; sus citas quedan D-secundario."
+      }
+    },
+    {
+      "id": "R05",
+      "kind": "web",
+      "title": "CARESCAPE R860 · User's Reference Manual · SW10 · 2065490-001 (copia ManualsLib)",
+      "url": "https://www.manualslib.com/manual/2898130/Datex-Ohmeda-Carescape-R860.html",
+      "access": {
+        "date": "2026-09-06",
+        "status": "no intentado en esta sesión",
+        "note": "Citas sólo vía dossier (D-secundario)."
+      }
+    },
+    {
+      "id": "R21",
+      "kind": "pdf",
+      "title": "CARESCAPE R860 · User's Reference Manual · Rev F (ruta oficial GE vía ASPR)",
+      "url": "https://www.gehealthcare.com/-/jssmedia/files/us--carescape-r860-user-manual-urm-rev-f.pdf",
+      "access": {
+        "date": "2026-09-06",
+        "status": "FALLIDO (HTTP 502)",
+        "note": "Coincide con U-17 del dossier; integridad no verificada."
+      }
+    },
+    {
+      "id": "R24",
+      "kind": "pdf",
+      "title": "CARESCAPE R860 · Invasive Modes of Ventilation (inglés) · JB72469XX · April 2020",
+      "url": "https://www.gehealthcare.com/-/jssmedia/825b7ec09a56479d8469160697015530.pdf?la=en-us",
+      "access": {
+        "date": "2026-09-06",
+        "status": "FALLIDO (HTTP 502 en en-us y en-ca)",
+        "note": "Se usó la edición en español (R23)."
+      }
+    }
   ],
   "claims": [
-    { "id": "E-001", "claim": "Cambiar un ajuste en modo activo: seleccionar la tecla rápida, girar el Trim Knob, pulsar el mando o la tecla para activar.", "status": "D", "source": "R02", "locator": "p.8 «Making Ventilator Changes When in an Active Mode»", "implemented": "src/app/uiState.ts (EditController); src/ui/app.ts (editor rápido: teclas, ±, deslizador por índice, rueda de la perilla)", "tests": ["INT-01", "INT-02", "tests/unit/uiState.test.ts"] },
-    { "id": "E-002", "claim": "Los cambios de límites de alarma no confirmados antes del fin de un plazo se cancelan; el plazo no se cuantifica.", "status": "D (plazo: U-07)", "source": "R02", "locator": "p.9 Note", "implemented": "editTimeoutMs = 20 000 ms (P), configurable", "tests": ["INT-03"] },
-    { "id": "E-003", "claim": "Banda de alarmas: verde sin alarmas; muestra la alarma más reciente de mayor prioridad; gris si no hay activas pero una previa requiere reconocimiento.", "status": "D", "source": "R02", "locator": "p.8 «Alarm Bar»", "implemented": "src/engine/alarms.ts bar()", "tests": ["ALM-02", "ALM-03"] },
-    { "id": "E-004", "claim": "Prioridad alta: rojo, luz roja intermitente, serie de cinco tonos dos veces; media: amarillo, tres tonos; informativa: azul fijo, un tono.", "status": "D", "source": "R02", "locator": "p.9 «Alarm Priority»", "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12)", "tests": ["ALM-06"] },
-    { "id": "E-005", "claim": "Tecla física «2-minute audio pause».", "status": "D", "source": "R02", "locator": "p.4 (3a)", "implemented": "Simulator.audioPauseUntilMs (120 000 ms); src/ui/audio.ts", "tests": ["ALM-04 (no automatizado en E2E: pendiente)"] },
-    { "id": "E-006", "claim": "↑O2: temporizador de 2 minutos; valor de fábrica +100 % adulto/pediátrico (+25 % neonatal); termina por tiempo, Stop, favorito o tecla.", "status": "D", "source": "R02", "locator": "p.12", "implemented": "src/engine/procedures.ts startO2/endO2", "tests": ["PRC-03"] },
-    { "id": "E-007", "claim": "Standby → Pause Ventilation detiene ventilación y monitorización; Cancel continúa ventilando.", "status": "D", "source": "R02", "locator": "p.14", "implemented": "src/ui/app.ts (diálogo de espera); Simulator.enterStandby", "tests": ["INT-04", "tests/unit/procedures.test.ts (espera)"] },
-    { "id": "E-008", "claim": "Espacios Pasado/Presente/Futuro; vistas del presente: Basic, Basic Waveform, Advanced Waveform, Splitscreen, Charting.", "status": "D", "source": "R02", "locator": "p.13", "implemented": "src/ui/app.ts: vistas Presente básica (P3), curvas, bucles, tabla, tendencias y registro; Pasado/Futuro no implementados", "tests": ["INT-05", "CFG-05 (overlay)"] },
-    { "id": "E-009", "claim": "Assist Control sólo disponible en A/C VC, A/C PC y A/C PRVC.", "status": "D", "source": "R02", "locator": "p.7", "implemented": "settings.assistControl" },
-    { "id": "E-010", "claim": "El ventilador no entrega el VT programado en A/C VC o SIMV VC porque el ajuste Plimit impide entregar todo el VT en el periodo inspiratorio.", "status": "D", "source": "R07", "locator": "p.2 «Solutions to Common Events»", "implemented": "controller.ts fase inspLimited", "tests": ["BM-06"] },
-    { "id": "E-011", "claim": "En A/C PRVC, SIMV PRVC o BiLevel VG, Pmax limita la presión inspiratoria entregada.", "status": "D (fuera del alcance P0)", "source": "R07", "locator": "p.2" },
-    { "id": "E-012", "claim": "Las condiciones de Ppeak alta se comprueban antes de refrescar la vista: el ventilador puede reaccionar a un transitorio antes de que el dato se muestre.", "status": "D", "source": "R07", "locator": "p.2", "implemented": "alarms.onPmaxReached con valor bruto por sub-paso", "tests": ["ALM-05"] },
-    { "id": "E-013", "claim": "Auto-disparo cuando la fuga del circuito supera el nivel de trigger por flujo.", "status": "D (fuga no modelada en P0)", "source": "R07", "locator": "p.2" },
-    { "id": "E-014", "claim": "Alcanzar Pmáx termina la inspiración y pasa a espiración (guía SW10).", "status": "D-secundario", "source": "R04 vía DOSSIER §11", "locator": "«Ventilation mode settings»", "note": "No verificado directamente (403); coherente con R07 (Pmax limita entrega).", "implemented": "controller.ts onPmax → endInspiration('pmax')", "tests": ["BM-06", "tests/unit/alarms.test.ts «ALM-05/06: la alarma Pmáx se traza al valor bruto; varias alarmas concurrentes conservan todas las condiciones»", "tests/unit/review.test.ts «FR medida ≈ FR programada aunque cada inspiración termine a 0.8 s por Pmáx»", "tests/unit/physics.test.ts «resistencia alta (Rinsp 60) y C baja (5 mL/cmH2O): … Pmáx termina la inspiración con volumen parcial»", "tests/e2e/visual.spec.ts «VIS-04 · alarma de Pmáx (SC-09): banda roja, luz del bisel y celda resaltada»"] },
-    { "id": "E-015", "claim": "A/C VC: flujo constante calculado de VT, tiempo inspiratorio y Tpausa; si se alcanza el límite de presión, el flujo baja para sostener la presión durante la inspiración; el ventilador ajusta el flujo inspiratorio en las siguientes respiraciones para mantener el VT.", "status": "D", "source": "R23", "locator": "diapositiva «Assist Control Volume Control (A/C VC)»", "implemented": "parcial: limitación sí; compensación de flujo entre respiraciones NO (U-19)", "tests": ["BM-06"] },
-    { "id": "E-016", "claim": "Controles de A/C VC: VT, FiO2, PEEP, Flow; ciclo por Rate con I:E, Tinsp o Tpause e Insp Pause; sincronía por Insp Trigger y Bias Flow; seguridad Plimit y Pmax.", "status": "D", "source": "R23", "locator": "tabla «Modos de Control»", "implemented": "VC_ADULT_RULES (bias flow: constante no editable de 10 L/min, P; desde v0.3.1 fija la deflexión de disparo en espiración, ver E-033 y U-33)" },
-    { "id": "E-017", "claim": "Rangos y escalones de VT, FR, I:E, PEEP, Pinsp, Plimit, Pmax, Pmin, PS, Tinsp, rampa, trigger, pausa y límites de alarma.", "status": "D", "source": "R03", "locator": "pp.2–3", "implemented": "src/profiles/r860-es-photo-reference/settings.ts", "tests": ["tests/unit/validation.test.ts"] },
-    { "id": "E-018", "claim": "Bloqueo inspiratorio 2–15 s (1 s) y 15–40 s (5 s); bloqueo espiratorio 2–20 s (1 s) y 20–60 s (5 s).", "status": "D", "source": "R03", "locator": "p.3 «Procedimientos»", "implemented": "Rangos y escalones en INSP_HOLD_RULE (2–40 s) / EXP_HOLD_RULE (2–60 s); el motor los exige por tipo de bloqueo en Simulator.requestHold (src/engine/simulator.ts) y la UI los recorre con el mismo deslizador por rejilla (src/ui/app.ts)", "tests": ["tests/unit/procedures.test.ts", "tests/unit/review3.test.ts «la duración del bloqueo debe estar en la rejilla de su tipo (insp 2–40, esp 2–60)»", "tests/unit/review.test.ts «requestHold con duración no numérica o fuera de rango se rechaza…»"] },
-    { "id": "E-019", "claim": "Cinco familias de temporización: control de flujo encendido/apagado × tiempo inspiratorio por I:E, Tinsp o Tpause.", "status": "D", "source": "R03", "locator": "p.4 «Familias de modos»", "implemented": "Familia 2 (flujo apagado, I:E) elegida por O: tecla I:E y ausencia de tecla de flujo en P1/P3" },
-    { "id": "E-020", "claim": "Pantalla táctil LCD de 15''; hasta cuatro curvas; escala automática o independiente; favoritos: 9 elegibles, 4 visibles.", "status": "D", "source": "R03", "locator": "p.4 «Pantalla»", "implemented": "3 curvas con tres juegos de escala manual (P); favoritos fijos como en P1 (O)" },
-    { "id": "E-021", "claim": "Tendencias hasta 72 h con resolución 1 min; capturas de 15 o 30 s, las 10 más recientes.", "status": "D (no implementado)", "source": "R03", "locator": "p.4" },
-    { "id": "E-022", "claim": "La compensación de tubo limita la presión entregada a Pmax − 5 cmH2O.", "status": "D (no implementado)", "source": "R23", "locator": "diapositiva «Compensación de Tubo»" },
-    { "id": "E-023", "claim": "PRVC: ciclo por volumen durante 10 s o dos periodos para estimar compliance; presión entre PEEP + Pmin y Pmax − 2; cambio ≤ ±3 cmH2O por respiración; tras alarma de presión alta, 0.5 cmH2O menos.", "status": "D (reservado para la etapa de modos adaptativos)", "source": "R23", "locator": "diapositivas PRVC / VS / BiLevel VG" },
-    { "id": "E-024", "claim": "Precisión de monitorización: presión ±2 cmH2O; volumen ±10 % o ±5 mL; O2 ±2.95 %.", "status": "D (no modelado: sensores ideales en P0)", "source": "R03", "locator": "p.4" },
-    { "id": "E-025", "claim": "Composición y etiquetas: vista avanzada (P1) y básica (P3), Pva/Flujo/Volumen, Ppico/PEEPe/Pplat/Pmedia/VMesp/FR/VTesp/FiO2, «Fuga % 0», espontáneas, ventana de bloqueo (Tiempo, ▶, Pplat, Cstat, fecha, hora), reloj HH:MM, teclas rápidas, «EN ESPERA», punto decimal.", "status": "O", "source": "P1, P2, P3", "implemented": "src/ui/app.ts + src/ui/styles.css (sistema visual derivado de R860 Lab, MIT); fixtures en modo transcripción", "tests": ["VIS-01", "VIS-02"] },
-    { "id": "E-026", "claim": "Discrepancias observadas conservadas: P3 FiO2 programada 100 / medida 97 y VT 285 / VTesp 295; P1 Pplat de panel 35 / bloqueo guardado 32.", "status": "O", "source": "P1, P3", "implemented": "src/fixtures/photoFixtures.ts", "tests": ["DAT-01", "DAT-02"] },
-    { "id": "E-027", "claim": "Modelo mecánico lineal de un compartimento (Paw + Pmus = P0 + V/Crs + R·Q) con volumen absoluto continuo; ensayos de banco BM-01…BM-08.", "status": "P", "source": "DOSSIER §12, §26", "implemented": "src/engine/patient.ts, controller.ts", "tests": ["tests/bench/bm.test.ts"] },
-    { "id": "E-028", "claim": "El disparo por paciente en A/C produce respiraciones asistidas (mandatorias), no espontáneas; FR espont permanece 0.", "status": "P (semántica del dossier §15)", "source": "DOSSIER", "implemented": "controller.ts, metrics.ts", "tests": ["PHY-08"] },
-    { "id": "E-029", "claim": "A/C PC: la presión (PEEP + Pinsp) es la variable controlada durante Tinsp; el volumen resulta de la mecánica del paciente; el tiempo de subida (rampa) modula el ascenso de presión y el flujo inicial.", "status": "D", "source": "R23, R24", "locator": "JB72469XX · diapositivas de A/C PC (presión constante, flujo decelerante, VT dependiente)", "implemented": "src/engine/controller.ts (fase inspPressure, rampa lineal riseMs, objetivo PEEP + Pinsp)", "tests": ["tests/bench/pc.test.ts (BM-03 en el motor, PHY-02)", "tests/e2e/pc.spec.ts"] },
-    { "id": "E-030", "claim": "Rango de Pinsp 1–98 cmH₂O (paso 1) y tiempo de subida 0–500 ms (paso 50) en adulto.", "status": "D", "source": "R03", "locator": "ficha 2014 p.2 (Pinsp, Rise Time)", "implemented": "src/profiles/r860-es-photo-reference/settings.ts (VC_ADULT_RULES.pinsp, riseMs)", "tests": ["tests/unit/validation.test.ts"] },
-    { "id": "E-031", "claim": "Ajuste con el ratón sobre un deslizador que sólo recorre valores admitidos (rejilla por tramos; Off como primer paso cuando procede); ± y deslizador producen el mismo escalón; un valor escrito fuera de rejilla se rechaza indicando el más cercano.", "status": "P", "source": "DOSSIER regla «select≠apply», petición del usuario 06-09-2026", "locator": "—", "implemented": "src/domain/validation.ts (gridValues, nearestGridValue); src/ui/app.ts (openQuick/renderQuick)", "tests": ["tests/unit/validation.test.ts (rejilla)", "tests/e2e/pc.spec.ts (deslizador/±/rueda)"] },
-    { "id": "E-032", "claim": "Un bloqueo inspiratorio solicitado cuando Pmáx termina la inspiración se registra como resultado no válido con motivo y hora, y se anuncia; una solicitud en cola se puede cancelar de forma explícita.", "status": "P", "source": "DOSSIER regla de procedimientos (elegibilidad, cancelación, resultado fechado)", "locator": "—", "implemented": "src/engine/procedures.ts (last[kind] inválido); src/ui/app.ts (openHold/updateHold, «Cancelar solicitud»)", "tests": ["tests/unit/procedures.test.ts", "tests/e2e/pc.spec.ts (bloqueo rechazado, cancelación)"] },
-    { "id": "E-033", "claim": "Flujo de base espiratorio: durante la espiración la válvula mantiene la PEEP hasta un flujo de base de 10 L/min hacia el paciente; por encima, la Pva cae por debajo de PEEP (deflexión de disparo).", "status": "P", "source": "DOSSIER (bias flow como control del modo, E-016); valor y forma propios (U-33)", "locator": "—", "note": "Sustituye la válvula espiratoria ideal (Pva = PEEP siempre) de v0.3. El valor del equipo no está documentado en las fuentes leídas.", "implemented": "src/engine/controller.ts (EXP_BIAS_FLOW_LPS; fase exp: integratePressureSource con tope de flujo de base)", "tests": ["tests/unit/review3.test.ts «sin asistencia, un esfuerzo de 8 cmH₂O en espiración baja la Pva por debajo de PEEP y VTe − VTi queda acotado por el flujo de base»", "tests/unit/physics.test.ts"] },
-    { "id": "E-034", "claim": "Tope de flujo del actuador en A/C PC integrado dentro del mismo RK2 con sub-pasos: sin sobreimpulso de presión dependiente de dt cuando el tope de 160 L/min actúa.", "status": "P", "source": "revisión adversarial 06-09-2026 (v0.3 aplicaba el tope fuera del integrador)", "locator": "—", "implemented": "src/engine/controller.ts (fase inspPressure), src/engine/patient.ts", "tests": ["tests/bench/pc.test.ts «tope de flujo del actuador (160 L/min): con R muy baja la presión no alcanza el objetivo de inmediato»", "tests/bench/pc.test.ts (BM-03, PHY-02)"] },
-    { "id": "E-035", "claim": "Cstat del bloqueo inspiratorio usa PEEPtot como denominador cuando existe un bloqueo espiratorio válido reciente con la misma PEEP programada; si no, usa PEEPe y el motivo de la muestra lo dice.", "status": "P", "source": "Natalini 2016 (auto-PEEP = PEEPtot − PEEP; docs/03 §5) y revisión adversarial 06-09-2026", "locator": "—", "note": "Antes (v0.3) siempre Pplat − PEEPe, motivo «sin PEEPtot medida»; con auto-PEEP sobreestimaba la carga elástica.", "implemented": "src/engine/procedures.ts (resultado del bloqueo inspiratorio)", "tests": ["tests/unit/review3.test.ts «con atrapamiento (Rexp 30, FR 30) la Cstat vuelve a 50 mL/cmH₂O tras medir PEEPtot»", "tests/unit/procedures.test.ts"] },
-    { "id": "E-036", "claim": "[v0.3.6: indicador «Plimit» junto a Ppico, ya no alarma] Alarma de prioridad media «Presión limitada por Plimit» cuando la inspiración termina limitada por Plimit (VT no entregado).", "status": "P", "source": "R07 p.2 describe el evento («Plimit impide entregar todo el VT»), no la alarma", "locator": "—", "note": "NO VERIFICADO que el R860 emita un aviso con ese texto ni con esa prioridad; se propone para que el alumno vea por qué el VT queda corto (U-11).", "implemented": "src/engine/alarms.ts (condición plimit, prioridad media, a partir de record.plimitReached)", "tests": ["tests/unit/review3.test.ts «con Plimit 7 la alarma de prioridad media se activa; al subir Plimit se resuelve»", "tests/unit/alarms.test.ts"] },
-    { "id": "E-037", "claim": "La importación de sesiones valida esfuerzo, sensores, modo y claves desconocidas; se aceptan sesiones de motor 0.2.0 y 0.3.0 (con aviso de reproducción no idéntica si la versión difiere).", "status": "P", "source": "DOSSIER (SEC-03, H2/H6 de R860 Lab no heredados)", "locator": "—", "implemented": "src/history/session.ts (ACCEPTED_ENGINE_VERSIONS de src/engine/version.ts), src/engine/simulator.ts (importSession)", "tests": ["tests/unit/session.test.ts", "tests/unit/boundaries.test.ts", "tests/unit/review3.test.ts «engineVersion 0.2.0 se acepta con aviso; 0.1.0 se rechaza; esfuerzo absurdo en init se rechaza»", "tests/unit/review.test.ts «importSession rechaza ajustes fuera de dominio y pacientes degenerados»"] },
-    { "id": "E-038", "claim": "Flujo de base espiratorio programable 2–10 L/min en pasos de 0,5 (adulto); el disparo por flujo detecta el flujo de base desviado por el paciente, por lo que el umbral de disparo no puede superar el flujo de base.", "status": "D (rango) / P (valor inicial 2 L/min y relación con el disparo)", "source": "R03", "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»", "implemented": "src/profiles/r860-es-photo-reference/settings.ts (biasFlow); src/engine/controller.ts (fase exp, tope = settings.biasFlow); src/domain/validation.ts (flowTrigger ≤ biasFlow)", "tests": ["tests/unit/sync.test.ts (SYN-01)"] },
-    { "id": "E-039", "claim": "Disparo inspiratorio por presión: −10 a −3 cmH₂O (0,5) y −3 a −0,25 cmH₂O (0,25), alternativo al disparo por flujo; se evalúa como caída de la Pva por debajo de la PEEP programada.", "status": "D (rangos y existencia) / P (referencia a PEEP programada, selector como casilla)", "source": "R03", "locator": "p.2 «Trigger inspiratorio por presión: −10 a −3 cm H2O (incrementos de 0.5); −3 a −0.25 cm H2O (incrementos de 0.25)»", "implemented": "settings.ts (triggerByPressure, pressureTrigger); controller.ts (condición de disparo)", "tests": ["tests/unit/sync.test.ts (SYN-02)"] },
-    { "id": "E-040", "claim": "Ninguna fuente pública consultada (ficha JB23840CO 2014, curso JB72469XX, guía rápida JB77395XX) establece una relación obligatoria entre Plimit y Pmáx: ambos comparten el rango 7–100 cmH₂O y sólo Pmáx aparece entre los «parámetros con límites de software». El curso sí documenta Pmáx − 2 cmH₂O como techo de la presión regulada en PRVC y Pmáx − 5 con compensación de tubo.", "status": "D (ausencia en las fuentes públicas) / U (regla interna del equipo, manual de usuario no accesible)", "source": "R03, R23, R02", "locator": "R03 p.2–3 (rangos Plimit y Pmax; «parámetros con límites de software»); R23 diapositivas PRVC («Límite alto: Pmax – 2 cmH2O») y compensación de tubo («se limita a Pmax − 5 cmH2O»)", "implemented": "src/domain/validation.ts (Plimit > Pmáx permitido con aviso no bloqueante)", "tests": ["tests/unit/review3.test.ts (R3-04)"] },
-    { "id": "E-041", "claim": "El sistema respiratorio (rama + válvula espiratoria) añade una resistencia en serie con la vía aérea; el manual de usuario fija como techo ≤ 6 cmH₂O al flujo de referencia (15 L/min pediátrico, 2,5 L/min neonatal; adulto no citado en el extracto, ISO 80601-2-12 usa 60 L/min). El simulador la modela como resistencia lineal 0–6 cmH₂O·s/L, 0 por omisión (válvula ideal), ajustable en el panel docente.", "status": "D (techo normativo y componente físico) / P (linealidad y valor 0 por omisión) / U (valor real del R860 con su circuito)", "source": "R21 (extracto vía buscador), R03", "locator": "URM SW10 §especificaciones del sistema respiratorio: «inspiratory and expiratory resistance should not exceed 6 cmH2O for… 15 l/min… 2.5 l/min»", "implemented": "src/domain/types.ts (PatientParams.rExpValve); src/engine/patient.ts (rSeries); src/engine/controller.ts (fase exp); src/ui/patientControls.ts (deslizador)", "tests": ["tests/unit/sync.test.ts (SYN-03)"] },
-    { "id": "E-042", "claim": "El volumen que muestra el ventilador es una lectura, no el volumen verdadero: la ficha 2014 acota las lecturas de volumen a ±10 % o ±10 mL y la administración de VT a ±10 % del ajuste. El simulador separa ambos canales y aplica al canal medido una dispersión ciclo a ciclo de ±2,5 % (uniforme), determinista a partir de la semilla del escenario.", "status": "D (envolvente de exactitud) / P (dispersión típica de ±2,5 % y su distribución)", "source": "R03", "locator": "p.3 «Precisión de monitoreo … Lecturas de volumen: ±10 % o ±10 mL, lo que sea mayor»; «Precisión de administración … volumen tidal: ±10 % de ajuste o ±5 mL»", "implemented": "src/engine/sensors.ts (FlowSensor, mulberry32); src/engine/simulator.ts (ganancia por respiración); metrics y alarms leen el canal medido", "tests": ["tests/unit/flowSensor.test.ts (SEN-01)", "tests/e2e/pc.spec.ts"] },
-    { "id": "E-043", "claim": "La columna de presión del monitor desciende con una amortiguación de presentación (constante 0,07 s) al terminar la inspiración; sube sin retardo. Complementa a la apertura física de la válvula (E-052), que dura menos que el refresco de pantalla. Es una decisión de presentación: las curvas, las métricas y las alarmas usan la señal sin amortiguar.", "status": "P (presentación; el comportamiento real de la barra del equipo no está verificado)", "source": "—", "locator": "petición del usuario 07-09-2026", "implemented": "src/ui/plotsView.ts (gaugeValue)", "tests": ["tests/e2e/pc.spec.ts (descenso progresivo de la columna)"] },
-    { "id": "E-044", "claim": "Relajación de esfuerzo: el sistema respiratorio se modela como un compartimento estático (Cest) más un cuerpo de Maxwell opcional (E2 en serie con un amortiguador, constante τ2). Al ocluir, la presión cae de inmediato lo resistivo (Ppico → P1 = R·Q) y después decae exponencialmente hasta la meseta estática P2 = P0 + V/Cest. Con E2 = 0 el modelo se reduce exactamente al compartimento único.", "status": "D (bibliografía de mecánica respiratoria: Mount; Bates; D\u0027Angelo) / P (valores por omisión y rangos ofrecidos)", "source": "BIBLIO", "locator": "modelo viscoelástico de dos compartimentos en serie; diferencia entre elastancia dinámica y estática", "implemented": "src/engine/patient.ts (vVisc, relax, pel/pelStatic); src/engine/controller.ts (relaja en las fases ocluidas)", "tests": ["tests/unit/viscoelastic.test.ts (VIS-01, VIS-02)"] },
-    { "id": "E-045", "claim": "El criterio de meseta separa dos cosas: la deriva en el tramo final de la oclusión (la presión ya se asentó) y la excursión contra la tendencia en toda la ventana (esfuerzo, fuga u oscilación). Una relajación viscoelástica es monótona y no invalida la maniobra si la oclusión dura lo suficiente; un esfuerzo mueve la presión en ambos sentidos y la invalida siempre.", "status": "P (criterio del simulador; el algoritmo del equipo no está publicado)", "source": "—", "locator": "—", "implemented": "src/engine/controller.ts (plateauQuality); src/engine/procedures.ts", "tests": ["tests/unit/viscoelastic.test.ts (VIS-02)", "tests/unit/procedures.test.ts (PRC-02)"] },
-    { "id": "E-046", "claim": "Resistencia no lineal de Rohrer R(Q) = K1 + K2·|Q| disponible como parámetro del paciente: la caída resistiva deja de ser proporcional al flujo y crece más deprisa al acelerar la inspiración, como impone sobre todo el tubo endotraqueal.", "status": "D (modelo de Rohrer, bibliografía) / P (valor por omisión 0 y rango 0–50)", "source": "BIBLIO", "locator": "ecuación de Rohrer para vía aérea artificial", "implemented": "src/engine/patient.ts (flowForPaw/pawForFlow con r2); control en el panel docente", "tests": ["tests/unit/viscoelastic.test.ts (VIS-03)"] },
-    { "id": "E-047", "claim": "La PEEPe de referencia de una respiración se toma de la última espiración sin ocluir: la respiración que sigue a un bloqueo espiratorio no puede usar la presión de la oclusión como PEEPe.", "status": "P (corrección de un defecto propio detectado con el modelo viscoelástico)", "source": "—", "locator": "—", "implemented": "src/engine/controller.ts (lastExpPaw)", "tests": ["tests/unit/viscoelastic.test.ts (VIS-04)"] },
-    { "id": "E-048", "claim": "Curva presión-volumen sigmoidea opcional (Venegas): V(P) = a + b/(1 + e^(−(P−c)/d)), anclada en V(P0) = 0. La compliance deja de ser única: máxima b/(4d) en P = c y codos de máxima curvatura en c ± 1,317·d. Permite titular PEEP (la compliance medida dibuja una U invertida) y ver la sobredistensión. Ausente o b = 0 → compliance lineal Crs, idéntica al modelo previo.", "status": "D (ecuación de Venegas et al., bibliografía) / P (valores por omisión, rangos y extensión tangente fuera de la capacidad)", "source": "BIBLIO", "locator": "ecuación sigmoidea de la curva P-V del sistema respiratorio", "implemented": "src/engine/patient.ts (sigmoidVolume, sigmoidPressure, sigmoidCompliance, equilibriumVolumeFor); controles del panel docente; escenario SC-15", "tests": ["tests/unit/sigmoid.test.ts (SIG-01, SIG-02)"] },
-    { "id": "E-049", "claim": "Limitación al flujo espiratorio (resistor de Starling): cuando la presión de la vía aérea cae por debajo de la presión crítica del segmento colapsable, el flujo deja de depender de la presión aguas abajo y queda fijado por el retroceso elástico y la resistencia aguas arriba del estrangulamiento, Qmax = (Pel − Pcrít)/(f·Rexp). Consecuencias reproducidas: independencia del esfuerzo espiratorio, atrapamiento hasta que el retroceso iguala Pcrít, y desaparición de la limitación cuando la PEEP externa alcanza ese punto.", "status": "D (modelo de resistor de Starling y limitación al flujo, bibliografía de mecánica respiratoria) / P (valores y la condición Pva < Pcrít como interruptor)", "source": "BIBLIO", "locator": "limitación al flujo espiratorio; punto de igual presión; efecto de la PEEP externa en el atrapamiento dinámico", "implemented": "src/engine/patient.ts (maxExpiratoryFlow, aplicado dentro de flowForPaw)", "tests": ["tests/unit/flowLimitation.test.ts (EFL-01, EFL-02)"] },
-    { "id": "E-050", "claim": "Calibre de la vía aérea dependiente del volumen pulmonar: Rexp(V) = Rexp·(1 + ganancia·máx(0, 1 − V/Vref)). Sin él, el flujo espiratorio es exactamente proporcional al volumen y la rama espiratoria del bucle flujo-volumen es una recta; con él la rama se hunde por debajo de la cuerda, que es el bucle excavado del paciente obstructivo.", "status": "D (dependencia del calibre con el volumen pulmonar, bibliografía) / P (forma lineal elegida y valores)", "source": "BIBLIO", "locator": "conductancia de la vía aérea en función del volumen pulmonar", "implemented": "src/engine/patient.ts (r1For, expiratoryResistance)", "tests": ["tests/unit/flowLimitation.test.ts (EFL-03)"] },
-    { "id": "E-051", "claim": "Dos unidades alveolares en paralelo sobre un nodo común de vía aérea, cada una con su compliance y sus resistencias. Consecuencias reproducidas: vaciamiento con dos constantes de tiempo (cola lenta en la curva de flujo), meseta que depende de la duración de la oclusión y pendelluft con el circuito cerrado, con ΔP que decae con τ = (R1+R2)·C1·C2/(C1+C2) hacia la presión común (V1+V2)/(C1+C2). Ausente = un solo compartimento, idéntico al modelo previo.", "status": "D (modelo de dos compartimentos en paralelo y pendelluft, bibliografía de mecánica respiratoria) / P (que la segunda unidad sea lineal y los valores)", "source": "BIBLIO", "locator": "inhomogeneidad de constantes de tiempo; redistribución interna de gas durante la oclusión", "implemented": "src/engine/patient.ts (v2, branch1Flow/branch2Flow, nodePressureForFlow por bisección, equilibratedPressure); integradores por pares", "tests": ["tests/unit/twoCompartment.test.ts (PEN-01, PEN-02)"] },
-    { "id": "E-052", "claim": "La válvula espiratoria abre en unas decenas de milisegundos, no de golpe: mientras se abre su resistencia decae, así que la Pva parte de la presión alveolar y desciende hasta la PEEP, y el flujo espiratorio alcanza su pico después de la apertura y no en el primer instante. Con apertura 0 (banco analítico) el comportamiento es el instantáneo anterior. No cambia de forma apreciable el volumen espirado ni la PEEP total.", "status": "P (el tiempo de apertura del R860 no está publicado; 40 ms está dentro del rango habitual de 20–50 ms de las válvulas de ventilador)", "source": "—", "locator": "—", "implemented": "src/engine/controller.ts (fase exp con resistencia de válvula variable en el tiempo, sub-pasos de 1 ms)", "tests": ["tests/unit/expValve.test.ts (VAL-01)"] },
-    { "id": "E-053", "claim": "La compliance que muestra el panel docente es la del sistema completo (suma de las unidades alveolares), mientras que el sub-paso de los integradores usa la constante de tiempo más corta de las ramas. Son dos cantidades distintas y antes se usaba la misma para ambas cosas.", "status": "P (corrección de coherencia interna)", "source": "—", "locator": "—", "implemented": "src/engine/patient.ts (complianceMain, compliance, minBranchTau)", "tests": ["tests/unit/sigmoid.test.ts (compliance local del cuadro)", "tests/unit/review4.test.ts (R4-03)"] },
-    { "id": "E-054", "claim": "Las asincronías no están programadas: emergen de la mecánica, del perfil de esfuerzo y del umbral de disparo. Comprobado y fijado por pruebas: (a) doble disparo cuando el tiempo inspiratorio neural supera al mecánico, con la segunda respiración exactamente al terminar el periodo refractario del disparo; (b) el apilamiento genera PEEP intrínseca por sí solo, sin obstrucción alguna; (c) esfuerzos inefectivos cuando la auto-PEEP crece, con muesca visible en el flujo espiratorio de más de 5 L/min.", "status": "P (comportamiento emergente del modelo; ninguna regla lo impone)", "source": "—", "locator": "—", "implemented": "no hay código específico: sale de effort.ts, del disparo en controller.ts y de la mecánica", "tests": ["tests/unit/asynchrony.test.ts (ASI-01, ASI-02)"] },
-    { "id": "E-055", "claim": "La resistencia en serie del circuito y el tope de flujo del ventilador son restricciones del NODO de la vía aérea, no de una rama: con dos unidades alveolares se resuelve primero la presión del nodo y después se reparte entre ramas. Además, la presión que se publica durante una oclusión es la del nodo, y la curva de volumen suma todas las unidades.", "status": "P (corrección de defectos propios detectados en la cuarta revisión adversarial)", "source": "—", "locator": "—", "implemented": "src/engine/patient.ts (nodeState, nodePressureWithSeries, solveNodeLinear); src/engine/controller.ts (Pva de oclusión); src/engine/simulator.ts (volumen de la curva)", "tests": ["tests/unit/review4.test.ts (R4-02, R4-03, R4-06)"] },
-    { "id": "E-056", "claim": "Ningún valor no finito puede publicarse con calidad válida: la capa de métricas lo convierte en dato ausente con motivo, y el simulador registra un evento de discontinuidad la primera vez que el modelo deja de dar números finitos. Los integradores rechazan tramos de duración nula, que era el origen de la divergencia.", "status": "P (contrato de calidad del proyecto)", "source": "—", "locator": "—", "implemented": "src/engine/patient.ts (guardas de dt); src/engine/metrics.ts (sample); src/engine/simulator.ts (vigilancia de divergencia)", "tests": ["tests/unit/review4.test.ts (R4-01)"] },
-    { "id": "E-057", "claim": "Las órdenes del panel docente dejan el estado interno coherente: fijar el volumen absoluto reparte entre unidades hasta igualar presiones y deja relajado el elemento viscoelástico; quitar o añadir la segunda unidad conserva la masa de gas; y al salir de espera el ventilador presuriza el circuito a PEEP antes de la primera respiración.", "status": "P (corrección de defectos propios; la presurización instantánea al salir de espera es una simplificación)", "source": "—", "locator": "—", "implemented": "src/engine/patient.ts (setAbsoluteVolume, applyParams, equilibrateTo); src/engine/controller.ts (startVentilation)", "tests": ["tests/unit/review4.test.ts (R4-04)"] }
+    {
+      "id": "E-001",
+      "claim": "Cambiar un ajuste en modo activo: seleccionar la tecla rápida, girar el Trim Knob, pulsar el mando o la tecla para activar.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.8 «Making Ventilator Changes When in an Active Mode»",
+      "implemented": "src/app/uiState.ts (EditController); src/ui/app.ts (editor rápido: teclas, ±, deslizador por índice, rueda de la perilla)",
+      "tests": [
+        "INT-01",
+        "INT-02",
+        "tests/unit/uiState.test.ts"
+      ]
+    },
+    {
+      "id": "E-002",
+      "claim": "Los cambios de límites de alarma no confirmados antes del fin de un plazo se cancelan; el plazo no se cuantifica.",
+      "status": "D (plazo: U-07)",
+      "source": "R02",
+      "locator": "p.9 Note",
+      "implemented": "editTimeoutMs = 20 000 ms (P), configurable",
+      "tests": [
+        "INT-03"
+      ]
+    },
+    {
+      "id": "E-003",
+      "claim": "Banda de alarmas: verde sin alarmas; muestra la alarma más reciente de mayor prioridad; gris si no hay activas pero una previa requiere reconocimiento.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.8 «Alarm Bar»",
+      "implemented": "src/engine/alarms.ts bar()",
+      "tests": [
+        "ALM-02",
+        "ALM-03"
+      ]
+    },
+    {
+      "id": "E-004",
+      "claim": "Prioridad alta: rojo, luz roja intermitente, serie de cinco tonos dos veces; media: amarillo, tres tonos; informativa: azul fijo, un tono.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.9 «Alarm Priority»",
+      "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12)",
+      "tests": [
+        "ALM-06"
+      ]
+    },
+    {
+      "id": "E-005",
+      "claim": "Tecla física «2-minute audio pause».",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.4 (3a)",
+      "implemented": "Simulator.audioPauseUntilMs (120 000 ms); src/ui/audio.ts",
+      "tests": [
+        "ALM-04 (no automatizado en E2E: pendiente)"
+      ]
+    },
+    {
+      "id": "E-006",
+      "claim": "↑O2: temporizador de 2 minutos; valor de fábrica +100 % adulto/pediátrico (+25 % neonatal); termina por tiempo, Stop, favorito o tecla.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.12",
+      "implemented": "src/engine/procedures.ts startO2/endO2",
+      "tests": [
+        "PRC-03"
+      ]
+    },
+    {
+      "id": "E-007",
+      "claim": "Standby → Pause Ventilation detiene ventilación y monitorización; Cancel continúa ventilando.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.14",
+      "implemented": "src/ui/app.ts (diálogo de espera); Simulator.enterStandby",
+      "tests": [
+        "INT-04",
+        "tests/unit/procedures.test.ts (espera)"
+      ]
+    },
+    {
+      "id": "E-008",
+      "claim": "Espacios Pasado/Presente/Futuro; vistas del presente: Basic, Basic Waveform, Advanced Waveform, Splitscreen, Charting.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.13",
+      "implemented": "src/ui/app.ts: vistas Presente básica (P3), curvas, bucles, tabla, tendencias y registro; Pasado/Futuro no implementados",
+      "tests": [
+        "INT-05",
+        "CFG-05 (overlay)"
+      ]
+    },
+    {
+      "id": "E-009",
+      "claim": "Assist Control sólo disponible en A/C VC, A/C PC y A/C PRVC.",
+      "status": "D",
+      "source": "R02",
+      "locator": "p.7",
+      "implemented": "settings.assistControl"
+    },
+    {
+      "id": "E-010",
+      "claim": "El ventilador no entrega el VT programado en A/C VC o SIMV VC porque el ajuste Plimit impide entregar todo el VT en el periodo inspiratorio.",
+      "status": "D",
+      "source": "R07",
+      "locator": "p.2 «Solutions to Common Events»",
+      "implemented": "controller.ts fase inspLimited",
+      "tests": [
+        "BM-06"
+      ]
+    },
+    {
+      "id": "E-011",
+      "claim": "En A/C PRVC, SIMV PRVC o BiLevel VG, Pmax limita la presión inspiratoria entregada.",
+      "status": "D (fuera del alcance P0)",
+      "source": "R07",
+      "locator": "p.2"
+    },
+    {
+      "id": "E-012",
+      "claim": "Las condiciones de Ppeak alta se comprueban antes de refrescar la vista: el ventilador puede reaccionar a un transitorio antes de que el dato se muestre.",
+      "status": "D",
+      "source": "R07",
+      "locator": "p.2",
+      "implemented": "alarms.onPmaxReached con valor bruto por sub-paso",
+      "tests": [
+        "ALM-05"
+      ]
+    },
+    {
+      "id": "E-013",
+      "claim": "Auto-disparo cuando la fuga del circuito supera el nivel de trigger por flujo.",
+      "status": "D (fuga no modelada en P0)",
+      "source": "R07",
+      "locator": "p.2"
+    },
+    {
+      "id": "E-014",
+      "claim": "Alcanzar Pmáx termina la inspiración y pasa a espiración (guía SW10).",
+      "status": "D-secundario",
+      "source": "R04 vía DOSSIER §11",
+      "locator": "«Ventilation mode settings»",
+      "note": "No verificado directamente (403); coherente con R07 (Pmax limita entrega).",
+      "implemented": "controller.ts onPmax → endInspiration('pmax')",
+      "tests": [
+        "BM-06",
+        "tests/unit/alarms.test.ts «ALM-05/06: la alarma Pmáx se traza al valor bruto; varias alarmas concurrentes conservan todas las condiciones»",
+        "tests/unit/review.test.ts «FR medida ≈ FR programada aunque cada inspiración termine a 0.8 s por Pmáx»",
+        "tests/unit/physics.test.ts «resistencia alta (Rinsp 60) y C baja (5 mL/cmH2O): … Pmáx termina la inspiración con volumen parcial»",
+        "tests/e2e/visual.spec.ts «VIS-04 · alarma de Pmáx (SC-09): banda roja, luz del bisel y celda resaltada»"
+      ]
+    },
+    {
+      "id": "E-015",
+      "claim": "A/C VC: flujo constante calculado de VT, tiempo inspiratorio y Tpausa; si se alcanza el límite de presión, el flujo baja para sostener la presión durante la inspiración; el ventilador ajusta el flujo inspiratorio en las siguientes respiraciones para mantener el VT.",
+      "status": "D",
+      "source": "R23",
+      "locator": "diapositiva «Assist Control Volume Control (A/C VC)»",
+      "implemented": "parcial: limitación sí; compensación de flujo entre respiraciones NO (U-19)",
+      "tests": [
+        "BM-06"
+      ]
+    },
+    {
+      "id": "E-016",
+      "claim": "Controles de A/C VC: VT, FiO2, PEEP, Flow; ciclo por Rate con I:E, Tinsp o Tpause e Insp Pause; sincronía por Insp Trigger y Bias Flow; seguridad Plimit y Pmax.",
+      "status": "D",
+      "source": "R23",
+      "locator": "tabla «Modos de Control»",
+      "implemented": "VC_ADULT_RULES (bias flow: constante no editable de 10 L/min, P; desde v0.3.1 fija la deflexión de disparo en espiración, ver E-033 y U-33)"
+    },
+    {
+      "id": "E-017",
+      "claim": "Rangos y escalones de VT, FR, I:E, PEEP, Pinsp, Plimit, Pmax, Pmin, PS, Tinsp, rampa, trigger, pausa y límites de alarma.",
+      "status": "D",
+      "source": "R03",
+      "locator": "pp.2–3",
+      "implemented": "src/profiles/r860-es-photo-reference/settings.ts",
+      "tests": [
+        "tests/unit/validation.test.ts"
+      ]
+    },
+    {
+      "id": "E-018",
+      "claim": "Bloqueo inspiratorio 2–15 s (1 s) y 15–40 s (5 s); bloqueo espiratorio 2–20 s (1 s) y 20–60 s (5 s).",
+      "status": "D",
+      "source": "R03",
+      "locator": "p.3 «Procedimientos»",
+      "implemented": "Rangos y escalones en INSP_HOLD_RULE (2–40 s) / EXP_HOLD_RULE (2–60 s); el motor los exige por tipo de bloqueo en Simulator.requestHold (src/engine/simulator.ts) y la UI los recorre con el mismo deslizador por rejilla (src/ui/app.ts)",
+      "tests": [
+        "tests/unit/procedures.test.ts",
+        "tests/unit/review3.test.ts «la duración del bloqueo debe estar en la rejilla de su tipo (insp 2–40, esp 2–60)»",
+        "tests/unit/review.test.ts «requestHold con duración no numérica o fuera de rango se rechaza…»"
+      ]
+    },
+    {
+      "id": "E-019",
+      "claim": "Cinco familias de temporización: control de flujo encendido/apagado × tiempo inspiratorio por I:E, Tinsp o Tpause.",
+      "status": "D",
+      "source": "R03",
+      "locator": "p.4 «Familias de modos»",
+      "implemented": "Familia 2 (flujo apagado, I:E) elegida por O: tecla I:E y ausencia de tecla de flujo en P1/P3"
+    },
+    {
+      "id": "E-020",
+      "claim": "Pantalla táctil LCD de 15''; hasta cuatro curvas; escala automática o independiente; favoritos: 9 elegibles, 4 visibles.",
+      "status": "D",
+      "source": "R03",
+      "locator": "p.4 «Pantalla»",
+      "implemented": "3 curvas con tres juegos de escala manual (P); favoritos fijos como en P1 (O)"
+    },
+    {
+      "id": "E-021",
+      "claim": "Tendencias hasta 72 h con resolución 1 min; capturas de 15 o 30 s, las 10 más recientes.",
+      "status": "D (no implementado)",
+      "source": "R03",
+      "locator": "p.4"
+    },
+    {
+      "id": "E-022",
+      "claim": "La compensación de tubo limita la presión entregada a Pmax − 5 cmH2O.",
+      "status": "D (no implementado)",
+      "source": "R23",
+      "locator": "diapositiva «Compensación de Tubo»"
+    },
+    {
+      "id": "E-023",
+      "claim": "PRVC: ciclo por volumen durante 10 s o dos periodos para estimar compliance; presión entre PEEP + Pmin y Pmax − 2; cambio ≤ ±3 cmH2O por respiración; tras alarma de presión alta, 0.5 cmH2O menos.",
+      "status": "D (reservado para la etapa de modos adaptativos)",
+      "source": "R23",
+      "locator": "diapositivas PRVC / VS / BiLevel VG"
+    },
+    {
+      "id": "E-024",
+      "claim": "Precisión de monitorización: presión ±2 cmH2O; volumen ±10 % o ±5 mL; O2 ±2.95 %.",
+      "status": "D (no modelado: sensores ideales en P0)",
+      "source": "R03",
+      "locator": "p.4"
+    },
+    {
+      "id": "E-025",
+      "claim": "Composición y etiquetas: vista avanzada (P1) y básica (P3), Pva/Flujo/Volumen, Ppico/PEEPe/Pplat/Pmedia/VMesp/FR/VTesp/FiO2, «Fuga % 0», espontáneas, ventana de bloqueo (Tiempo, ▶, Pplat, Cstat, fecha, hora), reloj HH:MM, teclas rápidas, «EN ESPERA», punto decimal.",
+      "status": "O",
+      "source": "P1, P2, P3",
+      "implemented": "src/ui/app.ts + src/ui/styles.css (sistema visual derivado de R860 Lab, MIT); fixtures en modo transcripción",
+      "tests": [
+        "VIS-01",
+        "VIS-02"
+      ]
+    },
+    {
+      "id": "E-026",
+      "claim": "Discrepancias observadas conservadas: P3 FiO2 programada 100 / medida 97 y VT 285 / VTesp 295; P1 Pplat de panel 35 / bloqueo guardado 32.",
+      "status": "O",
+      "source": "P1, P3",
+      "implemented": "src/fixtures/photoFixtures.ts",
+      "tests": [
+        "DAT-01",
+        "DAT-02"
+      ]
+    },
+    {
+      "id": "E-027",
+      "claim": "Modelo mecánico lineal de un compartimento (Paw + Pmus = P0 + V/Crs + R·Q) con volumen absoluto continuo; ensayos de banco BM-01…BM-08.",
+      "status": "P",
+      "source": "DOSSIER §12, §26",
+      "implemented": "src/engine/patient.ts, controller.ts",
+      "tests": [
+        "tests/bench/bm.test.ts"
+      ]
+    },
+    {
+      "id": "E-028",
+      "claim": "El disparo por paciente en A/C produce respiraciones asistidas (mandatorias), no espontáneas; FR espont permanece 0.",
+      "status": "P (semántica del dossier §15)",
+      "source": "DOSSIER",
+      "implemented": "controller.ts, metrics.ts",
+      "tests": [
+        "PHY-08"
+      ]
+    },
+    {
+      "id": "E-029",
+      "claim": "A/C PC: la presión (PEEP + Pinsp) es la variable controlada durante Tinsp; el volumen resulta de la mecánica del paciente; el tiempo de subida (rampa) modula el ascenso de presión y el flujo inicial.",
+      "status": "D",
+      "source": "R23, R24",
+      "locator": "JB72469XX · diapositivas de A/C PC (presión constante, flujo decelerante, VT dependiente)",
+      "implemented": "src/engine/controller.ts (fase inspPressure, rampa lineal riseMs, objetivo PEEP + Pinsp)",
+      "tests": [
+        "tests/bench/pc.test.ts (BM-03 en el motor, PHY-02)",
+        "tests/e2e/pc.spec.ts"
+      ]
+    },
+    {
+      "id": "E-030",
+      "claim": "Rango de Pinsp 1–98 cmH₂O (paso 1) y tiempo de subida 0–500 ms (paso 50) en adulto.",
+      "status": "D",
+      "source": "R03",
+      "locator": "ficha 2014 p.2 (Pinsp, Rise Time)",
+      "implemented": "src/profiles/r860-es-photo-reference/settings.ts (VC_ADULT_RULES.pinsp, riseMs)",
+      "tests": [
+        "tests/unit/validation.test.ts"
+      ]
+    },
+    {
+      "id": "E-031",
+      "claim": "Ajuste con el ratón sobre un deslizador que sólo recorre valores admitidos (rejilla por tramos; Off como primer paso cuando procede); ± y deslizador producen el mismo escalón; un valor escrito fuera de rejilla se rechaza indicando el más cercano.",
+      "status": "P",
+      "source": "DOSSIER regla «select≠apply», petición del usuario 06-09-2026",
+      "locator": "—",
+      "implemented": "src/domain/validation.ts (gridValues, nearestGridValue); src/ui/app.ts (openQuick/renderQuick)",
+      "tests": [
+        "tests/unit/validation.test.ts (rejilla)",
+        "tests/e2e/pc.spec.ts (deslizador/±/rueda)"
+      ]
+    },
+    {
+      "id": "E-032",
+      "claim": "Un bloqueo inspiratorio solicitado cuando Pmáx termina la inspiración se registra como resultado no válido con motivo y hora, y se anuncia; una solicitud en cola se puede cancelar de forma explícita.",
+      "status": "P",
+      "source": "DOSSIER regla de procedimientos (elegibilidad, cancelación, resultado fechado)",
+      "locator": "—",
+      "implemented": "src/engine/procedures.ts (last[kind] inválido); src/ui/app.ts (openHold/updateHold, «Cancelar solicitud»)",
+      "tests": [
+        "tests/unit/procedures.test.ts",
+        "tests/e2e/pc.spec.ts (bloqueo rechazado, cancelación)"
+      ]
+    },
+    {
+      "id": "E-033",
+      "claim": "Flujo de base espiratorio: durante la espiración la válvula mantiene la PEEP hasta un flujo de base de 10 L/min hacia el paciente; por encima, la Pva cae por debajo de PEEP (deflexión de disparo).",
+      "status": "P",
+      "source": "DOSSIER (bias flow como control del modo, E-016); valor y forma propios (U-33)",
+      "locator": "—",
+      "note": "Sustituye la válvula espiratoria ideal (Pva = PEEP siempre) de v0.3. El valor del equipo no está documentado en las fuentes leídas.",
+      "implemented": "src/engine/controller.ts (EXP_BIAS_FLOW_LPS; fase exp: integratePressureSource con tope de flujo de base)",
+      "tests": [
+        "tests/unit/review3.test.ts «sin asistencia, un esfuerzo de 8 cmH₂O en espiración baja la Pva por debajo de PEEP y VTe − VTi queda acotado por el flujo de base»",
+        "tests/unit/physics.test.ts"
+      ]
+    },
+    {
+      "id": "E-034",
+      "claim": "Tope de flujo del actuador en A/C PC integrado dentro del mismo RK2 con sub-pasos: sin sobreimpulso de presión dependiente de dt cuando el tope de 160 L/min actúa.",
+      "status": "P",
+      "source": "revisión adversarial 06-09-2026 (v0.3 aplicaba el tope fuera del integrador)",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (fase inspPressure), src/engine/patient.ts",
+      "tests": [
+        "tests/bench/pc.test.ts «tope de flujo del actuador (160 L/min): con R muy baja la presión no alcanza el objetivo de inmediato»",
+        "tests/bench/pc.test.ts (BM-03, PHY-02)"
+      ]
+    },
+    {
+      "id": "E-035",
+      "claim": "Cstat del bloqueo inspiratorio usa PEEPtot como denominador cuando existe un bloqueo espiratorio válido reciente con la misma PEEP programada; si no, usa PEEPe y el motivo de la muestra lo dice.",
+      "status": "P",
+      "source": "Natalini 2016 (auto-PEEP = PEEPtot − PEEP; docs/03 §5) y revisión adversarial 06-09-2026",
+      "locator": "—",
+      "note": "Antes (v0.3) siempre Pplat − PEEPe, motivo «sin PEEPtot medida»; con auto-PEEP sobreestimaba la carga elástica.",
+      "implemented": "src/engine/procedures.ts (resultado del bloqueo inspiratorio)",
+      "tests": [
+        "tests/unit/review3.test.ts «con atrapamiento (Rexp 30, FR 30) la Cstat vuelve a 50 mL/cmH₂O tras medir PEEPtot»",
+        "tests/unit/procedures.test.ts"
+      ]
+    },
+    {
+      "id": "E-036",
+      "claim": "[v0.3.6: indicador «Plimit» junto a Ppico, ya no alarma] Alarma de prioridad media «Presión limitada por Plimit» cuando la inspiración termina limitada por Plimit (VT no entregado).",
+      "status": "P",
+      "source": "R07 p.2 describe el evento («Plimit impide entregar todo el VT»), no la alarma",
+      "locator": "—",
+      "note": "NO VERIFICADO que el R860 emita un aviso con ese texto ni con esa prioridad; se propone para que el alumno vea por qué el VT queda corto (U-11).",
+      "implemented": "src/engine/alarms.ts (condición plimit, prioridad media, a partir de record.plimitReached)",
+      "tests": [
+        "tests/unit/review3.test.ts «con Plimit 7 la alarma de prioridad media se activa; al subir Plimit se resuelve»",
+        "tests/unit/alarms.test.ts"
+      ]
+    },
+    {
+      "id": "E-037",
+      "claim": "La importación de sesiones valida esfuerzo, sensores, modo y claves desconocidas; se aceptan sesiones de motor 0.2.0 y 0.3.0 (con aviso de reproducción no idéntica si la versión difiere).",
+      "status": "P",
+      "source": "DOSSIER (SEC-03, H2/H6 de R860 Lab no heredados)",
+      "locator": "—",
+      "implemented": "src/history/session.ts (ACCEPTED_ENGINE_VERSIONS de src/engine/version.ts), src/engine/simulator.ts (importSession)",
+      "tests": [
+        "tests/unit/session.test.ts",
+        "tests/unit/boundaries.test.ts",
+        "tests/unit/review3.test.ts «engineVersion 0.2.0 se acepta con aviso; 0.1.0 se rechaza; esfuerzo absurdo en init se rechaza»",
+        "tests/unit/review.test.ts «importSession rechaza ajustes fuera de dominio y pacientes degenerados»"
+      ]
+    },
+    {
+      "id": "E-038",
+      "claim": "Flujo de base espiratorio programable 2–10 L/min en pasos de 0,5 (adulto); el disparo por flujo detecta el flujo de base desviado por el paciente, por lo que el umbral de disparo no puede superar el flujo de base.",
+      "status": "D (rango) / P (valor inicial 2 L/min y relación con el disparo)",
+      "source": "R03",
+      "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»",
+      "implemented": "src/profiles/r860-es-photo-reference/settings.ts (biasFlow); src/engine/controller.ts (fase exp, tope = settings.biasFlow); src/domain/validation.ts (flowTrigger ≤ biasFlow)",
+      "tests": [
+        "tests/unit/sync.test.ts (SYN-01)"
+      ]
+    },
+    {
+      "id": "E-039",
+      "claim": "Disparo inspiratorio por presión: −10 a −3 cmH₂O (0,5) y −3 a −0,25 cmH₂O (0,25), alternativo al disparo por flujo; se evalúa como caída de la Pva por debajo de la PEEP programada.",
+      "status": "D (rangos y existencia) / P (referencia a PEEP programada, selector como casilla)",
+      "source": "R03",
+      "locator": "p.2 «Trigger inspiratorio por presión: −10 a −3 cm H2O (incrementos de 0.5); −3 a −0.25 cm H2O (incrementos de 0.25)»",
+      "implemented": "settings.ts (triggerByPressure, pressureTrigger); controller.ts (condición de disparo)",
+      "tests": [
+        "tests/unit/sync.test.ts (SYN-02)"
+      ]
+    },
+    {
+      "id": "E-040",
+      "claim": "Ninguna fuente pública consultada (ficha JB23840CO 2014, curso JB72469XX, guía rápida JB77395XX) establece una relación obligatoria entre Plimit y Pmáx: ambos comparten el rango 7–100 cmH₂O y sólo Pmáx aparece entre los «parámetros con límites de software». El curso sí documenta Pmáx − 2 cmH₂O como techo de la presión regulada en PRVC y Pmáx − 5 con compensación de tubo.",
+      "status": "D (ausencia en las fuentes públicas) / U (regla interna del equipo, manual de usuario no accesible)",
+      "source": "R03, R23, R02",
+      "locator": "R03 p.2–3 (rangos Plimit y Pmax; «parámetros con límites de software»); R23 diapositivas PRVC («Límite alto: Pmax – 2 cmH2O») y compensación de tubo («se limita a Pmax − 5 cmH2O»)",
+      "implemented": "src/domain/validation.ts (Plimit > Pmáx permitido con aviso no bloqueante)",
+      "tests": [
+        "tests/unit/review3.test.ts (R3-04)"
+      ]
+    },
+    {
+      "id": "E-041",
+      "claim": "El sistema respiratorio (rama + válvula espiratoria) añade una resistencia en serie con la vía aérea; el manual de usuario fija como techo ≤ 6 cmH₂O al flujo de referencia (15 L/min pediátrico, 2,5 L/min neonatal; adulto no citado en el extracto, ISO 80601-2-12 usa 60 L/min). El simulador la modela como resistencia lineal 0–6 cmH₂O·s/L, 0 por omisión (válvula ideal), ajustable en el panel docente.",
+      "status": "D (techo normativo y componente físico) / P (linealidad y valor 0 por omisión) / U (valor real del R860 con su circuito)",
+      "source": "R21 (extracto vía buscador), R03",
+      "locator": "URM SW10 §especificaciones del sistema respiratorio: «inspiratory and expiratory resistance should not exceed 6 cmH2O for… 15 l/min… 2.5 l/min»",
+      "implemented": "src/domain/types.ts (PatientParams.rExpValve); src/engine/patient.ts (rSeries); src/engine/controller.ts (fase exp); src/ui/patientControls.ts (deslizador)",
+      "tests": [
+        "tests/unit/sync.test.ts (SYN-03)"
+      ]
+    },
+    {
+      "id": "E-042",
+      "claim": "El volumen que muestra el ventilador es una lectura, no el volumen verdadero: la ficha 2014 acota las lecturas de volumen a ±10 % o ±10 mL y la administración de VT a ±10 % del ajuste. El simulador separa ambos canales y aplica al canal medido una dispersión ciclo a ciclo de ±2,5 % (uniforme), determinista a partir de la semilla del escenario.",
+      "status": "D (envolvente de exactitud) / P (dispersión típica de ±2,5 % y su distribución)",
+      "source": "R03",
+      "locator": "p.3 «Precisión de monitoreo … Lecturas de volumen: ±10 % o ±10 mL, lo que sea mayor»; «Precisión de administración … volumen tidal: ±10 % de ajuste o ±5 mL»",
+      "implemented": "src/engine/sensors.ts (FlowSensor, mulberry32); src/engine/simulator.ts (ganancia por respiración); metrics y alarms leen el canal medido",
+      "tests": [
+        "tests/unit/flowSensor.test.ts (SEN-01)",
+        "tests/e2e/pc.spec.ts"
+      ]
+    },
+    {
+      "id": "E-043",
+      "claim": "La columna de presión del monitor desciende con una amortiguación de presentación (constante 0,07 s) al terminar la inspiración; sube sin retardo. Complementa a la apertura física de la válvula (E-052), que dura menos que el refresco de pantalla. Es una decisión de presentación: las curvas, las métricas y las alarmas usan la señal sin amortiguar.",
+      "status": "P (presentación; el comportamiento real de la barra del equipo no está verificado)",
+      "source": "—",
+      "locator": "petición del usuario 07-09-2026",
+      "implemented": "src/ui/plotsView.ts (gaugeValue)",
+      "tests": [
+        "tests/e2e/pc.spec.ts (descenso progresivo de la columna)"
+      ]
+    },
+    {
+      "id": "E-044",
+      "claim": "Relajación de esfuerzo: el sistema respiratorio se modela como un compartimento estático (Cest) más un cuerpo de Maxwell opcional (E2 en serie con un amortiguador, constante τ2). Al ocluir, la presión cae de inmediato lo resistivo (Ppico → P1 = R·Q) y después decae exponencialmente hasta la meseta estática P2 = P0 + V/Cest. Con E2 = 0 el modelo se reduce exactamente al compartimento único.",
+      "status": "D (bibliografía de mecánica respiratoria: Mount; Bates; D'Angelo) / P (valores por omisión y rangos ofrecidos)",
+      "source": "BIBLIO",
+      "locator": "modelo viscoelástico de dos compartimentos en serie; diferencia entre elastancia dinámica y estática",
+      "implemented": "src/engine/patient.ts (vVisc, relax, pel/pelStatic); src/engine/controller.ts (relaja en las fases ocluidas)",
+      "tests": [
+        "tests/unit/viscoelastic.test.ts (VIS-01, VIS-02)"
+      ]
+    },
+    {
+      "id": "E-045",
+      "claim": "El criterio de meseta separa dos cosas: la deriva en el tramo final de la oclusión (la presión ya se asentó) y la excursión contra la tendencia en toda la ventana (esfuerzo, fuga u oscilación). Una relajación viscoelástica es monótona y no invalida la maniobra si la oclusión dura lo suficiente; un esfuerzo mueve la presión en ambos sentidos y la invalida siempre.",
+      "status": "P (criterio del simulador; el algoritmo del equipo no está publicado)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (plateauQuality); src/engine/procedures.ts",
+      "tests": [
+        "tests/unit/viscoelastic.test.ts (VIS-02)",
+        "tests/unit/procedures.test.ts (PRC-02)"
+      ]
+    },
+    {
+      "id": "E-046",
+      "claim": "Resistencia no lineal de Rohrer R(Q) = K1 + K2·|Q| disponible como parámetro del paciente: la caída resistiva deja de ser proporcional al flujo y crece más deprisa al acelerar la inspiración, como impone sobre todo el tubo endotraqueal.",
+      "status": "D (modelo de Rohrer, bibliografía) / P (valor por omisión 0 y rango 0–50)",
+      "source": "BIBLIO",
+      "locator": "ecuación de Rohrer para vía aérea artificial",
+      "implemented": "src/engine/patient.ts (flowForPaw/pawForFlow con r2); control en el panel docente",
+      "tests": [
+        "tests/unit/viscoelastic.test.ts (VIS-03)"
+      ]
+    },
+    {
+      "id": "E-047",
+      "claim": "La PEEPe de referencia de una respiración se toma de la última espiración sin ocluir: la respiración que sigue a un bloqueo espiratorio no puede usar la presión de la oclusión como PEEPe.",
+      "status": "P (corrección de un defecto propio detectado con el modelo viscoelástico)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (lastExpPaw)",
+      "tests": [
+        "tests/unit/viscoelastic.test.ts (VIS-04)"
+      ]
+    },
+    {
+      "id": "E-048",
+      "claim": "Curva presión-volumen sigmoidea opcional (Venegas): V(P) = a + b/(1 + e^(−(P−c)/d)), anclada en V(P0) = 0. La compliance deja de ser única: máxima b/(4d) en P = c y codos de máxima curvatura en c ± 1,317·d. Permite titular PEEP (la compliance medida dibuja una U invertida) y ver la sobredistensión. Ausente o b = 0 → compliance lineal Crs, idéntica al modelo previo.",
+      "status": "D (ecuación de Venegas et al., bibliografía) / P (valores por omisión, rangos y extensión tangente fuera de la capacidad)",
+      "source": "BIBLIO",
+      "locator": "ecuación sigmoidea de la curva P-V del sistema respiratorio",
+      "implemented": "src/engine/patient.ts (sigmoidVolume, sigmoidPressure, sigmoidCompliance, equilibriumVolumeFor); controles del panel docente; escenario SC-15",
+      "tests": [
+        "tests/unit/sigmoid.test.ts (SIG-01, SIG-02)"
+      ]
+    },
+    {
+      "id": "E-049",
+      "claim": "Limitación al flujo espiratorio (resistor de Starling): cuando la presión de la vía aérea cae por debajo de la presión crítica del segmento colapsable, el flujo deja de depender de la presión aguas abajo y queda fijado por el retroceso elástico y la resistencia aguas arriba del estrangulamiento, Qmax = (Pel − Pcrít)/(f·Rexp). Consecuencias reproducidas: independencia del esfuerzo espiratorio, atrapamiento hasta que el retroceso iguala Pcrít, y desaparición de la limitación cuando la PEEP externa alcanza ese punto.",
+      "status": "D (modelo de resistor de Starling y limitación al flujo, bibliografía de mecánica respiratoria) / P (valores y la condición Pva < Pcrít como interruptor)",
+      "source": "BIBLIO",
+      "locator": "limitación al flujo espiratorio; punto de igual presión; efecto de la PEEP externa en el atrapamiento dinámico",
+      "implemented": "src/engine/patient.ts (maxExpiratoryFlow, aplicado dentro de flowForPaw)",
+      "tests": [
+        "tests/unit/flowLimitation.test.ts (EFL-01, EFL-02)"
+      ]
+    },
+    {
+      "id": "E-050",
+      "claim": "Calibre de la vía aérea dependiente del volumen pulmonar: Rexp(V) = Rexp·(1 + ganancia·máx(0, 1 − V/Vref)). Sin él, el flujo espiratorio es exactamente proporcional al volumen y la rama espiratoria del bucle flujo-volumen es una recta; con él la rama se hunde por debajo de la cuerda, que es el bucle excavado del paciente obstructivo.",
+      "status": "D (dependencia del calibre con el volumen pulmonar, bibliografía) / P (forma lineal elegida y valores)",
+      "source": "BIBLIO",
+      "locator": "conductancia de la vía aérea en función del volumen pulmonar",
+      "implemented": "src/engine/patient.ts (r1For, expiratoryResistance)",
+      "tests": [
+        "tests/unit/flowLimitation.test.ts (EFL-03)"
+      ]
+    },
+    {
+      "id": "E-051",
+      "claim": "Dos unidades alveolares en paralelo sobre un nodo común de vía aérea, cada una con su compliance y sus resistencias. Consecuencias reproducidas: vaciamiento con dos constantes de tiempo (cola lenta en la curva de flujo), meseta que depende de la duración de la oclusión y pendelluft con el circuito cerrado, con ΔP que decae con τ = (R1+R2)·C1·C2/(C1+C2) hacia la presión común (V1+V2)/(C1+C2). Ausente = un solo compartimento, idéntico al modelo previo.",
+      "status": "D (modelo de dos compartimentos en paralelo y pendelluft, bibliografía de mecánica respiratoria) / P (que la segunda unidad sea lineal y los valores)",
+      "source": "BIBLIO",
+      "locator": "inhomogeneidad de constantes de tiempo; redistribución interna de gas durante la oclusión",
+      "implemented": "src/engine/patient.ts (v2, branch1Flow/branch2Flow, nodePressureForFlow por bisección, equilibratedPressure); integradores por pares",
+      "tests": [
+        "tests/unit/twoCompartment.test.ts (PEN-01, PEN-02)"
+      ]
+    },
+    {
+      "id": "E-052",
+      "claim": "La válvula espiratoria abre en unas decenas de milisegundos, no de golpe: mientras se abre su resistencia decae, así que la Pva parte de la presión alveolar y desciende hasta la PEEP, y el flujo espiratorio alcanza su pico después de la apertura y no en el primer instante. Con apertura 0 (banco analítico) el comportamiento es el instantáneo anterior. No cambia de forma apreciable el volumen espirado ni la PEEP total.",
+      "status": "P (el tiempo de apertura del R860 no está publicado; 40 ms está dentro del rango habitual de 20–50 ms de las válvulas de ventilador)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (fase exp con resistencia de válvula variable en el tiempo, sub-pasos de 1 ms)",
+      "tests": [
+        "tests/unit/expValve.test.ts (VAL-01)"
+      ]
+    },
+    {
+      "id": "E-053",
+      "claim": "La compliance que muestra el panel docente es la del sistema completo (suma de las unidades alveolares), mientras que el sub-paso de los integradores usa la constante de tiempo más corta de las ramas. Son dos cantidades distintas y antes se usaba la misma para ambas cosas.",
+      "status": "P (corrección de coherencia interna)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (complianceMain, compliance, minBranchTau)",
+      "tests": [
+        "tests/unit/sigmoid.test.ts (compliance local del cuadro)",
+        "tests/unit/review4.test.ts (R4-03)"
+      ]
+    },
+    {
+      "id": "E-054",
+      "claim": "Las asincronías no están programadas: emergen de la mecánica, del perfil de esfuerzo y del umbral de disparo. Comprobado y fijado por pruebas: (a) doble disparo cuando el tiempo inspiratorio neural supera al mecánico, con la segunda respiración exactamente al terminar el periodo refractario del disparo; (b) el apilamiento genera PEEP intrínseca por sí solo, sin obstrucción alguna; (c) esfuerzos inefectivos cuando la auto-PEEP crece, con muesca visible en el flujo espiratorio de más de 5 L/min.",
+      "status": "P (comportamiento emergente del modelo; ninguna regla lo impone)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "no hay código específico: sale de effort.ts, del disparo en controller.ts y de la mecánica",
+      "tests": [
+        "tests/unit/asynchrony.test.ts (ASI-01, ASI-02)"
+      ]
+    },
+    {
+      "id": "E-055",
+      "claim": "La resistencia en serie del circuito y el tope de flujo del ventilador son restricciones del NODO de la vía aérea, no de una rama: con dos unidades alveolares se resuelve primero la presión del nodo y después se reparte entre ramas. Además, la presión que se publica durante una oclusión es la del nodo, y la curva de volumen suma todas las unidades.",
+      "status": "P (corrección de defectos propios detectados en la cuarta revisión adversarial)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (nodeState, nodePressureWithSeries, solveNodeLinear); src/engine/controller.ts (Pva de oclusión); src/engine/simulator.ts (volumen de la curva)",
+      "tests": [
+        "tests/unit/review4.test.ts (R4-02, R4-03, R4-06)"
+      ]
+    },
+    {
+      "id": "E-056",
+      "claim": "Ningún valor no finito puede publicarse con calidad válida: la capa de métricas lo convierte en dato ausente con motivo, y el simulador registra un evento de discontinuidad la primera vez que el modelo deja de dar números finitos. Los integradores rechazan tramos de duración nula, que era el origen de la divergencia.",
+      "status": "P (contrato de calidad del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (guardas de dt); src/engine/metrics.ts (sample); src/engine/simulator.ts (vigilancia de divergencia)",
+      "tests": [
+        "tests/unit/review4.test.ts (R4-01)"
+      ]
+    },
+    {
+      "id": "E-057",
+      "claim": "Las órdenes del panel docente dejan el estado interno coherente: fijar el volumen absoluto reparte entre unidades hasta igualar presiones y deja relajado el elemento viscoelástico; quitar o añadir la segunda unidad conserva la masa de gas; y al salir de espera el ventilador presuriza el circuito a PEEP antes de la primera respiración.",
+      "status": "P (corrección de defectos propios; la presurización instantánea al salir de espera es una simplificación)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (setAbsoluteVolume, applyParams, equilibrateTo); src/engine/controller.ts (startVentilation)",
+      "tests": [
+        "tests/unit/review4.test.ts (R4-04)"
+      ]
+    },
+    {
+      "id": "E-058",
+      "claim": "El guardián de rendimiento del solucionador del nodo cuenta evaluaciones, no tiempo de reloj: con ramas lineales el nodo se resuelve en forma cerrada y cuesta cero bisecciones; la combinación más adversa (Rohrer + limitación al flujo + segunda unidad muy rígida) cuesta 10038 evaluaciones por paso en una ventana de un ciclo a 30 por minuto. Un guardián determinista no depende de la máquina ni de la instrumentación de cobertura.",
+      "status": "D (medición propia reproducible; el motor es determinista, así que el conteo se repite exactamente)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (solverEvals)",
+      "tests": [
+        "tests/unit/review4.test.ts (R4-07)"
+      ]
+    }
   ]
 }
