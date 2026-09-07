@@ -335,6 +335,13 @@
       "policy": "P: por omisión no hay colapso ni dependencia del volumen. El escenario SC-16 usa Pcrít 8 cmH2O, fracción 0,5 y ganancia 3 con referencia 1 L, valores elegidos para que el fenómeno se vea, no medidos en pacientes.",
       "status": "nueva (v0.4.2)",
       "blocks": []
+    },
+    {
+      "id": "U-41",
+      "question": "Reparto de compliance y resistencia entre unidades rápida y lenta en un pulmón adulto enfermo, y si dos unidades bastan para el fenómeno.",
+      "policy": "P: por omisión hay una sola unidad. SC-17 usa 40 mL/cmH2O con R 8 y 20 mL/cmH2O con R 80. La segunda unidad es lineal (sin sigmoide, viscoelástico, Rohrer ni limitación al flujo, que actúan sobre la principal).",
+      "status": "nueva (v0.4.3)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

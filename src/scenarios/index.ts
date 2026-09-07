@@ -215,6 +215,35 @@ export const SCENARIOS: Scenario[] = [
     caution: 'Dominio de fallo del ensayo, no fisiología.',
   },
   {
+    id: 'SC-17',
+    name: 'Dos pulmones en uno',
+    synthetic: true,
+    category: 'Mecánica del tejido',
+    level: 3,
+    lesson: {
+      title: 'Constantes de tiempo distintas y pendelluft',
+      text: 'Este pulmón tiene dos unidades en paralelo: una rápida y una lenta. El vaciamiento ya no es una sola exponencial y, con el circuito ocluido, el gas sigue moviéndose de una a otra.',
+      tasks: [
+        { id: 'corto', text: 'Mide una meseta con un bloqueo inspiratorio de 2 s.', test: 'validInsp' },
+        { id: 'largo', text: 'Repite con 10 s y compara: la meseta baja más.', test: 'longHoldValid' },
+        { id: 'curva', text: 'Mira la cola del flujo espiratorio en la vista de curvas.', test: 'basic' },
+      ],
+    },
+    question: '¿Por qué la meseta depende de cuánto dure la oclusión?',
+    answer:
+      'Porque con el circuito cerrado las dos unidades no están en equilibrio entre sí: el gas pasa de la que quedó a más presión a la que quedó a menos (pendelluft) hasta igualarlas. Mientras eso ocurre la presión de la vía aérea sigue bajando, así que una oclusión corta mide una meseta más alta que la verdadera.',
+    description:
+      'Unidad rápida (40 mL/cmH₂O, R 8) en paralelo con una lenta (20 mL/cmH₂O, R 80): cola espiratoria lenta y meseta que depende de la oclusión.',
+    patient: { crs: 0.04, rInsp: 8, rExp: 8, r2: 0, p0: 0, second: { crs: 0.02, rInsp: 80, rExp: 80 } },
+    effort: passive,
+    sensors: idealSensors,
+    settings: { vt: 0.5, rr: 12, ie: 1 / 3, peep: 5, pmax: 45, plimit: 100, pausePct: 0 },
+    initialV: 'equilibrium',
+    perturbations: [],
+    observe: 'Doble constante de tiempo en la espiración y redistribución interna durante la oclusión.',
+    caution: 'La segunda unidad es del modelo; no representa un lóbulo concreto.',
+  },
+  {
     id: 'SC-16',
     name: 'Espiración estrangulada',
     synthetic: true,

@@ -51,7 +51,7 @@ export interface HoldOutcome {
 }
 
 export type ControllerEvent =
-  | { type: 'breathStart'; breathId: string; breathType: BreathType; simTimeS: number; vStartL: number }
+  | { type: 'breathStart'; breathId: string; breathType: BreathType; simTimeS: number; vStartL: number; v2StartL: number }
   | { type: 'stepGuardExhausted'; simTimeS: number; phase: ControllerPhase }
   | { type: 'breathEnd'; record: BreathRecord }
   | { type: 'plimitReached'; breathId: string; simTimeS: number; paw: number }
@@ -652,7 +652,14 @@ export class VcController {
     this.phase = this.settings.mode === 'AC_PC' ? 'inspPressure' : 'inspFlow';
     this.tPhase = 0;
     this.tBreath = 0;
-    this.events.push({ type: 'breathStart', breathId, breathType: type, simTimeS: this.simT, vStartL: this.patient.v });
+    this.events.push({
+      type: 'breathStart',
+      breathId,
+      breathType: type,
+      simTimeS: this.simT,
+      vStartL: this.patient.v,
+      v2StartL: this.patient.v2,
+    });
   }
 
   private finishBreath(b: BreathAccum): void {

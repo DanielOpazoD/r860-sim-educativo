@@ -142,6 +142,7 @@ export class Simulator {
   private lastMetrics: Record<string, MetricSample> = {};
   private samplesSinceFrame = 0;
   private breathVStart = 0;
+  private breathV2Start = 0;
   /** Pausa de audio (D 120 s) como estado del motor para que el replay la reproduzca; el audio sólo la lee. */
   audioPauseUntilMs: number | null = null;
 
@@ -177,6 +178,7 @@ export class Simulator {
     this.procedures = new ProcedureManager(this.controller, (ms) => init.startWallTimeMs + ms);
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
+    this.breathV2Start = this.patient.v2;
     if (init.startVentilating) {
       this.ventilation = 'ventilating';
       this.controller.paw = peep; // la vía aérea parte a PEEP en equilibrio
@@ -274,6 +276,7 @@ export class Simulator {
     switch (ev.type) {
       case 'breathStart':
         this.breathVStart = ev.vStartL;
+        this.breathV2Start = ev.v2StartL ?? 0;
         break;
       case 'stepGuardExhausted':
         this.logEvent('discontinuity', 'system', { reason: 'límite de sub-pasos agotado', phase: ev.phase, simTimeS: ev.simTimeS });
@@ -425,12 +428,12 @@ export class Simulator {
       breathCount: this.breaths.length,
       audioPauseUntilMs: this.audioPauseUntilMs,
       truth: {
-        vAbsL: this.patient.v,
+        vAbsL: this.patient.vTotal,
         pel: this.patient.pel(),
         pVisc: this.patient.pVisc,
         cLocal: this.patient.compliance(),
         pmus: this.effort.pmusAt(t / 1000),
-        peepiEndExp: Math.max(0, this.patient.pelStatic(this.breathVStart) - this.controller.peepTarget),
+        peepiEndExp: Math.max(0, this.patient.equilibratedPressure(this.breathVStart, this.breathV2Start) - this.controller.peepTarget),
         patient: { ...this.patient.params },
         effort: { ...this.effort.params },
         sensors: { ...this.o2.params },

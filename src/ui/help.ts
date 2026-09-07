@@ -185,6 +185,14 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Presión resistiva = R × flujo',
   },
+  'patient.second': {
+    title: 'Segunda unidad alveolar',
+    text: [
+      'Añade en paralelo una segunda unidad con su propia compliance y resistencia, es decir, con otra constante de tiempo. Ambas comparten el nodo de la vía aérea, así que el pulmón deja de vaciarse con una sola exponencial: al final domina la unidad lenta.',
+      'Con el circuito ocluido aparece el pendelluft: el gas pasa de la unidad rápida a la lenta hasta igualar presiones, de modo que la meseta sigue bajando y su valor depende de cuánto dure la oclusión. Con compliance 0 hay un solo compartimento.',
+    ],
+    equation: 'Ocluido: ΔP decae con τ = (R₁+R₂)·C₁·C₂/(C₁+C₂)',
+  },
   'patient.efl': {
     title: 'Colapso espiratorio (limitación al flujo)',
     text: [
