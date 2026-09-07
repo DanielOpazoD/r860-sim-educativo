@@ -92,6 +92,35 @@ export const PHYS: Record<string, PhysSpec> = {
       params: fr.truth.patient.sigmoid ? { sigmoid: { ...fr.truth.patient.sigmoid, d: v } } : {},
     }),
   },
+  secondCrs: {
+    label: 'Segunda unidad: compliance',
+    unit: 'mL/cmH₂O',
+    min: 0,
+    max: 100,
+    step: 1,
+    help: 'patient.second',
+    get: (fr) => (fr.truth.patient.second?.crs ?? 0) * 1000,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: {
+        second:
+          v <= 0 ? undefined : { crs: v / 1000, rInsp: fr.truth.patient.second?.rInsp ?? 60, rExp: fr.truth.patient.second?.rExp ?? 60 },
+      },
+    }),
+  },
+  secondR: {
+    label: 'Segunda unidad: resistencia',
+    unit: 'cmH₂O/L/s',
+    min: 2,
+    max: 300,
+    step: 2,
+    help: 'patient.second',
+    get: (fr) => fr.truth.patient.second?.rInsp ?? 60,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: fr.truth.patient.second ? { second: { ...fr.truth.patient.second, rInsp: v, rExp: v } } : {},
+    }),
+  },
   eflPcrit: {
     label: 'Colapso espiratorio: presión crítica',
     unit: 'cmH₂O',
@@ -201,6 +230,8 @@ export const PHYS: Record<string, PhysSpec> = {
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
 export const PATIENT_EXTRA = [
+  'secondCrs',
+  'secondR',
   'eflPcrit',
   'airwayCollapse',
   'sigmoidB',

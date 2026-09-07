@@ -166,3 +166,12 @@ Tercer bloque de fidelidad mecánica. Hasta ahora la espiración era siempre un 
 - **Calibre dependiente del volumen** (E-050): Rexp(V) = Rexp·(1 + ganancia·(1 − V/Vref)). Sin él, el flujo espiratorio es exactamente proporcional al volumen y la rama espiratoria del bucle flujo-volumen es una **recta** (comprobado: desviación de la cuerda < 0,01 L/s). Con él la rama se hunde por debajo de la cuerda: es el bucle excavado del obstructivo.
 - **Escenario SC-16 «Espiración estrangulada»**: colapso por debajo de 8 cmH₂O y resistencia que se triplica al vaciarse. Medido en la interfaz: con PEEP 3 la auto-PEEP es 6,0 cmH₂O; al subir la PEEP a 8 el estrangulamiento desaparece y el escalón que el paciente debe vencer para disparar cae a 2,7, mientras la PEEP total sólo pasa de 9,0 a 10,7.
 - Panel docente: controles de presión crítica de colapso y de estrechamiento al vaciarse.
+
+## v0.4.3 · dos unidades alveolares en paralelo: pendelluft y doble constante de tiempo (07-09-2026)
+
+Cuarto bloque de fidelidad mecánica, y el que más cambia la forma de la espiración.
+
+- **Segunda unidad en paralelo** (E-051, U-41): una unidad alveolar adicional con su propia compliance y resistencias, compartiendo el nodo de la vía aérea con la principal. El nodo se resuelve por bisección, así que las ramas pueden ser no lineales (Rohrer y limitación al flujo siguen actuando sobre la unidad principal) sin perder robustez. Los integradores avanzan ahora el par de volúmenes.
+- **Consecuencias comprobadas contra su solución analítica**: con el circuito ocluido el gas pasa de una unidad a otra y la diferencia de presiones decae con τ = (R1+R2)·C1·C2/(C1+C2) hacia la presión común (V1+V2)/(C1+C2), sin que entre ni salga gas del pulmón. La presión del nodo con flujo nulo es la media ponderada por las conductancias.
+- **En las curvas**: el vaciamiento deja de ser una sola exponencial y la constante aparente al final del flujo espiratorio es más del 50 % mayor que al principio; la meseta de una oclusión depende de su duración (en SC-17, 13,8 cmH₂O con 2 s frente a 13,5 con 10 s), mientras que con una sola unidad no cambia (< 0,05 cmH₂O). La auto-PEEP verdadera pasa a calcularse como la presión de equilibrio de todas las unidades.
+- **Escenario SC-17 «Dos pulmones en uno»** y controles del panel docente para la compliance y la resistencia de la segunda unidad.

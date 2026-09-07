@@ -241,10 +241,12 @@ export function validatePatientParams(p: {
   sigmoid?: { b: number; c: number; d: number };
   efl?: { pcrit: number; rusFraction: number };
   rExpVolumeDep?: { gain: number; vRefL: number };
+  second?: { crs: number; rInsp: number; rExp: number };
 }): string[] {
   const r: string[] = [];
   for (const [k, v] of Object.entries(p))
-    if (!['sigmoid', 'efl', 'rExpVolumeDep'].includes(k) && (typeof v !== 'number' || !Number.isFinite(v))) r.push(`${k}: no numérico`);
+    if (!['sigmoid', 'efl', 'rExpVolumeDep', 'second'].includes(k) && (typeof v !== 'number' || !Number.isFinite(v)))
+      r.push(`${k}: no numérico`);
   if (r.length) return r;
   if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
     r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
@@ -256,6 +258,16 @@ export function validatePatientParams(p: {
     r.push('Elastancia viscoelástica fuera de 0–40 cmH2O/L');
   if (p.tauViscS !== undefined && (!Number.isFinite(p.tauViscS) || p.tauViscS < 0.05 || p.tauViscS > 10))
     r.push('Constante viscoelástica fuera de 0.05–10 s');
+  if (p.second !== undefined) {
+    const s2 = p.second;
+    if (!s2 || typeof s2 !== 'object' || ![s2.crs, s2.rInsp, s2.rExp].every((x) => typeof x === 'number' && Number.isFinite(x)))
+      r.push('Segunda unidad inválida');
+    else {
+      if (s2.crs < 1e-4 || s2.crs > 1) r.push('Compliance de la segunda unidad fuera de 0.1–1000 mL/cmH2O');
+      if (s2.rInsp < 0.1 || s2.rInsp > 1000 || s2.rExp < 0.1 || s2.rExp > 1000)
+        r.push('Resistencias de la segunda unidad fuera de 0.1–1000 cmH2O·s/L');
+    }
+  }
   if (p.rExpVolumeDep !== undefined) {
     const d = p.rExpVolumeDep;
     if (!d || typeof d !== 'object' || ![d.gain, d.vRefL].every((x) => typeof x === 'number' && Number.isFinite(x)))

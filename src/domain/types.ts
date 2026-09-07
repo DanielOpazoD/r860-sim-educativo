@@ -129,6 +129,13 @@ export interface PatientParams {
    * Es lo que da la rama espiratoria excavada del bucle flujo-volumen. Ausente o gain = 0 → resistencia constante.
    */
   rExpVolumeDep?: { gain: number; vRefL: Liters };
+  /**
+   * Segunda unidad alveolar en paralelo con la principal, con su propia compliance y resistencias (unidad lenta o
+   * rápida). Ambas comparten el nodo de la vía aérea, así que aparecen la doble exponencial del vaciamiento, la
+   * dependencia de la meseta con la duración de la oclusión y el pendelluft: con el circuito ocluido el gas pasa de
+   * una unidad a otra hasta igualar presiones. Ausente = un solo compartimento.
+   */
+  second?: { crs: LitersPerCmH2O; rInsp: CmH2OSecondsPerLiter; rExp: CmH2OSecondsPerLiter };
   /** Presión de referencia (0 en pruebas). */
   p0: CmH2O;
   /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */
