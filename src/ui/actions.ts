@@ -130,7 +130,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       downloadBlob(blob, `R860_monitor_${stamp()}.png`);
       ctx.lesson.flags.snapshot = true;
       ctx.lesson.evaluate();
-      ctx.toast('Captura guardada.');
     }, 'image/png');
   }
   const openHelp = (tab: string): void => ctx.dialog.open('help', 'Guía del simulador', helpHTML(tab), CLOSE_BTN, 'wide');
@@ -192,11 +191,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         break;
       case 'mute':
         await ctx.send({ type: 'audioPause' });
-        ctx.toast('Audio en pausa durante 120 s de simulación. Las condiciones activas siguen visibles.');
         break;
       case 'acknowledge':
         await ctx.send({ type: 'acknowledgeAlarms' });
-        ctx.toast('Reconocimiento registrado; las condiciones activas permanecen.');
         break;
       case 'inspiratory':
         hold.openHold('inspHold');
@@ -215,8 +212,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         await hold.cancelHold();
         break;
       case 'manual': {
-        const r = await ctx.send({ type: 'manualBreath' });
-        if (r.accepted) ctx.toast('Respiración manual solicitada.');
+        await ctx.send({ type: 'manualBreath' });
         ctx.dialog.close();
         break;
       }

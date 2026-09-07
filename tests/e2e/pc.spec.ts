@@ -5,7 +5,7 @@ import { frame, open } from './helpers';
 test.describe('A/C PC y edición', () => {
   test('cambiar a A/C PC desde el menú de modos: teclas rápidas, curvas y VT esperado', async ({ page }) => {
     await open(page, { speed: 4 });
-    await page.click('[data-action="modes"]');
+    await page.locator('[data-action="modes"]').first().click();
     await page.click('.mode-option[data-mode="AC_PC"]');
     await expect(page.locator('#mode-fields')).toContainText('controlado por presión');
     await page.click('[data-action="confirmModes"]');
@@ -112,7 +112,7 @@ test.describe('A/C PC y edición', () => {
 
   test('menú de modo: flujo de base y disparo por presión; el disparo por flujo no puede superar el flujo de base', async ({ page }) => {
     await open(page, { speed: 4 });
-    await page.click('[data-action="modes"]');
+    await page.locator('[data-action="modes"]').first().click();
     await expect(page.locator('[data-mode-field="biasFlow"]')).toHaveValue('2');
     await expect(page.locator('[data-mode-field="pressureTrigger"]')).toHaveValue('-2');
     await page.fill('[data-mode-field="flowTrigger"]', '5');
@@ -121,7 +121,7 @@ test.describe('A/C PC y edición', () => {
     await page.fill('[data-mode-field="biasFlow"]', '6');
     await page.dispatchEvent('[data-mode-field="biasFlow"]', 'input');
     await expect(page.locator('#mode-error')).not.toContainText('flujo de base');
-    await page.check('[data-mode-field="triggerByPressure"]');
+    await page.locator('[data-mode-field="triggerByPressure"]').dispatchEvent('click');
     await page.click('[data-action="confirmModes"]');
     await expect.poll(async () => (await frame(page)).settings.triggerByPressure).toBe(true);
     expect((await frame(page)).settings.biasFlow).toBeCloseTo(0.1, 6);

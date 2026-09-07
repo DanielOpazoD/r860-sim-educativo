@@ -152,7 +152,6 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     const r = await ctx.send({ type: 'setAlarmLimits', changes });
     if (r.accepted) {
       ctx.dialog.close();
-      ctx.toast('Límites de alarma actualizados.');
     }
   }
   async function toggleAudio(): Promise<void> {
@@ -162,10 +161,8 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
         ctx.toast(audio.blockedReason ?? 'Audio no disponible.', true);
         return;
       }
-      ctx.toast('Audio de alarmas activado. Tonos sintéticos de entrenamiento.');
     } else {
       audio.enabled = false;
-      ctx.toast('Audio de alarmas apagado. Las alarmas visuales continúan.');
     }
     $('#sound-toggle').innerHTML = icon(audio.enabled ? 'sound' : 'muted');
     $('#sound-toggle').setAttribute('aria-pressed', String(audio.enabled));

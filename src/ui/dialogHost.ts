@@ -17,7 +17,6 @@ export function createDialogHost(): DialogHost & { bind(): void } {
       kind = k;
       $('#app-dialog').className = 'app-dialog ' + size;
       put('#dialog-title', title);
-      put('#dialog-eyebrow', 'R860 LAB · SIMULACIÓN EDUCATIVA');
       $('#dialog-content').innerHTML = html;
       $('#dialog-footer').innerHTML = footer || CLOSE_BTN;
       const d = $<HTMLDialogElement>('#app-dialog');

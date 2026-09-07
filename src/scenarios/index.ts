@@ -168,7 +168,7 @@ export const SCENARIOS: Scenario[] = [
     level: 3,
     lesson: {
       title: 'Esfuerzos que no disparan',
-      text: 'Pmus de 1.5 cmH2O con trigger de 3 L/min: la mayoría de los esfuerzos no producen flujo suficiente. Observa el panel docente.',
+      text: 'Pmus de 0.4 cmH2O con disparo por flujo de 3 L/min: el esfuerzo mueve unos 2 L/min y no dispara. Observa la curva de Pmus en el panel docente.',
       tasks: [
         { id: 'trig', text: 'Baja el trigger de flujo a 1 L/min en el menú de modo.', test: 'trigger1' },
         { id: 'assisted', text: 'Consigue una respiración asistida (FR medida > programada).', test: 'assisted' },
@@ -177,11 +177,11 @@ export const SCENARIOS: Scenario[] = [
     },
     question: '¿Ausencia de disparo significa ausencia de esfuerzo?',
     answer: 'No. El esfuerzo existe en el modelo (curva de Pmus del panel docente) aunque no supere el umbral del trigger.',
-    description: 'Pmus 1.5 cmH2O a 18/min: algunos esfuerzos no disparan.',
+    description: 'Pmus 0.4 cmH2O a 18/min: los esfuerzos no disparan con 3 L/min.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-    effort: { enabled: true, amplitude: 1.5, ratePerMin: 18, tiS: 0.7, phaseS: 0.3 },
+    effort: { enabled: true, amplitude: 0.4, ratePerMin: 18, tiS: 0.7, phaseS: 0.3 },
     sensors: idealSensors,
-    settings: { vt: 0.5, rr: 12, ie: 1 / 3, peep: 5, pmax: 40, plimit: 35, pausePct: 0, flowTrigger: 3 / 60 },
+    settings: { vt: 0.5, rr: 12, ie: 1 / 3, peep: 5, pmax: 40, plimit: 35, pausePct: 0, flowTrigger: 3 / 60, biasFlow: 4 / 60 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Esfuerzos inefectivos y significado de sensibilidad.',

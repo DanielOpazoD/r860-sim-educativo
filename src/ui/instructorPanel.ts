@@ -5,7 +5,7 @@
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
 import { format as f } from '../render/plots';
-import { findScenario, SCENARIOS } from '../scenarios';
+import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
 import { $, $$, icon, put } from './dom';
 import type { HoldPanel } from './holdPanel';
@@ -127,7 +127,6 @@ export function createInstructorPanel(
     ctx.lesson.reset();
     ctx.switchView('waves');
     $('#global-notice').hidden = true;
-    ctx.toast(`${sc.name}: ${sc.observe}`);
   }
   return {
     get teacherVisible() {
@@ -145,9 +144,6 @@ export function createInstructorPanel(
     },
     initChrome() {
       renderToggle();
-      put('#instructor-footer-text', '');
-      $('#instructor-footer-text').innerHTML =
-        `${SCENARIOS.length} escenarios · A/C VC adulto<br><b>Modelo mecánico, no paciente completo</b>`;
     },
     updateTeacher,
     setPhys,
@@ -175,7 +171,6 @@ export function createInstructorPanel(
         ],
         null,
       );
-      ctx.toast('Mecánica inicial restablecida. Los ajustes ventilatorios se mantienen.');
     },
     async undoEvent() {
       const u = eventUndo.pop();

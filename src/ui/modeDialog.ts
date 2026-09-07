@@ -80,8 +80,7 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
       return `<button class="mode-option ${m === id ? 'selected' : ''}" data-mode="${id}" aria-pressed="${m === id}" ${m === id ? 'aria-current="true"' : ''} ${on ? '' : `disabled title="${esc(why)}"`}><b>${label}</b>${on ? '' : `<small>${esc(why)}</small>`}</button>`;
     }).join('');
     const others = OTHER_MODES.map(
-      ([mm, why]) =>
-        `<button class="mode-option" disabled aria-pressed="false" title="${esc(why)}"><b>${mm}</b><small>${esc(why)}</small></button>`,
+      ([mm, why]) => `<button class="mode-option" disabled aria-pressed="false" title="${esc(why)}"><b>${mm}</b></button>`,
     ).join('');
     ctx.dialog.open(
       'modes',
@@ -140,7 +139,6 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
       if ('peep' in changes) ctx.lesson.flags.peepChanged = true;
       ctx.lesson.noteSettingsChange();
       ctx.dialog.close();
-      ctx.toast('Ajustes confirmados. Se aplican en la próxima respiración.');
     }
   }
   return {
