@@ -1,6 +1,13 @@
-// Verificador de fronteras entre capas (sin dependencias). Falla si un módulo importa en valor una capa que no le corresponde.
+// Verificador de fronteras entre capas (sin dependencias). Falla si un módulo alcanza en valor una capa que no le corresponde.
 // Capas (de abajo arriba): domain → engine → profiles/scenarios → history → app → ui. render es hoja; workers sólo usa app.
-// Los `import type` no cuentan: desaparecen en tiempo de ejecución y no acoplan comportamiento.
+//
+// Qué cuenta como alcanzar una capa, y por qué. Los `import type` no cuentan: desaparecen al compilar y no acoplan
+// comportamiento. Sí cuentan las cuatro formas que dejan una dependencia en tiempo de ejecución, y las cuatro se
+// comprueban porque las tres últimas fueron el agujero por el que una revisión adversarial burló este verificador:
+//   import x from '…'          declaración normal
+//   export … from '…'          re-exportación: acopla igual, y además propaga el módulo a quien importe éste
+//   import '…'                 sólo por efecto secundario: no liga ningún nombre, pero ejecuta el módulo
+//   await import('…')          dinámica: la carga es diferida, la dependencia es la misma
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve, dirname, sep } from 'node:path';
 
@@ -18,6 +25,15 @@ const ALLOWED = {
   workers: ['app'],
   '': ['ui'],
 };
+
+/** Las cuatro formas de alcanzar otro módulo, con la etiqueta que se muestra en el error y si liga sólo tipos. */
+const FORMAS = [
+  { nombre: 'import', re: /^import\s+(type\s+)?(?:[^'"]*?)\s*from\s+['"]([^'"]+)['"]/gm, cuentaDuplicado: true },
+  { nombre: 'export … from', re: /^export\s+(type\s+)?(?:[^'"]*?)\s*from\s+['"]([^'"]+)['"]/gm, cuentaDuplicado: false },
+  { nombre: 'import por efecto', re: /^import\s+()['"]([^'"]+)['"]/gm, cuentaDuplicado: false },
+  { nombre: 'import dinámico', re: /()\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g, cuentaDuplicado: false },
+];
+
 function walk(dir, out = []) {
   for (const e of readdirSync(dir)) {
     const p = join(dir, e);
@@ -26,7 +42,9 @@ function walk(dir, out = []) {
   }
   return out;
 }
-const layerOf = (file) => relative(ROOT, file).split(sep)[0].replace(/\.ts$/, '') === 'main' ? '' : relative(ROOT, file).split(sep)[0];
+const primerSegmento = (file) => relative(ROOT, file).split(sep)[0];
+const layerOf = (file) => (primerSegmento(file).replace(/\.ts$/, '') === 'main' ? '' : primerSegmento(file));
+
 const problems = [];
 for (const file of walk(ROOT)) {
   const src = readFileSync(file, 'utf8');
@@ -37,17 +55,23 @@ for (const file of walk(ROOT)) {
     continue;
   }
   const seen = new Map();
-  for (const m of src.matchAll(/^import\s+(type\s+)?(?:[^'"]*?)\s*from\s+['"]([^'"]+)['"]/gm)) {
-    const [, typeOnly, spec] = m;
-    if (!spec.startsWith('.')) continue;
-    const target = resolve(dirname(file), spec);
-    const rel = relative(ROOT, target);
-    if (rel.startsWith('..')) continue;
-    const key = spec.replace(/\.(ts|js|json)$/, '');
-    seen.set(key, (seen.get(key) ?? 0) + 1);
-    if (typeOnly) continue;
-    const targetLayer = rel.split(sep)[0].replace(/\.ts$/, '');
-    if (!allowed.includes(targetLayer)) problems.push(`${relative(ROOT, file)} → ${spec}: la capa «${layer}» no puede importar «${targetLayer}» en valor`);
+  for (const forma of FORMAS) {
+    for (const m of src.matchAll(forma.re)) {
+      const [, typeOnly, spec] = m;
+      if (!spec.startsWith('.')) continue;
+      const rel = relative(ROOT, resolve(dirname(file), spec));
+      if (rel.startsWith('..')) continue;
+      if (forma.cuentaDuplicado) {
+        const key = spec.replace(/\.(ts|js|json)$/, '');
+        seen.set(key, (seen.get(key) ?? 0) + 1);
+      }
+      if (typeOnly) continue;
+      const targetLayer = rel.split(sep)[0].replace(/\.ts$/, '');
+      if (!allowed.includes(targetLayer))
+        problems.push(
+          `${relative(ROOT, file)} → ${spec} (${forma.nombre}): la capa «${layer}» no puede alcanzar «${targetLayer}» en valor`,
+        );
+    }
   }
   for (const [k, n] of seen) if (n > 1) problems.push(`${relative(ROOT, file)}: importa «${k}» ${n} veces (unifica la declaración)`);
 }

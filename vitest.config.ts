@@ -13,8 +13,8 @@ export default mergeConfig(
         include: ['src/**/*.ts'],
         exclude: ['src/workers/**', 'src/fixtures/**'],
         reporter: ['text', 'json-summary', 'html'],
-        // Medido el 07-09-2026 (200 pruebas): líneas 44,23 · ramas 40,49 · funciones 37,44 · sentencias 43,03.
-        // Los umbrales van dos puntos por debajo de lo medido; hay que reajustarlos cuando la cobertura suba.
+        // Los umbrales van por debajo de lo medido; hay que reajustarlos cuando la cobertura suba. La cifra medida
+        // no se copia aquí a mano: la publica el README desde `coverage/coverage-summary.json` con `npm run docs:facts`.
         thresholds: { lines: 42, branches: 38, functions: 35, statements: 41 },
       },
     },

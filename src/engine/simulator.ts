@@ -142,7 +142,11 @@ export class Simulator {
   private ventilation: VentilationState = 'standby';
   private lastMetrics: Record<string, MetricSample> = {};
   private samplesSinceFrame = 0;
-  /** El modelo dejó de dar números finitos: se registra una vez y las métricas dejan de publicarse como válidas. */
+  /**
+   * El modelo dejó de dar números finitos. Sirve para registrar la discontinuidad una sola vez, no para filtrar:
+   * invalidar los datos es cosa de `MetricEngine.sample`, que anula todo valor no finito y le pone calidad
+   * `invalid` con motivo `valorNoFinito`, venga de una divergencia o de cualquier otra causa.
+   */
   private diverged = false;
   private breathVStart = 0;
   private breathV2Start = 0;

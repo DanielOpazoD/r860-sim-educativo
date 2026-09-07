@@ -20,6 +20,10 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
+      # Los números de README y docs/ salen de estos artefactos, no de la memoria de quien escribió la prosa:
+      # se comprueban al final, contra la cobertura y las salidas de prueba que este mismo trabajo acaba de producir.
+      - run: npm run results:doc
+      - run: npm run docs:facts -- --check
       # El resumen de cobertura lo produce el reporter json-summary de vitest.config.ts: si falta, CI debe fallar.
       - uses: actions/upload-artifact@v4
         if: always()

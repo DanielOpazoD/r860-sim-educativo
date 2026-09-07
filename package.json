@@ -16,10 +16,11 @@
     "results:doc": "vitest run --reporter=json --outputFile=test-results/vitest.json; python3 scripts/results-doc.py",
     "check": "npm run lint && npm run deps && npm run format:check && npm run typecheck && npm run test",
     "lint": "oxlint src tests",
-    "format": "prettier --write src tests",
-    "format:check": "prettier --check src tests",
+    "format": "prettier --write src tests \"scripts/*.mjs\"",
+    "format:check": "prettier --check src tests \"scripts/*.mjs\"",
     "test:coverage": "vitest run --coverage",
-    "deps": "node scripts/check-deps.mjs"
+    "deps": "node scripts/check-deps.mjs",
+    "docs:facts": "python3 scripts/doc-facts.py"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
