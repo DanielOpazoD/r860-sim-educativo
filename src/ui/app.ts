@@ -58,7 +58,8 @@ export function startApp(opts: AppOptions): void {
   let running = true,
     speed = 1,
     pauseReason: string | null = null,
-    discontinuities: Discontinuity[] = [];
+    discontinuities: Discontinuity[] = [],
+    generation = -1;
   let locked = false;
   let scenario: Scenario = findScenario(params.get('scenario') ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
   let fixtureId: FixtureId | null = null;
@@ -205,16 +206,20 @@ export function startApp(opts: AppOptions): void {
   }
   function ingest(
     fr: EngineFrame,
-    m: { running: boolean; speed: number; pauseReason: string | null; discontinuities: Discontinuity[] },
+    m: { running: boolean; speed: number; pauseReason: string | null; discontinuities: Discontinuity[]; generation: number },
   ): void {
     const prev = frame;
+    const newSession = m.generation !== generation;
+    generation = m.generation;
     frame = fr;
     running = m.running;
     speed = m.speed;
     pauseReason = m.pauseReason;
     discontinuities = m.discontinuities;
     plots.ingest(prev, fr);
-    if (prev && JSON.stringify(prev.truth.patient) !== JSON.stringify(fr.truth.patient)) lesson.notePatientChange(fr.simTimeMs);
+    if (newSession)
+      lesson.reset(); // la lección arranca con el primer cuadro de la sesión nueva, nunca con cuadros de la anterior
+    else if (prev && JSON.stringify(prev.truth.patient) !== JSON.stringify(fr.truth.patient)) lesson.notePatientChange(fr.simTimeMs);
     updateUI();
   }
 

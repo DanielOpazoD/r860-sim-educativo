@@ -24,6 +24,7 @@ export class EngineHost {
   private tickCount = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private discontinuities: Discontinuity[] = [];
+  private generation = 0;
   private scenarioPerturbations: { atSimTimeMs: number; apply: () => void; note: string }[] = [];
   /** Pausa exacta en tiempo simulado (capturas deterministas, VIS). */
   private autopauseAtMs: number | null = null;
@@ -38,11 +39,13 @@ export class EngineHost {
       case 'init':
         try {
           this.sim = new Simulator(m.init, profileFor(m.init));
+          this.generation += 1;
         } catch (e) {
           // Nunca silencioso: el cliente lo notifica por onDegraded y la interfaz lo muestra.
           this.post({ type: 'initError', reason: (e as Error).message });
           return;
         }
+        if (m.warmUp !== false) this.warmUp(this.sim);
         this.speed = m.speed;
         this.running = m.running;
         this.pauseReason = m.running ? null : 'inicio';
@@ -110,6 +113,7 @@ export class EngineHost {
           return;
         }
         this.sim = replayed;
+        this.generation += 1;
         this.scenarioPerturbations = []; // una sesión importada no hereda perturbaciones del escenario previo (regla 9)
         this.discontinuities = [];
         this.running = false;
@@ -142,12 +146,15 @@ export class EngineHost {
       sensors: { ...sc.sensors },
       // Los ajustes parten de los valores iniciales del perfil, no del escenario anterior: un escenario en VC no hereda el modo PC.
       settings: keepSettings && prev ? { ...prev.controller.settings } : { ...profileFor(base).defaults.settings, ...(sc.settings ?? {}) },
-      alarmLimits: { ...base.alarmLimits, ...(sc.alarmLimits ?? {}) },
+      // Los límites de alarma que el usuario ya configuró se conservan al cambiar de escenario (salvo que el escenario fije otros).
+      alarmLimits: { ...(prev ? prev.alarms.limits : base.alarmLimits), ...(sc.alarmLimits ?? {}) },
       initialV: sc.initialV ?? 'equilibrium',
       startVentilating: true,
     };
     this.sim = new Simulator(init, profileFor(init));
+    this.generation += 1;
     this.sim.noteEvent('scenario', 'instructor', { scenarioId: sc.id, name: sc.name, synthetic: true });
+    this.warmUp(this.sim);
     this.scenarioPerturbations = sc.perturbations.map((p) => ({
       atSimTimeMs: p.atSimTimeMs,
       note: p.note,
@@ -162,6 +169,13 @@ export class EngineHost {
     this.accMs = 0;
     this.lastNow = null;
     this.postFrame();
+  }
+
+  /** Adelanta dos ciclos respiratorios al instante para que la pantalla muestre curvas desde el primer cuadro (P: sólo presentación; el registro conserva t = 0). */
+  private warmUp(sim: Simulator): void {
+    if (sim.ventilationState !== 'ventilating') return;
+    const cycleMs = (60_000 / sim.controller.settings.rr) * 2;
+    sim.run(Math.min(cycleMs, 20_000));
   }
 
   private startTimer(): void {
@@ -236,6 +250,7 @@ export class EngineHost {
       speed: this.speed,
       pauseReason: this.pauseReason,
       discontinuities: [...this.discontinuities],
+      generation: this.generation,
     });
   }
 }

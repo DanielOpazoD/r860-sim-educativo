@@ -53,7 +53,6 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
       if (!task) return;
       done.add(task.id);
       render();
-      ctx.toast(`Objetivo realizado: ${task.text}`);
     },
     noteSettingsChange() {
       settingsChangeMs = ctx.frame?.simTimeMs ?? 0;

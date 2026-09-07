@@ -12,7 +12,7 @@ export interface Discontinuity {
 }
 
 export type MainToEngine =
-  | { type: 'init'; init: SimulatorInit; speed: number; running: boolean; autopauseAtMs?: number }
+  | { type: 'init'; init: SimulatorInit; speed: number; running: boolean; autopauseAtMs?: number; warmUp?: boolean }
   | { type: 'command'; id: number; cmd: Command; actor: Actor }
   | { type: 'control'; action: 'pause' | 'resume'; reason: string }
   | { type: 'setSpeed'; speed: number }
@@ -23,7 +23,16 @@ export type MainToEngine =
   | { type: 'loadScenario'; scenario: Scenario; keepSettings: boolean };
 
 export type EngineToMain =
-  | { type: 'frame'; frame: EngineFrame; running: boolean; speed: number; pauseReason: string | null; discontinuities: Discontinuity[] }
+  | {
+      type: 'frame';
+      frame: EngineFrame;
+      running: boolean;
+      speed: number;
+      pauseReason: string | null;
+      discontinuities: Discontinuity[];
+      /** Cuenta de arranques del motor (init, escenario, importación): la interfaz reinicia lo que dependa de la sesión al verla cambiar. */
+      generation: number;
+    }
   | { type: 'commandResult'; id: number; accepted: boolean; reason?: string }
   | { type: 'session'; id: number; file: SessionFile }
   | { type: 'importResult'; id: number; ok: boolean; errors?: string[]; warnings?: string[] }
