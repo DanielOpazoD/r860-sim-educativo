@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generated": "2026-09-06",
+  "generated": "2026-09-07",
   "note": "Registro de incertidumbres. Las U-01…U-18 provienen del dossier; U-19 en adelante se descubrieron en esta etapa. «blocks» enumera lo que queda desactivado o aproximado por cada brecha.",
   "gaps": [
     {
@@ -362,6 +362,41 @@
       "question": "Cuánto tarda el equipo real en presurizar el circuito a PEEP al salir de espera.",
       "policy": "P: instantáneo, para que la primera respiración tenga una PEEP de referencia coherente con el estado del pulmón. Sin ello la primera Cstat salía falsa.",
       "status": "nueva (v0.4.6)",
+      "blocks": []
+    },
+    {
+      "id": "U-45",
+      "question": "Dónde debe elegirse el perfil del equipo: hoy `src/ui/app.ts` importa `R860_PROFILE` directamente, que es la única referencia al perfil concreto fuera de `src/profiles`.",
+      "policy": "P: se deja así hasta que exista un segundo perfil. Lo correcto es recibirlo por parámetro de `startApp`, para que la elección la haga quien monta la página. La documentación lo declara en vez de esconderlo (docs/04 §4).",
+      "status": "nueva (v0.4.7)",
+      "blocks": []
+    },
+    {
+      "id": "U-46",
+      "question": "Qué debe pasar con las sesiones grabadas bajo `ENGINE_VERSION` 0.3.0 ahora que la física de ese mismo número cambió mucho: dos unidades alveolares, curva sigmoidea, Rohrer y limitación al flujo espiratorio. Una sesión de entonces se reproduce hoy con un modelo distinto bajo la misma etiqueta.",
+      "policy": "U: no resuelto. Subir `ENGINE_VERSION` deja de aceptar las sesiones anteriores, que es lo correcto pero cambia el comportamiento; dejarlo como está reproduce con física distinta bajo la misma versión. Se anota antes de decidir, para no arreglarlo de paso en una ronda de documentación.",
+      "status": "nueva (v0.4.7)",
+      "blocks": []
+    },
+    {
+      "id": "U-47",
+      "question": "Con qué modelo dar histéresis y reclutamiento a la curva P-V. Hoy la sigmoide es unívoca y la PEEP decremental devuelve exactamente los mismos Cstat que la ascendente, así que la maniobra que se enseña a la cabecera no se puede mostrar.",
+      "policy": "U: no resuelto. La forma más barata es una sigmoide de inflación y otra de deflación con una variable de estado de reclutamiento que se mueva entre ambas con su propia constante de tiempo. Falta decidir los valores y de dónde salen.",
+      "status": "nueva (v0.4.7)",
+      "blocks": []
+    },
+    {
+      "id": "U-48",
+      "question": "Si el esfuerzo debe poder ser espiratorio. Hoy Pmus ≥ 0 siempre, de modo que no hay espiración activa, frenado espiratorio ni meseta contaminada por contracción espiratoria.",
+      "policy": "U: no resuelto. Requiere una amplitud espiratoria independiente en el generador de esfuerzo y decidir qué se enseña con ella.",
+      "status": "nueva (v0.4.7)",
+      "blocks": []
+    },
+    {
+      "id": "U-49",
+      "question": "Cómo advertir al alumno de que, con dos unidades alveolares, la Cstat y la resistencia que mide el equipo no son las del pulmón: en SC-17 la Cstat sale un 24 % baja y la resistencia aparente un 98 % alta con una oclusión de 2 s.",
+      "policy": "U: no resuelto. Es un fenómeno real y merece enseñarse, no esconderse. Falta decidir si la advertencia va en el escenario, en el panel de bloqueo o en la propia medición marcada con un motivo.",
+      "status": "nueva (v0.4.7)",
       "blocks": []
     }
   ],
