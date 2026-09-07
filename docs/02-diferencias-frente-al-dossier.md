@@ -103,3 +103,8 @@ Una tercera lectura adversarial de contexto limpio revisó el motor de PC, los b
 - **Plimit frente a Pmáx** (E-040): revisadas la ficha 2014, el curso JB72469XX y la guía rápida: ninguna impone Plimit ≤ Pmáx; el curso sólo documenta Pmáx − 2 cmH₂O en PRVC y Pmáx − 5 con compensación de tubo. Se conserva el aviso no bloqueante. La brecha queda cerrada en lo público; sólo el manual de usuario completo (inaccesible: 403/502) podría añadir una regla.
 - **Resistencia de la rama espiratoria** (E-041): nuevo parámetro `rExpValve` 0–6 cmH₂O·s/L (techo normativo ≤ 6 cmH₂O citado por el manual) en serie con Rexp, deslizador en «más parámetros» del panel docente, 0 por omisión para no alterar el banco. Acota el flujo espiratorio pico y eleva la Pva sobre PEEP durante la espiración (SYN-03).
 - Pruebas: `tests/unit/sync.test.ts` (SYN-01…03) y e2e del diálogo de modo; 105 pruebas unitarias.
+
+## v0.3.3 · tema negro y ajuste a pantallas bajas (06-09-2026)
+
+- **Tema de página negro fijo** por decisión del usuario: el cromo (cabecera, panel docente, diálogos, avisos) pasa a negro puro; el monitor del equipo conserva su azul de referencia. El tema claro introducido en v0.3.1 se retiró.
+- **El equipo se encoge para caber en pantallas bajas** (MacBook Air 13″): la anchura de la carcasa se limita a `(alto de ventana − 290 px) × 1120/735`, de modo que el monitor completo, con teclas y perilla, queda visible sin desplazamiento vertical (verificado a 1440×820 y 1280×740). El panel docente sigue debajo cuando no cabe al lado.

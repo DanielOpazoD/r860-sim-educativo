@@ -4173,60 +4173,45 @@ a {
     min-height: 0;
   }
 }
-/* Tema claro del cromo de la página (el monitor del equipo permanece oscuro, como el aparato). */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f2f5f8;
-    --surface: #ffffff;
-    --surface2: #eef2f6;
-    --line: #c9d3dd;
-    --text: #17222d;
-    --muted: #4c5f72;
-    --dim: #5d7185;
-  }
-  body {
-    background: #eef2f6;
-    color: var(--text);
-  }
-  .app-top {
-    background: #ffffffe6;
-    border-bottom-color: #c9d3dd;
-  }
-  .stage-heading h1 {
-    color: #17222d;
-  }
-  .stage-sub,
-  .stage-footnote,
-  .knob-hint {
-    color: #46596c;
-  }
-  .instructor {
-    background: #ffffff;
-    border-color: #c9d3dd;
-    color: #17222d;
-  }
-  .instructor-header {
-    background: linear-gradient(120deg, #f4f7fa, #e9eef4);
-  }
-  .app-dialog {
-    background: #ffffff;
-    color: #17222d;
-    border-color: #b9c6d3;
-  }
-  .toast {
-    background: #ffffff;
-    color: #17222d;
-    border-color: #7f97ab;
-  }
-  .safety-strip {
-    background: #e2e8ee;
-    color: #2c3e50;
-  }
-  .safety-strip .version {
-    color: #46596c;
-  }
-  .mobile-toolbar {
-    background: #ffffffee;
-    border-top-color: #c9d3dd;
-  }
+/* Tema de página: negro fijo por decisión del usuario (06-09-2026); el tema claro se retiró. */
+/* ---- Ajuste a pantallas bajas (MacBook Air 13): el equipo se encoge para que quepa entero sin desplazar. ---- */
+.device-shell {
+  margin: 0 auto;
+  max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
+}
+/* ---- Tema de página negro: el cromo de la app en negro puro; el monitor del equipo conserva su azul. ---- */
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface2: #121212;
+  --line: #262626;
+}
+body {
+  background: #000000;
+}
+.app-top {
+  background: #000000e6;
+  border-bottom-color: #262626;
+}
+.instructor {
+  background: #0a0a0a;
+  border-color: #262626;
+}
+.instructor-header {
+  background: linear-gradient(120deg, #141414, #0d0d0d);
+}
+.app-dialog {
+  background: #0d0d0d;
+  border-color: #333333;
+}
+.toast {
+  background: #141414;
+  border-color: #4a4a4a;
+}
+.safety-strip {
+  background: #000000;
+}
+.mobile-toolbar {
+  background: #000000f2;
+  border-top-color: #262626;
 }
