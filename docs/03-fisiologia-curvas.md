@@ -188,6 +188,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Disparo por flujo o por presión, referido a la PEEP programada | Sin compensación de fugas ni ventana de disparo del 80 % de Tesp | D existencia; P detalle (E-039) |
 | Esfuerzo como pulso semisinusoidal de Pmus independiente del reloj del ventilador | Reproduce disparo, asincronía por fase y mesetas inestables, no la modulación neural real ni la respuesta al CO₂ | P |
 | Sin adaptación de flujo tras Plimit en respiraciones sucesivas | El equipo real ajusta el flujo en las respiraciones siguientes (JB72469XX); aquí cada respiración se limita igual | U-19 |
+| Canal de volumen con dispersión de lectura (±2,5 % por ciclo) separado del volumen verdadero | VTesp y VMesp mostrados cambian entre ciclos aunque el modelo entregue exactamente el VT programado; las referencias analíticas del banco se leen del volumen verdadero, con el ruido apagado | D envolvente ±10 % (ficha 2014); P dispersión típica (E-042, U-36) |
 | Sin datos de pacientes reales | Todas las cifras son analíticas o sintéticas; el simulador no valida ajustes clínicos ni pretende fidelidad numérica con el equipo (U-18) | — |
 
 ## Fuentes verificadas

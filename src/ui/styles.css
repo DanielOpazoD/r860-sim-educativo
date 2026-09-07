@@ -4590,3 +4590,39 @@ body {
 .quick-controls .quick-key b {
   font-size: 28px;
 }
+
+/* ---- Ajuste fino (07-09-2026): la barra de señal se alinea con el equipo y el bisel inferior cede alto al monitor. ---- */
+.signal-toolbar {
+  max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
+  margin-left: auto;
+  margin-right: auto;
+}
+.bezel-bottom {
+  height: 68px;
+  padding: 0 16px 0 20px;
+  gap: 14px;
+}
+.bezel-bottom .hard-key {
+  width: 34px;
+}
+.bezel-bottom .hard-key .icon {
+  width: 20px;
+  height: 20px;
+}
+.trim-knob {
+  width: 54px;
+  height: 54px;
+}
+.bezel-signature {
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.signal-toolbar .inline-select select {
+  height: 28px;
+  padding: 2px 22px 2px 7px;
+}
+#simulation-clock,
+.session-meta {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+}

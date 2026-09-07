@@ -23,8 +23,13 @@ export const BENCH_SETTINGS: VcSettings = {
   riseMs: 100,
 };
 
+/** El banco analítico lee el volumen sin ruido de sensor: las referencias BM/PHY son exactas. */
+export const BENCH_SENSORS = { fio2TauS: 6, fio2Bias: 0, flowNoiseFraction: 0 };
 export function benchSim(over: Partial<SimulatorInit> = {}): Simulator {
-  return new Simulator(defaultInit({ patient: { ...BENCH_PATIENT }, settings: { ...BENCH_SETTINGS }, ...over }), R860_PROFILE);
+  return new Simulator(
+    defaultInit({ patient: { ...BENCH_PATIENT }, settings: { ...BENCH_SETTINGS }, sensors: { ...BENCH_SENSORS }, ...over }),
+    R860_PROFILE,
+  );
 }
 
 /** Avanza hasta que se complete la respiración con secuencia `seq` (o expira el presupuesto). */

@@ -300,6 +300,13 @@
       "blocks": [
         "flujo espiratorio pico realista con R de válvula"
       ]
+    },
+    {
+      "id": "U-36",
+      "question": "Dispersión real del canal de volumen del R860 entre ciclos consecutivos con un pulmón de prueba estable (la ficha sólo publica la envolvente de exactitud, ±10 %).",
+      "policy": "P: ±2,5 % uniforme por respiración, determinista por semilla; ajustable por el instructor entre 0 y 10 % (0 = canal ideal del banco analítico).",
+      "status": "nueva (v0.3.8)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

@@ -310,6 +310,9 @@ export function startApp(opts: AppOptions): void {
     get frame() {
       return frame;
     },
+    get gaugePaw() {
+      return plots.gaugePaw;
+    },
     get edit() {
       return quick.edit.state;
     },

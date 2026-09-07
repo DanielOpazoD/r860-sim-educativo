@@ -149,3 +149,44 @@ test.describe('Alarmas configuradas desde el diálogo', () => {
     await expect(page.locator('#alarm-band')).toContainText('FR alta');
   });
 });
+
+test.describe('Presentación del manómetro y del volumen medido', () => {
+  test('la columna de presión desciende de forma progresiva al terminar la inspiración', async ({ page }) => {
+    await open(page, { speed: 1, instructor: 0 });
+    await page.waitForFunction(() => window.__r860.frame?.live.phase === 'inspFlow');
+    const serie = await page.evaluate(
+      async () =>
+        await new Promise<[number, number, string][]>((res) => {
+          const out: [number, number, string][] = [];
+          const t0 = performance.now();
+          const step = (): void => {
+            const f = window.__r860.frame!;
+            out.push([f.live.paw, window.__r860.gaugePaw ?? 0, f.live.phase]);
+            if (performance.now() - t0 < 2500) requestAnimationFrame(step);
+            else res(out);
+          };
+          requestAnimationFrame(step);
+        }),
+    );
+    const i = serie.findIndex((s) => s[2] === 'exp');
+    expect(i).toBeGreaterThan(0);
+    const bajada = serie.slice(i, i + 12).map((s) => s[1]);
+    expect(serie[i]?.[0]).toBeLessThan(6); // la señal ya está en PEEP
+    expect(bajada[0]).toBeGreaterThan(12); // la columna todavía no
+    expect(bajada.at(-1)).toBeLessThan(bajada[0]!); // y baja escalón a escalón
+    for (let k = 1; k < bajada.length; k++) expect(bajada[k]!).toBeLessThanOrEqual(bajada[k - 1]! + 1e-9);
+    expect(new Set(bajada.map((v) => Math.round(v * 10))).size).toBeGreaterThan(3); // varios valores intermedios visibles
+  });
+
+  test('el VTesp mostrado cambia entre ciclos alrededor del volumen programado', async ({ page }) => {
+    await open(page, { speed: 4, instructor: 0, autopause: 60_000 });
+    await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 60_000, null, {
+      timeout: 60_000,
+    });
+    const vte = await page.evaluate(() =>
+      (window.__r860.frame as unknown as { trends: { vte: number }[] }).trends.slice(-10).map((t) => Math.round(t.vte * 1000)),
+    );
+    expect(new Set(vte).size).toBeGreaterThan(4);
+    for (const v of vte) expect(Math.abs(v - 500)).toBeLessThanOrEqual(16);
+  });
+});

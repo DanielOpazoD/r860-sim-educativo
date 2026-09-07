@@ -32,7 +32,7 @@ import { EffortGenerator } from './effort';
 import { MetricEngine } from './metrics';
 import { PatientModel } from './patient';
 import { ProcedureManager, type O2ProcedureState } from './procedures';
-import { O2Sensor, SampleRing } from './sensors';
+import { FlowSensor, O2Sensor, SampleRing } from './sensors';
 import { ENGINE_VERSION } from './version';
 
 export interface SimulatorInit {
@@ -123,6 +123,7 @@ export class Simulator {
   readonly effort: EffortGenerator;
   readonly controller: VcController;
   readonly o2: O2Sensor;
+  readonly flowSensor: FlowSensor;
   readonly metrics = new MetricEngine();
   readonly alarms: AlarmEngine;
   readonly procedures: ProcedureManager;
@@ -167,6 +168,7 @@ export class Simulator {
     this.effort = new EffortGenerator(init.effort);
     this.controller = new VcController(this.patient, this.effort, init.settings);
     this.o2 = new O2Sensor(init.sensors, init.settings.fio2);
+    this.flowSensor = new FlowSensor(init.seed);
     this.alarms = new AlarmEngine(init.alarmLimits);
     this.procedures = new ProcedureManager(this.controller, (ms) => init.startWallTimeMs + ms);
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
@@ -273,6 +275,10 @@ export class Simulator {
         this.logEvent('discontinuity', 'system', { reason: 'límite de sub-pasos agotado', phase: ev.phase, simTimeS: ev.simTimeS });
         break;
       case 'breathEnd': {
+        // El sensor de flujo lee cada ciclo con una ganancia propia: la pantalla muestra VTe/VMe medidos, no el volumen verdadero del modelo.
+        const gain = this.flowSensor.gain(this.o2.params.flowNoiseFraction);
+        ev.record.vtInspMeasured = ev.record.vtInsp * gain;
+        ev.record.vtExpMeasured = ev.record.vtExp * gain;
         this.breaths.push(ev.record);
         if (this.breaths.length > 2000) this.breaths.shift();
         this.metrics.onBreath(ev.record);
@@ -281,8 +287,8 @@ export class Simulator {
           tMs: ev.record.endSimTimeMs,
           ppeak: ev.record.ppeak,
           peepe: ev.record.peepe,
-          vte: ev.record.vtExp,
-          vti: ev.record.vtInsp,
+          vte: ev.record.vtExpMeasured ?? ev.record.vtExp,
+          vti: ev.record.vtInspMeasured ?? ev.record.vtInsp,
           rr: this.lastMetrics.rr?.value ?? null,
           mve: this.lastMetrics.mve?.value ?? null,
           pplatHold: this.procedures.last.inspHold?.values.pplat?.value ?? null,

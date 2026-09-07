@@ -4,6 +4,7 @@ import fs from 'node:fs';
 export const T0 = '2026-08-18T21:04:05-04:00';
 export interface FrameLike {
   simTimeMs: number;
+  live: { paw: number; phase: string; plimitLimited: boolean };
   wallTimeMs: number;
   ventilation: string;
   settings: Record<string, unknown>;
@@ -29,6 +30,8 @@ declare global {
       mode: string;
       running: boolean;
       points: number;
+      /** Valor amortiguado que muestra la columna de presión. */
+      gaugePaw: number | null;
     };
   }
 }
