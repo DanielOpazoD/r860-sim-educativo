@@ -115,23 +115,44 @@ export class PatientModel {
     return s && s.b > 0 ? sigmoidCompliance(s, this.params.p0, v) : this.params.crs;
   }
 
-  private r1For(q: number): number {
-    return q >= 0 ? this.params.rInsp : this.params.rExp;
+  /** Resistencia lineal según el sentido del flujo; la espiratoria puede crecer al vaciarse el pulmón. */
+  private r1For(q: number, v: number = this.v): number {
+    if (q >= 0) return this.params.rInsp;
+    const d = this.params.rExpVolumeDep;
+    if (!d || d.gain <= 0) return this.params.rExp;
+    return this.params.rExp * (1 + d.gain * Math.max(0, 1 - v / Math.max(1e-6, d.vRefL)));
+  }
+  /** Resistencia espiratoria efectiva al volumen indicado (cmH2O·s/L). */
+  expiratoryResistance(v: number = this.v): number {
+    return this.r1For(-1, v);
+  }
+
+  /**
+   * Flujo espiratorio máximo por estrangulamiento (resistor de Starling), o infinito si no hay limitación.
+   * Depende sólo del retroceso elástico y de la resistencia aguas arriba: por eso es independiente del esfuerzo
+   * espiratorio y de cuánto se baje la presión aguas abajo.
+   */
+  maxExpiratoryFlow(paw: number, v: number = this.v): number {
+    const e = this.params.efl;
+    if (!e || paw >= e.pcrit) return Number.POSITIVE_INFINITY; // con la vía aérea por encima del punto crítico no colapsa
+    const rus = Math.max(1e-3, e.rusFraction * this.expiratoryResistance(v));
+    return Math.max(0, (this.pel(v) - e.pcrit) / rus);
   }
 
   /** Resolver Q para una Paw impuesta (fuente de presión). */
   flowForPaw(paw: number, pmus: number, v: number = this.v, rSeries = 0): number {
     const dp = paw + pmus - this.pel(v);
-    const r1 = (dp >= 0 ? this.params.rInsp : this.params.rExp) + rSeries;
+    const r1 = this.r1For(dp >= 0 ? 1 : -1, v) + rSeries;
     const r2 = this.params.r2;
-    if (r2 <= 0) return dp / r1;
-    const mag = (-r1 + Math.sqrt(r1 * r1 + 4 * r2 * Math.abs(dp))) / (2 * r2);
-    return Math.sign(dp) * mag;
+    const q = r2 <= 0 ? dp / r1 : Math.sign(dp) * ((-r1 + Math.sqrt(r1 * r1 + 4 * r2 * Math.abs(dp))) / (2 * r2));
+    if (q >= 0) return q;
+    const qMax = this.maxExpiratoryFlow(paw, v);
+    return Number.isFinite(qMax) ? -Math.min(-q, qMax) : q;
   }
 
   /** Paw resultante para un flujo impuesto (fuente de flujo). */
   pawForFlow(q: number, pmus: number, v: number = this.v): number {
-    const r = this.r1For(q) + this.params.r2 * Math.abs(q);
+    const r = this.r1For(q, v) + this.params.r2 * Math.abs(q);
     return this.pel(v) + r * q - pmus;
   }
 

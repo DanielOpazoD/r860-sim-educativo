@@ -185,6 +185,22 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Presión resistiva = R × flujo',
   },
+  'patient.efl': {
+    title: 'Colapso espiratorio (limitación al flujo)',
+    text: [
+      'Por debajo de esta presión el segmento colapsable de la vía aérea se estrecha y el flujo espiratorio deja de depender de la presión aguas abajo: queda fijado por el retroceso elástico y por la resistencia que hay antes del punto de estrangulamiento.',
+      'Consecuencias: espirar con más fuerza no saca más gas, el pulmón atrapa hasta que su retroceso iguala esta presión, y subir la PEEP hasta ese valor abre la vía aérea sin aumentar la PEEP total. Con 0 no hay colapso.',
+    ],
+    equation: 'Qmax = (Pel − Pcrít)/(f·Rexp),  sólo si Pva < Pcrít',
+  },
+  'patient.airwayCollapse': {
+    title: 'Estrechamiento al vaciarse',
+    text: [
+      'Multiplica la resistencia espiratoria a medida que el pulmón se vacía, porque el calibre de la vía aérea depende del volumen pulmonar. Con 0 la resistencia es constante y el flujo resulta exactamente proporcional al volumen, es decir, la rama espiratoria del bucle es una recta.',
+      'Al subirlo, esa rama se hunde: es el bucle excavado del paciente obstructivo.',
+    ],
+    equation: 'Rexp(V) = Rexp·(1 + ganancia·(1 − V/Vref))',
+  },
   'patient.sigmoid': {
     title: 'Curva presión-volumen sigmoidea',
     text: [
