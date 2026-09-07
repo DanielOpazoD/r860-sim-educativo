@@ -215,6 +215,43 @@ export const SCENARIOS: Scenario[] = [
     caution: 'Dominio de fallo del ensayo, no fisiología.',
   },
   {
+    id: 'SC-16',
+    name: 'Espiración estrangulada',
+    synthetic: true,
+    category: 'Mecánica obstructiva',
+    level: 3,
+    lesson: {
+      title: 'Flujo limitado y PEEP externa',
+      text: 'La vía aérea se estrecha al vaciarse y colapsa por debajo de 8 cmH₂O: el flujo espiratorio queda estrangulado y el pulmón atrapa aire. Mira la rama espiratoria del bucle flujo-volumen y mide la PEEP total.',
+      tasks: [
+        { id: 'bucle', text: 'Abre la vista de bucles y observa la rama espiratoria excavada.', test: 'loops' },
+        { id: 'medir', text: 'Mide la PEEP total con un bloqueo espiratorio.', test: 'validExp' },
+        { id: 'peep', text: 'Sube la PEEP a 8 cmH₂O y vuelve a mirar la curva de flujo.', test: 'peepAtCritical' },
+      ],
+    },
+    question: '¿Qué gana el paciente si se sube la PEEP hasta el punto de colapso?',
+    answer:
+      'El atrapamiento no lo fija la PEEP sino el colapso: el pulmón se vacía hasta que su retroceso iguala la presión crítica. Al subir la PEEP de 3 a 8 la vía aérea deja de estrangularse; la PEEP total apenas cambia (de unos 9 a unos 11 cmH₂O) pero el escalón que el paciente debe vencer para disparar cae de 6 a menos de 3 cmH₂O.',
+    description:
+      'Colapso por debajo de 8 cmH₂O y resistencia que se triplica al vaciarse: bucle excavado y auto-PEEP que no depende de la PEEP programada.',
+    patient: {
+      crs: 0.06,
+      rInsp: 15,
+      rExp: 25,
+      r2: 0,
+      p0: 0,
+      efl: { pcrit: 8, rusFraction: 0.5 },
+      rExpVolumeDep: { gain: 3, vRefL: 1 },
+    },
+    effort: passive,
+    sensors: idealSensors,
+    settings: { vt: 0.5, rr: 14, ie: 1 / 3, peep: 3, pmax: 45, plimit: 100, pausePct: 0 },
+    initialV: 'equilibrium',
+    perturbations: [],
+    observe: 'Rama espiratoria excavada, flujo que no vuelve a cero y PEEP total fijada por el colapso.',
+    caution: 'El punto de colapso es del modelo; no es una recomendación de PEEP.',
+  },
+  {
     id: 'SC-15',
     name: 'Titular la PEEP sobre la curva P-V',
     synthetic: true,

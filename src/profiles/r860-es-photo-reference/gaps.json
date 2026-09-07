@@ -328,6 +328,13 @@
       "policy": "P: por omisión la curva es lineal (Crs). El escenario SC-15 usa b 1,6 L, c 18 cmH2O y d 5 cmH2O, que sitúa los codos en 11 y 25 cmH2O y la compliance máxima en 80 mL/cmH2O. No son valores de paciente: sirven para ver la forma.",
       "status": "nueva (v0.4.1)",
       "blocks": []
+    },
+    {
+      "id": "U-40",
+      "question": "Presión crítica de colapso, fracción de resistencia aguas arriba y ganancia de estrechamiento representativas de un paciente obstructivo.",
+      "policy": "P: por omisión no hay colapso ni dependencia del volumen. El escenario SC-16 usa Pcrít 8 cmH2O, fracción 0,5 y ganancia 3 con referencia 1 L, valores elegidos para que el fenómeno se vea, no medidos en pacientes.",
+      "status": "nueva (v0.4.2)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

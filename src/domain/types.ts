@@ -115,6 +115,20 @@ export interface PatientParams {
    * Ausente o b = 0 → compliance lineal Crs. Con ella aparecen el codo inferior y la sobredistensión.
    */
   sigmoid?: { b: Liters; c: CmH2O; d: CmH2O };
+  /**
+   * Limitación al flujo espiratorio (resistor de Starling). Cuando la presión en la vía aérea cae por debajo de
+   * `pcrit`, el segmento colapsable se estrecha y el flujo deja de depender de la presión aguas abajo: queda fijado
+   * por el retroceso elástico y la resistencia aguas arriba del punto de estrangulamiento.
+   *   Qmax = (Pel − pcrit) / (rusFraction · Rexp)
+   * Ausente = sin limitación. Con PEEP ≥ pcrit la limitación desaparece, que es el fundamento de la PEEP externa.
+   */
+  efl?: { pcrit: CmH2O; rusFraction: number };
+  /**
+   * Calibre de la vía aérea dependiente del volumen: al vaciarse el pulmón las vías se estrechan y la resistencia
+   * espiratoria crece.  Rexp(V) = Rexp · (1 + gain · máx(0, 1 − V/vRefL)).
+   * Es lo que da la rama espiratoria excavada del bucle flujo-volumen. Ausente o gain = 0 → resistencia constante.
+   */
+  rExpVolumeDep?: { gain: number; vRefL: Liters };
   /** Presión de referencia (0 en pruebas). */
   p0: CmH2O;
   /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */

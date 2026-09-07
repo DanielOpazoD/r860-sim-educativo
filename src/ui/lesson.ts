@@ -56,6 +56,10 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   alarmSeen: (c) => !!c.flags.alarmSeen,
   acknowledged: (c) => c.frame.alarms.some((a) => a.acknowledgedAtMs !== null),
   alarmCleared: (c) => !!c.flags.alarmSeen && c.frame.alarmBar.color === 'green',
+  peepAtCritical: (c) => {
+    const p = c.frame.settings.peep;
+    return p !== 'off' && p >= 8;
+  },
   cstatOver70: (c) => {
     const h = c.frame.procedure.last.inspHold;
     return !!h && h.quality === 'valid' && (h.values.cstat?.value ?? 0) > 0.07;

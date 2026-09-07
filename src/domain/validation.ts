@@ -239,10 +239,12 @@ export function validatePatientParams(p: {
   eVisc?: number;
   tauViscS?: number;
   sigmoid?: { b: number; c: number; d: number };
+  efl?: { pcrit: number; rusFraction: number };
+  rExpVolumeDep?: { gain: number; vRefL: number };
 }): string[] {
   const r: string[] = [];
   for (const [k, v] of Object.entries(p))
-    if (k !== 'sigmoid' && (typeof v !== 'number' || !Number.isFinite(v))) r.push(`${k}: no numérico`);
+    if (!['sigmoid', 'efl', 'rExpVolumeDep'].includes(k) && (typeof v !== 'number' || !Number.isFinite(v))) r.push(`${k}: no numérico`);
   if (r.length) return r;
   if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
     r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
@@ -254,6 +256,24 @@ export function validatePatientParams(p: {
     r.push('Elastancia viscoelástica fuera de 0–40 cmH2O/L');
   if (p.tauViscS !== undefined && (!Number.isFinite(p.tauViscS) || p.tauViscS < 0.05 || p.tauViscS > 10))
     r.push('Constante viscoelástica fuera de 0.05–10 s');
+  if (p.rExpVolumeDep !== undefined) {
+    const d = p.rExpVolumeDep;
+    if (!d || typeof d !== 'object' || ![d.gain, d.vRefL].every((x) => typeof x === 'number' && Number.isFinite(x)))
+      r.push('Dependencia del volumen inválida');
+    else {
+      if (d.gain < 0 || d.gain > 10) r.push('Ganancia de estrechamiento fuera de 0–10');
+      if (d.vRefL < 0.1 || d.vRefL > 5) r.push('Volumen de referencia del estrechamiento fuera de 0.1–5 L');
+    }
+  }
+  if (p.efl !== undefined) {
+    const e = p.efl;
+    if (!e || typeof e !== 'object' || ![e.pcrit, e.rusFraction].every((x) => typeof x === 'number' && Number.isFinite(x)))
+      r.push('Limitación al flujo inválida');
+    else {
+      if (e.pcrit < 0 || e.pcrit > 30) r.push('Presión crítica de colapso fuera de 0–30 cmH2O');
+      if (e.rusFraction < 0.05 || e.rusFraction > 1) r.push('Fracción de resistencia aguas arriba fuera de 0.05–1');
+    }
+  }
   if (p.sigmoid !== undefined) {
     const s = p.sigmoid;
     if (!s || typeof s !== 'object' || ![s.b, s.c, s.d].every((x) => typeof x === 'number' && Number.isFinite(x)))

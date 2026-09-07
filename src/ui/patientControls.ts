@@ -92,6 +92,32 @@ export const PHYS: Record<string, PhysSpec> = {
       params: fr.truth.patient.sigmoid ? { sigmoid: { ...fr.truth.patient.sigmoid, d: v } } : {},
     }),
   },
+  eflPcrit: {
+    label: 'Colapso espiratorio: presión crítica',
+    unit: 'cmH₂O',
+    min: 0,
+    max: 25,
+    step: 1,
+    help: 'patient.efl',
+    get: (fr) => fr.truth.patient.efl?.pcrit ?? 0,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: { efl: v <= 0 ? undefined : { pcrit: v, rusFraction: fr.truth.patient.efl?.rusFraction ?? 0.5 } },
+    }),
+  },
+  airwayCollapse: {
+    label: 'Estrechamiento al vaciarse',
+    unit: '×',
+    min: 0,
+    max: 8,
+    step: 0.5,
+    help: 'patient.airwayCollapse',
+    get: (fr) => fr.truth.patient.rExpVolumeDep?.gain ?? 0,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: { rExpVolumeDep: v <= 0 ? undefined : { gain: v, vRefL: fr.truth.patient.rExpVolumeDep?.vRefL ?? 1 } },
+    }),
+  },
   viscoelastic: {
     label: 'Relajación viscoelástica (E₂)',
     unit: 'cmH₂O/L',
@@ -175,6 +201,8 @@ export const PHYS: Record<string, PhysSpec> = {
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
 export const PATIENT_EXTRA = [
+  'eflPcrit',
+  'airwayCollapse',
   'sigmoidB',
   'sigmoidC',
   'sigmoidD',
