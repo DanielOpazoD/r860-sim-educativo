@@ -201,12 +201,15 @@ describe('R4-07 · el solucionador del nodo no se dispara', () => {
   // El guardián cuenta trabajo, no tiempo. Contar es determinista y no depende de la máquina ni de la instrumentación
   // de cobertura; medir el reloj en integración continua daba un test que caducaba en un runner compartido. La medida
   // de reloj queda en docs/02 como dato, no como puerta.
+  // A 30 por minuto una respiración dura 2 s, es decir 500 pasos de 4 ms: la ventana medida es exactamente un ciclo,
+  // así que la media por paso está bien definida y el guardián hace el mínimo trabajo necesario.
+  const PASOS = 500;
   const evalsPorPaso = (over: Parameters<typeof benchSim>[0]): number => {
-    const sim = benchSim({ ...over, settings: { ...BENCH_SETTINGS, plimit: 100 } });
-    for (let i = 0; i < 200; i++) sim.step();
+    const sim = benchSim({ ...over, settings: { ...BENCH_SETTINGS, rr: 30, plimit: 100 } });
+    for (let i = 0; i < PASOS; i++) sim.step();
     const base = sim.patient.solverEvals;
-    for (let i = 0; i < 1500; i++) sim.step();
-    return (sim.patient.solverEvals - base) / 1500;
+    for (let i = 0; i < PASOS; i++) sim.step();
+    return (sim.patient.solverEvals - base) / PASOS;
   };
 
   it('con ramas lineales el nodo se resuelve en forma cerrada: cero bisecciones', () => {
@@ -216,7 +219,7 @@ describe('R4-07 · el solucionador del nodo no se dispara', () => {
 
   it('la combinación más costosa se mantiene acotada', () => {
     // Rohrer + limitación al flujo + segunda unidad muy rígida obligan a bisecar en cada evaluación de la integración.
-    // Medido: 8030 evaluaciones por paso. El tope deja margen para variación de camino, no para una regresión de orden.
+    // Medido: 10038 evaluaciones por paso. El tope deja margen para un reajuste del modelo, no para una regresión de orden.
     const pesado = evalsPorPaso({
       patient: {
         ...BENCH_PATIENT,
@@ -227,6 +230,8 @@ describe('R4-07 · el solucionador del nodo no se dispara', () => {
         second: { crs: 0.0005, rInsp: 0.1, rExp: 0.1 },
       },
     });
-    expect(pesado, `${pesado.toFixed(0)} evaluaciones por paso`).toBeLessThan(12000);
-  });
+    expect(pesado, `${pesado.toFixed(0)} evaluaciones por paso`).toBeLessThan(15000);
+    // Plazo amplio y explícito: la aserción es determinista, así que el único riesgo es que un runner lento no
+    // alcance a terminar el trabajo. El plazo por omisión de 5 s no le bastaba bajo instrumentación de cobertura.
+  }, 60_000);
 });

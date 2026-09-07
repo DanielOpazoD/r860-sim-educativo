@@ -763,7 +763,7 @@
     },
     {
       "id": "E-058",
-      "claim": "El guardián de rendimiento del solucionador del nodo cuenta evaluaciones, no tiempo de reloj: con ramas lineales el nodo se resuelve en forma cerrada y cuesta cero bisecciones; la combinación más adversa (Rohrer + limitación al flujo + segunda unidad muy rígida) cuesta 8030 evaluaciones por paso. Un guardián determinista no depende de la máquina ni de la instrumentación de cobertura.",
+      "claim": "El guardián de rendimiento del solucionador del nodo cuenta evaluaciones, no tiempo de reloj: con ramas lineales el nodo se resuelve en forma cerrada y cuesta cero bisecciones; la combinación más adversa (Rohrer + limitación al flujo + segunda unidad muy rígida) cuesta 10038 evaluaciones por paso en una ventana de un ciclo a 30 por minuto. Un guardián determinista no depende de la máquina ni de la instrumentación de cobertura.",
       "status": "D (medición propia reproducible; el motor es determinista, así que el conteo se repite exactamente)",
       "source": "—",
       "locator": "—",
