@@ -839,6 +839,17 @@
         "tests/unit/review6.test.ts (R6-01, R6-02)",
         "tests/e2e/interaction.spec.ts (CFG · parámetros ilegibles)"
       ]
+    },
+    {
+      "id": "E-065",
+      "claim": "Las pruebas se miden por lo que detectan, no por lo que cubren. Un estudio de mutación con catorce defectos deliberados encontró que la suite completa —unitaria, banco y Playwright— sólo detectaba seis. Los cinco supervivientes comprobados (presupuesto de pasos del reloj, Pmedia, guarda de la fuga, diccionario de lenguaje clínico, grafía de las unidades) tienen ahora prueba que los mata, verificada aplicando el mutante y viéndola fallar.",
+      "status": "D (método: mutación aplicada y revertida, con el resultado comprobado en ambos sentidos)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "—",
+      "tests": [
+        "tests/unit/cobertura.test.ts"
+      ]
     }
   ]
 }

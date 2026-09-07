@@ -15,7 +15,7 @@ export default mergeConfig(
         reporter: ['text', 'json-summary', 'html'],
         // Los umbrales van por debajo de lo medido; hay que reajustarlos cuando la cobertura suba. La cifra medida
         // no se copia aquí a mano: la publica el README desde `coverage/coverage-summary.json` con `npm run docs:facts`.
-        thresholds: { lines: 42, branches: 38, functions: 35, statements: 41 },
+        thresholds: { lines: 44, branches: 40, functions: 37, statements: 43 },
       },
     },
   }),

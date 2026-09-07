@@ -35,11 +35,17 @@ describe('R4-01 · ningún número no finito sale como válido', () => {
     sim.patient.v = Number.NaN; // se fuerza la divergencia para comprobar la vigilancia, no el modelo
     sim.step();
     expect(sim.events.some((e) => e.kind === 'discontinuity' && JSON.stringify(e.payload).includes('finitos'))).toBe(true);
-    // Y ninguna métrica derivada del estado roto puede salir con calidad válida.
+    // Y ninguna métrica derivada del estado roto puede salir con calidad válida. Incondicional: si el valor no es
+    // finito, la calidad no puede ser «válida». Antes la única aserción sin condición pasaba con cualquier número.
     runUntilBreath(sim, 4);
-    const vte = sim.frame().metrics.vte;
-    expect(vte?.value === null || Number.isFinite(vte?.value as number)).toBe(true);
-    if (vte?.value === null) expect(vte.quality).not.toBe('valid');
+    const m = sim.frame().metrics;
+    expect(Object.keys(m).length).toBeGreaterThan(0);
+    for (const s of Object.values(m)) {
+      expect(s.value === null || Number.isFinite(s.value), `${s.key}=${s.value}`).toBe(true);
+      expect(s.quality === 'valid' && !Number.isFinite(s.value as number), `${s.key} válida con ${s.value}`).toBe(false);
+    }
+    // El volumen medido, que es el que deriva directamente del estado roto, no puede salir válido.
+    expect(m.vte?.quality).not.toBe('valid');
   });
 });
 

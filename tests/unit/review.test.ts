@@ -176,7 +176,12 @@ describe('H13 · bloqueo espiratorio con paciente que dispara continuamente', ()
     runUntilBreath(sim, 8);
     const r = sim.procedures.last.expHold;
     expect(r).not.toBeNull();
-    expect(['invalid', 'completed']).toContain(r!.phase);
+    // Se ejecuta entero (3 s) pero el esfuerzo continuo mueve la presión en los dos sentidos: perturbado, con motivo.
+    expect(r!.actualDurationS).toBeCloseTo(3, 6);
+    expect(r!.phase).toBe('invalid');
+    expect(r!.quality).toBe('invalid');
+    expect(r!.reason).toBe('mesetaPerturbada');
+    expect(r!.values.peepTot?.value).toBeNull();
     expect(sim.procedures.current).toBeNull();
   });
 });
