@@ -307,6 +307,20 @@
       "policy": "P: ±2,5 % uniforme por respiración, determinista por semilla; ajustable por el instructor entre 0 y 10 % (0 = canal ideal del banco analítico).",
       "status": "nueva (v0.3.8)",
       "blocks": []
+    },
+    {
+      "id": "U-37",
+      "question": "Valores de E2 y τ2 (relajación de esfuerzo) y de K2 (Rohrer) del paciente adulto típico y del tubo endotraqueal por diámetro.",
+      "policy": "P: por omisión 0 (sistema puramente elástico y resistencia lineal, como hasta v0.3.8); ajustables por el instructor entre 0 y 20 cmH2O/L, 0,2 y 4 s, y 0 y 20 cmH2O/(L/s)². El escenario SC-14 usa E2 20 y τ2 1,5 s para hacer visible P1 frente a P2.",
+      "status": "nueva (v0.4.0)",
+      "blocks": []
+    },
+    {
+      "id": "U-38",
+      "question": "Criterio exacto del R860 para aceptar una meseta durante una oclusión.",
+      "policy": "P: deriva ≤ 0,5 cmH2O en el tramo final más excursión contra la tendencia ≤ 0,3 cmH2O en toda la ventana (E-045).",
+      "status": "nueva (v0.4.0)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

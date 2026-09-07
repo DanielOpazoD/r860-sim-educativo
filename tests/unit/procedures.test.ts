@@ -23,7 +23,7 @@ describe('PRC · procedimientos con elegibilidad, cancelación, restauración id
     // Bloqueo pedido en t=0 (inspiración de b1, Tinsp 1 s): ocluye de 1.0 a 4.0 s → 18-Ago-2026 21:04:05 (UTC-4) + 4.000 s
     expect(new Date(wall).toISOString()).toBe('2026-08-19T01:04:09.000Z');
   });
-  it('PRC-02: bloqueo con esfuerzo del escenario (SC-10) resulta inválido por meseta inestable; sin Cstat fabricada', () => {
+  it('PRC-02: bloqueo con esfuerzo del escenario (SC-10) resulta inválido por meseta perturbada; sin Cstat fabricada', () => {
     const sim = benchSim({
       effort: { enabled: true, amplitude: 8, ratePerMin: 30, tiS: 0.8, phaseS: 0.2 },
       settings: { ...BENCH_SETTINGS, assistControl: false },
@@ -32,7 +32,7 @@ describe('PRC · procedimientos con elegibilidad, cancelación, restauración id
     runUntilBreath(sim, 2);
     const r = sim.procedures.last.inspHold!;
     expect(r.quality).toBe('invalid');
-    expect(r.reason).toBe('mesetaInestable');
+    expect(r.reason).toBe('mesetaPerturbada');
     expect(r.values.pplat!.value).toBeNull();
     expect(r.values.cstat!.value).toBeNull();
   });

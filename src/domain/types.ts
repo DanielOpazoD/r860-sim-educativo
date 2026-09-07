@@ -101,8 +101,15 @@ export interface PatientParams {
   crs: LitersPerCmH2O;
   rInsp: CmH2OSecondsPerLiter;
   rExp: CmH2OSecondsPerLiter;
-  /** Componente no lineal R2·|Q| (0 en el modelo mínimo). */
+  /** Componente no lineal de Rohrer R2·|Q| (cmH2O/(L/s)²): 0 = resistencia lineal pura. */
   r2: number;
+  /**
+   * Elastancia viscoelástica E2 (cmH2O/L) del modelo de dos compartimentos en serie (cuerpo de Maxwell).
+   * 0 = sin relajación de esfuerzo (un solo compartimento, como hasta v0.3.8).
+   */
+  eVisc?: number;
+  /** Constante de tiempo de la relajación viscoelástica (s). */
+  tauViscS?: number;
   /** Presión de referencia (0 en pruebas). */
   p0: CmH2O;
   /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */

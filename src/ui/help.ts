@@ -185,6 +185,28 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Presión resistiva = R × flujo',
   },
+  'patient.viscoelastic': {
+    title: 'Relajación viscoelástica (E₂)',
+    text: [
+      'El tejido pulmonar y la pared torácica no responden sólo como un resorte: parte de la presión se disipa lentamente. Al ocluir, la presión cae de golpe lo resistivo (Ppico → P1) y después sigue bajando durante uno a tres segundos hasta la meseta estática (P2).',
+      'Con 0 el sistema es un resorte puro y la meseta es plana desde el primer instante. Al subir E₂ aumenta la diferencia entre P1 y P2, es decir entre la elastancia dinámica y la estática.',
+    ],
+    equation: 'Pel = P0 + V/Cest + E₂·(V − Vve),  dVve/dt = (V − Vve)/τ₂',
+  },
+  'patient.viscTau': {
+    title: 'Constante viscoelástica (τ₂)',
+    text: [
+      'Tiempo característico de la relajación. Con τ₂ de 1,2 s hace falta una oclusión de unos 3 s para que la meseta se asiente; una pausa corta la lee todavía en descenso y el simulador la declara no válida.',
+    ],
+  },
+  'patient.rohrer': {
+    title: 'Resistencia de Rohrer (K₂)',
+    text: [
+      'Componente turbulenta de la resistencia: se suma a la resistencia lineal en proporción al flujo. Con K₂ mayor que cero, la diferencia entre Ppico y Pplat deja de ser proporcional al flujo y crece más deprisa al acelerar la inspiración.',
+      'Es lo que aporta sobre todo el tubo endotraqueal: a menor diámetro, mayor K₂.',
+    ],
+    equation: 'R(Q) = K₁ + K₂·|Q|',
+  },
   'patient.expValve': {
     title: 'Resistencia de la rama espiratoria',
     text: [

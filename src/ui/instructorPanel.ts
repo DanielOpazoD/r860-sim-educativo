@@ -67,6 +67,7 @@ export function createInstructorPanel(
     put('#truth-auto', `${f(fr.truth.peepiEndExp, 1)} cmH₂O`);
     put('#truth-vabs', `${f(fr.truth.vAbsL * 1000, 0)} mL`);
     put('#truth-o2', `${f(fr.truth.fio2Delivered * 100, 0)} / ${f((fr.metrics.fio2?.value ?? 0) * 100, 1)} %`);
+    put('#truth-pvisc', `${f(fr.truth.pVisc, 2)} cmH₂O`);
     put('#muscle-value', `${f(fr.truth.pmus, 1)} cmH₂O`);
     for (const [id, on] of [
       ['apnea', apneaApplied && (!fr.truth.effort.enabled || fr.truth.effort.amplitude === 0)],

@@ -56,6 +56,14 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   alarmSeen: (c) => !!c.flags.alarmSeen,
   acknowledged: (c) => c.frame.alarms.some((a) => a.acknowledgedAtMs !== null),
   alarmCleared: (c) => !!c.flags.alarmSeen && c.frame.alarmBar.color === 'green',
+  shortHoldInvalid: (c) => {
+    const h = c.frame.procedure.last.inspHold;
+    return !!h && h.quality === 'invalid' && (h.requestedDurationS ?? 0) <= 2;
+  },
+  longHoldValid: (c) => {
+    const h = c.frame.procedure.last.inspHold;
+    return !!h && h.quality === 'valid' && (h.requestedDurationS ?? 0) >= 5;
+  },
   invalidHold: (c) => {
     const h = c.frame.procedure.last.inspHold;
     return !!h && h.quality !== 'valid' && after(h, c.lessonStartMs);

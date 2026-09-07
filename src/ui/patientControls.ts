@@ -53,6 +53,36 @@ export const PHYS: Record<string, PhysSpec> = {
     get: (fr) => fr.truth.patient.rExpValve ?? 0,
     cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
   },
+  viscoelastic: {
+    label: 'Relajación viscoelástica (E₂)',
+    unit: 'cmH₂O/L',
+    min: 0,
+    max: 20,
+    step: 0.5,
+    help: 'patient.viscoelastic',
+    get: (fr) => fr.truth.patient.eVisc ?? 0,
+    cmd: (v) => ({ type: 'setPatient', params: { eVisc: v } }),
+  },
+  viscTau: {
+    label: 'Constante viscoelástica (τ₂)',
+    unit: 's',
+    min: 0.2,
+    max: 4,
+    step: 0.1,
+    help: 'patient.viscTau',
+    get: (fr) => fr.truth.patient.tauViscS ?? 1.2,
+    cmd: (v) => ({ type: 'setPatient', params: { tauViscS: v } }),
+  },
+  rohrer: {
+    label: 'Resistencia de Rohrer (K₂)',
+    unit: 'cmH₂O/(L/s)²',
+    min: 0,
+    max: 20,
+    step: 0.5,
+    help: 'patient.rohrer',
+    get: (fr) => fr.truth.patient.r2,
+    cmd: (v) => ({ type: 'setPatient', params: { r2: v } }),
+  },
   effort: {
     label: 'Esfuerzo (Pmus)',
     unit: 'cmH₂O',
@@ -105,7 +135,7 @@ export const PHYS: Record<string, PhysSpec> = {
   },
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
-export const PATIENT_EXTRA = ['expValve', 'patientRR', 'muscleTi', 'o2Tau', 'o2Bias'];
+export const PATIENT_EXTRA = ['viscoelastic', 'viscTau', 'rohrer', 'expValve', 'patientRR', 'muscleTi', 'o2Tau', 'o2Bias'];
 /** Botones de eventos (pestaña «Eventos»): [id, icono, título, descripción, deshabilitado]. */
 export const FAULTS: [string, string, string, string, boolean][] = [
   ['resistance', 'wave', 'Resistencia ×2', 'Aumenta la carga resistiva', false],

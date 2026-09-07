@@ -1,5 +1,12 @@
 import type { MetricSample, ProcedureKind, ProcedureResult, Quality } from '../domain/types';
-import { PLATEAU_STABILITY_CMH2O, type ControllerEvent, type HoldKind, type HoldOutcome, type VcController } from './controller';
+import {
+  PLATEAU_REVERSAL_CMH2O,
+  PLATEAU_STABILITY_CMH2O,
+  type ControllerEvent,
+  type HoldKind,
+  type HoldOutcome,
+  type VcController,
+} from './controller';
 import { msToS, sToMs } from '../domain/units';
 
 /** Denominador mínimo para Cstat (cmH2O), P. */
@@ -138,6 +145,9 @@ export class ProcedureManager {
     } else if (o.actualDurationS < o.requestedDurationS - 1e-6) {
       quality = 'invalid';
       reason = 'duracionInsuficiente';
+    } else if (!Number.isFinite(o.reversal) || o.reversal > PLATEAU_REVERSAL_CMH2O) {
+      quality = 'invalid';
+      reason = 'mesetaPerturbada';
     } else if (!Number.isFinite(o.stability) || o.stability > PLATEAU_STABILITY_CMH2O) {
       quality = 'invalid';
       reason = 'mesetaInestable';
