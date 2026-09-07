@@ -185,6 +185,14 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Presión resistiva = R × flujo',
   },
+  'patient.sigmoid': {
+    title: 'Curva presión-volumen sigmoidea',
+    text: [
+      'Con capacidad 0 el pulmón es un resorte de compliance constante y el bucle presión-volumen es una recta. Al darle capacidad, la curva pasa a tener forma de S: rígida abajo (unidades colapsadas), máxima compliance en la presión c y rígida otra vez arriba (sobredistensión).',
+      'Los codos caen en c ± 1,317·d y la compliance máxima vale b/(4·d). Sirve para titular PEEP: la compliance medida dibuja una U invertida y cae de nuevo si la PEEP sobredistiende.',
+    ],
+    equation: 'V(P) = a + b/(1 + e^(−(P−c)/d))',
+  },
   'patient.viscoelastic': {
     title: 'Relajación viscoelástica (E₂)',
     text: [

@@ -110,6 +110,11 @@ export interface PatientParams {
   eVisc?: number;
   /** Constante de tiempo de la relajación viscoelástica (s). */
   tauViscS?: number;
+  /**
+   * Curva presión-volumen sigmoidea (Venegas): V(P) = a + b/(1 + e^(−(P−c)/d)), anclada en V(P0) = 0.
+   * Ausente o b = 0 → compliance lineal Crs. Con ella aparecen el codo inferior y la sobredistensión.
+   */
+  sigmoid?: { b: Liters; c: CmH2O; d: CmH2O };
   /** Presión de referencia (0 en pruebas). */
   p0: CmH2O;
   /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */

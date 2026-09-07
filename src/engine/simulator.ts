@@ -30,7 +30,7 @@ import { SimClock } from './clock';
 import { VcController, type ControllerEvent } from './controller';
 import { EffortGenerator } from './effort';
 import { MetricEngine } from './metrics';
-import { PatientModel } from './patient';
+import { equilibriumVolumeFor, PatientModel } from './patient';
 import { ProcedureManager, type O2ProcedureState } from './procedures';
 import { FlowSensor, O2Sensor, SampleRing } from './sensors';
 import { ENGINE_VERSION } from './version';
@@ -66,6 +66,8 @@ export interface Truth {
   pel: number;
   /** Aporte del elemento viscoelástico a la presión elástica (cmH2O); 0 sin E2. */
   pVisc: number;
+  /** Compliance local del modelo (L/cmH2O): con sigmoide cambia con el volumen. */
+  cLocal: number;
   pmus: number;
   /** PEEP intrínseca verdadera al fin de la última espiración: Pel(V al inicio de la respiración en curso) − PEEP. */ peepiEndExp: number;
   patient: PatientParams;
@@ -165,7 +167,7 @@ export class Simulator {
     this.init = init;
     this.clock = new SimClock(init.dtMs, init.startWallTimeMs);
     const peep = init.settings.peep === 'off' ? 0 : init.settings.peep;
-    const v0 = init.initialV === 'equilibrium' ? init.patient.crs * (peep - init.patient.p0) : init.initialV;
+    const v0 = init.initialV === 'equilibrium' ? equilibriumVolumeFor(init.patient, peep) : init.initialV;
     this.patient = new PatientModel(init.patient, v0);
     this.effort = new EffortGenerator(init.effort);
     this.controller = new VcController(this.patient, this.effort, init.settings);
@@ -426,6 +428,7 @@ export class Simulator {
         vAbsL: this.patient.v,
         pel: this.patient.pel(),
         pVisc: this.patient.pVisc,
+        cLocal: this.patient.compliance(),
         pmus: this.effort.pmusAt(t / 1000),
         peepiEndExp: Math.max(0, this.patient.pelStatic(this.breathVStart) - this.controller.peepTarget),
         patient: { ...this.patient.params },

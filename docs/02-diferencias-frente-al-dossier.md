@@ -149,3 +149,11 @@ Primer bloque de las mejoras de fidelidad acordadas con el usuario el 07-09-2026
 - **Resistencia de Rohrer** (E-046): K2 pasa de existir sin uso a ser un control del panel docente. Con K2 = 5, duplicar el flujo multiplica la caída resistiva por 2,4 en vez de por 2, y la meseta no cambia.
 - **Defecto propio corregido** (E-047): la respiración siguiente a un bloqueo espiratorio tomaba como PEEPe la presión de la oclusión, lo que falseaba el ΔP y el motivo declarado de la Cstat. Ahora la PEEPe de referencia viene de la última espiración sin ocluir.
 - **Escenario SC-14 «La meseta que sigue bajando»**: con E2 20 y τ2 1,5 s, un bloqueo de 2 s se declara no válido porque la presión aún no se asienta y uno de 5 s sí es válido. Panel docente: nuevos controles de E2, τ2 y K2, y lectura de la presión viscoelástica en «Datos del modelo».
+
+## v0.4.1 · curva presión-volumen sigmoidea (07-09-2026)
+
+Segundo bloque de las mejoras de fidelidad acordadas.
+
+- **Compliance dependiente del volumen** (E-048, U-39): curva sigmoidea de Venegas opcional, V(P) = a + b/(1 + e^(−(P−c)/d)), anclada en V(P0) = 0. La compliance deja de ser un número único: vale b/(4d) en su máximo (P = c) y cae a los dos lados; los codos de máxima curvatura quedan en c ± 1,317·d. Fuera del intervalo útil la presión se prolonga con la tangente del borde, así que el modelo nunca devuelve infinitos aunque el ventilador insista por encima de la capacidad. Sin `sigmoid` el modelo es exactamente el lineal anterior.
+- **Escenario SC-15 «Titular la PEEP sobre la curva P-V»**: con b 1,6 L, c 18 y d 5, la Cstat medida con bloqueo inspiratorio dibuja la U invertida esperada. Medido en la interfaz: 39 mL/cmH₂O a PEEP 5, 68 a PEEP 12, 74 a PEEP 18 y 32 a PEEP 24.
+- **Panel docente**: controles de capacidad, punto de máxima compliance y anchura, más lectura de la compliance local al volumen actual y de la posición de los codos.
