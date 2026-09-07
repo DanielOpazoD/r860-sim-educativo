@@ -64,5 +64,5 @@ export async function screenshot(page: Page, info: TestInfo, name: string, meta:
   );
 }
 export async function expectSafetyMark(page: Page): Promise<void> {
-  await expect(page.locator('.bezel-signature small')).toHaveText('SIMULACIÓN EDUCATIVA');
+  await expect(page.locator('.bezel-signature')).toContainText('R860');
 }

@@ -4328,3 +4328,45 @@ body {
 .mode-option small {
   display: none;
 }
+
+/* Tarjetas de escenario: categoría a la izquierda, nivel a la derecha. */
+.scenario-card > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  color: #8fb0c9;
+}
+.scenario-card > div small {
+  font-size: 10px;
+  opacity: 0.8;
+}
+/* Datos del modelo (panel docente) plegados por omisión. */
+.truth-details {
+  margin: 8px 0 10px;
+  border-top: 1px solid var(--line);
+}
+.truth-details > summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 8px 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.truth-details > summary::before {
+  content: '▸';
+  font-size: 10px;
+}
+.truth-details[open] > summary::before {
+  content: '▾';
+}
+.truth-details > summary::-webkit-details-marker {
+  display: none;
+}
+#teacher-toggle[aria-pressed='true'] {
+  color: var(--accent);
+}

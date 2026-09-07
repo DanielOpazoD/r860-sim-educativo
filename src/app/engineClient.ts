@@ -106,8 +106,8 @@ export class EngineClient {
     };
   }
 
-  init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number): void {
-    this.send({ type: 'init', init, speed, running, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) });
+  init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number, warmUp = true): void {
+    this.send({ type: 'init', init, speed, running, warmUp, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) });
   }
 
   command(cmd: Command, actor: Actor = 'learner'): Promise<{ accepted: boolean; reason?: string }> {

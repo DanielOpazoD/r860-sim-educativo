@@ -45,7 +45,10 @@ export function createInstructorPanel(
 
   function renderToggle(): void {
     $('#workspace').classList.toggle('teacher-hidden', !teacherVisible);
-    $('#teacher-toggle').innerHTML = icon('eye') + `<span>${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente</span>`;
+    const tb = $('#teacher-toggle');
+    tb.setAttribute('aria-pressed', String(teacherVisible));
+    tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente`);
+    tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente`);
   }
   function updateTeacher(): void {
     const fr = ctx.frame as EngineFrame;
@@ -123,8 +126,7 @@ export function createInstructorPanel(
     deps.metrics.resetLog();
     deps.plots.reset();
     if (ctx.frozen) ctx.toggleFreeze();
-    ctx.client.loadScenario(sc, false);
-    ctx.lesson.reset();
+    ctx.client.loadScenario(sc, false); // la lección se reinicia al llegar el primer cuadro de la sesión nueva
     ctx.switchView('waves');
     $('#global-notice').hidden = true;
   }
