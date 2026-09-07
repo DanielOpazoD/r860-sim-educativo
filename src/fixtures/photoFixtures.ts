@@ -184,7 +184,7 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
     simTimeMs: 0,
     wallTimeMs: wall,
     ventilation: 'ventilating',
-    live: { paw: m.peepeCmH2O, flowLps: 0, volTidalL: 0, ppeakCurrent: m.ppeakCmH2O, phase: 'exp' },
+    live: { paw: m.peepeCmH2O, flowLps: 0, volTidalL: 0, ppeakCurrent: m.ppeakCmH2O, phase: 'exp', plimitLimited: false },
     settings,
     pending: null,
     alarmLimits: limits,

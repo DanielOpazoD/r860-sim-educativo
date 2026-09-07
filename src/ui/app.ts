@@ -216,10 +216,12 @@ export function startApp(opts: AppOptions): void {
     speed = m.speed;
     pauseReason = m.pauseReason;
     discontinuities = m.discontinuities;
+    if (newSession) plots.reset();
     plots.ingest(prev, fr);
-    if (newSession)
+    if (newSession) {
       lesson.reset(); // la lección arranca con el primer cuadro de la sesión nueva, nunca con cuadros de la anterior
-    else if (prev && JSON.stringify(prev.truth.patient) !== JSON.stringify(fr.truth.patient)) lesson.notePatientChange(fr.simTimeMs);
+      $('#monitor').classList.remove('loading');
+    } else if (prev && JSON.stringify(prev.truth.patient) !== JSON.stringify(fr.truth.patient)) lesson.notePatientChange(fr.simTimeMs);
     updateUI();
   }
 

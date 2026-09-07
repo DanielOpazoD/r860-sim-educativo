@@ -174,8 +174,8 @@ export class EngineHost {
   /** Adelanta dos ciclos respiratorios al instante para que la pantalla muestre curvas desde el primer cuadro (P: sólo presentación; el registro conserva t = 0). */
   private warmUp(sim: Simulator): void {
     if (sim.ventilationState !== 'ventilating') return;
-    const cycleMs = (60_000 / sim.controller.settings.rr) * 2;
-    sim.run(Math.min(cycleMs, 20_000));
+    const cycleMs = 60_000 / sim.controller.settings.rr;
+    sim.run(Math.min(Math.max(cycleMs * 3, 12_000), 20_000));
   }
 
   private startTimer(): void {

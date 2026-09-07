@@ -14,7 +14,7 @@ export interface PhysSpec {
 }
 export const PHYS: Record<string, PhysSpec> = {
   compliance: {
-    label: 'Compliance estática (C)',
+    label: 'Compliance (C)',
     unit: 'mL/cmH₂O',
     min: 5,
     max: 150,
@@ -24,7 +24,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { crs: v / 1000 } }),
   },
   resistance: {
-    label: 'Resistencia inspiratoria',
+    label: 'Resistencia insp.',
     unit: 'cmH₂O/L/s',
     min: 2,
     max: 100,
@@ -34,7 +34,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { rInsp: v } }),
   },
   expResistance: {
-    label: 'Resistencia espiratoria',
+    label: 'Resistencia esp.',
     unit: 'cmH₂O/L/s',
     min: 2,
     max: 150,
@@ -44,7 +44,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { rExp: v } }),
   },
   expValve: {
-    label: 'Resistencia rama espiratoria',
+    label: 'Resistencia de rama esp.',
     unit: 'cmH₂O·s/L',
     min: 0,
     max: 6,
@@ -54,7 +54,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
   },
   effort: {
-    label: 'Intensidad del esfuerzo',
+    label: 'Esfuerzo (Pmus)',
     unit: 'cmH₂O',
     min: 0,
     max: 30,
@@ -84,7 +84,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setEffort', params: { tiS: v } }),
   },
   o2Tau: {
-    label: 'Constante del sensor de O₂',
+    label: 'Sensor O₂: constante',
     unit: 's',
     min: 0.5,
     max: 60,
@@ -94,7 +94,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setSensors', params: { fio2TauS: v } }),
   },
   o2Bias: {
-    label: 'Sesgo del sensor de O₂',
+    label: 'Sensor O₂: sesgo',
     unit: '%',
     min: -20,
     max: 20,

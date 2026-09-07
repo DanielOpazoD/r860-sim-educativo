@@ -57,6 +57,8 @@ export interface LiveSignals {
   volTidalL: number;
   ppeakCurrent: number | null;
   phase: ControllerPhase;
+  /** La última respiración completa terminó limitada por Plimit: indicador junto a Ppico, no alarma (E-036). */
+  plimitLimited: boolean;
 }
 
 export interface Truth {
@@ -395,6 +397,8 @@ export class Simulator {
         volTidalL: this.patient.v - this.breathVStart,
         ppeakCurrent: this.controller.currentPpeak,
         phase: this.controller.phase,
+        /** La última respiración completa terminó limitada por Plimit (indicador junto a Ppico; no es alarma, E-036). */
+        plimitLimited: this.breaths.at(-1)?.plimitReached ?? false,
       },
       settings: { ...this.controller.settings },
       pending: this.controller.pending ? { ...this.controller.pending } : null,
