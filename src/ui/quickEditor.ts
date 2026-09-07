@@ -53,6 +53,7 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     const QUICK_KEYS = QUICK_KEYS_BY_MODE[fr.settings.mode];
     if (lastQuickSig !== fr.settings.mode) {
       lastQuickSig = fr.settings.mode;
+      $('#quick-controls').style.setProperty('--nkeys', String(QUICK_KEYS.length));
       $('#quick-controls').innerHTML =
         `<button class="device-key quick-key mode-key" data-action="modes"><small>Modo actual</small><b id="quick-mode">${MODE_LABEL[fr.settings.mode]}</b></button>` +
         QUICK_KEYS.map(
@@ -167,7 +168,10 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     if (typeof d === 'number' && Number.isNaN(d)) msg = 'Escribe un valor.';
     else if (!p.valid && typeof d === 'number' && k !== 'ie' && !isOnGrid(ruleOf(k), d))
       msg = `${d} no es un valor admitido; el más cercano es ${nearestGridValue(ruleOf(k), d)} ${unitText(ruleOf(k).displayUnit)}.`;
-    const warnings = (p as { warnings?: string[] }).warnings ?? [];
+    const warnings = [...((p as { warnings?: string[] }).warnings ?? [])];
+    // Pmáx es el techo que termina la inspiración; si Plimit está recortando la presión, subir Pmáx no cambia la Ppico.
+    if (k === 'pmax' && ctx.frame?.live.plimitLimited)
+      warnings.push(`La presión está limitada por Plimit (${ctx.frame.settings.plimit} cmH₂O): subir Pmáx no la eleva; ajusta Plimit.`);
     const v = $('#quick-validation');
     put(v, p.valid ? joinSentences(warnings) : msg);
     v.hidden = p.valid && warnings.length === 0;
