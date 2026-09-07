@@ -185,3 +185,13 @@ Ronda de corrección, no de adición. Tras cuatro bloques de física nueva, revi
 - **Compliance mostrada frente a compliance de integración** (E-053): la del panel es ahora la del sistema completo (suma de unidades); el sub-paso de los integradores usa la constante de tiempo más corta de las ramas. Antes se usaba la misma cantidad para las dos cosas.
 - **Duplicación eliminada**: `flowForPaw` reimplementaba la resolución de la rama principal; ahora la reutiliza, de modo que no pueden divergir.
 - **Rendimiento medido, no supuesto**: el paso del motor cuesta 0,5 µs con un compartimento lineal y 3,2 µs con todo activado (dos unidades, sigmoide, viscoelástico, Rohrer y limitación al flujo), es decir 1249 veces el tiempo real en el caso más pesado. La bisección del nodo no es un problema, así que **no se optimizó nada**: no había nada lento que arreglar.
+
+## v0.4.5 · asincronías: comprobar antes de añadir (07-09-2026)
+
+Antes de escribir un modelo de asincronías comprobé qué hacía ya el motor. Resultado: **no hacía falta código nuevo**.
+
+- **Doble disparo** (E-054): con tiempo inspiratorio neural de 2 s y mecánico de 1 s, el esfuerzo sobrevive al ciclado y dispara una segunda respiración exactamente al terminar el periodo refractario del disparo (1,25 s tras la anterior, medido). La respiración apilada entra sobre un pulmón sin vaciar y su presión pico sube varios cmH₂O.
+- **El apilamiento genera atrapamiento por sí solo**: con el mismo pulmón y las mismas resistencias, activar el disparo asistido eleva la PEEP intrínseca más de 3 cmH₂O sobre la que produce el esfuerzo solo. Es el hallazgo más útil del escenario y no estaba previsto.
+- **Esfuerzos inefectivos**: al subir la resistencia espiratoria, los mismos esfuerzos dejan de disparar (menos de la cuarta parte de dobles disparos) y aparece la muesca característica en el flujo espiratorio, de más de 5 L/min, sobre un vaciamiento que sin esfuerzo es estrictamente monótono.
+- **Límite declarado en vez de inventado** (U-43): la deflexión de presión de un esfuerzo inefectivo nace del ancho de banda finito del regulador de PEEP del equipo, que no está publicado. Nuestro regulador es ideal hasta el flujo de base, así que la huella queda en el flujo y no en la presión. Está fijado por una prueba para que nadie lo tome por un descuido.
+- **Escenario SC-18 «Doble disparo y esfuerzos que no llegan»**: medido en la interfaz, la frecuencia medida sube a 24/min con FR programada de 15 y, tras la perturbación a los 40 s, las respiraciones vuelven a ser mandatorias.

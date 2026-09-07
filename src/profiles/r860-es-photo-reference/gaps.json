@@ -349,6 +349,13 @@
       "policy": "P: 40 ms con caída cuadrática de la resistencia desde la de válvula cerrada; 0 en el banco analítico. Dentro del rango habitual de 20–50 ms, no medido en el equipo.",
       "status": "nueva (v0.4.4)",
       "blocks": []
+    },
+    {
+      "id": "U-43",
+      "question": "Deflexión de presión durante un esfuerzo inefectivo: depende del ancho de banda del regulador de PEEP del equipo, que no está publicado.",
+      "policy": "P: el regulador de PEEP es ideal hasta el flujo de base, así que la huella de un esfuerzo inefectivo aparece en el flujo (muesca) pero no en la presión. Declarado como límite y fijado por prueba, en vez de inventar una constante de control.",
+      "status": "nueva (v0.4.5)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

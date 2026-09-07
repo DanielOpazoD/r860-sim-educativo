@@ -215,6 +215,47 @@ export const SCENARIOS: Scenario[] = [
     caution: 'Dominio de fallo del ensayo, no fisiología.',
   },
   {
+    id: 'SC-18',
+    name: 'Doble disparo y esfuerzos que no llegan',
+    synthetic: true,
+    category: 'Sincronía',
+    level: 3,
+    lesson: {
+      title: 'El mismo esfuerzo, dos problemas opuestos',
+      text: 'El paciente inspira durante 2 s pero el ventilador cicla al segundo: el esfuerzo sobrevive al ciclado y dispara una segunda respiración sobre un pulmón sin vaciar. A los 40 s la resistencia espiratoria se dispara: aparece auto-PEEP y esos mismos esfuerzos dejan de llegar al umbral.',
+      tasks: [
+        { id: 'ver', text: 'Observa en el registro las respiraciones asistidas seguidas de otra al poco tiempo.', test: 'assisted' },
+        { id: 'peepi', text: 'Tras la perturbación, mide la PEEP total con un bloqueo espiratorio.', test: 'validExp' },
+        { id: 'trig', text: 'Baja el disparo por flujo a 1 L/min y comprueba si recupera alguna respiración.', test: 'trigger1' },
+      ],
+    },
+    question: '¿Por qué el mismo esfuerzo primero sobra y luego no basta?',
+    answer:
+      'Porque el disparo compara el flujo que genera el esfuerzo, y ese flujo depende de la mecánica. Al principio el pulmón se vacía bien, así que el esfuerzo que sobrevive al ciclado dispara otra respiración encima: eso apila volumen y, por sí solo, ya genera PEEP intrínseca. Cuando además sube la resistencia espiratoria, el esfuerzo se gasta primero en vencer la presión atrapada y deja de generar flujo suficiente para disparar.',
+    description:
+      'Ti neural 2 s frente a Ti mecánico 1 s: doble disparo. A los 40 s la resistencia espiratoria pasa a 60 y los esfuerzos se vuelven inefectivos.',
+    patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
+    effort: { enabled: true, amplitude: 12, ratePerMin: 12, tiS: 2, phaseS: 0 },
+    sensors: idealSensors,
+    settings: {
+      vt: 0.5,
+      rr: 15,
+      ie: 1 / 3,
+      peep: 5,
+      pmax: 45,
+      plimit: 100,
+      pausePct: 0,
+      assistControl: true,
+      flowTrigger: 2 / 60,
+      biasFlow: 4 / 60,
+    },
+    initialV: 'equilibrium',
+    perturbations: [{ atSimTimeMs: 40_000, patient: { rExp: 60 }, note: 'Rexp 10 → 60' }],
+    observe:
+      'Respiraciones apiladas y la PEEP intrínseca que ellas mismas generan; después, esfuerzos sin disparo y muesca en el flujo espiratorio.',
+    caution: 'Las asincronías salen de la mecánica y del disparo, no de una regla que las imponga.',
+  },
+  {
     id: 'SC-17',
     name: 'Dos pulmones en uno',
     synthetic: true,

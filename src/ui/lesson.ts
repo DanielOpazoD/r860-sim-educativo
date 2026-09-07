@@ -56,6 +56,7 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   alarmSeen: (c) => !!c.flags.alarmSeen,
   acknowledged: (c) => c.frame.alarms.some((a) => a.acknowledgedAtMs !== null),
   alarmCleared: (c) => !!c.flags.alarmSeen && c.frame.alarmBar.color === 'green',
+  doubleTrigger: (c) => !!c.flags.doubleTrigger,
   peepAtCritical: (c) => {
     const p = c.frame.settings.peep;
     return p !== 'off' && p >= 8;
