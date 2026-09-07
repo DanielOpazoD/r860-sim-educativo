@@ -771,6 +771,62 @@
       "tests": [
         "tests/unit/review4.test.ts (R4-07)"
       ]
+    },
+    {
+      "id": "E-059",
+      "claim": "El criterio de estabilidad de la meseta es una TASA (cmH2O/s) sobre un tramo final de duración fija, no una diferencia absoluta sobre un tramo que crece con la oclusión. Así el veredicto es monótono en la duración: esperar más nunca empeora la medición aceptada. Umbral 0,45 cmH2O/s, calibrado sobre tres mecánicas (dos unidades dispares, viscoelástica y un compartimento).",
+      "status": "P (la forma del criterio es deducida; el valor está calibrado, no documentado por el fabricante)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (plateauQuality, PLATEAU_DRIFT_RATE_CMH2O_S); src/engine/procedures.ts",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-01)"
+      ]
+    },
+    {
+      "id": "E-060",
+      "claim": "La curva recibe una muestra en cada instante de transición resuelto dentro del paso fijo, además de la muestra regular del final del paso. Sin ellas la métrica Ppico publicaba un valor que no aparecía en ninguna muestra dibujada: con Pmáx 7 y PEEP 5 el equipo mostraba Ppico 7 con la curva plana en 5.",
+      "status": "P (decisión de presentación: el instrumento real muestrea a su propia frecuencia)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (substepSamples); src/engine/simulator.ts",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-02)"
+      ]
+    },
+    {
+      "id": "E-061",
+      "claim": "La espiración tiene techo de máquina, 200 L/min, análogo al tope inspiratorio del actuador. Sin él la espiración no tenía ningún límite: con resistencia muy baja y gradiente alto el modelo llegaba a 2949 L/min. El escenario más obstructivo del simulador alcanza 149 L/min, así que el techo sólo actúa fuera de lo fisiológico.",
+      "status": "P (la ficha 2014 documenta el rango inspiratorio 2–160 L/min y no el espiratorio; U-50)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (EXP_MAX_FLOW_LPS); src/engine/patient.ts (minFlow en nodeState e integratePressureSource)",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-03)"
+      ]
+    },
+    {
+      "id": "E-062",
+      "claim": "Un solo elástico: el volumen de equilibrio es el inverso exacto de la presión elástica, prolongación por la tangente incluida. Antes el equilibrio usaba la sigmoide cruda y la meseta la prolongada, así que por encima del codo superior el pulmón arrancaba a una presión distinta de la PEEP programada (47,8 en vez de 50, y hasta 27 cmH2O con sigmoides estrechas).",
+      "status": "D (propiedad matemática comprobada a 9 decimales en todo el dominio)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (sigmoidVolume, sigmoidPressure)",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-04)",
+        "tests/unit/sigmoid.test.ts"
+      ]
+    },
+    {
+      "id": "E-063",
+      "claim": "La guarda de finitud vive en un solo sitio y la usan tanto las métricas como los procedimientos: ningún número no finito sale marcado como válido por ningún camino. Conmutar la segunda unidad conserva el gas en los dos sentidos: quitarla une su volumen al de la unidad que queda, añadirla reparte el que hay hasta igualar presiones (antes creaba unos 150 mL).",
+      "status": "D (contrato del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/metrics.ts (guardFiniteness); src/engine/procedures.ts; src/engine/patient.ts (applyParams)",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-05, R5-06)"
+      ]
     }
   ]
 }

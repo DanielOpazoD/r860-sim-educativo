@@ -385,7 +385,13 @@ export class Simulator {
       this.diverged = true;
       this.logEvent('discontinuity', 'system', { reason: 'el modelo dejó de dar números finitos', simTimeMs: this.clock.simTimeMs });
     }
-    const vol = this.patient.vTotal - this.breathVStart - this.breathV2Start;
+    const base = this.breathVStart + this.breathV2Start;
+    // Primero los instantes de transición resueltos dentro del paso, en orden, para que la curva pase por ellos.
+    for (const m of this.controller.substepSamples) {
+      this.ring.push(m.tS * 1000, m.paw, m.q, m.vAbsL - base, this.effort.pmusAt(m.tS), this.controller.currentBreathSequence);
+      this.samplesSinceFrame += 1;
+    }
+    const vol = this.patient.vTotal - base;
     this.ring.push(
       this.clock.simTimeMs,
       this.controller.paw,

@@ -398,6 +398,13 @@
       "policy": "U: no resuelto. Es un fenómeno real y merece enseñarse, no esconderse. Falta decidir si la advertencia va en el escenario, en el panel de bloqueo o en la propia medición marcada con un motivo.",
       "status": "nueva (v0.4.7)",
       "blocks": []
+    },
+    {
+      "id": "U-50",
+      "question": "Cuál es el flujo espiratorio máximo que deja pasar el conjunto válvula + rama espiratoria del R860. La ficha de 2014 documenta el rango inspiratorio (2–160 L/min) y no dice nada del espiratorio.",
+      "policy": "P: 200 L/min, por encima de todo lo fisiológico, para que el techo sólo actúe en regímenes irreales y no altere ningún escenario (el más obstructivo llega a 149 L/min). Si aparece la cifra documentada, se sustituye.",
+      "status": "nueva (v0.4.8)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

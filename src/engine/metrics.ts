@@ -25,20 +25,33 @@ function sample(
     source?: MetricSample['source'];
   },
 ): MetricSample {
-  // Ningún número no finito puede salir marcado como válido: el contrato de calidad es lo que sostiene todo lo demás.
-  const finito = value === null || Number.isFinite(value);
+  const g = guardFiniteness(value, ctx.quality, ctx.reason);
   return {
     key,
-    value: finito ? value : null,
+    value: g.value,
     unit,
     source: ctx.source ?? 'ventilator',
     simTimeMs: ctx.simTimeMs,
     breathId: ctx.breathId,
     procedureId: null,
-    quality: finito ? ctx.quality : 'invalid',
-    reason: finito ? ctx.reason : 'valorNoFinito',
+    quality: g.quality,
+    reason: g.reason,
     windowMs: ctx.windowMs,
   };
+}
+
+/**
+ * Ningún número no finito puede salir marcado como válido: el contrato de calidad es lo que sostiene todo lo demás.
+ * Vive en un solo sitio porque estaba en uno solo: las métricas lo cumplían y los procedimientos no, de modo que una
+ * Pplat o una Cstat no finitas habrían salido con calidad «válida» por el otro camino.
+ */
+export function guardFiniteness(
+  value: number | null,
+  quality: Quality,
+  reason: string | null,
+): { value: number | null; quality: Quality; reason: string | null } {
+  if (value === null || Number.isFinite(value)) return { value, quality, reason };
+  return { value: null, quality: 'invalid', reason: 'valorNoFinito' };
 }
 
 /**

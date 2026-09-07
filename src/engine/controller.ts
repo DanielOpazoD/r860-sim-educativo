@@ -8,12 +8,42 @@ import type { PatientModel } from './patient';
 export const TRIGGER_REFRACTORY_S = 0.25;
 /** Duración mínima de pausa para estimar Pplat de ciclo (P). */
 export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
-/** Estabilidad máxima (máx−mín de Paw en la ventana evaluada) para meseta válida (P). */
-export const PLATEAU_STABILITY_CMH2O = 0.5;
+/**
+ * Deriva máxima admisible de la meseta, como TASA (cmH2O/s) medida sobre un tramo final de duración fija (P).
+ *
+ * Fue un valor absoluto sobre un tramo que crecía con la oclusión, y por eso el criterio no era monótono: con dos
+ * unidades de constantes muy dispares, un bloqueo de 2 s pasaba como válido —con la Cstat un 40 % baja, porque el
+ * pendelluft aún no había terminado— mientras que uno de 5 s se rechazaba por inestable y uno de 15 s volvía a pasar.
+ * La medición peor era la que superaba el filtro. Una tasa sobre un tramo fijo responde a la pregunta correcta:
+ * ¿se ha asentado ya la presión?, y su respuesta no depende de cuánto se haya esperado.
+ *
+ * El valor está calibrado sobre tres mecánicas, con la tasa medida al final de la oclusión (cmH2O/s):
+ *
+ *     oclusión        2 s     3 s     5 s    10 s    15 s
+ *     dos unidades   0,845   0,717   0,516   0,227   0,099   (tau del pendelluft 6,1 s)
+ *     viscoelástico  0,707   0,363   0,096   0,003   0,000   (E2 10, tau 1,5 s)
+ *     un compartim.  0,000   0,000   0,000   0,000   0,000
+ *
+ * 0,45 separa el pulmón que ya se asentó del que sigue relajándose visiblemente: deja pasar el bloqueo de 3 s sobre
+ * un pulmón viscoelástico —donde la meseta por encima de la estática es el fenómeno que se quiere enseñar— y rechaza
+ * los de 2, 3 y 5 s con dos unidades muy dispares, que antes pasaban con la Cstat hasta un 40 % baja. Es una constante
+ * P: lo principiado es la forma del criterio (tasa, ventana fija, monótona); el valor está calibrado, no deducido.
+ */
+export const PLATEAU_DRIFT_RATE_CMH2O_S = 0.45;
+/** Tramo final sobre el que se mide la deriva. Fijo a propósito: ver `PLATEAU_DRIFT_RATE_CMH2O_S`. */
+export const PLATEAU_TAIL_S = 0.5;
 /** Excursión contra la tendencia que delata una perturbación (esfuerzo, fuga, oscilación) en cmH2O. */
 export const PLATEAU_REVERSAL_CMH2O = 0.3;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
+/**
+ * Tope de flujo espiratorio (L/s): la conductancia máxima de la válvula y de la rama espiratoria con la válvula
+ * abierta del todo. No existía, y sin él la espiración no tenía ningún límite de máquina: con resistencia muy baja y
+ * un gradiente alto el modelo llegaba a −2949 L/min, que ninguna tubuladura deja pasar. El valor es P: la ficha
+ * documenta el rango inspiratorio (2–160 L/min) y no el espiratorio, así que se toma un techo por encima de todo lo
+ * fisiológico (el escenario más obstructivo del simulador llega a −149 L/min) para que sólo actúe en lo irreal (U-50).
+ */
+export const EXP_MAX_FLOW_LPS = -200 / 60;
 /** Flujo de base espiratorio por omisión (D rango 2–10 L/min ficha 2014; valor inicial P). Ajustable en `settings.biasFlow`. */
 export const EXP_BIAS_FLOW_LPS = 2 / 60;
 /** Apertura de la válvula espiratoria por omisión (ms): dentro del rango habitual de 20–50 ms (P, U-42). */
@@ -40,7 +70,8 @@ export interface HoldOutcome {
   pawEnd: number;
   /** máx−mín de Paw en la ventana evaluada (toda la ventana tras un arranque de min(0.5 s, 30 %)). */
   /** Deriva (máx − mín) en el tramo final de la oclusión: mide si la presión ya se asentó. */
-  stability: number;
+  /** Velocidad a la que aún se movía la presión en el tramo final de la oclusión, en cmH2O/s. */
+  driftRate: number;
   /** Mayor excursión contra la tendencia en toda la ventana: 0 en una relajación monótona, alta con esfuerzo. */
   reversal: number;
   pmaxHit: boolean;
@@ -258,8 +289,17 @@ export class VcController {
     return { accepted: true };
   }
 
+  /**
+   * Muestras de los instantes en que se resolvió un evento dentro del paso fijo. El anillo de la curva sólo guarda una
+   * muestra por paso, al final, así que un cruce de Pmáx o de Plimit a mitad de paso quedaba fuera del dibujo: la
+   * métrica Ppico publicaba un valor que no aparecía en ninguna muestra de la pantalla. Con Pmáx 7 y PEEP 5 el equipo
+   * mostraba Ppico 7 con la curva plana en 5. Aquí se recogen esos instantes para que el simulador los dibuje.
+   */
+  readonly substepSamples: { tS: number; paw: number; q: number; vAbsL: number }[] = [];
+
   /** Avanza un paso fijo dt (s). Los eventos programados se resuelven con sub-pasos exactos. */
   step(dt: number): void {
+    this.substepSamples.length = 0;
     let remaining = dt;
     let guard = 0;
     while (remaining > EPS && guard++ < 128) {
@@ -273,6 +313,8 @@ export class VcController {
       const used = this.integrate(h);
       this.account(used);
       remaining -= used;
+      // Sólo los cortes interiores: el final del paso lo publica el simulador como muestra regular.
+      if (remaining > EPS) this.substepSamples.push({ tS: this.simT, paw: this.paw, q: this.q, vAbsL: this.patient.vTotal });
       if (this.transition) {
         const fn = this.transition;
         this.transition = null;
@@ -456,13 +498,13 @@ export class VcController {
           for (let i = 0; i < nSub; i++) {
             const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
             rNow = rValve + VALVE_CLOSED_R * u * u;
-            const r = p.integratePressureSource(peep, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow);
+            const r = p.integratePressureSource(peep, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
             dV += r.dV;
             qEnd = r.qEnd;
             clamped = r.clamped;
           }
         } else {
-          const r = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve);
+          const r = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve, EXP_MAX_FLOW_LPS);
           dV = r.dV;
           qEnd = r.qEnd;
           clamped = r.clamped;
@@ -597,7 +639,7 @@ export class VcController {
       b.pplatReason = 'disturbed';
       return;
     }
-    if (q.drift > PLATEAU_STABILITY_CMH2O) {
+    if (q.driftRate > PLATEAU_DRIFT_RATE_CMH2O_S) {
       b.pplatCycle = null;
       b.pplatReason = 'unstable';
       return;
@@ -627,6 +669,8 @@ export class VcController {
       return;
     }
     this.hold = null;
+    // Una sola evaluación: antes se llamaba dos veces con los mismos argumentos, una por campo.
+    const calidad = plateauQuality(hold.samples, this.simT - hold.tStart);
     const outcome: HoldOutcome = {
       procedureId: hold.req.procedureId,
       kind: hold.req.kind,
@@ -637,8 +681,8 @@ export class VcController {
       requestedDurationS: hold.req.durationS,
       pawStart: hold.pawStart,
       pawEnd: this.paw,
-      stability: plateauQuality(hold.samples, this.simT - hold.tStart)?.drift ?? Number.POSITIVE_INFINITY,
-      reversal: plateauQuality(hold.samples, this.simT - hold.tStart)?.reversal ?? Number.POSITIVE_INFINITY,
+      driftRate: calidad?.driftRate ?? Number.POSITIVE_INFINITY,
+      reversal: calidad?.reversal ?? Number.POSITIVE_INFINITY,
       pmaxHit: hold.pmaxHit,
       cancelled,
       cancelReason,
@@ -727,18 +771,21 @@ export class VcController {
  * Estabilidad de meseta (P): máx−mín de Paw en toda la ventana tras un arranque de min(0.5 s, 30 % de la ventana),
  * para que un esfuerzo o una fuga en cualquier punto del bloqueo invaliden el resultado (PRC-02).
  */
-export function plateauQuality(samples: { t: number; paw: number }[], windowS: number): { drift: number; reversal: number } | null {
+export function plateauQuality(samples: { t: number; paw: number }[], windowS: number): { driftRate: number; reversal: number } | null {
   if (samples.length < 2) return null;
   const tFrom = Math.min(0.5, windowS * 0.3);
   const win = samples.filter((s) => s.t >= tFrom - 1e-9);
   if (win.length < 2) return null;
-  // Deriva: sólo el tramo final. Una relajación de esfuerzo todavía cae al principio de la oclusión y eso no la invalida;
-  // lo que importa es si la presión ya se asentó cuando se lee la meseta.
-  const tTail = (win[win.length - 1] as { t: number }).t - Math.max(0.5, windowS * 0.25);
-  const tail = win.filter((s) => s.t >= tTail - 1e-9);
+  // Deriva: tasa sobre un tramo final de duración fija. Una relajación todavía cae al principio de la oclusión y eso
+  // no la invalida; lo que importa es si la presión ya se asentó cuando se lee la meseta, y eso es una velocidad.
+  const tEnd = (win[win.length - 1] as { t: number }).t;
+  const tramo = Math.min(PLATEAU_TAIL_S, (tEnd - (win[0] as { t: number }).t) / 2);
+  const tail = win.filter((s) => s.t >= tEnd - tramo - 1e-9);
+  const usadas = tail.length >= 2 ? tail : win;
+  const span = (usadas[usadas.length - 1] as { t: number }).t - (usadas[0] as { t: number }).t;
   let mn = Infinity,
     mx = -Infinity;
-  for (const s of tail.length >= 2 ? tail : win) {
+  for (const s of usadas) {
     mn = Math.min(mn, s.paw);
     mx = Math.max(mx, s.paw);
   }
@@ -754,5 +801,5 @@ export function plateauQuality(samples: { t: number; paw: number }[], windowS: n
     maxRise = Math.max(maxRise, s.paw - runMin);
     maxFall = Math.max(maxFall, runMax - s.paw);
   }
-  return { drift: mx - mn, reversal: Math.min(maxRise, maxFall) };
+  return { driftRate: span > 1e-9 ? (mx - mn) / span : 0, reversal: Math.min(maxRise, maxFall) };
 }

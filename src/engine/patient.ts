@@ -12,12 +12,24 @@ export interface SigmoidPV {
 }
 /** Desplazamiento que ancla la sigmoide en V(P0) = 0, la convención de volumen del modelo. */
 const sigmoidA = (s: SigmoidPV, p0: number): number => -s.b / (1 + Math.exp(-(p0 - s.c) / s.d));
-/** Volumen de equilibrio a una presión dada. */
-export function sigmoidVolume(s: SigmoidPV, p0: number, paw: number): number {
-  return sigmoidA(s, p0) + s.b / (1 + Math.exp(-(paw - s.c) / s.d));
-}
 /** Compliance local (pendiente dV/dP) en la fracción u = (V − a)/b de la capacidad. */
 const sigmoidSlope = (s: SigmoidPV, u: number): number => (s.b / s.d) * u * (1 - u);
+/** Presión a la que la sigmoide alcanza la fracción u de su capacidad. */
+const sigmoidAt = (s: SigmoidPV, u: number): number => s.c + s.d * Math.log(u / (1 - u));
+/**
+ * Volumen de equilibrio a una presión dada: el INVERSO EXACTO de `sigmoidPressure`, prolongación por la tangente
+ * incluida. Antes era la sigmoide cruda, así que por encima del codo superior las dos curvas discrepaban y el pulmón
+ * arrancaba a una presión distinta de la PEEP programada: con la sigmoide de SC-15 y PEEP 50, en Pel 47,8 en vez de
+ * 50, y hasta 27 cmH2O de diferencia con sigmoides estrechas que el panel docente admite. Un solo elástico o ninguno.
+ */
+export function sigmoidVolume(s: SigmoidPV, p0: number, paw: number): number {
+  const a = sigmoidA(s, p0);
+  const pBaja = sigmoidAt(s, SIGMOID_GUARD);
+  const pAlta = sigmoidAt(s, 1 - SIGMOID_GUARD);
+  if (paw <= pBaja) return a + SIGMOID_GUARD * s.b + (paw - pBaja) * sigmoidSlope(s, SIGMOID_GUARD);
+  if (paw >= pAlta) return a + (1 - SIGMOID_GUARD) * s.b + (paw - pAlta) * sigmoidSlope(s, 1 - SIGMOID_GUARD);
+  return a + s.b / (1 + Math.exp(-(paw - s.c) / s.d));
+}
 /**
  * Presión elástica de la sigmoide. Fuera del intervalo útil se prolonga con la tangente del borde:
  * el modelo nunca devuelve infinitos aunque el ventilador insista por encima de la capacidad.
@@ -25,10 +37,10 @@ const sigmoidSlope = (s: SigmoidPV, u: number): number => (s.b / s.d) * u * (1 -
 export function sigmoidPressure(s: SigmoidPV, p0: number, v: number): number {
   const a = sigmoidA(s, p0);
   const u = (v - a) / s.b;
-  const at = (uu: number): number => s.c + s.d * Math.log(uu / (1 - uu));
-  if (u <= SIGMOID_GUARD) return at(SIGMOID_GUARD) + (v - (a + SIGMOID_GUARD * s.b)) / sigmoidSlope(s, SIGMOID_GUARD);
-  if (u >= 1 - SIGMOID_GUARD) return at(1 - SIGMOID_GUARD) + (v - (a + (1 - SIGMOID_GUARD) * s.b)) / sigmoidSlope(s, 1 - SIGMOID_GUARD);
-  return at(u);
+  if (u <= SIGMOID_GUARD) return sigmoidAt(s, SIGMOID_GUARD) + (v - (a + SIGMOID_GUARD * s.b)) / sigmoidSlope(s, SIGMOID_GUARD);
+  if (u >= 1 - SIGMOID_GUARD)
+    return sigmoidAt(s, 1 - SIGMOID_GUARD) + (v - (a + (1 - SIGMOID_GUARD) * s.b)) / sigmoidSlope(s, 1 - SIGMOID_GUARD);
+  return sigmoidAt(s, u);
 }
 /** Compliance local del sistema respiratorio a un volumen dado (L/cmH2O). */
 export function sigmoidCompliance(s: SigmoidPV, p0: number, v: number): number {
@@ -173,19 +185,26 @@ export class PatientModel {
    * Cambia los parámetros conservando la masa de gas: si el instructor quita la segunda unidad, su volumen pasa a la
    * principal en vez de desaparecer; si la añade, arranca en equilibrio con la presión actual.
    */
+  /**
+   * Cambia los parámetros conservando el gas. Conmutar la segunda unidad es una acción docente, no un suceso físico:
+   * el pulmón no gana ni pierde volumen por ello. Quitarla une su gas al que queda; añadirla reparte el que hay entre
+   * las dos hasta igualar presiones. Antes, añadirla creaba gas de la nada (unos 150 mL) porque le daba a la unidad
+   * nueva su propio volumen de equilibrio sin quitárselo a la principal.
+   */
   applyParams(next: PatientParams): void {
     const teniaSegunda = this.hasSecond;
     const totalPrevio = this.vTotal;
-    const presionPrevia = this.pelStatic();
     this.params = { ...next };
     const tieneSegunda = this.hasSecond;
     if (teniaSegunda && !tieneSegunda) {
-      this.v = totalPrevio; // el gas no se evapora: se une a la unidad que queda
+      this.v = totalPrevio;
       this.v2 = 0;
+      if (this.e2 <= 0) this.vVisc = this.v;
     } else if (!teniaSegunda && tieneSegunda) {
-      this.v2 = (this.params.second?.crs ?? 0) * (presionPrevia - this.params.p0);
+      this.setAbsoluteVolume(totalPrevio);
+    } else if (this.e2 <= 0) {
+      this.vVisc = this.v;
     }
-    if (this.e2 <= 0) this.vVisc = this.v;
   }
 
   /** Compliance local de la unidad principal (pendiente de su curva P-V). */
@@ -271,6 +290,7 @@ export class PatientModel {
     nonNegativeFlow: boolean,
     v: number = this.v,
     v2: number = this.v2,
+    minFlow: number = Number.NEGATIVE_INFINITY,
   ): { py: number; q1: number; q2: number; clamped: boolean } {
     const ramas = (py: number): { q1: number; q2: number } => ({
       q1: this.branch1Flow(py, pmus, v),
@@ -286,6 +306,9 @@ export class PatientModel {
     if (q1 + q2 > maxFlow) {
       clamped = true;
       fijarTotal(maxFlow);
+    } else if (q1 + q2 < minFlow) {
+      clamped = true;
+      fijarTotal(minFlow);
     } else if (nonNegativeFlow && q1 + q2 < 0) {
       fijarTotal(0); // válvula inspiratoria de un solo sentido: el circuito queda ocluido
     }
@@ -402,6 +425,7 @@ export class PatientModel {
     nonNegativeFlow = false,
     maxFlow = Number.POSITIVE_INFINITY,
     rSeries = 0,
+    minFlow = Number.NEGATIVE_INFINITY,
   ): { dV: number; qEnd: number; clamped: boolean } {
     if (!(dt > 0)) return { dV: 0, qEnd: this.flowForPaw(paw, pmusAt(t0), this.v, rSeries), clamped: false };
     const tauMin = this.minBranchTau();
@@ -410,7 +434,7 @@ export class PatientModel {
     // sobreimpulso dependiente de dt cuando el flujo libre cruza el tope a mitad de paso (revisión E24).
     const f = (pw: number, pm: number, vv: number): number => {
       const q = this.flowForPaw(pw, pm, vv, rSeries);
-      return Math.min(maxFlow, nonNegativeFlow ? Math.max(0, q) : q);
+      return Math.min(maxFlow, Math.max(minFlow, nonNegativeFlow ? Math.max(0, q) : q));
     };
     const h = dt / nSub;
     const v0 = this.v;
@@ -421,7 +445,7 @@ export class PatientModel {
     let q = 0;
     // Con dos unidades el nodo se resuelve primero (circuito y tope del ventilador) y después se reparte entre ramas.
     const nodo = (pm: number, vv: number, vv2: number): { q1: number; q2: number; clamped: boolean } =>
-      this.nodeState(paw, pm, rSeries, maxFlow, nonNegativeFlow, vv, vv2);
+      this.nodeState(paw, pm, rSeries, maxFlow, nonNegativeFlow, vv, vv2, minFlow);
     let clampedAlguna = false;
     for (let i = 0; i < nSub; i++) {
       const vSub = v;
@@ -446,10 +470,12 @@ export class PatientModel {
     this.v2 = v2;
     if (this.hasSecond) {
       const fin = nodo(pmusAt(t), v, v2);
-      return { dV: v - v0 + (v2 - v20), qEnd: fin.q1 + fin.q2 || q, clamped: fin.clamped || clampedAlguna };
+      const qFin = fin.q1 + fin.q2;
+      return { dV: v - v0 + (v2 - v20), qEnd: Number.isFinite(qFin) ? qFin : q, clamped: fin.clamped || clampedAlguna };
     }
     const qFree = this.flowForPaw(paw, pmusAt(t), v, rSeries, v2);
-    return { dV: v - v0, qEnd: f(paw, pmusAt(t), v) || q, clamped: qFree > maxFlow };
+    const qFin = f(paw, pmusAt(t), v);
+    return { dV: v - v0, qEnd: Number.isFinite(qFin) ? qFin : q, clamped: qFree > maxFlow || qFree < minFlow };
   }
 
   /**
