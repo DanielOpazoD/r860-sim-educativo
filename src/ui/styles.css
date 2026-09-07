@@ -2433,6 +2433,12 @@ a {
   font-size: 12px;
   color: #bdd3e1;
 }
+/* La unidad es una anotación, no parte del nombre: sin separación se leía «PpicocmH₂O». */
+.alarm-edit-grid > label small {
+  margin-left: 6px;
+  color: #86a4bb;
+  font-size: 10px;
+}
 .alarm-edit-grid .column-label {
   font-size: 10px;
   color: #86a4bb;

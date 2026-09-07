@@ -62,23 +62,35 @@ export interface Bounds {
   flow: number;
   volume: number;
   minPressure: number;
+  minVolume: number;
 }
+const ESCALA_VOLUMEN = [300, 400, 600, 800, 1000, 1500, 2000, 2500, 4000];
 export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
   let maxP = peep + 20 || 35,
     maxF = 40,
     maxV = vtMl || 450,
-    minP = 0;
+    minP = 0,
+    minV = 0;
   for (const p of points) {
     maxP = Math.max(maxP, p[1]);
     minP = Math.min(minP, p[1]);
     maxF = Math.max(maxF, Math.abs(p[2]));
     maxV = Math.max(maxV, p[3]);
+    minV = Math.min(minV, p[3]);
   }
+  const volume = nice(maxV * 1.1, ESCALA_VOLUMEN);
+  // El suelo del eje de volumen tiene que caber el mínimo REAL, no un 10 % fijo de la escala superior. La traza es el
+  // volumen desde el inicio de la respiración, así que baja de cero cuando el pulmón devuelve gas que no recibió en
+  // ese ciclo: apilamiento, espiración activa o liberación de aire atrapado. Con el suelo fijo, la señal que más
+  // enseña —la curva de volumen hundiéndose bajo la línea de base— se dibujaba como una barra plana recortada: en el
+  // escenario de doble disparo la traza llega a −516 mL contra un suelo de −60.
+  const holgura = -volume * 0.1;
   return {
     pressure: nice(maxP * 1.12, [40, 60, 80, 100, 120]),
     flow: nice(maxF * 1.15, [40, 60, 80, 120, 160, 240, 320]),
-    volume: nice(maxV * 1.1, [300, 400, 600, 800, 1000, 1500, 2000, 2500, 4000]),
+    volume,
     minPressure: Math.min(-10, Math.floor(minP / 10) * 10),
+    minVolume: minV < holgura ? -nice(-minV * 1.12, ESCALA_VOLUMEN) : holgura,
   };
 }
 
@@ -154,9 +166,10 @@ export function drawWave(
           label: 'Volumen',
           unit: 'mL',
           index: 3,
-          min: -range.volume * 0.1,
+          min: range.minVolume,
           max: range.volume,
-          ticks: [0, range.volume / 2, range.volume],
+          // Con suelo negativo hace falta su marca: si no, la excursión bajo la línea de base se ve pero no se mide.
+          ticks: range.minVolume < -range.volume * 0.15 ? [range.minVolume, 0, range.volume] : [0, range.volume / 2, range.volume],
           color: '#c2efff',
           fill: 'volume',
         },
