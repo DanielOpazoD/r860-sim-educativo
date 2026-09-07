@@ -197,20 +197,27 @@ describe('R4-06 · la forma cerrada del nodo coincide con la bisección', () => 
   });
 });
 
-describe('R4-07 · el motor mantiene margen sobre el tiempo real', () => {
-  it('la combinación más costosa no cuesta más de 1500 veces el caso lineal', () => {
-    // Se mide en relación con el caso lineal del mismo proceso para no depender de la máquina. El margen es amplio
-    // porque la instrumentación de cobertura penaliza más al camino pesado (761× con ella, ~340× sin ella): el
-    // guardián existe para atajar una regresión grande, no para medir rendimiento con precisión.
-    const coste = (over: Parameters<typeof benchSim>[0]): number => {
-      const sim = benchSim({ ...over, settings: { ...BENCH_SETTINGS, plimit: 100 } });
-      for (let i = 0; i < 200; i++) sim.step();
-      const t0 = performance.now();
-      for (let i = 0; i < 1500; i++) sim.step();
-      return performance.now() - t0;
-    };
-    const lineal = coste({});
-    const pesado = coste({
+describe('R4-07 · el solucionador del nodo no se dispara', () => {
+  // El guardián cuenta trabajo, no tiempo. Contar es determinista y no depende de la máquina ni de la instrumentación
+  // de cobertura; medir el reloj en integración continua daba un test que caducaba en un runner compartido. La medida
+  // de reloj queda en docs/02 como dato, no como puerta.
+  const evalsPorPaso = (over: Parameters<typeof benchSim>[0]): number => {
+    const sim = benchSim({ ...over, settings: { ...BENCH_SETTINGS, plimit: 100 } });
+    for (let i = 0; i < 200; i++) sim.step();
+    const base = sim.patient.solverEvals;
+    for (let i = 0; i < 1500; i++) sim.step();
+    return (sim.patient.solverEvals - base) / 1500;
+  };
+
+  it('con ramas lineales el nodo se resuelve en forma cerrada: cero bisecciones', () => {
+    expect(evalsPorPaso({})).toBe(0);
+    expect(evalsPorPaso({ patient: { ...BENCH_PATIENT, second: { crs: 0.03, rInsp: 1, rExp: 1 } } })).toBe(0);
+  });
+
+  it('la combinación más costosa se mantiene acotada', () => {
+    // Rohrer + limitación al flujo + segunda unidad muy rígida obligan a bisecar en cada evaluación de la integración.
+    // Medido: 8030 evaluaciones por paso. El tope deja margen para variación de camino, no para una regresión de orden.
+    const pesado = evalsPorPaso({
       patient: {
         ...BENCH_PATIENT,
         eVisc: 10,
@@ -220,7 +227,6 @@ describe('R4-07 · el motor mantiene margen sobre el tiempo real', () => {
         second: { crs: 0.0005, rInsp: 0.1, rExp: 0.1 },
       },
     });
-    const razon = pesado / Math.max(1e-6, lineal);
-    expect(razon, `${razon.toFixed(0)}× el caso lineal`).toBeLessThan(1500);
+    expect(pesado, `${pesado.toFixed(0)} evaluaciones por paso`).toBeLessThan(12000);
   });
 });
