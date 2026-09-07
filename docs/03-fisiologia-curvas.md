@@ -176,11 +176,11 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 
 | Simplificación | Consecuencia observable | Marca |
 | --- | --- | --- |
-| Un solo compartimento | No hay pendelluft ni redistribución: en el bloqueo inspiratorio la presión cae de Ppico a Pplat **instantáneamente** en lugar de decaer durante 1–3 s como describe la bibliografía (Mellema 2013). No hay caída lenta de Pplat ni unidades rápidas/lentas | P (elección de diseño); U (magnitud real del decaimiento en pacientes) |
+| Un compartimento estático más un cuerpo de Maxwell opcional (E2, τ2) | Con E2 = 0 la presión cae de Ppico a Pplat instantáneamente. Con E2 > 0 aparece la relajación de esfuerzo: caída inmediata resistiva hasta P1 y decaimiento exponencial hasta P2, la diferencia entre elastancia dinámica y estática. Sigue sin haber unidades rápidas y lentas en paralelo (pendelluft) | D el modelo (Mount, Bates, D'Angelo); P los valores (E-044, U-37) |
 | R y C lineales y constantes en el ciclo | Sin dependencia de volumen: no hay puntos de inflexión ni beak espontáneo en el P-V; la única forma de mostrar sobredistensión es cambiar C en una perturbación | P |
 | Sin inhomogeneidad de constantes de tiempo | Flujo espiratorio monoexponencial; no hay «cola» lenta ni curvatura biexponencial | P; U (perfil real) |
 | Sin inertancia | La presión responde al flujo sin retardo; no hay oscilaciones ni sobreimpulso al inicio del flujo | P |
-| R no lineal sólo como término opcional R2·\|Q\| | El tipo `PatientParams` admite R2 ≥ 0 (resolución cuadrática en `flowForPaw`), pero **ningún escenario ni control de la interfaz lo activa** (R2 = 0 en todos): en la práctica el modelo es lineal en R | P (existe); U (valores realistas de R2 con tubo endotraqueal) |
+| Resistencia de Rohrer R(Q) = K1 + K2·\|Q\| disponible como parámetro | Con K2 > 0 la caída resistiva crece más que proporcionalmente con el flujo; con K2 = 0 (por omisión) el modelo es lineal | D el modelo; P los valores (E-046, U-37) |
 | Sin compresibilidad del gas ni distensibilidad del circuito | VT entregado = VT alveolar; no hay volumen comprimido perdido en el circuito ni corrección por compliance de tubuladura | P |
 | Sin fuga | VTinsp = VTe siempre que la espiración sea completa (BM-07); no se simulan auto-disparo por fuga ni balance de fuga en PC | P (documentado en `02-diferencias`, defecto H1 de R860 Lab no heredado) |
 | Rampa de PC lineal y tope de 160 L/min dentro del integrador | Forma de la subida y comportamiento con R muy baja son aproximaciones del simulador, no del equipo; el tope se aplica en cada etapa del RK2, sin sobreimpulso dependiente de dt (R3-01) | P (tope D ficha 2014; forma U) |

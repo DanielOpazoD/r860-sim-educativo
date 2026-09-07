@@ -236,6 +236,8 @@ export function validatePatientParams(p: {
   r2: number;
   p0: number;
   rExpValve?: number;
+  eVisc?: number;
+  tauViscS?: number;
 }): string[] {
   const r: string[] = [];
   for (const [k, v] of Object.entries(p)) if (typeof v !== 'number' || !Number.isFinite(v)) r.push(`${k}: no numérico`);
@@ -245,7 +247,11 @@ export function validatePatientParams(p: {
   if (p.crs < 1e-4 || p.crs > 1) r.push('Crs fuera de 0.1–1000 mL/cmH2O');
   if (p.rInsp < 0.1 || p.rInsp > 1000) r.push('Rinsp fuera de 0.1–1000 cmH2O·s/L');
   if (p.rExp < 0.1 || p.rExp > 1000) r.push('Rexp fuera de 0.1–1000 cmH2O·s/L');
-  if (p.r2 < 0) r.push('R2 negativo');
+  if (p.r2 < 0 || p.r2 > 50) r.push('R2 (Rohrer) fuera de 0–50 cmH2O/(L/s)²');
+  if (p.eVisc !== undefined && (!Number.isFinite(p.eVisc) || p.eVisc < 0 || p.eVisc > 40))
+    r.push('Elastancia viscoelástica fuera de 0–40 cmH2O/L');
+  if (p.tauViscS !== undefined && (!Number.isFinite(p.tauViscS) || p.tauViscS < 0.05 || p.tauViscS > 10))
+    r.push('Constante viscoelástica fuera de 0.05–10 s');
   if (Math.min(p.rInsp, p.rExp) * p.crs < 1e-3) r.push('tau = R·C menor que 1 ms');
   return r;
 }

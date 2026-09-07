@@ -1,8 +1,19 @@
 import type { PatientParams } from '../domain/types';
 
+/** Constante de tiempo viscoelástica por omisión (s) cuando se activa E2 sin declararla. */
+export const DEFAULT_TAU_VISC_S = 1.2;
+
 /**
- * Modelo mecánico lineal de un compartimento (P · dossier §12):
- *   Paw + Pmus = P0 + V/Crs + R(Q)·Q,   Q = dV/dt,   R(Q) = R1 + R2·|Q|
+ * Modelo mecánico del sistema respiratorio (P · dossier §12):
+ *   Paw + Pmus = P0 + Pel(V, Vve) + R(Q)·Q,   Q = dV/dt,   R(Q) = R1 + R2·|Q|
+ *
+ * Elástico: un compartimento estático (Crs) más un cuerpo de Maxwell opcional (E2 en serie con un amortiguador),
+ * el modelo clásico de relajación de esfuerzo (Mount; Bates; D'Angelo):
+ *   Pel = P0 + V/Crs + E2·(V − Vve),    dVve/dt = (V − Vve)/tauVisc
+ * Con E2 = 0 se reduce exactamente al compartimento único. Con E2 > 0, tras ocluir la presión cae de inmediato
+ * lo resistivo (Ppico → P1) y luego decae con tauVisc hasta la meseta estática P2 = P0 + V/Crs.
+ * Resistivo: término de Rohrer R2·|Q| sobre la resistencia lineal, distinta en inspiración y espiración.
+ *
  * V es el volumen ABSOLUTO sobre el volumen de relajación (V = 0 cuando Pel = P0).
  * No se reinicia al cambiar PEEP, al cambiar de vista ni al empezar una maniobra.
  */
@@ -10,14 +21,47 @@ export class PatientModel {
   params: PatientParams;
   /** Volumen absoluto sobre relajación (L). */
   v: number;
+  /** Volumen que ya atravesó el amortiguador viscoelástico (L). Sin E2 sigue pegado a `v`. */
+  vVisc: number;
 
   constructor(params: PatientParams, initialV = 0) {
     this.params = { ...params };
     this.v = initialV;
+    this.vVisc = initialV; // arranca relajado: Pel(0) = P0
   }
 
-  /** Presión elástica del sistema respiratorio (cmH2O). */
-  pel(v: number = this.v): number {
+  private get e2(): number {
+    const e = this.params.eVisc ?? 0;
+    return Number.isFinite(e) && e > 0 ? e : 0;
+  }
+  private get tauVisc(): number {
+    return Math.max(1e-3, this.params.tauViscS ?? DEFAULT_TAU_VISC_S);
+  }
+  /** Presión que aporta el elemento viscoelástico ahora mismo (cmH2O); 0 sin E2. */
+  get pVisc(): number {
+    return this.e2 * (this.v - this.vVisc);
+  }
+
+  /**
+   * Avanza el elemento viscoelástico un tramo con flujo constante. Solución exacta de dVve/dt = (V − Vve)/tau
+   * con V(t) = v0 + q·t, así que la relajación durante una oclusión (q = 0) es exacta a cualquier paso.
+   */
+  private relax(q: number, dt: number, v0: number): void {
+    if (this.e2 <= 0) {
+      this.vVisc = v0 + q * dt; // sin componente: si el instructor la activa después, no hay salto de presión
+      return;
+    }
+    const tau = this.tauVisc;
+    const k = Math.exp(-dt / tau);
+    this.vVisc = v0 + q * dt - q * tau + (this.vVisc - v0 + q * tau) * k;
+  }
+
+  /** Presión elástica del sistema respiratorio (cmH2O), estática más viscoelástica. */
+  pel(v: number = this.v, vVisc: number = this.vVisc): number {
+    return this.params.p0 + v / this.params.crs + this.e2 * (v - vVisc);
+  }
+  /** Presión elástica estática (sin el término viscoelástico): la meseta a la que tiende una oclusión larga. */
+  pelStatic(v: number = this.v): number {
     return this.params.p0 + v / this.params.crs;
   }
 
@@ -73,9 +117,12 @@ export class PatientModel {
     let t = t0;
     let q = 0;
     for (let i = 0; i < nSub; i++) {
+      const vSub = v;
       const k1 = f(paw, pmusAt(t), v);
       const k2 = f(paw, pmusAt(t + h), v + h * k1);
       v += (h / 2) * (k1 + k2);
+      // El elemento viscoelástico se congela dentro del sub-paso (tauVisc ≫ h) y avanza con el flujo medio del tramo.
+      this.relax((v - vSub) / h, h, vSub);
       t += h;
       q = k2;
     }
@@ -84,10 +131,12 @@ export class PatientModel {
     return { dV: v - v0, qEnd: f(paw, pmusAt(t), v) || q, clamped: qFree > maxFlow };
   }
 
-  /** Integra un tramo con flujo impuesto constante (exacto: V lineal en t). */
+  /** Integra un tramo con flujo impuesto constante (exacto: V lineal en t). Con q = 0 sólo relaja (oclusión). */
   integrateFlowSource(q: number, dt: number): { dV: number } {
+    const v0 = this.v;
     const dV = q * dt;
     this.v += dV;
+    this.relax(q, dt, v0);
     return { dV };
   }
 }

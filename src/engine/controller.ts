@@ -10,6 +10,8 @@ export const TRIGGER_REFRACTORY_S = 0.25;
 export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 /** Estabilidad máxima (máx−mín de Paw en la ventana evaluada) para meseta válida (P). */
 export const PLATEAU_STABILITY_CMH2O = 0.5;
+/** Excursión contra la tendencia que delata una perturbación (esfuerzo, fuga, oscilación) en cmH2O. */
+export const PLATEAU_REVERSAL_CMH2O = 0.3;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 /** Flujo de base espiratorio por omisión (D rango 2–10 L/min ficha 2014; valor inicial P). Ajustable en `settings.biasFlow`. */
@@ -33,7 +35,10 @@ export interface HoldOutcome {
   pawStart: number;
   pawEnd: number;
   /** máx−mín de Paw en la ventana evaluada (toda la ventana tras un arranque de min(0.5 s, 30 %)). */
+  /** Deriva (máx − mín) en el tramo final de la oclusión: mide si la presión ya se asentó. */
   stability: number;
+  /** Mayor excursión contra la tendencia en toda la ventana: 0 en una relajación monótona, alta con esfuerzo. */
+  reversal: number;
   pmaxHit: boolean;
   cancelled: boolean;
   /** Motivo de la cancelación (usuario o paso a espera). */
@@ -117,6 +122,8 @@ export class VcController {
   private breathSeq = 0;
   private breath: BreathAccum | null = null;
   private holdRequest: HoldRequest | null = null;
+  /** Última Pva de una espiración SIN ocluir: es la PEEPe de referencia de la respiración siguiente. */
+  private lastExpPaw: number | null = null;
   private hold: HoldRun | null = null;
   private manualRequested = false;
   private events: ControllerEvent[] = [];
@@ -198,6 +205,7 @@ export class VcController {
   }
 
   startVentilation(): void {
+    this.lastExpPaw = null;
     if (this.phase !== 'standby') return;
     this.startBreath('mandatory');
   }
@@ -408,6 +416,7 @@ export class VcController {
       case 'holdInsp':
       case 'holdExp': {
         this.q = 0;
+        p.integrateFlowSource(0, h); // oclusión: el volumen no cambia pero el elemento viscoelástico relaja
         this.paw = p.pel() - this.pmusAt(this.simT + h);
         if (this.phase === 'inspPause' && this.breath) this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
         if (this.hold) {
@@ -427,6 +436,7 @@ export class VcController {
         if (this.breath) this.breath.vtExp += Math.max(0, -dV);
         this.q = qEnd;
         this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) + rValve * qEnd : peep - rValve * qEnd;
+        this.lastExpPaw = this.paw;
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
           this.manualRequested = false;
@@ -542,13 +552,18 @@ export class VcController {
       b.pplatReason = 'pauseTooShort';
       return;
     }
-    const stab = stabilityOf(b.pauseSamples, tPause);
-    if (stab === null) {
+    const q = plateauQuality(b.pauseSamples, tPause);
+    if (q === null) {
       b.pplatCycle = null;
       b.pplatReason = 'insufficientSamples';
       return;
     }
-    if (stab > PLATEAU_STABILITY_CMH2O) {
+    if (q.reversal > PLATEAU_REVERSAL_CMH2O) {
+      b.pplatCycle = null;
+      b.pplatReason = 'disturbed';
+      return;
+    }
+    if (q.drift > PLATEAU_STABILITY_CMH2O) {
       b.pplatCycle = null;
       b.pplatReason = 'unstable';
       return;
@@ -588,7 +603,8 @@ export class VcController {
       requestedDurationS: hold.req.durationS,
       pawStart: hold.pawStart,
       pawEnd: this.paw,
-      stability: stabilityOf(hold.samples, this.simT - hold.tStart) ?? Number.POSITIVE_INFINITY,
+      stability: plateauQuality(hold.samples, this.simT - hold.tStart)?.drift ?? Number.POSITIVE_INFINITY,
+      reversal: plateauQuality(hold.samples, this.simT - hold.tStart)?.reversal ?? Number.POSITIVE_INFINITY,
       pmaxHit: hold.pmaxHit,
       cancelled,
       cancelReason,
@@ -616,7 +632,9 @@ export class VcController {
       type,
       startSimT: this.simT,
       vStart: this.patient.v,
-      pawStart: this.paw,
+      // La PEEPe de la respiración se toma de la espiración sin ocluir: si acaba de terminar un bloqueo espiratorio,
+      // `this.paw` todavía es la presión de la oclusión (PEEP total) y contaminaría el ΔP y la Cstat.
+      pawStart: this.lastExpPaw ?? this.paw,
       ppeak: -Infinity,
       pawIntegral: 0,
       vtInsp: 0,
@@ -668,16 +686,32 @@ export class VcController {
  * Estabilidad de meseta (P): máx−mín de Paw en toda la ventana tras un arranque de min(0.5 s, 30 % de la ventana),
  * para que un esfuerzo o una fuga en cualquier punto del bloqueo invaliden el resultado (PRC-02).
  */
-export function stabilityOf(samples: { t: number; paw: number }[], windowS: number): number | null {
+export function plateauQuality(samples: { t: number; paw: number }[], windowS: number): { drift: number; reversal: number } | null {
   if (samples.length < 2) return null;
   const tFrom = Math.min(0.5, windowS * 0.3);
-  const tail = samples.filter((s) => s.t >= tFrom - 1e-9);
-  if (tail.length < 2) return null;
+  const win = samples.filter((s) => s.t >= tFrom - 1e-9);
+  if (win.length < 2) return null;
+  // Deriva: sólo el tramo final. Una relajación de esfuerzo todavía cae al principio de la oclusión y eso no la invalida;
+  // lo que importa es si la presión ya se asentó cuando se lee la meseta.
+  const tTail = (win[win.length - 1] as { t: number }).t - Math.max(0.5, windowS * 0.25);
+  const tail = win.filter((s) => s.t >= tTail - 1e-9);
   let mn = Infinity,
     mx = -Infinity;
-  for (const s of tail) {
+  for (const s of tail.length >= 2 ? tail : win) {
     mn = Math.min(mn, s.paw);
     mx = Math.max(mx, s.paw);
   }
-  return mx - mn;
+  // Excursión contra la tendencia: una relajación (monótona hacia abajo) o un llenado de PEEP total (monótono hacia
+  // arriba) dan 0; un esfuerzo, una fuga o una oscilación mueven la presión en ambos sentidos y dan un valor alto.
+  let runMin = Infinity,
+    runMax = -Infinity,
+    maxRise = 0,
+    maxFall = 0;
+  for (const s of win) {
+    runMin = Math.min(runMin, s.paw);
+    runMax = Math.max(runMax, s.paw);
+    maxRise = Math.max(maxRise, s.paw - runMin);
+    maxFall = Math.max(maxFall, runMax - s.paw);
+  }
+  return { drift: mx - mn, reversal: Math.min(maxRise, maxFall) };
 }

@@ -64,6 +64,8 @@ export interface LiveSignals {
 export interface Truth {
   vAbsL: number;
   pel: number;
+  /** Aporte del elemento viscoelástico a la presión elástica (cmH2O); 0 sin E2. */
+  pVisc: number;
   pmus: number;
   /** PEEP intrínseca verdadera al fin de la última espiración: Pel(V al inicio de la respiración en curso) − PEEP. */ peepiEndExp: number;
   patient: PatientParams;
@@ -423,8 +425,9 @@ export class Simulator {
       truth: {
         vAbsL: this.patient.v,
         pel: this.patient.pel(),
+        pVisc: this.patient.pVisc,
         pmus: this.effort.pmusAt(t / 1000),
-        peepiEndExp: Math.max(0, this.patient.pel(this.breathVStart) - this.controller.peepTarget),
+        peepiEndExp: Math.max(0, this.patient.pelStatic(this.breathVStart) - this.controller.peepTarget),
         patient: { ...this.patient.params },
         effort: { ...this.effort.params },
         sensors: { ...this.o2.params },
