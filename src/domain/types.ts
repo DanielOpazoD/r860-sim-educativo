@@ -140,6 +140,12 @@ export interface PatientParams {
   p0: CmH2O;
   /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */
   rExpValve?: CmH2OSecondsPerLiter;
+  /**
+   * Tiempo de apertura de la válvula espiratoria (ms). La válvula no pasa de cerrada a abierta de golpe: mientras se
+   * abre, su resistencia decae y la presión de la vía aérea baja desde la presión alveolar hasta la PEEP en lugar de
+   * saltar. 0 = válvula ideal instantánea (banco analítico).
+   */
+  expValveOpenMs?: number;
 }
 
 export interface EffortParams {

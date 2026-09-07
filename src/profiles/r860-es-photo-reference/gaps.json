@@ -342,6 +342,13 @@
       "policy": "P: por omisión hay una sola unidad. SC-17 usa 40 mL/cmH2O con R 8 y 20 mL/cmH2O con R 80. La segunda unidad es lineal (sin sigmoide, viscoelástico, Rohrer ni limitación al flujo, que actúan sobre la principal).",
       "status": "nueva (v0.4.3)",
       "blocks": []
+    },
+    {
+      "id": "U-42",
+      "question": "Tiempo real de apertura de la válvula espiratoria del R860 y forma de la caída de resistencia.",
+      "policy": "P: 40 ms con caída cuadrática de la resistencia desde la de válvula cerrada; 0 en el banco analítico. Dentro del rango habitual de 20–50 ms, no medido en el equipo.",
+      "status": "nueva (v0.4.4)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

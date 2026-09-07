@@ -16,6 +16,10 @@ export const PLATEAU_REVERSAL_CMH2O = 0.3;
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 /** Flujo de base espiratorio por omisión (D rango 2–10 L/min ficha 2014; valor inicial P). Ajustable en `settings.biasFlow`. */
 export const EXP_BIAS_FLOW_LPS = 2 / 60;
+/** Apertura de la válvula espiratoria por omisión (ms): dentro del rango habitual de 20–50 ms (P, U-42). */
+export const DEFAULT_EXP_VALVE_OPEN_MS = 40;
+/** Resistencia equivalente de la válvula cerrada (cmH2O·s/L): el flujo arranca casi en cero al abrirse. */
+const VALVE_CLOSED_R = 200;
 
 export type HoldKind = 'inspHold' | 'expHold';
 export interface HoldRequest {
@@ -349,7 +353,7 @@ export class VcController {
           }
         }
         const used = Math.max(0, Math.min(h, frac * h));
-        const { dV } = p.integrateFlowSource(qCmd, used);
+        const { dV } = p.integrateFlowSource(qCmd, used, this.pmusAt(this.simT));
         if (this.breath) this.breath.vtInsp += dV;
         this.q = qCmd;
         this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
@@ -416,7 +420,7 @@ export class VcController {
       case 'holdInsp':
       case 'holdExp': {
         this.q = 0;
-        p.integrateFlowSource(0, h); // oclusión: el volumen no cambia pero el elemento viscoelástico relaja
+        p.integrateFlowSource(0, h, this.pmusAt(this.simT)); // oclusión: el volumen total no cambia, pero el elemento viscoelástico relaja y el gas se redistribuye entre unidades
         this.paw = p.pel() - this.pmusAt(this.simT + h);
         if (this.phase === 'inspPause' && this.breath) this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
         if (this.hold) {
@@ -432,10 +436,33 @@ export class VcController {
         // La rama espiratoria + válvula añaden una resistencia en serie (D techo ≤ 6 cmH2O a 60 L/min; valor P): la Pva en la pieza en Y
         // queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
         const rValve = p.params.rExpValve ?? 0;
-        const { dV, qEnd, clamped } = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve);
+        const tOpen = Math.max(0, (p.params.expValveOpenMs ?? DEFAULT_EXP_VALVE_OPEN_MS) / 1000);
+        let dV = 0,
+          qEnd = 0,
+          clamped = false,
+          rNow = rValve;
+        if (this.tPhase < tOpen) {
+          // La válvula se abre progresivamente: su resistencia decae desde la de cerrada hasta la de la rama.
+          // El flujo arranca casi nulo y la Pva parte de la presión alveolar, en vez de saltar a la PEEP.
+          const nSub = Math.max(1, Math.ceil(h / 0.001));
+          const hs = h / nSub;
+          for (let i = 0; i < nSub; i++) {
+            const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
+            rNow = rValve + VALVE_CLOSED_R * u * u;
+            const r = p.integratePressureSource(peep, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow);
+            dV += r.dV;
+            qEnd = r.qEnd;
+            clamped = r.clamped;
+          }
+        } else {
+          const r = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve);
+          dV = r.dV;
+          qEnd = r.qEnd;
+          clamped = r.clamped;
+        }
         if (this.breath) this.breath.vtExp += Math.max(0, -dV);
         this.q = qEnd;
-        this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) + rValve * qEnd : peep - rValve * qEnd;
+        this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) + rNow * qEnd : peep - rNow * qEnd;
         this.lastExpPaw = this.paw;
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
