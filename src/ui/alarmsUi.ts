@@ -111,7 +111,7 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     ctx.dialog.open(
       'alarmSetup',
       'Límites de alarma',
-      `<div class="context-help-row"><span>Información sobre límites</span>${infoButton('procedure.alarms', 'help-alarm-limits')}</div>${infoPanel('procedure.alarms', 'help-alarm-limits')}<div class="alarm-edit-grid"><b>Parámetro</b><b>Bajo</b><b>Alto</b>${rows.map(([label, u, lo, hi]) => `<label>${label}<small>${u}</small></label>${cell(lo, label, 'bajo')}${cell(hi, label, 'alto')}`).join('')}</div><p class="settings-annotation">Vacío = Off (la alarma no se evalúa). Pmáx se ajusta en la tecla rápida y termina la inspiración.</p><div id="limits-error" class="mode-error" role="status"></div>`,
+      `<div class="context-help-row"><span>Información sobre límites</span>${infoButton('procedure.alarms', 'help-alarm-limits')}</div>${infoPanel('procedure.alarms', 'help-alarm-limits')}<div class="alarm-edit-grid"><b>Parámetro</b><b>Bajo</b><b>Alto</b>${rows.map(([label, u, lo, hi]) => `<label>${label} <small>${u}</small></label>${cell(lo, label, 'bajo')}${cell(hi, label, 'alto')}`).join('')}</div><p class="settings-annotation">Vacío = Off (la alarma no se evalúa). Pmáx se ajusta en la tecla rápida y termina la inspiración.</p><div id="limits-error" class="mode-error" role="status"></div>`,
       btn('Ver alarmas', 'alarms', 'secondary-button') + btn('Confirmar límites', 'confirmLimits'),
     );
   }

@@ -5,6 +5,7 @@ import type { MetricSample } from '../../src/domain/types';
 import { EditController } from '../../src/app/uiState';
 import { VC_ADULT_CROSS_LIMITS, VC_ADULT_RULES } from '../../src/profiles/r860-es-photo-reference/settings';
 import { exportSession } from '../../src/history/session';
+import { getBounds } from '../../src/render/plots';
 import { clock, ieText, unitText } from '../../src/ui/format';
 import { humanReason } from '../../src/ui/humanize';
 import { BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
@@ -177,5 +178,34 @@ describe('Formatos de pantalla y lenguaje del alumno', () => {
     expect(humanReason('fin:timer')).toBe('terminó por tiempo');
     expect(humanReason(null)).toBe('');
     expect(humanReason('')).toBe('');
+  });
+});
+
+describe('Los ejes de las curvas tienen que caber los datos', () => {
+  const traza = (vols: number[]): [number, number, number, number, number, number][] => vols.map((v, i) => [i * 0.02, 10, 30, v, 0, 0]);
+
+  it('el suelo del eje de volumen baja hasta el mínimo real', () => {
+    // La traza es el volumen desde el inicio de la respiración, así que baja de cero cuando el pulmón devuelve gas
+    // que no recibió en ese ciclo (apilamiento, espiración activa). El suelo era un 10 % fijo de la escala superior,
+    // de modo que en el escenario de doble disparo la curva llegaba a −516 mL contra un suelo de −60 y se recortaba.
+    const b = getBounds(traza([0, 500, 250, -516, -300, 0]), 5, 500);
+    expect(b.volume).toBeGreaterThanOrEqual(500);
+    expect(b.minVolume).toBeLessThanOrEqual(-516);
+  });
+
+  it('sin excursión negativa el suelo se queda en la holgura de siempre', () => {
+    const b = getBounds(traza([0, 250, 500, 250, 0]), 5, 500);
+    expect(b.minVolume).toBeCloseTo(-b.volume * 0.1, 9);
+  });
+
+  it('los demás ejes siguen cabiendo sus extremos', () => {
+    const pts: [number, number, number, number, number, number][] = [
+      [0, 45, 150, 100, 0, 0],
+      [0.02, -8, -190, 0, 0, 0],
+    ];
+    const b = getBounds(pts, 5, 500);
+    expect(b.pressure).toBeGreaterThanOrEqual(45);
+    expect(b.minPressure).toBeLessThanOrEqual(-8);
+    expect(b.flow).toBeGreaterThanOrEqual(190);
   });
 });

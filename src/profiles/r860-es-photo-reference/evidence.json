@@ -850,6 +850,17 @@
       "tests": [
         "tests/unit/cobertura.test.ts"
       ]
+    },
+    {
+      "id": "E-066",
+      "claim": "El eje de volumen de las curvas cabe el mínimo real de la traza, no un 10 % fijo de la escala superior, y muestra su marca cuando el suelo es negativo. La traza es el volumen desde el inicio de la respiración, así que baja de cero cuando el pulmón devuelve gas que no recibió en ese ciclo; con el suelo fijo, la señal más característica del apilamiento —la curva hundiéndose bajo la línea de base— se dibujaba recortada como una barra plana (−516 mL de excursión contra un suelo de −60).",
+      "status": "D (la excursión negativa es una consecuencia de la definición de la traza, verificada en SC-18)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/render/plots.ts (getBounds, minVolume)",
+      "tests": [
+        "tests/unit/cobertura.test.ts"
+      ]
     }
   ]
 }

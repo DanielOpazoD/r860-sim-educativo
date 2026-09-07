@@ -346,7 +346,7 @@
     {
       "id": "U-42",
       "question": "Tiempo real de apertura de la válvula espiratoria del R860 y forma de la caída de resistencia.",
-      "policy": "P: 40 ms con caída cuadrática de la resistencia desde la de válvula cerrada; 0 en el banco analítico. Dentro del rango habitual de 20–50 ms, no medido en el equipo.",
+      "policy": "P: 40 ms con caída cuadrática de la resistencia desde la de válvula cerrada; 0 en el banco analítico. Dentro del rango habitual de 20–50 ms, no medido en el equipo. Medido el 07-09-2026: con rExpValve 0 la Pva durante la espiración es exactamente la PEEP, de modo que la rama espiratoria del bucle presión-volumen es una vertical perfecta y los picos espiratorios salen altos (−149 L/min en SC-17; con rExpValve 2 bajan a −107 y con 3 a −94). Activarlo por omisión rompe SC-18 —VTe 0 y PEEP intrínseca 10,5 cmH2O—, así que exige reajustar ese escenario antes: no es una corrección menor.",
       "status": "nueva (v0.4.4)",
       "blocks": []
     },
