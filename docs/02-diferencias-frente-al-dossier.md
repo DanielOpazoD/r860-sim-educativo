@@ -132,3 +132,9 @@ Una tercera lectura adversarial de contexto limpio revisó el motor de PC, los b
 ## v0.3.7 · Pmáx como único techo visible (06-09-2026)
 
 - Por decisión del usuario, **Pmáx es el techo de presión que el alumno ve y ajusta**; Plimit pasa a «Avanzado» en el menú de modo y por omisión queda en su máximo (100 cmH₂O), donde no actúa. Sólo el escenario «Mayor resistencia inspiratoria» lo baja a 30 para enseñar la diferencia entre limitar y terminar la inspiración. El aviso «Plimit por encima de Pmáx» no se muestra cuando Plimit está en su máximo. La tecla rápida de Plimit añadida en el PR #7 se retira.
+
+## v0.3.8 · lectura de volumen con dispersión y manómetro amortiguado (07-09-2026)
+
+- **El volumen mostrado deja de ser el volumen verdadero** (E-042, U-36): el sensor de flujo lee cada respiración con una ganancia 1 ± 2,5 % (uniforme, determinista a partir de la semilla), así que VTesp y VMesp cambian entre ciclos alrededor del VT programado, como en un equipo real. La envolvente está documentada en la ficha 2014 (lecturas de volumen ±10 % o ±10 mL; administración ±10 % del ajuste); la dispersión típica es P. VTi y VTe comparten la ganancia, de modo que la fuga mostrada sigue siendo nula, y las alarmas de volumen comparan el valor medido, como el equipo. El volumen del modelo (`BreathRecord.vtExp`) y las referencias analíticas del banco no cambian: el banco corre con el ruido apagado.
+- **La columna de presión desciende amortiguada** (E-043): sube siguiendo la señal y baja con una constante de 0,11 s, para que el final de la inspiración se vea como un movimiento y no como un salto. Es amortiguación de presentación y sólo afecta a la columna: las curvas, las métricas y las alarmas usan la señal instantánea.
+- **Ajuste fino visual**: la barra de señal se alinea con el ancho del equipo, el bisel inferior cede 19 px de alto al monitor y los selectores de la barra son más bajos.

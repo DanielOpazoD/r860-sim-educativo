@@ -149,6 +149,11 @@ export function validateEffort(e: EffortParams): string[] {
 
 export function validateSensors(sp: SensorParams): string[] {
   const r: string[] = [];
+  if (
+    sp.flowNoiseFraction !== undefined &&
+    (!Number.isFinite(sp.flowNoiseFraction) || sp.flowNoiseFraction < 0 || sp.flowNoiseFraction > 0.1)
+  )
+    r.push('sensores: variabilidad del volumen fuera de 0–10 %');
   if (![sp.fio2TauS, sp.fio2Bias].every((x) => typeof x === 'number' && Number.isFinite(x)))
     return ['sensores: tau y sesgo de FiO2 deben ser números finitos'];
   if (sp.fio2TauS < 0.1 || sp.fio2TauS > 600) r.push('sensores: tau de FiO2 fuera de 0.1–600 s');

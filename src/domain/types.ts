@@ -125,6 +125,12 @@ export interface SensorParams {
   fio2TauS: number;
   /** Sesgo aditivo del sensor de O2 (fracción). Escenario SC-12. */
   fio2Bias: Fraction;
+  /**
+   * Variabilidad del canal de volumen respiración a respiración (fracción, distribución uniforme ±x).
+   * Ausente = valor por omisión del perfil. 0 = canal ideal (banco analítico).
+   * D: la ficha 2014 acota lecturas de volumen a ±10 % o ±10 mL y la administración a ±10 % del ajuste; el valor típico ciclo a ciclo es P.
+   */
+  flowNoiseFraction?: Fraction;
 }
 
 export type BreathType = 'mandatory' | 'assisted' | 'manual' | 'spontaneous';
@@ -146,6 +152,9 @@ export interface BreathRecord {
   pmean: CmH2O;
   vtInsp: Liters;
   vtExp: Liters;
+  /** Lo que mide el sensor de flujo del ventilador (VTi/VTe de pantalla): volumen verdadero por la ganancia del sensor de esa respiración. */
+  vtInspMeasured?: Liters;
+  vtExpMeasured?: Liters;
   plimitReached: boolean;
   pmaxReached: boolean;
   /** Estado verdadero al inicio (docente): volumen absoluto sobre relajación. */

@@ -165,8 +165,10 @@ export class AlarmEngine {
     const L = this.limits;
     if (!record.pmaxReached) this.resolve('pmax', simTimeMs);
     this.check('ppeakLow', simTimeMs, record.ppeak, L.ppeakLow, 'low', Math.round(record.ppeak));
-    this.check('vteLow', simTimeMs, record.vtExp, L.vteLow, 'low', Math.round(litersToMl(record.vtExp)));
-    this.check('vteHigh', simTimeMs, record.vtExp, L.vteHigh, 'high', Math.round(litersToMl(record.vtExp)));
+    // Las alarmas de volumen comparan el valor MEDIDO, como el equipo real, no el volumen verdadero del modelo.
+    const vteM = record.vtExpMeasured ?? record.vtExp;
+    this.check('vteLow', simTimeMs, vteM, L.vteLow, 'low', Math.round(litersToMl(vteM)));
+    this.check('vteHigh', simTimeMs, vteM, L.vteHigh, 'high', Math.round(litersToMl(vteM)));
     this.check('peepeLow', simTimeMs, record.peepe, L.peepeLow, 'low', Math.round(record.peepe));
     this.check('peepeHigh', simTimeMs, record.peepe, L.peepeHigh, 'high', Math.round(record.peepe));
     const mve = metrics.mve?.quality === 'valid' ? metrics.mve.value : null;

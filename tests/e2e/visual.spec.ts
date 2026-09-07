@@ -43,7 +43,9 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     expect(f.breathCount).toBe(3);
     await expect(page.locator('#numeric-grid [data-metric="ppeak"] .numeric-value')).toHaveText('20');
     await expect(page.locator('#numeric-grid [data-metric="peepe"] .numeric-value')).toHaveText('5');
-    await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('500');
+    // El VTe mostrado es la lectura del sensor de flujo: varía ±2,5 % ciclo a ciclo alrededor del VT programado (SEN-01).
+    const vteMostrado = Number(await page.locator('#numeric-grid [data-metric="vte"] .numeric-value').textContent());
+    expect(Math.abs(vteMostrado - 500)).toBeLessThanOrEqual(15);
     await expect(page.locator('#numeric-grid [data-metric="rr"] .numeric-value')).toHaveText('15');
     await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('—');
     await expect(page.locator('#phase-status')).toContainText('PAUSADA');

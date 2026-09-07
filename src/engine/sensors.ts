@@ -1,5 +1,39 @@
 import type { SensorParams } from '../domain/types';
 
+/** Variabilidad por omisión del canal de volumen (P: ±2,5 % ciclo a ciclo, dentro de la envolvente D de ±10 %). */
+export const DEFAULT_FLOW_NOISE = 0.025;
+
+/**
+ * Generador pseudoaleatorio determinista (mulberry32). El motor no puede usar Math.random: la reproducción de
+ * una sesión debe dar exactamente las mismas lecturas, así que el ruido de sensores nace de la semilla del escenario.
+ */
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Sensor de flujo: el volumen verdadero del modelo y el volumen que el ventilador muestra no son el mismo dato.
+ * Cada respiración se lee con una ganancia 1 ± x (uniforme), como la dispersión ciclo a ciclo de un sensor real.
+ */
+export class FlowSensor {
+  private next: () => number;
+  constructor(seed: number) {
+    this.next = mulberry32(seed);
+  }
+  /** Ganancia del canal de volumen para la respiración que termina. */
+  gain(fraction: number | undefined): number {
+    const n = fraction ?? DEFAULT_FLOW_NOISE;
+    const u = this.next(); // se consume siempre, para que la secuencia no dependa del ajuste
+    return n <= 0 ? 1 : 1 + (u * 2 - 1) * n;
+  }
+}
+
 /**
  * Capa de sensores virtuales (P): la mezcla objetivo, la mezcla entregada y el sensor de O2 son estados distintos.
  * El sensor sigue a la mezcla con retardo de primer orden y un sesgo configurable por el instructor (SC-12).

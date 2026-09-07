@@ -91,10 +91,12 @@ export class MetricEngine {
     out.ppeak = sample('ppeak', last?.ppeak ?? null, 'cmH2O', base);
     out.peepe = sample('peepe', last?.peepe ?? null, 'cmH2O', base);
     out.pmean = sample('pmean', last?.pmean ?? null, 'cmH2O', base);
-    out.vte = sample('vte', last?.vtExp ?? null, 'L', base);
-    out.vti = sample('vti', last?.vtInsp ?? null, 'L', base);
+    // Canales mostrados: lo que mide el sensor de flujo (con su ganancia por ciclo), no el volumen verdadero del modelo.
+    out.vte = sample('vte', last ? (last.vtExpMeasured ?? last.vtExp) : null, 'L', base);
+    out.vti = sample('vti', last ? (last.vtInspMeasured ?? last.vtInsp) : null, 'L', base);
     if (last) {
-      const leak = last.vtInsp > 1e-6 ? Math.max(0, (last.vtInsp - last.vtExp) / last.vtInsp) : null;
+      const vtiM = last.vtInspMeasured ?? last.vtInsp;
+      const leak = vtiM > 1e-6 ? Math.max(0, (vtiM - (last.vtExpMeasured ?? last.vtExp)) / vtiM) : null;
       out.leakPct = sample('leakPct', leak, 'fraction', { ...base, source: 'derivedModel' });
       if (last.pplatCycle !== null) out.pplatCycle = sample('pplatCycle', last.pplatCycle, 'cmH2O', base);
       else
@@ -111,7 +113,7 @@ export class MetricEngine {
     const win = this.records.slice(-BREATH_WINDOW);
     const sumPeriodMs = win.reduce((a, r) => a + (r.endSimTimeMs - r.startSimTimeMs), 0);
     if (win.length >= 2 && sumPeriodMs > 0) {
-      const sumVte = win.reduce((a, r) => a + r.vtExp, 0);
+      const sumVte = win.reduce((a, r) => a + (r.vtExpMeasured ?? r.vtExp), 0);
       const rr = (win.length * S_PER_MIN * MS_PER_S) / sumPeriodMs;
       const mve = (sumVte * S_PER_MIN * MS_PER_S) / sumPeriodMs;
       const wq: Quality = stale ? 'stale' : 'valid';

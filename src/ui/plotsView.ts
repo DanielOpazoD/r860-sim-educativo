@@ -10,6 +10,8 @@ import { clock } from './format';
 
 export interface PlotsView {
   readonly points: Point[];
+  /** Valor que muestra la columna de presión (con la amortiguación de presentación). */
+  readonly gaugePaw: number | null;
   readonly frozen: boolean;
   /** Añade las muestras del cuadro a la traza (submuestreo 1/5) y reinicia si el tiempo retrocedió. */
   ingest(prev: EngineFrame | null, fr: EngineFrame): void;
@@ -42,6 +44,23 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     loopReference: Point[] | null = null;
   let dirty = true,
     lastPlot = 0;
+  // Amortiguación de presentación del manómetro (P): la columna sigue la presión al subir y desciende con una
+  // constante de 0,11 s, para que la caída al abrir la válvula se vea como un movimiento y no como un salto.
+  // Sólo afecta a la columna: las curvas, las métricas y las alarmas usan la señal sin amortiguar.
+  const GAUGE_FALL_TAU_S = 0.11;
+  let gaugePaw: number | null = null,
+    gaugeAt = 0,
+    gaugeAnimating = false;
+
+  function gaugeValue(target: number, live: boolean): number {
+    const now = performance.now();
+    const dt = Math.min(0.25, Math.max(0, (now - gaugeAt) / 1000));
+    gaugeAt = now;
+    if (gaugePaw === null || !live || target >= gaugePaw) gaugePaw = target;
+    else gaugePaw += (1 - Math.exp(-dt / GAUGE_FALL_TAU_S)) * (target - gaugePaw);
+    gaugeAnimating = Math.abs(target - gaugePaw) > 0.05;
+    return gaugePaw;
+  }
 
   function activeTrace(): { pts: Point[]; end: number } {
     return { pts: frozen ? frozenPoints : points, end: frozen ? reviewEnd : ctx.simS() };
@@ -67,7 +86,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         ctx.simS(),
       );
     drawGauge($<HTMLCanvasElement>('#gauge-canvas'), {
-      paw: fr.live.paw,
+      paw: gaugeValue(fr.live.paw, ctx.running && !frozen && fr.ventilation === 'ventilating'),
       pmax: fr.settings.pmax,
       ppeak: fr.metrics.ppeak?.value ?? fr.live.ppeakCurrent,
       peep,
@@ -78,7 +97,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     if (deps.teacherVisible()) drawMuscle($<HTMLCanvasElement>('#muscle-canvas'), points, ctx.simS());
   }
   function tick(now: number): void {
-    if (ctx.frame && !document.hidden && now - lastPlot > 32 && dirty) {
+    if (ctx.frame && !document.hidden && now - lastPlot > 32 && (dirty || gaugeAnimating)) {
       lastPlot = now;
       renderPlots();
       dirty = false;
@@ -120,6 +139,9 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     dirty = true;
   }
   return {
+    get gaugePaw() {
+      return gaugePaw;
+    },
     get points() {
       return points;
     },
@@ -150,6 +172,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       dirty = true;
     },
     reset() {
+      gaugePaw = null;
       points = [];
       loopReference = null;
     },
