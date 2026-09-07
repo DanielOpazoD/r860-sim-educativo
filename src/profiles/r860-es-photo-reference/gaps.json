@@ -356,6 +356,13 @@
       "policy": "P: el regulador de PEEP es ideal hasta el flujo de base, así que la huella de un esfuerzo inefectivo aparece en el flujo (muesca) pero no en la presión. Declarado como límite y fijado por prueba, en vez de inventar una constante de control.",
       "status": "nueva (v0.4.5)",
       "blocks": []
+    },
+    {
+      "id": "U-44",
+      "question": "Cuánto tarda el equipo real en presurizar el circuito a PEEP al salir de espera.",
+      "policy": "P: instantáneo, para que la primera respiración tenga una PEEP de referencia coherente con el estado del pulmón. Sin ello la primera Cstat salía falsa.",
+      "status": "nueva (v0.4.6)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

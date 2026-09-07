@@ -117,8 +117,9 @@ export interface EngineFrame {
 }
 
 /**
- * Simulador determinista (P · dossier §22): paso fijo, tiempo simulado, sin aleatoriedad en esta etapa (la semilla se
- * reserva para ruido futuro). Ningún componente de pantalla toca el estado físico; los comandos pasan por `command()`.
+ * Simulador determinista (P · dossier §22): paso fijo y tiempo simulado. La única aleatoriedad es la dispersión del
+ * sensor de flujo, que nace de `init.seed` con un generador propio, así que reproducir una sesión da las mismas
+ * lecturas. Ningún componente de pantalla toca el estado físico; los comandos pasan por `command()`.
  */
 export class Simulator {
   readonly init: SimulatorInit;
@@ -141,6 +142,8 @@ export class Simulator {
   private ventilation: VentilationState = 'standby';
   private lastMetrics: Record<string, MetricSample> = {};
   private samplesSinceFrame = 0;
+  /** El modelo dejó de dar números finitos: se registra una vez y las métricas dejan de publicarse como válidas. */
+  private diverged = false;
   private breathVStart = 0;
   private breathV2Start = 0;
   /** Pausa de audio (D 120 s) como estado del motor para que el replay la reproduzca; el audio sólo la lee. */
@@ -373,7 +376,12 @@ export class Simulator {
     this.alarms.onSensor(this.clock.simTimeMs, this.ventilation === 'ventilating' ? this.o2.measured : null);
     this.procedures.step(this.clock.simTimeMs);
     this.drainController();
-    const vol = this.patient.v - this.breathVStart;
+    // Vigilancia de divergencia: si el modelo deja de dar números finitos hay que decirlo, no seguir publicando.
+    if (!this.diverged && !(Number.isFinite(this.patient.v) && Number.isFinite(this.patient.vVisc) && Number.isFinite(this.patient.v2))) {
+      this.diverged = true;
+      this.logEvent('discontinuity', 'system', { reason: 'el modelo dejó de dar números finitos', simTimeMs: this.clock.simTimeMs });
+    }
+    const vol = this.patient.vTotal - this.breathVStart - this.breathV2Start;
     this.ring.push(
       this.clock.simTimeMs,
       this.controller.paw,
@@ -407,7 +415,7 @@ export class Simulator {
       live: {
         paw: this.controller.paw,
         flowLps: this.controller.q,
-        volTidalL: this.patient.v - this.breathVStart,
+        volTidalL: this.patient.vTotal - this.breathVStart - this.breathV2Start,
         ppeakCurrent: this.controller.currentPpeak,
         phase: this.controller.phase,
         /** La última respiración completa terminó limitada por Plimit (indicador junto a Ppico; no es alarma, E-036). */

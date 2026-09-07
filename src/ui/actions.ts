@@ -396,6 +396,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         ctx.toast(`Sesión importada y reproducida en pausa. ${r.warnings?.join(' ') ?? ''} Pulsa Reanudar.`);
       } else ctx.toast(`Rechazada: ${r.errors?.join(' · ')}`, true);
     });
+    $('#truth-details').addEventListener('toggle', () => {
+      if ($<HTMLDetailsElement>('#truth-details').open) ctx.lesson.flags.truthOpen = true;
+    });
     $('#trim-knob').addEventListener(
       'wheel',
       (e) => {

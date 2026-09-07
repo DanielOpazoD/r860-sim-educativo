@@ -2,7 +2,7 @@
 
 Simulador web de entrenamiento en ventilación mecánica inspirado en la interfaz del GE HealthCare CARESCAPE R860. **Simulación educativa, no uso clínico**: no controla equipos, no reproduce firmware y no cuenta con aval del fabricante. Los valores de las fotografías y de los bancos no son ajustes clínicos sugeridos. Versión 0.3.x (`package.json`).
 
-- **Motor**: determinista, en Web Worker, paso fijo de 4 ms con sub-pasos exactos en eventos; pulmón lineal de un compartimento con volumen absoluto continuo; A/C VC y A/C PC adulto con Plimit/Pmáx, rampa de presión y tope de flujo del actuador; bloqueos con resultado fechado y calidad, espera, alarmas con estados separados, ↑O₂ con restauración idempotente, replay reproducible. 99 pruebas Vitest (banco BM-01…08 y PC, físicas, alarmas, procedimientos, sesión, fronteras, regresiones de tres revisiones adversariales) y 25 pruebas Playwright × 3 proyectos (75 ejecuciones; la móvil sólo en Pixel 7).
+- **Motor**: determinista, en Web Worker, paso fijo de 4 ms con sub-pasos exactos en eventos; pulmón con volumen absoluto continuo: un compartimento lineal por omisión y, como opciones del escenario, relajación viscoelástica, curva P-V sigmoidea, resistencia de Rohrer, limitación al flujo espiratorio y una segunda unidad alveolar en paralelo; A/C VC y A/C PC adulto con Plimit/Pmáx, rampa de presión y tope de flujo del actuador; bloqueos con resultado fechado y calidad, espera, alarmas con estados separados, ↑O₂ con restauración idempotente, replay reproducible. 200 pruebas Vitest (banco BM-01…08 y PC, físicas, alarmas, procedimientos, sesión, fronteras, regresiones de tres revisiones adversariales) y 29 pruebas Playwright × 3 proyectos (85 ejecuciones; la móvil sólo en Pixel 7).
 - **Interfaz (v0.3)**: sistema visual y de interacción derivado de **R860 Lab v1.1** (código MIT, ver `LICENSES/R860-LAB-MIT.txt`): carcasa con bisel, curvas con degradado, iconos vectoriales, editor de ajuste emergente con vista previa y deslizador que sólo recorre valores admitidos, panel de bloqueo, vistas de datos grandes (como P3), bucles P-V/F-V con referencia, tabla de mediciones con calidad y origen, tendencias, registro de eventos, congelar curvas, panel docente con pestañas (Paciente · Entrenar · Eventos), escenarios con objetivos, sesión JSON/CSV/PNG. La marca de simulación es discreta (franja inferior, firma del bisel, encabezado de diálogos y marca de agua de capturas).
 - **Evidencia**: cada regla lleva marca D (documentado) / O (observado) / P (propuesto) / U (no resuelto) en `src/profiles/r860-es-photo-reference/evidence.json` y `gaps.json`.
 
@@ -32,7 +32,7 @@ Capturas de validación con metadatos (viewport, hora, semilla, tiempo simulado)
 
 ## Parámetros de URL
 
-`?scenario=SC-01` (SC-01…SC-13, SC-13 en presión control; SC-P referencia fotográfica) · `fixture=P1|P3` (transcripción de foto, sin motor) · `t0=2026-08-18T21:04:05-04:00` · `seed=1` · `dt=4` · `speed=2` · `paused=1` · `autopause=12000` · `view=waves|basic|loops|data|trends|log` · `instructor=0` · `inline=1` · `editTimeout=1500` (sólo pruebas).
+`?scenario=SC-01` (SC-01…SC-18 (15 escenarios; la numeración salta los no implementados) y SC-P de referencia fotográfica) · `fixture=P1|P3` (transcripción de foto, sin motor) · `t0=2026-08-18T21:04:05-04:00` · `seed=1` · `dt=4` · `speed=2` · `paused=1` · `autopause=12000` · `view=waves|basic|loops|data|trends|log` · `instructor=0` · `inline=1` · `editTimeout=1500` (sólo pruebas).
 
 ## Atajos
 

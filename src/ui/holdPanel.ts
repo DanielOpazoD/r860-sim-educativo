@@ -119,6 +119,10 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
           : `No válida: ${humanReason(h.reason)} · ${wallDate(h.wallTimeMs ?? 0)}`;
     if (h && h.procedureId !== lastHoldToastId && (h.completedAtMs ?? 0) > holdOpenedAtMs) {
       lastHoldToastId = h.procedureId;
+      if (h.kind === 'inspHold' && h.quality === 'valid' && h.values.pplat?.value !== null && h.values.pplat?.value !== undefined) {
+        const previos = (ctx.lesson.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
+        ctx.lesson.flags.inspHolds = [...previos, { d: h.requestedDurationS ?? 0, p: h.values.pplat.value }];
+      }
       ctx.toast(
         h.quality === 'valid'
           ? `Bloqueo medido: ${insp ? 'Pplat' : 'PEEP total'} ${f(v1?.value ?? null, 0)} cmH₂O`

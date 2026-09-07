@@ -266,16 +266,16 @@ export const SCENARIOS: Scenario[] = [
       text: 'Este pulmón tiene dos unidades en paralelo: una rápida y una lenta. El vaciamiento ya no es una sola exponencial y, con el circuito ocluido, el gas sigue moviéndose de una a otra.',
       tasks: [
         { id: 'corto', text: 'Mide una meseta con un bloqueo inspiratorio de 2 s.', test: 'validInsp' },
-        { id: 'largo', text: 'Repite con 10 s y compara: la meseta baja más.', test: 'longHoldValid' },
-        { id: 'curva', text: 'Mira la cola del flujo espiratorio en la vista de curvas.', test: 'basic' },
+        { id: 'largo', text: 'Repite con 15 s: la meseta medida baja unos 2 cmH₂O.', test: 'plateauDropSeen' },
+        { id: 'modelo', text: 'Abre «Datos del modelo» y compara la compliance local con la de cada unidad.', test: 'truthOpen' },
       ],
     },
     question: '¿Por qué la meseta depende de cuánto dure la oclusión?',
     answer:
       'Porque con el circuito cerrado las dos unidades no están en equilibrio entre sí: el gas pasa de la que quedó a más presión a la que quedó a menos (pendelluft) hasta igualarlas. Mientras eso ocurre la presión de la vía aérea sigue bajando, así que una oclusión corta mide una meseta más alta que la verdadera.',
     description:
-      'Unidad rápida (40 mL/cmH₂O, R 8) en paralelo con una lenta (20 mL/cmH₂O, R 80): cola espiratoria lenta y meseta que depende de la oclusión.',
-    patient: { crs: 0.04, rInsp: 8, rExp: 8, r2: 0, p0: 0, second: { crs: 0.02, rInsp: 80, rExp: 80 } },
+      'Unidad rápida (35 mL/cmH₂O, R 5) en paralelo con una muy lenta (25 mL/cmH₂O, R 200): cola espiratoria lenta y meseta que baja unos 2 cmH₂O entre una oclusión de 2 s y otra de 15 s.',
+    patient: { crs: 0.035, rInsp: 5, rExp: 5, r2: 0, p0: 0, second: { crs: 0.025, rInsp: 200, rExp: 200 } },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 12, ie: 1 / 3, peep: 5, pmax: 45, plimit: 100, pausePct: 0 },
@@ -362,12 +362,13 @@ export const SCENARIOS: Scenario[] = [
       tasks: [
         { id: 'corto', text: 'Pide un bloqueo inspiratorio de 2 s y observa por qué no es válido.', test: 'shortHoldInvalid' },
         { id: 'largo', text: 'Repítelo con 5 s o más: ahora sí se asienta.', test: 'longHoldValid' },
-        { id: 'modelo', text: 'Abre «Datos del modelo» y mira la presión viscoelástica.', test: 'basic' },
+        { id: 'peeptot', text: 'Mide la PEEP total con un bloqueo espiratorio: la relajación también atrapa aire.', test: 'validExp' },
+        { id: 'modelo', text: 'Abre «Datos del modelo» y mira la presión viscoelástica.', test: 'truthOpen' },
       ],
     },
     question: '¿Por qué la Cstat de una oclusión corta parece menor que la real?',
     answer:
-      'Porque se divide el volumen por una meseta todavía alta: parte de esa presión es viscoelástica y aún no se disipó. Con la oclusión completa la meseta baja y la Cstat sube hasta su valor estático.',
+      'Por dos motivos que se suman. El volumen se divide por una meseta todavía alta, porque parte de esa presión es viscoelástica y aún no se disipó; y además la propia relajación atrapa aire, así que la PEEP que hay que restar no es la programada sino la total. Con la oclusión larga y la PEEP total medida con un bloqueo espiratorio, la Cstat vuelve a su valor estático.',
     description: 'Elastancia viscoelástica 20 cmH₂O/L con τ₂ 1,5 s: la oclusión muestra P1 y luego el descenso hasta P2.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, eVisc: 20, tauViscS: 1.5 },
     effort: passive,
