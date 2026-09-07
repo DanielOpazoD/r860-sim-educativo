@@ -172,7 +172,6 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       ctx.lesson.flags.referenceLoop = true;
       dirty = true;
       ctx.lesson.evaluate();
-      ctx.toast('Ciclo de referencia guardado para comparación.');
     },
     clearLoopReference() {
       loopReference = null;

@@ -65,10 +65,10 @@ export const powerHTML = (): string =>
   `<div class="info-box">Ejecución local en tu navegador. Sin conexión a un ventilador, red hospitalaria, USB ni puertos físicos.</div><p>Este icono conserva la referencia visual de alimentación. No simula baterías, consumo eléctrico ni autonomía.</p>`;
 
 export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabel: (mode: string) => string): string {
-  return `<p class="dialog-lead">Pulmones sintéticos y secuencias de práctica. Cargar uno inicia una sesión nueva; guarda la actual antes de reemplazarla.</p><div class="scenario-grid">${scenarios
+  return `<div class="scenario-grid">${scenarios
     .map(
       (s) =>
-        `<button class="scenario-card ${currentId === s.id ? 'selected' : ''}" data-scenario="${s.id}"><div><span>${esc(s.category ?? 'Escenario')}</span><small>Nivel ${s.level ?? 1}</small></div><h3>${esc(s.name)}</h3><p>${esc(s.description)}</p><footer>${modeLabel(String(s.settings?.mode ?? 'AC_VC'))} · C ${Math.round(s.patient.crs * 1000)} · R ${s.patient.rInsp}/${s.patient.rExp}</footer></button>`,
+        `<button class="scenario-card ${currentId === s.id ? 'selected' : ''}" data-scenario="${s.id}" title="${esc(s.description)}"><div><span>${esc(s.category ?? 'Escenario')}</span><small>Nivel ${s.level ?? 1}</small></div><h3>${esc(s.name)}</h3><footer>${modeLabel(String(s.settings?.mode ?? 'AC_VC'))} · C ${Math.round(s.patient.crs * 1000)} · R ${s.patient.rInsp}/${s.patient.rExp}</footer></button>`,
     )
     .join('')}</div>`;
 }

@@ -140,7 +140,8 @@ export class EngineHost {
       patient: { ...sc.patient },
       effort: { ...sc.effort },
       sensors: { ...sc.sensors },
-      settings: keepSettings && prev ? { ...prev.controller.settings } : { ...base.settings, ...(sc.settings ?? {}) },
+      // Los ajustes parten de los valores iniciales del perfil, no del escenario anterior: un escenario en VC no hereda el modo PC.
+      settings: keepSettings && prev ? { ...prev.controller.settings } : { ...profileFor(base).defaults.settings, ...(sc.settings ?? {}) },
       alarmLimits: { ...base.alarmLimits, ...(sc.alarmLimits ?? {}) },
       initialV: sc.initialV ?? 'equilibrium',
       startVentilating: true,

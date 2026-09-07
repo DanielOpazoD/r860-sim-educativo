@@ -47,7 +47,6 @@
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
   <a class="wordmark" href="#" data-action="home" aria-label="R860 Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>R860<span>LAB</span></strong></a>
-  <div class="product-caption">Simulación de ventilación<span>Inspirado en CARESCAPE R860</span></div>
   <div class="top-actions">
     <button class="button subtle" data-action="scenarios"><svg class="icon"><use href="#i-grid"/></svg><span>Escenarios</span></button>
     <button class="button subtle" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Guía</span></button>
@@ -66,7 +65,7 @@
     <div class="stage-heading"><div><span class="live-dot" id="live-dot"></span><h1 id="scenario-name">Banco lineal pasivo</h1><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></div><button class="text-button" id="teacher-toggle" data-action="teacher"><svg class="icon"><use href="#i-eye"/></svg><span>Ocultar panel docente</span></button></div>
     <p class="mobile-hint">Vista de equipo: gira el dispositivo o desplaza horizontalmente. El panel docente está más abajo.</p>
     <div class="device-scroll"><div class="device-shell" id="device-shell">
-      <div class="bezel-top"><span class="bezel-model">CARESCAPE <b>R860</b> <span>REFERENCIA VISUAL</span></span><span class="bezel-tag">SIMULADOR</span><span class="bezel-light" id="bezel-light"></span></div>
+      <div class="bezel-top"><span class="bezel-model">CARESCAPE <b>R860</b></span><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
         <section class="monitor" id="monitor" aria-label="Pantalla de simulación R860" tabindex="-1">
           <header class="monitor-top">
@@ -135,7 +134,6 @@
     </div></div>
     <div class="signal-toolbar"><div class="signal-actions"><button class="button small" id="freeze-button" data-action="freeze"><svg class="icon"><use href="#i-pause"/></svg><span>Congelar curvas</span></button><label class="inline-select">Ventana<select id="wave-window"><option value="6">6 s</option><option value="12" selected>12 s</option><option value="24">24 s</option></select></label><label class="inline-select">Trazado<select id="wave-style"><option value="sweep">Barrido</option><option value="scroll">Continuo</option></select></label></div><span class="simulation-clock" id="simulation-clock">Sesión 00:00</span></div>
     <div class="signal-inspector" id="signal-inspector" hidden><span id="inspector-label">Mueve el cursor sobre una curva congelada para medir la señal.</span><input type="range" min="0" max="1000" value="1000" id="history-slider" aria-label="Revisar curvas anteriores"></div>
-    <div class="stage-footnote"><svg class="icon"><use href="#i-help"/></svg><span>Selecciona un parámetro inferior, modifica y confirma. <button data-action="help">Ver guía de uso</button></span><span id="engine-note">Motor 250 Hz · Señal 50 Hz</span></div>
   </section>
   <nav class="mobile-toolbar" aria-label="Accesos rápidos en pantallas táctiles">
   <button data-view="basic" aria-label="Datos grandes"><svg class="icon"><use href="#i-grid"/></svg><span>Datos</span></button>
@@ -149,7 +147,7 @@
   <button data-action="modes" aria-label="Modo y ajustes"><svg class="icon"><use href="#i-menu"/></svg><span>Modo</span></button>
 </nav>
 <aside class="instructor" id="instructor" aria-label="Panel docente">
-    <div class="instructor-header"><div><span class="panel-kicker">FUERA DEL EQUIPO</span><h2>Laboratorio de mecánica</h2></div><svg class="icon"><use href="#i-lung"/></svg></div>
+    <div class="instructor-header"><div><h2>Laboratorio de mecánica</h2></div><svg class="icon"><use href="#i-lung"/></svg></div>
     <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="learn">Entrenar</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button></div>
     <section class="instructor-pane active" id="instructor-patient">
       <div class="model-note">Mecánica del paciente virtual</div>
@@ -166,11 +164,10 @@
       <p class="truth-disclaimer">Objetivos de manejo del simulador; no califican seguridad clínica, competencia profesional ni aptitud de extubación.</p>
     </section>
     <section class="instructor-pane" id="instructor-events"><p class="lesson-text">Introduce cambios durante la ventilación. Cada acción queda en el registro y puede revertirse.</p><div class="fault-grid" id="fault-grid"></div><button class="button full" data-action="undoEvent" id="undo-event"><svg class="icon"><use href="#i-history"/></svg>Deshacer último evento</button><h3 class="small-section-title">Últimos eventos</h3><div class="teacher-log" id="teacher-log"></div></section>
-    <footer class="instructor-footer"><svg class="icon"><use href="#i-book"/></svg><span id="instructor-footer-text">Escenarios sintéticos · A/C VC<br><b>Modelo mecánico, no paciente completo</b></span></footer>
   </aside>
 </main>
-<footer class="safety-strip"><strong>SIMULACIÓN EDUCATIVA · NO USO CLÍNICO</strong><span>No es un producto de GE HealthCare ni controla equipos médicos.</span><button data-action="model">Modelo, alcance y fuentes</button><span class="version" id="version-tag">v0.3.0 · Offline</span></footer>
-<dialog id="app-dialog" class="app-dialog" aria-labelledby="dialog-title"><header class="dialog-header"><div><small id="dialog-eyebrow"></small><h2 id="dialog-title"></h2></div><button class="close-button" data-action="closeDialog" aria-label="Cerrar ventana"><svg class="icon"><use href="#i-close"/></svg></button></header><div class="dialog-content" id="dialog-content"></div><footer class="dialog-footer" id="dialog-footer"></footer></dialog>
+<footer class="safety-strip"><span class="version" id="version-tag">v0.3.0 · Offline</span><button data-action="model">Acerca del simulador</button></footer>
+<dialog id="app-dialog" class="app-dialog" aria-labelledby="dialog-title"><header class="dialog-header"><h2 id="dialog-title"></h2><button class="close-button" data-action="closeDialog" aria-label="Cerrar ventana"><svg class="icon"><use href="#i-close"/></svg></button></header><div class="dialog-content" id="dialog-content"></div><footer class="dialog-footer" id="dialog-footer"></footer></dialog>
 <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
 <input id="session-input" type="file" accept=".json,application/json" hidden>
 <noscript><div class="noscript">Este simulador necesita JavaScript. No usa internet ni requiere instalar paquetes.</div></noscript>

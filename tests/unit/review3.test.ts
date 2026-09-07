@@ -186,7 +186,7 @@ describe('R3-08 · un arranque fallido nunca es silencioso', () => {
     client.onDegraded = (r) => reasons.push(r);
     await client.ready;
     client.init({ ...defaultInit({}), dtMs: 100 }, 1, true);
-    expect(reasons[0]).toMatch(/no se pudo iniciar/);
+    expect(reasons[0]).toMatch(/Inicialización inválida/);
     expect(reasons[0]).toMatch(/dtMs/);
   });
   it('una orden pendiente al degradar el Worker se responde como rechazada en vez de quedar colgada', async () => {

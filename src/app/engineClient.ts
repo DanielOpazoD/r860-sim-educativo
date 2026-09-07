@@ -88,7 +88,7 @@ export class EngineClient {
       return;
     }
     if (m.type === 'initError') {
-      this.degradedReason = `no se pudo iniciar la simulación: ${m.reason}`;
+      this.degradedReason = m.reason;
       this.onDegraded?.(this.degradedReason);
       return;
     }

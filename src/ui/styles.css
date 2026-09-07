@@ -4215,3 +4215,116 @@ body {
   background: #000000f2;
   border-top-color: #262626;
 }
+
+/* ---- Diálogos compactos (06-09-2026): menos padding, tipografía más pequeña, ancho contenido. ---- */
+.app-dialog {
+  width: min(820px, calc(100vw - 38px));
+}
+.app-dialog.wide {
+  width: min(900px, calc(100vw - 38px));
+}
+.dialog-header {
+  padding: 12px 18px 10px;
+}
+.dialog-header h2 {
+  font-size: 15px;
+}
+.dialog-content {
+  padding: 12px 18px;
+  max-height: calc(92vh - 120px);
+}
+.dialog-content p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dialog-content h3 {
+  font-size: 13px;
+}
+.dialog-footer {
+  padding: 8px 18px;
+}
+.primary-button,
+.secondary-button {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.scenario-card {
+  padding: 10px 12px;
+}
+.scenario-card h3 {
+  font-size: 13px;
+  margin: 6px 0 8px;
+}
+.scenario-card .scenario-details,
+.scenario-card footer {
+  padding-top: 6px;
+  font-size: 10px;
+}
+.scenario-grid,
+.scenarios-grid {
+  gap: 8px;
+}
+.mode-layout {
+  grid-template-columns: 150px 1fr;
+  gap: 14px;
+}
+.mode-option {
+  padding: 8px 10px;
+}
+.settings-grid {
+  gap: 10px;
+  margin-top: 10px;
+}
+.settings-annotation,
+.mode-description p {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.parameter-help p,
+.dialog-content .parameter-help p,
+.help-equation {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dialog-content table,
+.dialog-content .data-table {
+  font-size: 11px;
+}
+.dialog-content .alarm-row b {
+  font-size: 12px;
+}
+.dialog-content .alarm-row p,
+.dialog-content .alarm-row small {
+  font-size: 10px;
+}
+.safety-strip {
+  padding: 4px 16px;
+  font-size: 10px;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.scenario-card {
+  min-height: 0;
+}
+.scenario-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.settings-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.setting-field input,
+.setting-field select {
+  font-size: 15px;
+  height: 36px;
+  padding: 4px 8px;
+}
+.setting-field > .parameter-label > label {
+  font-size: 11px;
+}
+.mode-option b {
+  font-size: 12px;
+}
+.mode-option small {
+  display: none;
+}
