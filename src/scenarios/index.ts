@@ -215,6 +215,35 @@ export const SCENARIOS: Scenario[] = [
     caution: 'Dominio de fallo del ensayo, no fisiología.',
   },
   {
+    id: 'SC-15',
+    name: 'Titular la PEEP sobre la curva P-V',
+    synthetic: true,
+    category: 'Mecánica del tejido',
+    level: 3,
+    lesson: {
+      title: 'La compliance dibuja una U invertida',
+      text: 'Este pulmón no tiene una compliance única: es rígido colapsado, se abre al subir la PEEP y vuelve a ponerse rígido si se sobredistiende. Mide la compliance con un bloqueo inspiratorio a varias PEEP.',
+      tasks: [
+        { id: 'medir', text: 'Mide la Cstat con un bloqueo inspiratorio a PEEP 5.', test: 'validInsp' },
+        { id: 'subir', text: 'Sube la PEEP a 18 cmH₂O.', test: 'peep18' },
+        { id: 'mejor', text: 'Consigue una Cstat medida por encima de 70 mL/cmH₂O.', test: 'cstatOver70' },
+      ],
+    },
+    question: '¿Por qué la compliance vuelve a caer con PEEP alta?',
+    answer:
+      'Porque el pulmón entra en la parte plana superior de la curva: el mismo volumen exige mucha más presión. La compliance máxima está cerca del punto medio de la sigmoide, entre los dos codos.',
+    description:
+      'Curva sigmoide con capacidad 1,6 L, máxima compliance en 18 cmH₂O y codos en 11 y 25: la Cstat medida depende de la PEEP.',
+    patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, sigmoid: { b: 1.6, c: 18, d: 5 } },
+    effort: passive,
+    sensors: idealSensors,
+    settings: { vt: 0.3, rr: 15, ie: 1 / 3, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
+    initialV: 'equilibrium',
+    perturbations: [],
+    observe: 'Compliance medida frente a PEEP; codo inferior y sobredistensión.',
+    caution: 'La curva es del modelo, no de un paciente: no es una recomendación de PEEP.',
+  },
+  {
     id: 'SC-14',
     name: 'La meseta que sigue bajando',
     synthetic: true,

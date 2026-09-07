@@ -53,6 +53,45 @@ export const PHYS: Record<string, PhysSpec> = {
     get: (fr) => fr.truth.patient.rExpValve ?? 0,
     cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
   },
+  sigmoidB: {
+    label: 'Curva P-V: capacidad (b)',
+    unit: 'mL',
+    min: 0,
+    max: 3000,
+    step: 100,
+    help: 'patient.sigmoid',
+    get: (fr) => (fr.truth.patient.sigmoid?.b ?? 0) * 1000,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: { sigmoid: v <= 0 ? undefined : { b: v / 1000, c: fr.truth.patient.sigmoid?.c ?? 18, d: fr.truth.patient.sigmoid?.d ?? 5 } },
+    }),
+  },
+  sigmoidC: {
+    label: 'Curva P-V: máxima compliance (c)',
+    unit: 'cmH₂O',
+    min: 0,
+    max: 40,
+    step: 1,
+    help: 'patient.sigmoid',
+    get: (fr) => fr.truth.patient.sigmoid?.c ?? 18,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: fr.truth.patient.sigmoid ? { sigmoid: { ...fr.truth.patient.sigmoid, c: v } } : {},
+    }),
+  },
+  sigmoidD: {
+    label: 'Curva P-V: anchura (d)',
+    unit: 'cmH₂O',
+    min: 1,
+    max: 15,
+    step: 0.5,
+    help: 'patient.sigmoid',
+    get: (fr) => fr.truth.patient.sigmoid?.d ?? 5,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: fr.truth.patient.sigmoid ? { sigmoid: { ...fr.truth.patient.sigmoid, d: v } } : {},
+    }),
+  },
   viscoelastic: {
     label: 'Relajación viscoelástica (E₂)',
     unit: 'cmH₂O/L',
@@ -135,7 +174,19 @@ export const PHYS: Record<string, PhysSpec> = {
   },
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
-export const PATIENT_EXTRA = ['viscoelastic', 'viscTau', 'rohrer', 'expValve', 'patientRR', 'muscleTi', 'o2Tau', 'o2Bias'];
+export const PATIENT_EXTRA = [
+  'sigmoidB',
+  'sigmoidC',
+  'sigmoidD',
+  'viscoelastic',
+  'viscTau',
+  'rohrer',
+  'expValve',
+  'patientRR',
+  'muscleTi',
+  'o2Tau',
+  'o2Bias',
+];
 /** Botones de eventos (pestaña «Eventos»): [id, icono, título, descripción, deshabilitado]. */
 export const FAULTS: [string, string, string, string, boolean][] = [
   ['resistance', 'wave', 'Resistencia ×2', 'Aumenta la carga resistiva', false],

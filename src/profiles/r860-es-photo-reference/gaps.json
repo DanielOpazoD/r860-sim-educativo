@@ -321,6 +321,13 @@
       "policy": "P: deriva ≤ 0,5 cmH2O en el tramo final más excursión contra la tendencia ≤ 0,3 cmH2O en toda la ventana (E-045).",
       "status": "nueva (v0.4.0)",
       "blocks": []
+    },
+    {
+      "id": "U-39",
+      "question": "Parámetros sigmoides (b, c, d) representativos de un pulmón adulto sano y de uno con SDRA.",
+      "policy": "P: por omisión la curva es lineal (Crs). El escenario SC-15 usa b 1,6 L, c 18 cmH2O y d 5 cmH2O, que sitúa los codos en 11 y 25 cmH2O y la compliance máxima en 80 mL/cmH2O. No son valores de paciente: sirven para ver la forma.",
+      "status": "nueva (v0.4.1)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

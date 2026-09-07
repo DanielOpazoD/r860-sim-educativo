@@ -2,6 +2,44 @@ import type { PatientParams } from '../domain/types';
 
 /** Constante de tiempo viscoelástica por omisión (s) cuando se activa E2 sin declararla. */
 export const DEFAULT_TAU_VISC_S = 1.2;
+/** Fracción de la capacidad del sigmoide donde se cambia a extensión lineal tangente (evita presiones infinitas). */
+const SIGMOID_GUARD = 0.005;
+
+export interface SigmoidPV {
+  b: number;
+  c: number;
+  d: number;
+}
+/** Desplazamiento que ancla la sigmoide en V(P0) = 0, la convención de volumen del modelo. */
+const sigmoidA = (s: SigmoidPV, p0: number): number => -s.b / (1 + Math.exp(-(p0 - s.c) / s.d));
+/** Volumen de equilibrio a una presión dada. */
+export function sigmoidVolume(s: SigmoidPV, p0: number, paw: number): number {
+  return sigmoidA(s, p0) + s.b / (1 + Math.exp(-(paw - s.c) / s.d));
+}
+/** Compliance local (pendiente dV/dP) en la fracción u = (V − a)/b de la capacidad. */
+const sigmoidSlope = (s: SigmoidPV, u: number): number => (s.b / s.d) * u * (1 - u);
+/**
+ * Presión elástica de la sigmoide. Fuera del intervalo útil se prolonga con la tangente del borde:
+ * el modelo nunca devuelve infinitos aunque el ventilador insista por encima de la capacidad.
+ */
+export function sigmoidPressure(s: SigmoidPV, p0: number, v: number): number {
+  const a = sigmoidA(s, p0);
+  const u = (v - a) / s.b;
+  const at = (uu: number): number => s.c + s.d * Math.log(uu / (1 - uu));
+  if (u <= SIGMOID_GUARD) return at(SIGMOID_GUARD) + (v - (a + SIGMOID_GUARD * s.b)) / sigmoidSlope(s, SIGMOID_GUARD);
+  if (u >= 1 - SIGMOID_GUARD) return at(1 - SIGMOID_GUARD) + (v - (a + (1 - SIGMOID_GUARD) * s.b)) / sigmoidSlope(s, 1 - SIGMOID_GUARD);
+  return at(u);
+}
+/** Compliance local del sistema respiratorio a un volumen dado (L/cmH2O). */
+export function sigmoidCompliance(s: SigmoidPV, p0: number, v: number): number {
+  const u = Math.min(1 - SIGMOID_GUARD, Math.max(SIGMOID_GUARD, (v - sigmoidA(s, p0)) / s.b));
+  return sigmoidSlope(s, u);
+}
+/** Volumen de equilibrio pasivo a una presión dada, con el modelo elástico que declare el paciente. */
+export function equilibriumVolumeFor(params: { crs: number; p0: number; sigmoid?: SigmoidPV }, paw: number): number {
+  const s = params.sigmoid;
+  return s && s.b > 0 ? sigmoidVolume(s, params.p0, paw) : params.crs * (paw - params.p0);
+}
 
 /**
  * Modelo mecánico del sistema respiratorio (P · dossier §12):
@@ -58,16 +96,23 @@ export class PatientModel {
 
   /** Presión elástica del sistema respiratorio (cmH2O), estática más viscoelástica. */
   pel(v: number = this.v, vVisc: number = this.vVisc): number {
-    return this.params.p0 + v / this.params.crs + this.e2 * (v - vVisc);
+    return this.pelStatic(v) + this.e2 * (v - vVisc);
   }
   /** Presión elástica estática (sin el término viscoelástico): la meseta a la que tiende una oclusión larga. */
   pelStatic(v: number = this.v): number {
-    return this.params.p0 + v / this.params.crs;
+    const s = this.params.sigmoid;
+    return s && s.b > 0 ? sigmoidPressure(s, this.params.p0, v) : this.params.p0 + v / this.params.crs;
   }
 
   /** Volumen de equilibrio pasivo bajo una presión de vía aérea constante. */
   equilibriumVolume(paw: number): number {
-    return this.params.crs * (paw - this.params.p0);
+    return equilibriumVolumeFor(this.params, paw);
+  }
+
+  /** Compliance local (pendiente de la curva P-V) al volumen actual: con sigmoide cambia con el volumen. */
+  compliance(v: number = this.v): number {
+    const s = this.params.sigmoid;
+    return s && s.b > 0 ? sigmoidCompliance(s, this.params.p0, v) : this.params.crs;
   }
 
   private r1For(q: number): number {
@@ -103,7 +148,7 @@ export class PatientModel {
     maxFlow = Number.POSITIVE_INFINITY,
     rSeries = 0,
   ): { dV: number; qEnd: number; clamped: boolean } {
-    const tauMin = Math.min(this.params.rInsp, this.params.rExp) * this.params.crs;
+    const tauMin = Math.min(this.params.rInsp, this.params.rExp) * Math.max(1e-5, this.compliance());
     const nSub = Math.min(1000, Math.max(1, Math.ceil(dt / (0.2 * Math.max(1e-6, tauMin)))));
     // El tope de flujo (válvula/actuador) se aplica dentro de cada etapa del RK2, no en un paso aparte: así no hay
     // sobreimpulso dependiente de dt cuando el flujo libre cruza el tope a mitad de paso (revisión E24).

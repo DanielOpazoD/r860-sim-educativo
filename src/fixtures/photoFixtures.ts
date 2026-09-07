@@ -212,6 +212,7 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
       vAbsL: 0,
       pel: 0,
       pVisc: 0,
+      cLocal: 0,
       pmus: 0,
       peepiEndExp: 0,
       patient: { crs: 0, rInsp: 0, rExp: 0, r2: 0, p0: 0 },

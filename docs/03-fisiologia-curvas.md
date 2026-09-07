@@ -177,7 +177,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Simplificación | Consecuencia observable | Marca |
 | --- | --- | --- |
 | Un compartimento estático más un cuerpo de Maxwell opcional (E2, τ2) | Con E2 = 0 la presión cae de Ppico a Pplat instantáneamente. Con E2 > 0 aparece la relajación de esfuerzo: caída inmediata resistiva hasta P1 y decaimiento exponencial hasta P2, la diferencia entre elastancia dinámica y estática. Sigue sin haber unidades rápidas y lentas en paralelo (pendelluft) | D el modelo (Mount, Bates, D'Angelo); P los valores (E-044, U-37) |
-| R y C lineales y constantes en el ciclo | Sin dependencia de volumen: no hay puntos de inflexión ni beak espontáneo en el P-V; la única forma de mostrar sobredistensión es cambiar C en una perturbación | P |
+| Compliance lineal por omisión, sigmoide de Venegas opcional | Con la curva lineal el bucle P-V es una recta. Con la sigmoide aparecen el codo inferior, la compliance máxima en c y el pico de sobredistensión arriba; la compliance medida depende de la PEEP | D la ecuación; P los valores (E-048, U-39) |
 | Sin inhomogeneidad de constantes de tiempo | Flujo espiratorio monoexponencial; no hay «cola» lenta ni curvatura biexponencial | P; U (perfil real) |
 | Sin inertancia | La presión responde al flujo sin retardo; no hay oscilaciones ni sobreimpulso al inicio del flujo | P |
 | Resistencia de Rohrer R(Q) = K1 + K2·\|Q\| disponible como parámetro | Con K2 > 0 la caída resistiva crece más que proporcionalmente con el flujo; con K2 = 0 (por omisión) el modelo es lineal | D el modelo; P los valores (E-046, U-37) |

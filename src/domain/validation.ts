@@ -238,9 +238,11 @@ export function validatePatientParams(p: {
   rExpValve?: number;
   eVisc?: number;
   tauViscS?: number;
+  sigmoid?: { b: number; c: number; d: number };
 }): string[] {
   const r: string[] = [];
-  for (const [k, v] of Object.entries(p)) if (typeof v !== 'number' || !Number.isFinite(v)) r.push(`${k}: no numérico`);
+  for (const [k, v] of Object.entries(p))
+    if (k !== 'sigmoid' && (typeof v !== 'number' || !Number.isFinite(v))) r.push(`${k}: no numérico`);
   if (r.length) return r;
   if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
     r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
@@ -252,6 +254,16 @@ export function validatePatientParams(p: {
     r.push('Elastancia viscoelástica fuera de 0–40 cmH2O/L');
   if (p.tauViscS !== undefined && (!Number.isFinite(p.tauViscS) || p.tauViscS < 0.05 || p.tauViscS > 10))
     r.push('Constante viscoelástica fuera de 0.05–10 s');
+  if (p.sigmoid !== undefined) {
+    const s = p.sigmoid;
+    if (!s || typeof s !== 'object' || ![s.b, s.c, s.d].every((x) => typeof x === 'number' && Number.isFinite(x)))
+      r.push('Curva sigmoide inválida');
+    else {
+      if (s.b < 0 || s.b > 5) r.push('Capacidad de la sigmoide fuera de 0–5 L');
+      if (s.c < 0 || s.c > 60) r.push('Presión de máxima compliance fuera de 0–60 cmH2O');
+      if (s.d < 0.5 || s.d > 20) r.push('Anchura de la sigmoide fuera de 0.5–20 cmH2O');
+    }
+  }
   if (Math.min(p.rInsp, p.rExp) * p.crs < 1e-3) r.push('tau = R·C menor que 1 ms');
   return r;
 }
