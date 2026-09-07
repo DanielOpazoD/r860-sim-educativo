@@ -366,7 +366,7 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
   ie: 1 / 3, // Tcycle 4 s -> Tinsp 1 s, Texp 3 s
   peep: 5,
   pmax: 40,
-  plimit: 35,
+  plimit: 100, // P: en su máximo no actúa; Pmáx es el techo visible. Plimit queda como ajuste avanzado.
   pausePct: 0,
   assistControl: true,
   flowTrigger: 2 / 60,

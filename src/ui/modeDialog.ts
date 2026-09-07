@@ -58,12 +58,12 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const pc = s.mode === 'AC_PC';
     const main: SettingsKey[] = pc
       ? ['fio2', 'peep', 'pinsp', 'rr', 'ie', 'riseMs', 'pmax']
-      : ['fio2', 'peep', 'vt', 'rr', 'ie', 'pausePct', 'plimit', 'pmax'];
+      : ['fio2', 'peep', 'vt', 'rr', 'ie', 'pausePct', 'pmax'];
     const title = pc ? 'Asistido / controlado por presión' : 'Asistido / controlado por volumen';
     const desc = pc
       ? 'Presión objetivo = PEEP + Pinsp durante el tiempo inspiratorio, con rampa. El flujo empieza alto y decae; el volumen depende de la compliance, la resistencia, el tiempo y el esfuerzo.'
-      : 'Flujo constante calculado de VT, Tinsp y pausa. Plimit sostiene la presión el resto de la inspiración; Pmáx termina la inspiración.';
-    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('assistControl', s)}${fieldHTML('flowTrigger', s)}${fieldHTML('biasFlow', s)}${fieldHTML('triggerByPressure', s)}${fieldHTML('pressureTrigger', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
+      : 'Flujo constante calculado de VT, Tinsp y pausa. Pmáx es el techo de presión: alcanzarlo termina la inspiración.';
+    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('assistControl', s)}${pc ? '' : `<div class="settings-subtitle">Avanzado</div>${fieldHTML('plimit', s)}`}${fieldHTML('flowTrigger', s)}${fieldHTML('biasFlow', s)}${fieldHTML('triggerByPressure', s)}${fieldHTML('pressureTrigger', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
   }
   function openModes(): void {
     if (!ctx.frame) return;

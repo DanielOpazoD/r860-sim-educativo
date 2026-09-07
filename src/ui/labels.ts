@@ -4,7 +4,7 @@ import type { SettingsKey, VcSettings, VentMode } from '../domain/types';
 import { ieText } from './format';
 
 export const QUICK_KEYS_BY_MODE: Record<VentMode, SettingsKey[]> = {
-  AC_VC: ['fio2', 'vt', 'rr', 'ie', 'peep', 'plimit', 'pmax'],
+  AC_VC: ['fio2', 'vt', 'rr', 'ie', 'peep', 'pmax'],
   AC_PC: ['fio2', 'pinsp', 'rr', 'ie', 'peep', 'pmax'],
 };
 export const MODE_LABEL: Record<VentMode, string> = { AC_VC: 'A/C VC', AC_PC: 'A/C PC' };

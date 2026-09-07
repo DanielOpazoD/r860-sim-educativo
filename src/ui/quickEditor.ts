@@ -171,7 +171,9 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     const warnings = [...((p as { warnings?: string[] }).warnings ?? [])];
     // Pmáx es el techo que termina la inspiración; si Plimit está recortando la presión, subir Pmáx no cambia la Ppico.
     if (k === 'pmax' && ctx.frame?.live.plimitLimited)
-      warnings.push(`La presión está limitada por Plimit (${ctx.frame.settings.plimit} cmH₂O): subir Pmáx no la eleva; ajusta Plimit.`);
+      warnings.push(
+        `La presión está limitada por Plimit (${ctx.frame.settings.plimit} cmH₂O, ajuste avanzado del menú de modo): subir Pmáx no la eleva.`,
+      );
     const v = $('#quick-validation');
     put(v, p.valid ? joinSentences(warnings) : msg);
     v.hidden = p.valid && warnings.length === 0;

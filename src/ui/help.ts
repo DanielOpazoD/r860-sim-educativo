@@ -45,15 +45,15 @@ export const HELP: Record<string, HelpEntry> = {
   'setting.pmax': {
     title: 'Presión máxima · Pmáx',
     text: [
-      'Techo de presión total en la vía aérea. En este simulador, alcanzarlo durante una inspiración por volumen interrumpe la entrega y activa la alarma.',
-      'No determina cuánta presión se intenta entregar: Pinsp establece el incremento sobre PEEP; Plimit limita la entrega de VC antes de alcanzar este techo.',
+      'Techo de presión en la vía aérea. Alcanzarlo termina la inspiración y activa la alarma de prioridad alta.',
+      'En presión control, Pinsp fija el incremento sobre PEEP y Pmáx sigue siendo el techo. En volumen control puede añadirse un límite inferior (Plimit, ajuste avanzado) que recorta la presión sin terminar la inspiración.',
     ],
   },
   'setting.plimit': {
     title: 'Límite de presión de entrega · Plimit',
     text: [
       'Limita la presión mientras se entrega una respiración por volumen. Cuando se alcanza, el flujo deja de ser constante y el volumen objetivo puede no completarse.',
-      'Pmáx sigue siendo el techo de protección. Plimit se configura por encima de PEEP y no puede superar Pmáx.',
+      'Ajuste avanzado: por omisión está en su máximo y no actúa; Pmáx es el techo. Si se baja por debajo de Pmáx, recorta la presión antes de que Pmáx termine la inspiración.',
     ],
   },
   'setting.pinsp': {

@@ -272,7 +272,8 @@ export function validateVcSettings(s: VcSettings, limits: CrossLimits): Validati
     }
     if (s.plimit <= peep) reasons.push(`Plimit (${s.plimit}) debe ser mayor que PEEP (${peep}).`);
     // P (U-34): no se sabe si el equipo prohíbe Plimit > Pmáx; se permite con aviso porque cambia qué límite actúa primero.
-    if (s.plimit > s.pmax)
+    // Con Plimit en su máximo (100) no actúa: no se avisa.
+    if (s.plimit > s.pmax && s.plimit < 100)
       warnings.push(`Plimit (${s.plimit}) está por encima de Pmáx (${s.pmax}): la inspiración terminará por Pmáx antes de limitarse.`);
   } else {
     if (peep + s.pinsp >= s.pmax) reasons.push(`PEEP + Pinsp (${peep + s.pinsp}) debe quedar por debajo de Pmáx (${s.pmax}).`);

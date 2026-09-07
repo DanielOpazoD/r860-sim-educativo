@@ -128,3 +128,7 @@ Una tercera lectura adversarial de contexto limpio revisó el motor de PC, los b
 - **Carga de escenario**: medida en 0,2 s entre el toque y el primer cuadro; el motor adelanta tres ciclos (mínimo 12 s) para que la ventana de curvas aparezca llena; las curvas se siembran con el historial de la sesión nueva (antes el historial anterior filtraba las muestras nuevas y la pantalla quedaba vacía); velo con indicador giratorio sobre el monitor hasta el primer cuadro.
 - **Diseño**: escala tipográfica 10/11/12/13/15 px y espaciado de 8 px en cabecera, título de escenario, panel docente (etiquetas cortas: «Compliance (C)», «Resistencia insp.», «Esfuerzo (Pmus)»), barra de señal y botones; sin subtítulo «Mecánica del paciente virtual» ni descargo de la lección.
 - **Móvil**: la cabecera ya no ensancha el viewport de disposición (hacía inestables las capas fijas); botones del título de la ventana de bloqueo de 44 px y geometría estable.
+
+## v0.3.7 · Pmáx como único techo visible (06-09-2026)
+
+- Por decisión del usuario, **Pmáx es el techo de presión que el alumno ve y ajusta**; Plimit pasa a «Avanzado» en el menú de modo y por omisión queda en su máximo (100 cmH₂O), donde no actúa. Sólo el escenario «Mayor resistencia inspiratoria» lo baja a 30 para enseñar la diferencia entre limitar y terminar la inspiración. El aviso «Plimit por encima de Pmáx» no se muestra cuando Plimit está en su máximo. La tecla rápida de Plimit añadida en el PR #7 se retira.
