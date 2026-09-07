@@ -139,12 +139,15 @@ export class EngineClient {
     this.send({ type: 'loadScenario', scenario, keepSettings });
   }
 
-  exportSession(): Promise<SessionFile> {
+  /**
+   * Devuelve `null` si el motor no pudo servir la sesión. Antes la promesa sólo se resolvía con el mensaje esperado,
+   * así que si el motor degradaba a mitad —o no tenía simulador— el aviso llegaba como `commandResult`, el callback lo
+   * ignoraba y la promesa quedaba colgada para siempre: la interfaz se quedaba esperando sin decir nada.
+   */
+  exportSession(): Promise<SessionFile | null> {
     const id = this.nextId++;
     return new Promise((res) => {
-      this.pending.set(id, (m) => {
-        if (m.type === 'session') res(m.file);
-      });
+      this.pending.set(id, (m) => res(m.type === 'session' ? m.file : null));
       this.send({ type: 'exportSession', id });
     });
   }
@@ -155,6 +158,8 @@ export class EngineClient {
       this.pending.set(id, (m) => {
         if (m.type === 'importResult')
           res({ ok: m.ok, ...(m.errors ? { errors: m.errors } : {}), ...(m.warnings ? { warnings: m.warnings } : {}) });
+        // Cualquier otra respuesta (motor degradado, sin simulador) es un fallo con motivo, nunca una espera eterna.
+        else res({ ok: false, errors: [m.type === 'commandResult' && m.reason ? m.reason : 'el motor no pudo abrir la sesión'] });
       });
       this.send({ type: 'importSession', id, text });
     });
