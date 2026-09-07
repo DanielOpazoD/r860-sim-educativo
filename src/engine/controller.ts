@@ -209,7 +209,11 @@ export class VcController {
   }
 
   startVentilation(): void {
-    this.lastExpPaw = null;
+    // Al salir de espera el ventilador presuriza el circuito a PEEP antes de la primera respiración (P: instantáneo).
+    // Si no, el pulmón quedaría a presión ambiente mientras la interfaz declara PEEP, y la primera Cstat saldría falsa.
+    if (this.phase === 'standby') this.patient.equilibrateTo(this.peepTarget);
+    this.paw = this.peepTarget;
+    this.lastExpPaw = this.peepTarget;
     if (this.phase !== 'standby') return;
     this.startBreath('mandatory');
   }
@@ -401,9 +405,11 @@ export class VcController {
       case 'inspLimited': {
         const qCheck = p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v);
         if (qCheck <= 0) {
-          // La válvula inspiratoria no admite flujo negativo: sistema ocluido a presión elástica.
+          // La válvula inspiratoria no admite flujo negativo: sistema ocluido. Misma física que una pausa, así que
+          // el elemento viscoelástico relaja y el gas se redistribuye igual que allí.
           this.q = 0;
-          this.paw = p.pel() - this.pmusAt(this.simT + h);
+          p.integrateFlowSource(0, h, this.pmusAt(this.simT));
+          this.paw = p.hasSecond ? p.nodePressureForFlow(0, this.pmusAt(this.simT + h)) : p.pel() - this.pmusAt(this.simT + h);
           if (this.paw >= s.pmax) {
             this.transition = () => this.onPmax();
             return 0;
@@ -421,7 +427,8 @@ export class VcController {
       case 'holdExp': {
         this.q = 0;
         p.integrateFlowSource(0, h, this.pmusAt(this.simT)); // oclusión: el volumen total no cambia, pero el elemento viscoelástico relaja y el gas se redistribuye entre unidades
-        this.paw = p.pel() - this.pmusAt(this.simT + h);
+        // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
+        this.paw = p.hasSecond ? p.nodePressureForFlow(0, this.pmusAt(this.simT + h)) : p.pel() - this.pmusAt(this.simT + h);
         if (this.phase === 'inspPause' && this.breath) this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
         if (this.hold) {
           this.hold.samples.push({ t: this.tPhase + h, paw: this.paw });

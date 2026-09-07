@@ -8,7 +8,7 @@ Unidades en todo el documento: presión en cmH₂O, volumen en L (la interfaz mu
 
 ## 1. Ecuación de movimiento y modelo
 
-El motor (`src/engine/patient.ts`) resuelve el modelo lineal de un compartimento:
+El motor (`src/engine/patient.ts`) parte del modelo lineal de un compartimento, que sigue siendo el comportamiento por omisión. Sobre él se añaden, sólo si el paciente los declara, la relajación viscoelástica, la curva sigmoidea, la resistencia de Rohrer, la limitación al flujo, el calibre dependiente del volumen y una segunda unidad alveolar en paralelo (§7):
 
     Pva + Pmus = P0 + V/C + R(Q)·Q        Q = dV/dt        R(Q) = R1 + R2·|Q|
 
@@ -134,7 +134,7 @@ Remedios en el simulador: alargar Tesp (↓ FR, I:E más bajo, ↓ pausa), reduc
 | **P-V** (presión en x, volumen en y) | Asa en sentido antihorario; rama inspiratoria inclinada con un desplazamiento inicial hacia la derecha igual a R·Q; el área entre ramas crece con R y con Q; la pendiente entre inicio y fin de inspiración es la distensibilidad dinámica | Rama inspiratoria que se hace casi vertical al final (presión constante mientras entra volumen) | «Pico» o **beak** en el extremo superior: la presión sigue subiendo con poco volumen adicional (sobredistensión; el modelo lineal sólo lo reproduce si se baja C a mitad de escenario, no por sí mismo); inicio de la asa desplazado en volumen: atrapamiento |
 | **F-V** (volumen en x, flujo en y) | Rama inspiratoria plana (flujo constante); rama espiratoria con pico inmediato y caída exponencial hasta el origen | Rama inspiratoria con pico inicial y decaimiento; espiratoria igual que en VC | Rama espiratoria que no llega a cero: auto-PEEP; caída espiratoria cóncava y lenta: ↑ Rexp |
 
-Descripción D (Mellema 2013): en PC la porción final de la rama inspiratoria del P-V aparece casi vertical; el beak refleja aumentos de presión con incremento mínimo de volumen. El modelo de un compartimento con C constante **no** genera beak espontáneo (§7); lo que el alumno verá es una asa lineal que rota cuando C cambia.
+Descripción D (Mellema 2013): en PC la porción final de la rama inspiratoria del P-V aparece casi vertical; el beak refleja aumentos de presión con incremento mínimo de volumen. Con compliance constante el modelo **no** genera beak espontáneo; con la sigmoide de Venegas activada (E-048) sí (§7); lo que el alumno verá es una asa lineal que rota cuando C cambia.
 
 ## 6. Verificación en el simulador
 
@@ -176,7 +176,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 
 | Simplificación | Consecuencia observable | Marca |
 | --- | --- | --- |
-| Un compartimento estático más un cuerpo de Maxwell opcional (E2, τ2) | Con E2 = 0 la presión cae de Ppico a Pplat instantáneamente. Con E2 > 0 aparece la relajación de esfuerzo: caída inmediata resistiva hasta P1 y decaimiento exponencial hasta P2, la diferencia entre elastancia dinámica y estática. Sigue sin haber unidades rápidas y lentas en paralelo (pendelluft) | D el modelo (Mount, Bates, D'Angelo); P los valores (E-044, U-37) |
+| Un compartimento estático más un cuerpo de Maxwell opcional (E2, τ2) | Con E2 = 0 la presión cae de Ppico a Pplat instantáneamente. Con E2 > 0 aparece la relajación de esfuerzo: caída inmediata resistiva hasta P1 y decaimiento exponencial hasta P2, la diferencia entre elastancia dinámica y estática. Las unidades rápidas y lentas en paralelo existen desde v0.4.3 como opción (E-051): con una sola unidad no hay pendelluft | D el modelo (Mount, Bates, D'Angelo); P los valores (E-044, U-37) |
 | Compliance lineal por omisión, sigmoide de Venegas opcional | Con la curva lineal el bucle P-V es una recta. Con la sigmoide aparecen el codo inferior, la compliance máxima en c y el pico de sobredistensión arriba; la compliance medida depende de la PEEP | D la ecuación; P los valores (E-048, U-39) |
 | Limitación al flujo espiratorio opcional (resistor de Starling) | Sin ella la espiración es un vaciamiento exponencial hacia PEEP en cualquier obstructivo. Con ella el flujo se hace independiente del esfuerzo y de la presión aguas abajo, el pulmón atrapa hasta que su retroceso iguala la presión crítica y la PEEP externa hasta ese punto abre la vía aérea | D el modelo; P los valores (E-049, U-40) |
 | Resistencia espiratoria dependiente del volumen opcional | Con resistencia constante el flujo es exactamente proporcional al volumen y la rama espiratoria del bucle es una recta; con dependencia queda excavada | D la dependencia; P la forma y los valores (E-050, U-40) |

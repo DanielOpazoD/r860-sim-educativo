@@ -210,8 +210,12 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     const v = raw.trim() === '' ? NaN : Number(raw);
     const rule = ruleOf(edit.state.key);
     const min = rule.domain[0]?.min ?? 0;
-    if (rule.allowOff && (v < min || raw.trim().toLowerCase() === 'off')) edit.setDraftDisplay('off', performance.now());
+    // «Off» sólo si el usuario lo escribe o marca 0: un valor fuera de rango se rechaza con su motivo, no se convierte
+    // en silencio a Off, que es un ajuste clínico muy distinto.
+    const pideOff = rule.allowOff && (raw.trim().toLowerCase() === 'off' || v === 0);
+    if (pideOff) edit.setDraftDisplay('off', performance.now());
     else edit.setDraftDisplay(Number.isFinite(v) ? v : NaN, performance.now());
+    void min;
     renderQuick();
   }
   function slidQuick(i: number): void {

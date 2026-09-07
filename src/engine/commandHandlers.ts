@@ -150,7 +150,7 @@ export const COMMAND_HANDLERS: Handlers = {
     const p = { ...ctx.patient.params, ...cmd.params };
     const pe = validatePatientParams(p);
     if (pe.length) return reject(`Parámetros de paciente inválidos: ${pe.join('; ')}`);
-    ctx.patient.params = p;
+    ctx.patient.applyParams(p);
     ctx.logEvent('scenario', actor, { patient: cmd.params });
     return ok;
   },
@@ -172,7 +172,7 @@ export const COMMAND_HANDLERS: Handlers = {
   },
   setLungVolume: (ctx, cmd, actor) => {
     if (!Number.isFinite(cmd.vAbsL) || cmd.vAbsL < -1 || cmd.vAbsL > 5) return reject('Volumen fuera de rango de ensayo');
-    ctx.patient.v = cmd.vAbsL;
+    ctx.patient.setAbsoluteVolume(cmd.vAbsL);
     ctx.logEvent('scenario', actor, { vAbsL: cmd.vAbsL });
     return ok;
   },

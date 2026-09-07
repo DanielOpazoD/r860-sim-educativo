@@ -25,16 +25,18 @@ function sample(
     source?: MetricSample['source'];
   },
 ): MetricSample {
+  // Ningún número no finito puede salir marcado como válido: el contrato de calidad es lo que sostiene todo lo demás.
+  const finito = value === null || Number.isFinite(value);
   return {
     key,
-    value,
+    value: finito ? value : null,
     unit,
     source: ctx.source ?? 'ventilator',
     simTimeMs: ctx.simTimeMs,
     breathId: ctx.breathId,
     procedureId: null,
-    quality: ctx.quality,
-    reason: ctx.reason,
+    quality: finito ? ctx.quality : 'invalid',
+    reason: finito ? ctx.reason : 'valorNoFinito',
     windowMs: ctx.windowMs,
   };
 }

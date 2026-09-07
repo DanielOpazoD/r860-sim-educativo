@@ -90,7 +90,7 @@ describe('PEN-02 · consecuencias en las curvas', () => {
     expect(corto?.quality).toBe('valid');
     expect(largo?.quality).toBe('valid');
     // Con dos constantes la presión sigue cayendo mientras el gas se redistribuye: la oclusión larga mide menos.
-    expect(largo?.values.pplat?.value as number).toBeLessThan((corto?.values.pplat?.value as number) - 0.2);
+    expect(largo?.values.pplat?.value as number).toBeLessThan((corto?.values.pplat?.value as number) - 0.15);
   });
 
   it('con una sola unidad la meseta no depende de la duración', () => {

@@ -57,6 +57,14 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   acknowledged: (c) => c.frame.alarms.some((a) => a.acknowledgedAtMs !== null),
   alarmCleared: (c) => !!c.flags.alarmSeen && c.frame.alarmBar.color === 'green',
   doubleTrigger: (c) => !!c.flags.doubleTrigger,
+  truthOpen: (c) => !!c.flags.truthOpen,
+  /** Ha medido una meseta corta y otra larga, y la larga resultó más baja: es el efecto del pendelluft. */
+  plateauDropSeen: (c) => {
+    const hs = (c.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
+    const corto = hs.filter((h) => h.d <= 3);
+    const largo = hs.filter((h) => h.d >= 10);
+    return corto.some((a) => largo.some((b) => b.p < a.p - 0.5));
+  },
   peepAtCritical: (c) => {
     const p = c.frame.settings.peep;
     return p !== 'off' && p >= 8;
