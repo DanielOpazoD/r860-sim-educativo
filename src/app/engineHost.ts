@@ -46,6 +46,17 @@ export class EngineHost {
           return;
         }
         if (m.warmUp !== false) this.warmUp(this.sim);
+        // El protocolo es un contrato: un número que no lo es congelaría el reloj sin decir nada (`?speed=abc`).
+        if (!Number.isFinite(m.speed) || m.speed <= 0) {
+          this.post({ type: 'initError', reason: `velocidad inválida: ${String(m.speed)}` });
+          this.sim = null;
+          return;
+        }
+        if (m.autopauseAtMs !== undefined && m.autopauseAtMs !== null && !Number.isFinite(m.autopauseAtMs)) {
+          this.post({ type: 'initError', reason: `autopausa inválida: ${String(m.autopauseAtMs)}` });
+          this.sim = null;
+          return;
+        }
         this.speed = m.speed;
         this.running = m.running;
         this.pauseReason = m.running ? null : 'inicio';
@@ -97,7 +108,9 @@ export class EngineHost {
         this.postFrame();
         break;
       case 'exportSession':
+        // Sin simulador hay que responder igual: una orden sin respuesta deja la promesa del cliente colgada.
         if (this.sim) this.post({ type: 'session', id: m.id, file: exportSession(this.sim) });
+        else this.post({ type: 'commandResult', id: m.id, accepted: false, reason: 'no hay simulación que exportar' });
         break;
       case 'importSession': {
         const r = importSession(m.text);

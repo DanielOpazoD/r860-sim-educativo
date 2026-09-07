@@ -231,3 +231,18 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     expect(external).toEqual([]);
   });
 });
+
+test.describe('CFG · parámetros de la dirección que no son números', () => {
+  test('un `speed` ilegible se descarta con aviso y el motor avanza igual', async ({ page }) => {
+    // Antes `?speed=abc` daba NaN: el acumulador del reloj se quedaba en NaN, el motor no ejecutaba ni un paso y la
+    // interfaz seguía diciendo «en marcha» con el tiempo simulado clavado en 0.
+    await open(page, { speed: 'abc', seed: 'xyz', instructor: 0 });
+    await expect(page.locator('#engine-banner')).toBeVisible();
+    await expect(page.locator('#engine-banner')).toContainText('speed=abc');
+    await expect(page.locator('#engine-banner')).toContainText('seed=xyz');
+    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs > 0, null, { timeout: 15_000 });
+    const f = await frame(page);
+    expect(f.simTimeMs).toBeGreaterThan(0);
+    expect(f.ventilation).toBe('ventilating');
+  });
+});

@@ -238,18 +238,39 @@ export function startApp(opts: AppOptions): void {
     versionTag();
   }
   function wireDegraded(): void {
-    // Compatibilidad con ambas formas de la interfaz: propiedad asignable o método de suscripción.
-    const c = client as unknown as { onDegraded: unknown };
-    if (typeof c.onDegraded === 'function') (c.onDegraded as (cb: (r: string) => void) => void).call(client, onDegraded);
-    else c.onDegraded = onDegraded;
+    // `onDegraded` es una propiedad asignable, y sólo eso. Aquí había un atajo que la trataba también como método de
+    // suscripción; como una propiedad ya asignada ES una función, esa rama habría llamado onDegraded(onDegraded).
+    client.onDegraded = onDegraded;
     if (client.degradedReason) onDegraded(client.degradedReason);
   }
+  /**
+   * Un parámetro numérico de la dirección que no sea un número no puede pasar en silencio. `?speed=abc` daba NaN, el
+   * acumulador del reloj se quedaba en NaN y el motor no avanzaba ni un paso mientras la interfaz seguía diciendo
+   * «en marcha»; `?seed=abc` producía exactamente la misma secuencia que `seed=0`, perdiendo la única fuente de
+   * aleatoriedad del motor sin avisar. Lo que no se entienda se descarta y se dice cuál era.
+   */
+  const parametrosMalos: string[] = [];
+  function numParam(nombre: string, min: number, max: number): number | undefined {
+    const bruto = params.get(nombre);
+    if (bruto === null || bruto.trim() === '') return undefined;
+    const v = Number(bruto);
+    if (!Number.isFinite(v) || v < min || v > max) {
+      parametrosMalos.push(`${nombre}=${bruto}`);
+      return undefined;
+    }
+    return v;
+  }
+
   function startEngine(): void {
     const t0 = params.get('t0');
+    const t0Ms = t0 ? new Date(t0).getTime() : Number.NaN;
+    if (t0 && !Number.isFinite(t0Ms)) parametrosMalos.push(`t0=${t0}`);
+    const seed = numParam('seed', 0, Number.MAX_SAFE_INTEGER);
+    const dt = numParam('dt', 0.1, 50);
     const init: SimulatorInit = defaultInit({
-      ...(t0 ? { startWallTimeMs: new Date(t0).getTime() } : { startWallTimeMs: Date.now() }),
-      ...(params.get('seed') ? { seed: Number(params.get('seed')) } : {}),
-      ...(params.get('dt') ? { dtMs: Number(params.get('dt')) } : {}),
+      startWallTimeMs: Number.isFinite(t0Ms) ? t0Ms : Date.now(),
+      ...(seed !== undefined ? { seed } : {}),
+      ...(dt !== undefined ? { dtMs: dt } : {}),
       patient: { ...scenario.patient },
       effort: { ...scenario.effort },
       sensors: { ...scenario.sensors },
@@ -257,9 +278,13 @@ export function startApp(opts: AppOptions): void {
       alarmLimits: { ...defaultInit().alarmLimits, ...(scenario.alarmLimits ?? {}) },
       initialV: scenario.initialV ?? 'equilibrium',
     });
-    speed = params.get('speed') ? Number(params.get('speed')) : 1;
+    speed = numParam('speed', 0.1, 10) ?? 1;
     ($('#sim-speed') as HTMLSelectElement).value = String(speed);
-    const autopause = params.get('autopause') ? Number(params.get('autopause')) : undefined;
+    const autopause = numParam('autopause', 0, 24 * 3600 * 1000);
+    if (parametrosMalos.length)
+      engineBanner(
+        `Parámetros de la dirección ignorados por no ser válidos: ${parametrosMalos.join(' · ')}. Se usan los valores por omisión.`,
+      );
     client.init(init, speed, params.get('paused') !== '1', autopause);
     if (scenario.perturbations.length) client.loadScenario(scenario, false);
     setTimeout(() => {

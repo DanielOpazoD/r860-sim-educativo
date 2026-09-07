@@ -87,6 +87,10 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   }
   async function exportSession(): Promise<void> {
     const file = await ctx.client.exportSession();
+    if (!file) {
+      ctx.toast('No se pudo guardar la sesión: el motor no la entregó.', true);
+      return;
+    }
     downloadBlob(sessionBlob(file), `R860_sesion_${stamp()}.json`);
     ctx.toast(`Sesión guardada (${file.commands.length} comandos, ${file.breaths.length} respiraciones).`);
   }

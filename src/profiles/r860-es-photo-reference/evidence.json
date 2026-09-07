@@ -827,6 +827,18 @@
       "tests": [
         "tests/unit/review5.test.ts (R5-05, R5-06)"
       ]
+    },
+    {
+      "id": "E-064",
+      "claim": "Nada falla en silencio en la frontera del programa: un parámetro numérico de la dirección que no se entiende se descarta y se nombra en un aviso visible; el protocolo del Worker rechaza con motivo una velocidad o una autopausa no finitas en vez de dejar el reloj en NaN; y ninguna promesa del cliente queda colgada, ni por degradación del Worker ni por falta de simulación.",
+      "status": "D (contrato del proyecto: null ≠ 0 ≠ Off, y nada silencioso)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/app.ts (numParam, wireDegraded); src/app/engineHost.ts; src/app/engineClient.ts (exportSession, importSession); src/ui/actions.ts",
+      "tests": [
+        "tests/unit/review6.test.ts (R6-01, R6-02)",
+        "tests/e2e/interaction.spec.ts (CFG · parámetros ilegibles)"
+      ]
     }
   ]
 }
