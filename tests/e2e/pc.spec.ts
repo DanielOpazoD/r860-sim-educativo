@@ -127,3 +127,25 @@ test.describe('A/C PC y edición', () => {
     expect((await frame(page)).settings.biasFlow).toBeCloseTo(0.1, 6);
   });
 });
+
+test.describe('Alarmas configuradas desde el diálogo', () => {
+  test('VTesp bajo y FR alta configurados en el diálogo se activan mientras ventila y se reflejan en la banda', async ({ page }) => {
+    await open(page, { speed: 4, instructor: 0 });
+    await page.locator('[data-action="alarmSetup"]').first().click();
+    await page.fill('[data-limit="vteLow"]', '600');
+    await page.dispatchEvent('[data-limit="vteLow"]', 'input');
+    await page.click('[data-action="confirmLimits"]');
+    await expect.poll(async () => (await frame(page)).alarmBar.color, { timeout: 20_000 }).toBe('yellow');
+    await expect(page.locator('#alarm-band')).toContainText('VTesp bajo');
+    await page.locator('[data-action="alarmSetup"]').first().click();
+    await page.fill('[data-limit="vteLow"]', '');
+    await page.dispatchEvent('[data-limit="vteLow"]', 'input');
+    await page.fill('[data-limit="rrHigh"]', '10');
+    await page.dispatchEvent('[data-limit="rrHigh"]', 'input');
+    await page.click('[data-action="confirmLimits"]');
+    await expect
+      .poll(async () => (await frame(page)).alarms.find((a) => a.id === 'rrHigh')?.conditionActive ?? false, { timeout: 20_000 })
+      .toBe(true);
+    await expect(page.locator('#alarm-band')).toContainText('FR alta');
+  });
+});
