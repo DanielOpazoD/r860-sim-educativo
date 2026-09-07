@@ -44,10 +44,10 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     loopReference: Point[] | null = null;
   let dirty = true,
     lastPlot = 0;
-  // Amortiguación de presentación del manómetro (P): la columna sigue la presión al subir y desciende con una
-  // constante de 0,11 s, para que la caída al abrir la válvula se vea como un movimiento y no como un salto.
-  // Sólo afecta a la columna: las curvas, las métricas y las alarmas usan la señal sin amortiguar.
-  const GAUGE_FALL_TAU_S = 0.11;
+  // Amortiguación de presentación del manómetro (P): la apertura de la válvula espiratoria dura unas decenas de ms,
+  // menos que el refresco de la pantalla, así que la columna se amortigua al bajar (0,07 s) para que la transición se
+  // vea como un movimiento. Sólo afecta a la columna: curvas, métricas y alarmas usan la señal sin amortiguar.
+  const GAUGE_FALL_TAU_S = 0.07;
   let gaugePaw: number | null = null,
     gaugeAt = 0,
     gaugeAnimating = false;

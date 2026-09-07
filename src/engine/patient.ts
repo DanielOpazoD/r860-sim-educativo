@@ -127,8 +127,8 @@ export class PatientModel {
     const c2 = this.params.second?.crs ?? 0;
     const total = v + v2;
     const vol = (p: number): number => equilibriumVolumeFor(this.params, p) + c2 * (p - this.params.p0);
-    let lo = this.params.p0 - 50,
-      hi = this.params.p0 + 200;
+    let lo = this.params.p0 - 100,
+      hi = this.params.p0 + 500; // holgado: con la sigmoide en su zona rígida la presión puede ser muy alta
     for (let i = 0; i < 80; i++) {
       const mid = (lo + hi) / 2;
       if (vol(mid) < total) lo = mid;
@@ -137,10 +137,20 @@ export class PatientModel {
     return (lo + hi) / 2;
   }
 
-  /** Compliance local (pendiente de la curva P-V) al volumen actual: con sigmoide cambia con el volumen. */
-  compliance(v: number = this.v): number {
+  /** Compliance local de la unidad principal (pendiente de su curva P-V). */
+  complianceMain(v: number = this.v): number {
     const s = this.params.sigmoid;
     return s && s.b > 0 ? sigmoidCompliance(s, this.params.p0, v) : this.params.crs;
+  }
+  /** Compliance local del sistema completo: la suma de las unidades, que es lo que mediría una oclusión larga. */
+  compliance(v: number = this.v): number {
+    return this.complianceMain(v) + (this.hasSecond ? (this.params.second?.crs ?? 0) : 0);
+  }
+  /** Constante de tiempo más corta de las ramas: fija el sub-paso de los integradores. */
+  private minBranchTau(): number {
+    const t1 = Math.min(this.params.rInsp, this.params.rExp) * Math.max(1e-5, this.complianceMain());
+    const sec = this.params.second;
+    return sec && sec.crs > 0 ? Math.min(t1, Math.min(sec.rInsp, sec.rExp) * sec.crs) : t1;
   }
 
   /** Resistencia lineal según el sentido del flujo; la espiratoria puede crecer al vaciarse el pulmón. */
@@ -184,13 +194,7 @@ export class PatientModel {
 
   /** Resolver Q para una Paw impuesta (fuente de presión). Con dos unidades devuelve el flujo TOTAL del nodo. */
   flowForPaw(paw: number, pmus: number, v: number = this.v, rSeries = 0, v2: number = this.v2): number {
-    const dp = paw + pmus - this.pel(v);
-    const r1 = this.r1For(dp >= 0 ? 1 : -1, v) + rSeries;
-    const r2 = this.params.r2;
-    const q = r2 <= 0 ? dp / r1 : Math.sign(dp) * ((-r1 + Math.sqrt(r1 * r1 + 4 * r2 * Math.abs(dp))) / (2 * r2));
-    if (q >= 0) return q;
-    const qMax = this.maxExpiratoryFlow(paw, v);
-    const q1 = Number.isFinite(qMax) ? -Math.min(-q, qMax) : q;
+    const q1 = this.branch1Flow(paw, pmus, v, rSeries);
     return this.hasSecond ? q1 + this.branch2Flow(paw, pmus, v2) : q1;
   }
   /** Flujo sólo de la unidad principal (la que lleva Rohrer, limitación al flujo y dependencia del volumen). */
@@ -241,7 +245,7 @@ export class PatientModel {
     maxFlow = Number.POSITIVE_INFINITY,
     rSeries = 0,
   ): { dV: number; qEnd: number; clamped: boolean } {
-    const tauMin = Math.min(this.params.rInsp, this.params.rExp) * Math.max(1e-5, this.compliance());
+    const tauMin = this.minBranchTau();
     const nSub = Math.min(1000, Math.max(1, Math.ceil(dt / (0.2 * Math.max(1e-6, tauMin)))));
     // El tope de flujo (válvula/actuador) se aplica dentro de cada etapa del RK2, no en un paso aparte: así no hay
     // sobreimpulso dependiente de dt cuando el flujo libre cruza el tope a mitad de paso (revisión E24).
@@ -293,7 +297,7 @@ export class PatientModel {
    * reparto entre ramas cambia dentro del tramo, así que se sub-divide y en cada sub-paso se resuelve la presión
    * del nodo: con q = 0 eso es exactamente el pendelluft (el gas pasa de una unidad a la otra con el circuito cerrado).
    */
-  integrateFlowSource(q: number, dt: number): { dV: number } {
+  integrateFlowSource(q: number, dt: number, pmus = 0): { dV: number } {
     if (!this.hasSecond) {
       const v0 = this.v;
       const dV = q * dt;
@@ -301,21 +305,19 @@ export class PatientModel {
       this.relax(q, dt, v0);
       return { dV };
     }
-    const sec = this.params.second as { crs: number; rInsp: number; rExp: number };
-    const tauMin = Math.min(
-      Math.min(this.params.rInsp, this.params.rExp) * Math.max(1e-5, this.compliance()),
-      Math.min(sec.rInsp, sec.rExp) * sec.crs,
-    );
+    const tauMin = this.minBranchTau();
     const nSub = Math.min(1000, Math.max(1, Math.ceil(dt / (0.2 * Math.max(1e-6, tauMin)))));
     const h = dt / nSub;
     for (let i = 0; i < nSub; i++) {
       const before = this.v;
-      const py1 = this.nodePressureForFlow(q, 0, this.v, this.v2);
-      const k1a = this.branch1Flow(py1, 0, this.v),
-        k1b = this.branch2Flow(py1, 0, this.v2);
-      const py2 = this.nodePressureForFlow(q, 0, this.v + h * k1a, this.v2 + h * k1b);
-      const k2a = this.branch1Flow(py2, 0, this.v + h * k1a),
-        k2b = this.branch2Flow(py2, 0, this.v2 + h * k1b);
+      // El esfuerzo es común a las dos unidades: desplaza la presión del nodo pero no el reparto entre ramas.
+      // Aun así entra en el cálculo porque la limitación al flujo se conmuta comparando la Pva REAL con la presión crítica.
+      const py1 = this.nodePressureForFlow(q, pmus, this.v, this.v2);
+      const k1a = this.branch1Flow(py1, pmus, this.v),
+        k1b = this.branch2Flow(py1, pmus, this.v2);
+      const py2 = this.nodePressureForFlow(q, pmus, this.v + h * k1a, this.v2 + h * k1b);
+      const k2a = this.branch1Flow(py2, pmus, this.v + h * k1a),
+        k2b = this.branch2Flow(py2, pmus, this.v2 + h * k1b);
       this.v += (h / 2) * (k1a + k2a);
       this.v2 += (h / 2) * (k1b + k2b);
       this.relax((this.v - before) / h, h, before);

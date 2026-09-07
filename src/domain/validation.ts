@@ -236,6 +236,7 @@ export function validatePatientParams(p: {
   r2: number;
   p0: number;
   rExpValve?: number;
+  expValveOpenMs?: number;
   eVisc?: number;
   tauViscS?: number;
   sigmoid?: { b: number; c: number; d: number };
@@ -250,6 +251,8 @@ export function validatePatientParams(p: {
   if (r.length) return r;
   if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
     r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
+  if (p.expValveOpenMs !== undefined && (!Number.isFinite(p.expValveOpenMs) || p.expValveOpenMs < 0 || p.expValveOpenMs > 200))
+    r.push('Apertura de la válvula espiratoria fuera de 0–200 ms');
   if (p.crs < 1e-4 || p.crs > 1) r.push('Crs fuera de 0.1–1000 mL/cmH2O');
   if (p.rInsp < 0.1 || p.rInsp > 1000) r.push('Rinsp fuera de 0.1–1000 cmH2O·s/L');
   if (p.rExp < 0.1 || p.rExp > 1000) r.push('Rexp fuera de 0.1–1000 cmH2O·s/L');

@@ -3,7 +3,8 @@ import { R860_PROFILE, defaultInit } from '../src/profiles';
 import type { PatientParams, VcSettings } from '../src/domain/types';
 
 /** Banco SC-01: C = 0.05, R = 10, PEEP 5, VT 0.5 L, Tinsp 1 s (flujo 0.5 L/s), sin pausa. */
-export const BENCH_PATIENT: PatientParams = { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 };
+/** El banco analítico usa válvula ideal (apertura instantánea): las referencias BM/PHY son exactas. */
+export const BENCH_PATIENT: PatientParams = { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, expValveOpenMs: 0 };
 export const BENCH_SETTINGS: VcSettings = {
   mode: 'AC_VC',
   fio2: 0.21,

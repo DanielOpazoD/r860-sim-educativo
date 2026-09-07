@@ -170,12 +170,17 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
     );
     const i = serie.findIndex((s) => s[2] === 'exp');
     expect(i).toBeGreaterThan(0);
+    const senal = serie.slice(i, i + 12).map((s) => s[0]);
     const bajada = serie.slice(i, i + 12).map((s) => s[1]);
-    expect(serie[i]?.[0]).toBeLessThan(6); // la señal ya está en PEEP
-    expect(bajada[0]).toBeGreaterThan(12); // la columna todavía no
-    expect(bajada.at(-1)).toBeLessThan(bajada[0]!); // y baja escalón a escalón
+    // La señal pierde de golpe lo resistivo (Ppico → presión alveolar) y luego baja con la válvula abriéndose.
+    expect(senal[0]).toBeLessThan(serie[i - 1]![0] - 3);
+    expect(senal[0]).toBeGreaterThan(8);
+    expect(senal.at(-1)).toBeLessThan(6); // en menos de 200 ms ya está en PEEP
+    // La columna sigue esa bajada amortiguada, escalón a escalón.
+    expect(bajada[0]).toBeGreaterThan(12);
+    expect(bajada.at(-1)).toBeLessThan(bajada[0]!);
     for (let k = 1; k < bajada.length; k++) expect(bajada[k]!).toBeLessThanOrEqual(bajada[k - 1]! + 1e-9);
-    expect(new Set(bajada.map((v) => Math.round(v * 10))).size).toBeGreaterThan(3); // varios valores intermedios visibles
+    expect(new Set(bajada.map((v) => Math.round(v * 10))).size).toBeGreaterThan(3);
   });
 
   test('el VTesp mostrado cambia entre ciclos alrededor del volumen programado', async ({ page }) => {
