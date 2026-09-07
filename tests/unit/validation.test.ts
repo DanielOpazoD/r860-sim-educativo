@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assert as fcAssert, double as fcDouble, property as fcProperty } from 'fast-check';
+import { assert as fcAssert, double as fcDouble, pre as fcPre, property as fcProperty } from 'fast-check';
 import { gridValues, isOnGrid, nearestGridValue, stepDisplayValue, validateVcSettings, deriveVcTiming } from '../../src/domain/validation';
 import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS, IE_VALUES } from '../../src/profiles/r860-es-photo-reference/settings';
 import { BENCH_SETTINGS } from '../helpers';
@@ -43,7 +43,9 @@ describe('escalones por tramo (D ficha 2014) en ambos sentidos', () => {
           // llevar a rejilla desde abajo
           let v = min;
           while (v < x - 1e-9 && v < max) v = stepDisplayValue(rule, v, 1);
-          if (v <= min + 1e-9 || v >= max - 1e-9) return true;
+          // Descartar, no aprobar: `return true` en los extremos hacía que una parte de las 300 corridas no
+          // comprobara nada y aun así contara como superada. `pre` obliga a fast-check a generar otro caso.
+          fcPre(v > min + 1e-9 && v < max - 1e-9);
           const up = stepDisplayValue(rule, v, 1);
           const back = stepDisplayValue(rule, up, -1);
           return Math.abs(back - v) < 1e-6 && isOnGrid(rule, v);

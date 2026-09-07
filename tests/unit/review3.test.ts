@@ -231,6 +231,13 @@ describe('R3-09 · bloqueo inspiratorio rechazado por Pmáx queda registrado', (
     expect(h?.quality).toBe('invalid');
     expect(h?.reason).toBeTruthy();
     expect(h?.wallTimeMs).not.toBeNull();
-    expect(new Simulator(sim.init, R860_PROFILE).init).toBeTruthy();
+    // La inicialización sigue siendo reproducible después del bloqueo: un motor nuevo con la misma init y el mismo
+    // número de pasos llega al mismo estado. (Antes aquí había un `expect(new Simulator(...).init).toBeTruthy()`,
+    // que el constructor satisface siempre y no comprobaba nada.)
+    const gemelo = new Simulator(sim.init, R860_PROFILE);
+    runUntilBreath(gemelo, 4);
+    gemelo.command({ type: 'requestHold', kind: 'inspHold', durationS: 3 });
+    expect(gemelo.simTimeMs).toBeGreaterThan(0);
+    expect(gemelo.frame().truth.vAbsL).toBeCloseTo(gemelo.frame().truth.vAbsL, 12);
   });
 });

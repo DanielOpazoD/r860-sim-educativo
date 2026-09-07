@@ -65,14 +65,21 @@ describe('INT · seleccionar/editar/confirmar/cancelar como transacciones', () =
   });
   it('PEEP: bajar desde 1 lleva a Off y subir desde Off lleva a 1 (Off no es 0)', () => {
     const active = { ...BENCH_SETTINGS, peep: 1 as const };
-    const { ec } = make(active);
+    const { ec, events } = make(active);
     ec.select('peep', 0);
     ec.adjust(-1, 1);
     expect(ec.state.kind === 'editing' && ec.state.draftDisplay).toBe('off');
     ec.adjust(1, 2);
     expect(ec.state.kind === 'editing' && ec.state.draftDisplay).toBe(1);
     ec.adjust(-1, 3);
-    ec.confirm();
+    expect(ec.state.kind === 'editing' && ec.state.draftDisplay).toBe('off');
+    // Y confirmar aplica «off», que no es 0: el evento lleva el valor interno, no el de pantalla.
+    const conf = ec.confirm();
+    expect(conf).toBe(true);
+    const aplicado = events.filter((e) => e.type === 'confirmed').at(-1);
+    expect(aplicado, 'confirmar tiene que emitir el cambio').toBeDefined();
+    expect((aplicado as { key: string }).key).toBe('peep');
+    expect((aplicado as { changes: Record<string, unknown> }).changes.peep).toBe('off');
   });
   it('seleccionar otra tecla descarta el borrador anterior sin aplicarlo', () => {
     const { ec, events } = make();
