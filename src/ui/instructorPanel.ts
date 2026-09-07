@@ -126,6 +126,7 @@ export function createInstructorPanel(
     deps.metrics.resetLog();
     deps.plots.reset();
     if (ctx.frozen) ctx.toggleFreeze();
+    $('#monitor').classList.add('loading');
     ctx.client.loadScenario(sc, false); // la lección se reinicia al llegar el primer cuadro de la sesión nueva
     ctx.switchView('waves');
     $('#global-notice').hidden = true;

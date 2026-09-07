@@ -66,6 +66,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         put(el.querySelector('.numeric-value'), f(value(m), m.decimals));
         put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
+        if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
         const h = fr.procedure.last.inspHold;
         put(
           el.querySelector('.numeric-age'),

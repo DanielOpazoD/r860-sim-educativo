@@ -25,14 +25,6 @@ export const ALARM_RULES: Record<string, RuleDef> = {
     latching: true,
     source: 'ventilator.paw',
   },
-  plimit: {
-    id: 'plimit',
-    priority: 'medium',
-    message: 'Presión limitada por Plimit',
-    responseAction: 'none',
-    latching: true,
-    source: 'ventilator.paw',
-  },
   ppeakLow: { id: 'ppeakLow', priority: 'medium', message: 'Ppico baja', responseAction: 'none', latching: true, source: 'ventilator.paw' },
   vteLow: { id: 'vteLow', priority: 'medium', message: 'VTesp bajo', responseAction: 'none', latching: true, source: 'ventilator.flow' },
   vteHigh: { id: 'vteHigh', priority: 'medium', message: 'VTesp alto', responseAction: 'none', latching: true, source: 'ventilator.flow' },
@@ -172,17 +164,6 @@ export class AlarmEngine {
   onBreath(record: BreathRecord, metrics: Record<string, MetricSample>, simTimeMs: number): void {
     const L = this.limits;
     if (!record.pmaxReached) this.resolve('pmax', simTimeMs);
-    // Aviso (P, E-036): la inspiración terminó limitada por Plimit; el VT entregado puede ser menor que el programado.
-    if (record.plimitReached)
-      this.activate(
-        'plimit',
-        simTimeMs,
-        record.ppeak,
-        Math.round(record.ppeak),
-        null,
-        `inspiración limitada por Plimit; VTi ${Math.round(litersToMl(record.vtInsp))} mL`,
-      );
-    else this.resolve('plimit', simTimeMs);
     this.check('ppeakLow', simTimeMs, record.ppeak, L.ppeakLow, 'low', Math.round(record.ppeak));
     this.check('vteLow', simTimeMs, record.vtExp, L.vteLow, 'low', Math.round(litersToMl(record.vtExp)));
     this.check('vteHigh', simTimeMs, record.vtExp, L.vteHigh, 'high', Math.round(litersToMl(record.vtExp)));

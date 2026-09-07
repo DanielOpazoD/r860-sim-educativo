@@ -121,3 +121,10 @@ Una tercera lectura adversarial de contexto limpio revisó el motor de PC, los b
 - **Límites de alarma conservados al cambiar de escenario** (antes volvían a los valores iniciales y el usuario percibía que «la alarma no se activaba»).
 - **Generación del motor** en cada cuadro: la lección se reinicia con el primer cuadro de la sesión nueva, lo que evitaba objetivos «cumplidos» con cuadros del escenario anterior. Sin aviso de «Objetivo realizado»: la lista de objetivos ya lo muestra.
 - Poda: firma «SIMULACIÓN EDUCATIVA» del bisel retirada (queda «R860 LAB»); datos del modelo (τ, PEEPi, volumen absoluto, O₂, Pmus) plegados bajo «Datos del modelo»; el botón del panel docente pasa a icono en la cabecera; tarjetas de escenario con categoría a la izquierda y nivel a la derecha.
+
+## v0.3.6 · Plimit como indicador, arranque con ventana llena y pasada de diseño (06-09-2026)
+
+- **Plimit ya no es alarma**: cuando la inspiración termina limitada por Plimit, aparece una etiqueta «Plimit» junto a Ppico (E-036 pasa de alarma P a indicador P). Motivo: el usuario no configuró ninguna alarma y Plimit es un ajuste, no un límite de alarma; la conducta del R860 al respecto sigue sin verificar.
+- **Carga de escenario**: medida en 0,2 s entre el toque y el primer cuadro; el motor adelanta tres ciclos (mínimo 12 s) para que la ventana de curvas aparezca llena; las curvas se siembran con el historial de la sesión nueva (antes el historial anterior filtraba las muestras nuevas y la pantalla quedaba vacía); velo con indicador giratorio sobre el monitor hasta el primer cuadro.
+- **Diseño**: escala tipográfica 10/11/12/13/15 px y espaciado de 8 px en cabecera, título de escenario, panel docente (etiquetas cortas: «Compliance (C)», «Resistencia insp.», «Esfuerzo (Pmus)»), barra de señal y botones; sin subtítulo «Mecánica del paciente virtual» ni descargo de la lección.
+- **Móvil**: la cabecera ya no ensancha el viewport de disposición (hacía inestables las capas fijas); botones del título de la ventana de bloqueo de 44 px y geometría estable.

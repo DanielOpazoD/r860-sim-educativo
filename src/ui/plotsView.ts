@@ -127,6 +127,11 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       return frozen;
     },
     ingest(prev, fr) {
+      if (prev && prev.simTimeMs > fr.simTimeMs) {
+        // sesión nueva (escenario o importación): el historial anterior no debe filtrar las muestras nuevas
+        points = [];
+        loopReference = null;
+      }
       const s = fr.samples;
       const lastT = points[points.length - 1]?.[0] ?? -1;
       for (let i = 0; i < s.t.length; i += 5) {
@@ -142,10 +147,6 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         ]);
       }
       if (points.length > 6000) points.splice(0, points.length - 6000);
-      if (prev && prev.simTimeMs > fr.simTimeMs) {
-        points = [];
-        loopReference = null;
-      }
       dirty = true;
     },
     reset() {

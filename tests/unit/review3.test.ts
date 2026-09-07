@@ -81,16 +81,15 @@ describe('R3-03 · flujo de base espiratorio: el esfuerzo hunde la Pva y no inha
 });
 
 describe('R3-04 · aviso «Presión limitada por Plimit»', () => {
-  it('con Plimit 7 la alarma de prioridad media se activa; al subir Plimit se resuelve', () => {
+  it('con Plimit 7 el cuadro marca «limitado por Plimit» sin alarma; al subir Plimit el indicador desaparece', () => {
     const sim = benchSim({ settings: { ...BENCH_SETTINGS, plimit: 7 } });
     runUntilBreath(sim, 2);
-    const a = sim.frame().alarms.find((x) => x.id === 'plimit');
-    expect(a?.conditionActive).toBe(true);
-    expect(a?.priority).toBe('medium');
-    expect(sim.frame().alarmBar.color).toBe('yellow');
+    expect(sim.frame().live.plimitLimited).toBe(true);
+    expect(sim.frame().alarms.some((x) => x.id === 'plimit')).toBe(false);
+    expect(sim.frame().alarmBar.color).not.toBe('yellow');
     sim.command({ type: 'confirmSettings', changes: { plimit: 35 } });
     runUntilBreath(sim, 4);
-    expect(sim.frame().alarms.find((x) => x.id === 'plimit')?.conditionActive).toBe(false);
+    expect(sim.frame().live.plimitLimited).toBe(false);
   });
   it('Plimit por encima de Pmáx se acepta con aviso no bloqueante', () => {
     const sim = benchSim();
