@@ -11,7 +11,7 @@ test.describe('A/C PC y edición', () => {
     await page.click('[data-action="confirmModes"]');
     await expect(page.locator('#scenario-sub')).toContainText('A/C PC');
     await expect.poll(async () => (await frame(page)).settings.mode).toBe('AC_PC');
-    await expect(page.locator('#quick-controls [data-key]')).toHaveCount(6);
+    await expect(page.locator('#quick-controls [data-key]')).toHaveCount(6); // PC: sin Plimit
     expect(await page.$$eval('#quick-controls [data-key]', (e) => e.map((x) => (x as HTMLElement).dataset.key))).toEqual([
       'fio2',
       'pinsp',

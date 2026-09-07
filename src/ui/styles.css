@@ -4582,3 +4582,11 @@ body {
 .hold-panel.mobile-hold #hold-status {
   min-height: 20px;
 }
+
+/* Teclas de ajuste: seis en PC, siete en VC (Plimit visible junto a Pmáx). */
+.quick-controls {
+  grid-template-columns: 150px repeat(var(--nkeys, 6), 1fr) 100px 46px;
+}
+.quick-controls .quick-key b {
+  font-size: 28px;
+}
