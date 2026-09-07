@@ -1,13 +1,14 @@
 import type { MetricSample, ProcedureKind, ProcedureResult, Quality } from '../domain/types';
 import {
   PLATEAU_REVERSAL_CMH2O,
-  PLATEAU_STABILITY_CMH2O,
+  PLATEAU_DRIFT_RATE_CMH2O_S,
   type ControllerEvent,
   type HoldKind,
   type HoldOutcome,
   type VcController,
 } from './controller';
 import { msToS, sToMs } from '../domain/units';
+import { guardFiniteness } from './metrics';
 
 /** Denominador mínimo para Cstat (cmH2O), P. */
 export const MIN_CSTAT_DENOMINATOR = 1;
@@ -37,16 +38,17 @@ function mkSample(
     windowMs: number | null;
   },
 ): MetricSample {
+  const g = guardFiniteness(value, ctx.quality, ctx.reason);
   return {
     key,
-    value,
+    value: g.value,
     unit,
     source: 'procedure',
     simTimeMs: ctx.simTimeMs,
     breathId: ctx.breathId,
     procedureId: ctx.procedureId,
-    quality: ctx.quality,
-    reason: ctx.reason,
+    quality: g.quality,
+    reason: g.reason,
     windowMs: ctx.windowMs,
   };
 }
@@ -148,7 +150,7 @@ export class ProcedureManager {
     } else if (!Number.isFinite(o.reversal) || o.reversal > PLATEAU_REVERSAL_CMH2O) {
       quality = 'invalid';
       reason = 'mesetaPerturbada';
-    } else if (!Number.isFinite(o.stability) || o.stability > PLATEAU_STABILITY_CMH2O) {
+    } else if (!Number.isFinite(o.driftRate) || o.driftRate > PLATEAU_DRIFT_RATE_CMH2O_S) {
       quality = 'invalid';
       reason = 'mesetaInestable';
     }
