@@ -196,10 +196,19 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     );
     expect((await frame(page)).alarmBar.color).toBe('red'); // reconocida pero la condición persiste
     await page.keyboard.press('Escape');
-    // Resolver la causa desde el panel docente (Rinsp 400 → 10): la alarma se resuelve; como ya estaba reconocida, la banda vuelve a verde.
+    // Resolver la causa desde el panel docente (Rinsp 400 → 10). Con los límites por omisión configurados, un ventilador
+    // que entrega 0 mL no alarma sólo por Pmáx: también saltan VTesp bajo y VMesp bajo, y esas dos se activaron DESPUÉS
+    // del reconocimiento anterior. Así que al resolverse la causa la banda queda gris —resuelta, pendiente de
+    // reconocer— y hace falta reconocer otra vez para limpiarla. Ése es justamente el contrato que esta prueba fija.
     await page.fill('[data-phys-number="resistance"]', '10');
     await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
+    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'grey', null, {
+      timeout: 20_000,
+    });
+    await page.click('[data-action="alarms"]');
+    await page.click('[data-action="acknowledge"]');
+    await page.keyboard.press('Escape');
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green', null, {
       timeout: 20_000,
     });

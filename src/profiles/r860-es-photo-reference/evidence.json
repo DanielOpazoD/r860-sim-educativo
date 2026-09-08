@@ -892,6 +892,28 @@
       "locator": "—",
       "implemented": "src/ui/styles.css (.alarm-band, .numeric.alarm-value)",
       "tests": []
+    },
+    {
+      "id": "E-070",
+      "claim": "Los objetivos de una lección se evalúan todos, no sólo el primero pendiente. La lista está numerada y se recorre en orden, pero eso es una sugerencia, no una cerradura: con la regla anterior un objetivo imposible dejaba muertos a todos los que venían detrás, y SC-04 quedaba en cero de tres alcanzables.",
+      "status": "P (decisión docente)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/lesson.ts (nextCompletedTask)",
+      "tests": [
+        "tests/unit/objetivos.test.ts"
+      ]
+    },
+    {
+      "id": "E-071",
+      "claim": "Los límites de alarma iniciales dejan de estar todos en Off. Criterio dimensionado sobre los ajustes por omisión: VTesp ±50 % del VT programado (250/750 mL), VMesp la mitad y el doble del previsto (4/15 L/min), FR 5/35 por minuto, FiO2 18/100 %, Ppico bajo 8 cmH2O como lo más parecido a una alarma de desconexión que este modelo permite, y PEEPe en Off como en las fotografías P1 y P3. Comprobado sobre los catorce escenarios: sólo dispara SC-18, con VTesp bajo en la respiración que no llega y VTesp alto en la apilada.",
+      "status": "P (los valores son propuestos; los rangos editables son D ficha 2014 p.3 y la PEEPe en Off es O)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/profiles/r860-es-photo-reference/settings.ts (DEFAULT_ALARM_LIMITS)",
+      "tests": [
+        "tests/unit/objetivos.test.ts"
+      ]
     }
   ]
 }

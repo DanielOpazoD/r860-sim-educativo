@@ -48,7 +48,7 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   vteBelowSet: (c) => (c.frame.metrics.vte?.value ?? 1) < c.frame.settings.vt * 0.9,
   plimitChanged: (c) => !!c.flags.plimitChanged,
   trigger1: (c) => Math.abs(c.frame.settings.flowTrigger * 60 - 1) < 1e-6,
-  assisted: (c) => (c.frame.metrics.rr?.value ?? 0) > c.frame.settings.rr + 0.5,
+  assisted: (c) => !!c.flags.assistedSeen,
   anyHold: (c) => {
     const h = c.frame.procedure.last.inspHold;
     return !!h && after(h, c.lessonStartMs);
@@ -60,8 +60,11 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   truthOpen: (c) => !!c.flags.truthOpen,
   /** Ha medido una meseta corta y otra larga, y la larga resultó más baja: es el efecto del pendelluft. */
   plateauDropSeen: (c) => {
+    // «Corta» es la más corta que el equipo acepta como meseta válida. Con dos unidades muy dispares, una oclusión de
+    // 2 o 3 s se rechaza por inestable —correctamente: la presión sigue cayendo—, así que exigir ≤ 3 s hacía el
+    // objetivo imposible por construcción. La comparación docente sigue siendo la misma: corta contra larga.
     const hs = (c.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
-    const corto = hs.filter((h) => h.d <= 3);
+    const corto = hs.filter((h) => h.d <= 5);
     const largo = hs.filter((h) => h.d >= 10);
     return corto.some((a) => largo.some((b) => b.p < a.p - 0.5));
   },
@@ -110,17 +113,27 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
 export function updateLessonFlags(frame: EngineFrame, flags: Record<string, unknown>): void {
   if (frame.truth.sensors.fio2Bias !== 0) flags.biasWasSet = true;
   if (frame.alarms.some((a) => a.conditionActive)) flags.alarmActiveSeen = true;
+  // Una respiración asistida se cuenta cuando ocurre. Antes se deducía de que la FR MEDIA superara a la programada,
+  // que es otra cosa: con la ventana móvil de ocho respiraciones hacen falta muchos disparos seguidos para moverla,
+  // así que el objetivo parecía roto aunque el alumno hubiera conseguido lo que se le pedía.
+  for (const e of frame.eventsTail) {
+    if (e.kind === 'breath' && (e.payload as { type?: string }).type === 'assisted') flags.assistedSeen = true;
+  }
 }
 
 /**
- * Evalúa SÓLO el primer objetivo pendiente (secuencia guiada) y lo devuelve si acaba de cumplirse.
+ * Evalúa TODOS los objetivos pendientes y devuelve el primero que acaba de cumplirse.
  * No marca nada: el llamador decide cómo registrar y anunciar.
+ *
+ * Antes se evaluaba sólo el primer pendiente y se devolvía sin mirar los demás. La lista está numerada y se recorre
+ * en orden, pero eso es una sugerencia, no una cerradura: con esa regla un objetivo imposible —o simplemente uno que
+ * el alumno resuelve más tarde— dejaba muertos a todos los que venían detrás.
  */
 export function nextCompletedTask(tasks: LessonTask[], done: Set<string>, ctx: LessonContext): LessonTask | null {
   updateLessonFlags(ctx.frame, ctx.flags);
   for (const task of tasks) {
     if (done.has(task.id)) continue;
-    return LESSON_TESTS[task.test]?.(ctx) ? task : null;
+    if (LESSON_TESTS[task.test]?.(ctx)) return task;
   }
   return null;
 }
