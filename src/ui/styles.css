@@ -4645,3 +4645,150 @@ body {
   font-size: 10px;
   letter-spacing: 0.4px;
 }
+
+/* ---------- Pestaña «Resumen»: el esquema de una respiración y las cuatro fórmulas ---------- */
+.view-teaching {
+  flex-direction: column;
+}
+.edu-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.edu-diagram {
+  background: #0c4a8c33;
+  border: 1px solid #3d7bb0;
+  border-radius: 6px;
+  padding: 6px 10px 2px;
+}
+.edu-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.edu-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.edu-card {
+  background: #0c4a8c33;
+  border: 1px solid #3d7bb0;
+  border-left-width: 3px;
+  border-radius: 6px;
+  padding: 8px 11px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* El borde izquierdo dice de un vistazo si el valor cae dentro de su referencia; el estado nunca va sólo por color:
+   la tarjeta lleva además el rango escrito y, cuando falta el dato, qué hacer para medirlo. */
+.edu-card.edu-dentro {
+  border-left-color: #58c79a;
+}
+.edu-card.edu-fuera {
+  border-left-color: #e0a030;
+}
+.edu-card.edu-sinDato,
+.edu-card.edu-sinRango {
+  border-left-color: #6c93b5;
+}
+.edu-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.edu-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #d1f6ff;
+}
+.edu-card header b {
+  font-size: 23px;
+  font-weight: 600;
+  color: #eaffff;
+  line-height: 1;
+  white-space: nowrap;
+}
+.edu-card header b small {
+  font-size: 11px;
+  font-weight: 400;
+  color: #a6d0ed;
+  margin-left: 5px;
+}
+.edu-formula {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: block;
+}
+.edu-formula {
+  background: #08325e66;
+  color: #bfe6ff;
+  line-height: 1.5;
+}
+.edu-formula b {
+  color: #eaffff;
+  font-weight: 600;
+}
+.edu-flecha {
+  color: #7ce0b8;
+  padding: 0 3px;
+}
+.edu-falta {
+  margin: 0;
+  font-size: 12px;
+  color: #ffd27a;
+}
+.edu-ref {
+  margin: 0;
+  font-size: 12px;
+  color: #d1f6ff;
+}
+.edu-ref b {
+  font-weight: 600;
+}
+.edu-ref small {
+  font-size: 11px;
+  color: #9dc4e2;
+}
+.edu-ref.edu-sinref {
+  color: #9dc4e2;
+}
+.edu-nota {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #b9d9ef;
+}
+.edu-pie {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #9dc4e2;
+  border-top: 1px solid #548db970;
+  padding-top: 7px;
+}
+.edu-pie code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #bfe6ff;
+}
+/* En pantallas estrechas la fila de cuatro se parte en dos y luego en una. */
+@media (max-width: 1000px) {
+  .edu-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .edu-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

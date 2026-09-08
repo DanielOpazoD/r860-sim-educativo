@@ -9,7 +9,7 @@ import type { ProfileSpec } from '../domain/profile';
 import type { EngineFrame } from '../engine/simulator';
 import type { Scenario } from '../scenarios';
 
-export type ViewId = 'waves' | 'basic' | 'loops' | 'data' | 'trends' | 'log';
+export type ViewId = 'waves' | 'basic' | 'loops' | 'data' | 'trends' | 'log' | 'teaching';
 export type FixtureId = 'P1' | 'P3';
 export type Actor = 'learner' | 'instructor';
 export interface CommandResult {

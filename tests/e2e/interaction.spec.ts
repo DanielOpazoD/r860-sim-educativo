@@ -285,3 +285,43 @@ test.describe('CFG · contrato de estado del ajuste', () => {
     expect((await frame(page)).settings.peep).toBe(5);
   });
 });
+
+test.describe('EDU · pestaña Resumen', () => {
+  test('sin bloqueo no inventa números; con bloqueo enseña la cuenta con los del monitor', async ({ page }) => {
+    await open(page, { speed: 4, instructor: 0 });
+    await page.click('.monitor-nav [data-view="teaching"]');
+    await expect(page.locator('#view-teaching')).toBeVisible();
+    // La Ppico se lee siempre; la meseta y sus derivados exigen ocluir, y la pestaña lo dice en vez de rellenar.
+    await expect(page.locator('.edu-card').first()).toContainText('Presión pico');
+    await expect(page.locator('.edu-falta').first()).toContainText('bloqueo inspiratorio');
+    await expect(page.locator('.edu-sub')).toHaveCount(0);
+
+    await page.click('[data-action="inspiratory"]');
+    await page.click('[data-action="runHold"]');
+    await page.waitForFunction(
+      () => (window.__r860.frame as unknown as { procedure: { last: { inspHold: unknown } } })?.procedure.last.inspHold !== null,
+      null,
+      { timeout: 40_000 },
+    );
+    await page.click('[data-action="closeHold"]');
+    // El bloqueo lleva el monitor a las curvas, que es lo que se quiere ver durante la maniobra: se vuelve al resumen.
+    await page.click('.monitor-nav [data-view="teaching"]');
+    // Las cuatro tarjetas con su sustitución, y el número de la meseta es el mismo que publicó el bloqueo.
+    await expect(page.locator('.edu-card')).toHaveCount(4);
+    await expect(page.locator('.edu-formula b')).toHaveCount(4);
+    const pplat = await page.evaluate(
+      () =>
+        (window.__r860.frame as unknown as { procedure: { last: { inspHold: { values: { pplat: { value: number } } } } } }).procedure.last
+          .inspHold.values.pplat.value,
+    );
+    await expect(page.locator('.edu-card').nth(1)).toContainText(pplat.toFixed(1));
+    // Y en escritorio la pestaña cabe sin desplazarse: es un resumen, no un documento. En móvil las cuatro tarjetas se
+    // apilan y el desplazamiento es inevitable y correcto, así que ahí no se exige.
+    const alturas = await page.evaluate(() => {
+      const b = document.querySelector('#teaching-body') as HTMLElement;
+      return { cliente: b.clientHeight, contenido: b.scrollHeight };
+    });
+    if ((page.viewportSize()?.width ?? 0) >= 1000) expect(alturas.contenido).toBeLessThanOrEqual(alturas.cliente);
+    else expect(alturas.contenido).toBeGreaterThan(0);
+  });
+});

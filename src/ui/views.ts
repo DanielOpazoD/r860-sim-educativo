@@ -1,8 +1,8 @@
-/** Vistas del monitor (curvas, básica, bucles, datos, tendencias, registro) y escala del monitor en la ventana. */
+/** Vistas del monitor (curvas, básica, bucles, datos, tendencias, registro, resumen) y escala del monitor en la ventana. */
 import type { AppContext, ViewId } from './context';
 import { $, $$ } from './dom';
 
-export const VIEWS: ViewId[] = ['waves', 'basic', 'loops', 'data', 'trends', 'log'];
+export const VIEWS: ViewId[] = ['waves', 'basic', 'loops', 'data', 'trends', 'log', 'teaching'];
 
 export interface Views {
   readonly view: ViewId;
