@@ -914,6 +914,17 @@
       "tests": [
         "tests/unit/objetivos.test.ts"
       ]
+    },
+    {
+      "id": "E-072",
+      "claim": "La jerarquía de los dos techos de presión es una función pura, `thresholdCrossing`, fuera de la máquina de fases: gana el umbral que se cruza antes, que es el más bajo, porque durante la inspiración a flujo constante la presión sube de forma monótona; con los dos iguales gana Pmáx, que es la acción de seguridad. Se saca del switch para poder comprobarla sin arrancar un simulador, que es lo que pedía el peor defecto que ha tenido el proyecto.",
+      "status": "D (aritmética; la preferencia por Pmáx en el empate es P)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (thresholdCrossing)",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-07)"
+      ]
     }
   ]
 }

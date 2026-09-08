@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXP_MAX_FLOW_LPS, plateauQuality } from '../../src/engine/controller';
+import { EXP_MAX_FLOW_LPS, plateauQuality, thresholdCrossing } from '../../src/engine/controller';
 import { guardFiniteness } from '../../src/engine/metrics';
 import { sigmoidPressure, sigmoidVolume } from '../../src/engine/patient';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
@@ -152,6 +152,34 @@ describe('R5-06 · el contrato de calidad también cubre los procedimientos', ()
 });
 
 describe('R5-07 · Plimit protege sin dejar de ventilar', () => {
+  it('dentro de un tramo actúa el umbral que se cruza antes, que es el más bajo', () => {
+    // Aritmética pura de la jerarquía de seguridad. Sacarla del switch la hace comprobable sin arrancar un simulador,
+    // que es lo que este defecto pedía: aquí estuvo el peor fallo que ha tenido el proyecto.
+    const P = { plimit: 30, pmax: 40 };
+    // Ninguno se alcanza: el tramo se integra entero.
+    expect(thresholdCrossing(20, 25, P.plimit, P.pmax)).toEqual({ frac: 1, hit: null });
+    // Sólo Plimit, a dos tercios del tramo.
+    const soloPlimit = thresholdCrossing(20, 35, P.plimit, P.pmax);
+    expect(soloPlimit.hit).toBe('plimit');
+    expect(soloPlimit.frac).toBeCloseTo(10 / 15, 12);
+    // Los dos dentro del tramo: gana el más bajo, y con la fracción del más bajo.
+    const ambos = thresholdCrossing(20, 50, P.plimit, P.pmax);
+    expect(ambos.hit).toBe('plimit');
+    expect(ambos.frac).toBeCloseTo(10 / 30, 12);
+    // Ya superados al empezar: no se integra nada y actúa el más bajo, no el que se mirara primero.
+    expect(thresholdCrossing(35, 40, P.plimit, P.pmax)).toEqual({ frac: 0, hit: 'plimit' });
+    expect(thresholdCrossing(45, 60, P.plimit, P.pmax)).toEqual({ frac: 0, hit: 'plimit' });
+  });
+
+  it('con Pmáx por debajo de Plimit, o iguales, manda Pmáx', () => {
+    // Pmáx termina la inspiración: es la acción de seguridad y por eso gana el empate.
+    expect(thresholdCrossing(25, 30, 40, 20)).toEqual({ frac: 0, hit: 'pmax' });
+    expect(thresholdCrossing(35, 40, 30, 30)).toEqual({ frac: 0, hit: 'pmax' });
+    const dentro = thresholdCrossing(10, 30, 40, 20);
+    expect(dentro.hit).toBe('pmax');
+    expect(dentro.frac).toBeCloseTo(10 / 20, 12);
+  });
+
   it('el volumen entregado decrece de forma continua al subir la resistencia', () => {
     // El defecto: Pmáx se evaluaba antes que Plimit y contra la presión del flujo ORDENADO, no contra la que la máquina
     // dejaría alcanzar. Con Plimit 30 y Pmáx 40, pasar de Rinsp 69 a 70 llevaba el volumen de 314 mL a CERO, con la

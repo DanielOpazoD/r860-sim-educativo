@@ -1,7 +1,8 @@
 /** Exportaciones de sesión: CSV de tendencias y señal, JSON de sesión y captura PNG del monitor. Sin DOM salvo el lienzo que se pinta. */
 import type { SessionFile } from '../history/session';
 import type { EngineFrame } from '../engine/simulator';
-import { format as f, type Point } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
+import { type Point } from '../render/plots';
 import { clock, wallDate } from './format';
 import { humanReason } from './humanize';
 import { METRICS, metricValue } from './metricsTable';

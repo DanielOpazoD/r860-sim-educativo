@@ -31,5 +31,16 @@ export const msToS = (ms: Milliseconds): Seconds => ms / MS_PER_S;
 export const sToMs = (s: Seconds): Milliseconds => s * MS_PER_S;
 export const rrToCycleS = (rrPerMin: number): Seconds => S_PER_MIN / rrPerMin;
 
+/**
+ * Número para la pantalla, con el contrato del proyecto sobre el dato ausente: un valor que no es un número finito se
+ * muestra como «—», nunca como 0 (null ≠ 0 ≠ Off). Punto decimal como en las fotografías (O).
+ *
+ * Vivía en `render/plots.ts` y lo importaban ocho módulos de interfaz, de modo que la capa de dibujo en canvas era
+ * también la capa de formato y no se podía sustituir sin tocar toda la interfaz. Aquí es de la capa que no depende
+ * de nadie, y la usan tanto el dibujo como la interfaz.
+ */
+export const formatNumber = (v: number | null | undefined, d = 0): string =>
+  typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : '—';
+
 /** Comparación con tolerancia para valores en unidades internas. */
 export const approxEqual = (a: number, b: number, tol: number): boolean => Math.abs(a - b) <= tol;

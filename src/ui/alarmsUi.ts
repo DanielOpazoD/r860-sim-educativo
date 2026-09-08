@@ -2,7 +2,7 @@
 import type { AlarmLimits, AlarmState } from '../domain/types';
 import { isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
-import { format as f } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
 import { AlarmAudio } from './audio';
 import type { AppContext } from './context';
 import { $, $$, btn, esc, icon, put } from './dom';

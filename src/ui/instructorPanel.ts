@@ -4,7 +4,7 @@
  */
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
-import { format as f } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
 import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
 import { $, $$, icon, put } from './dom';
