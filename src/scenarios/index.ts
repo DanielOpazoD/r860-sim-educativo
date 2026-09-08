@@ -140,7 +140,7 @@ export const SCENARIOS: Scenario[] = [
     level: 2,
     lesson: {
       title: 'Plimit recorta la entrega',
-      text: 'A los 20 s la R inspiratoria sube a 40. Con Plimit 30, el flujo deja de ser constante y el VT espirado cae por debajo del programado.',
+      text: 'A los 20 s la R inspiratoria sube a 60. Con Plimit 30, el flujo deja de ser constante y el VT espirado cae a unos 350 mL: el ventilador sostiene la presión en vez de completar el volumen.',
       tasks: [
         { id: 'observe', text: 'Observa VTesp < VT programado tras los 20 s.', test: 'vteBelowSet' },
         { id: 'plimit', text: 'Sube Plimit (menú de modo, apartado Avanzado) y confirma.', test: 'plimitChanged' },
@@ -156,7 +156,7 @@ export const SCENARIOS: Scenario[] = [
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 15, ie: 1 / 3, peep: 5, pmax: 40, plimit: 30, pausePct: 0 },
     initialV: 'equilibrium',
-    perturbations: [{ atSimTimeMs: 20_000, patient: { rInsp: 40 }, note: 'Rinsp 10 → 40' }],
+    perturbations: [{ atSimTimeMs: 20_000, patient: { rInsp: 60 }, note: 'Rinsp 10 → 60' }],
     observe: 'Ppico sube, Pplat no; Plimit recorta la entrega.',
     caution: 'No cambiar C en secreto para exagerar el aspecto.',
   },
@@ -168,10 +168,10 @@ export const SCENARIOS: Scenario[] = [
     level: 3,
     lesson: {
       title: 'Esfuerzos que no disparan',
-      text: 'Pmus de 0.4 cmH2O con disparo por flujo de 3 L/min: el esfuerzo mueve unos 2 L/min y no dispara. Observa la curva de Pmus en el panel docente.',
+      text: 'Pmus de 0.4 cmH2O con disparo por flujo de 3 L/min: el esfuerzo mueve algo más de 1 L/min y no llega al umbral. Observa la curva de Pmus en el panel docente.',
       tasks: [
         { id: 'trig', text: 'Baja el trigger de flujo a 1 L/min en el menú de modo.', test: 'trigger1' },
-        { id: 'assisted', text: 'Consigue una respiración asistida (FR medida > programada).', test: 'assisted' },
+        { id: 'assisted', text: 'Consigue al menos una respiración asistida: el registro la marca como «asistida».', test: 'assisted' },
         { id: 'hold', text: 'Intenta un bloqueo inspiratorio con esfuerzo y revisa su validez.', test: 'anyHold' },
       ],
     },
@@ -265,8 +265,12 @@ export const SCENARIOS: Scenario[] = [
       title: 'Constantes de tiempo distintas y pendelluft',
       text: 'Este pulmón tiene dos unidades en paralelo: una rápida y una lenta. El vaciamiento ya no es una sola exponencial y, con el circuito ocluido, el gas sigue moviéndose de una a otra.',
       tasks: [
-        { id: 'corto', text: 'Mide una meseta con un bloqueo inspiratorio de 2 s.', test: 'validInsp' },
-        { id: 'largo', text: 'Repite con 15 s: la meseta medida baja unos 2 cmH₂O.', test: 'plateauDropSeen' },
+        {
+          id: 'corto',
+          text: 'Mide una meseta con un bloqueo inspiratorio de 4 s (con 2 s el equipo aún no la da por asentada).',
+          test: 'validInsp',
+        },
+        { id: 'largo', text: 'Repite con 15 s: la meseta medida baja alrededor de 1 cmH₂O.', test: 'plateauDropSeen' },
         { id: 'modelo', text: 'Abre «Datos del modelo» y compara la compliance local con la de cada unidad.', test: 'truthOpen' },
       ],
     },
@@ -274,7 +278,7 @@ export const SCENARIOS: Scenario[] = [
     answer:
       'Porque con el circuito cerrado las dos unidades no están en equilibrio entre sí: el gas pasa de la que quedó a más presión a la que quedó a menos (pendelluft) hasta igualarlas. Mientras eso ocurre la presión de la vía aérea sigue bajando, así que una oclusión corta mide una meseta más alta que la verdadera.',
     description:
-      'Unidad rápida (35 mL/cmH₂O, R 5) en paralelo con una muy lenta (25 mL/cmH₂O, R 200): cola espiratoria lenta y meseta que baja unos 2 cmH₂O entre una oclusión de 2 s y otra de 15 s.',
+      'Unidad rápida (35 mL/cmH₂O, R 5) en paralelo con una muy lenta (25 mL/cmH₂O, R 200): cola espiratoria lenta y meseta que baja alrededor de 1 cmH₂O entre una oclusión de 4 s y otra de 15 s. Con 2 s la presión aún cae demasiado deprisa y el equipo no da la meseta por válida.',
     patient: { crs: 0.035, rInsp: 5, rExp: 5, r2: 0, p0: 0, second: { crs: 0.025, rInsp: 200, rExp: 200 } },
     effort: passive,
     sensors: idealSensors,

@@ -377,17 +377,36 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
   riseMs: 100,
 };
 
-/** Límites de alarma iniciales: Off salvo lo que exige el motor (P). Rangos editables D ficha 2014 p.3. */
+/**
+ * Límites de alarma iniciales (P). Rangos editables D ficha 2014 p.3; los VALORES son propuestos, no del fabricante.
+ *
+ * Estaban todos en Off. Un ventilador de enseñanza cuyo estado inicial es «no se evalúa ninguna alarma» enseña lo
+ * contrario de lo que debe: el alumno nunca se encuentra con una alarma que él no haya provocado a propósito, y la
+ * primera lección de la cabecera —comprobar los límites antes de dejar al paciente— no aparece por ninguna parte.
+ *
+ * Criterio, dimensionado sobre los ajustes por omisión (VT 500 mL, FR 15, PEEP 5, FiO2 21 %):
+ *   VTesp   ±50 % del VT programado          250 / 750 mL
+ *   VMesp   la mitad y el doble del previsto   4 / 15 L/min
+ *   FR      apnea práctica y taquipnea          5 / 35 /min
+ *   FiO2    por debajo del aire y el tope      18 / 100 %
+ *   Ppico   bajo: 8 cmH2O, que es lo más parecido a una alarma de desconexión que este modelo permite
+ *   PEEPe   Off, como en las fotografías P1 y P3 (O)
+ * El techo de presión no es una alarma sino un ajuste: lo pone Pmáx en la tecla rápida.
+ *
+ * Comprobado sobre los catorce escenarios: sólo dispara SC-18, y por lo que debe —VTesp bajo en la respiración que no
+ * llega y VTesp alto en la apilada—. Los demás recorren su lección sin ruido. Cambiar el VT sin revisar los límites
+ * puede hacerlos saltar: eso es fiel a la cabecera, no un defecto.
+ */
 export const DEFAULT_ALARM_LIMITS: AlarmLimits = {
-  ppeakLow: 'off',
-  vteLow: 'off',
-  vteHigh: 'off',
-  mveLow: 'off',
-  mveHigh: 'off',
-  rrLow: 'off',
-  rrHigh: 'off',
-  fio2Low: 'off',
-  fio2High: 'off',
+  ppeakLow: 8,
+  vteLow: 0.25,
+  vteHigh: 0.75,
+  mveLow: 4,
+  mveHigh: 15,
+  rrLow: 5,
+  rrHigh: 35,
+  fio2Low: 0.18,
+  fio2High: 1.0,
   peepeLow: 'off',
   peepeHigh: 'off',
 };
