@@ -6,7 +6,8 @@ Documento de referencia para quien mantenga o extienda el simulador. Describe la
 
 ```
 domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui  ←  main
-                                                                render (hoja: sin importaciones)
+   ↑                                                            main → profiles (elige el perfil)
+   └── render (sólo tipos y unidades del dominio)
                                                                 workers → app
 ```
 
@@ -19,7 +20,7 @@ domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui
 | `fixtures` | Transcripción de las fotografías P1/P3 a un cuadro congelado, sin física | `domain`, `engine`, `profiles` | app, ui, render |
 | `history` | Exportación, importación validada y reproducción de sesiones | `domain`, `engine`, `profiles` | app, ui |
 | `app` | Protocolo del Worker, anfitrión, cliente, máquina de estados de edición | `domain`, `engine`, `profiles`, `scenarios`, `history` | ui |
-| `render` | Dibujo en canvas (curvas, bucles, manómetro, tendencias) | nada | — |
+| `render` | Dibujo en canvas (curvas, bucles, manómetro, tendencias) | `domain` | engine, app, ui |
 | `ui` | Composición de la interfaz, diálogos, editor, panel docente | todo lo anterior | — |
 | `workers` | Punto de entrada del Worker | `app` | — |
 
@@ -45,7 +46,7 @@ Invariantes: `null ≠ 0 ≠ Off`; seleccionar ≠ aplicar; el volumen absoluto 
 
 `src/ui/app.ts` es la raíz de composición: lee los parámetros, crea el cliente del motor, construye un contexto compartido (`AppContext`) y ensambla módulos por responsabilidad: `quickEditor.ts`, `holdPanel.ts`, `modeDialog.ts`, `alarmsUi.ts`, `metricsView.ts`, `plotsView.ts`, `views.ts`, `instructorPanel.ts`, `actions.ts`, `keyboard.ts`, con `dialogHost.ts`, `lessonTracker.ts`, `helpPanels.ts` y `labels.ts` como apoyo. Cada módulo se crea con una fábrica `createX(ctx, deps)`, posee su estado y su DOM, y las dependencias entre módulos forman un grafo acíclico explícito (quickEditor ← holdPanel/modeDialog ← instructorPanel ← actions/keyboard ← app), verificado por `import/no-cycle`. `app.ts` se queda en el papel de raíz de composición: monta, conecta y no decide nada de la simulación. Las funciones puras viven aparte: `format.ts`, `humanize.ts` (lenguaje del alumno), `metricsTable.ts`, `lesson.ts`, `exports.ts`, `dialogs.ts`, `patientControls.ts`.
 
-La interfaz depende del perfil inyectado (`ctx.profile`), no del módulo del R860. La excepción es la propia raíz de composición: `src/ui/app.ts` importa `R860_PROFILE` de `src/profiles` para elegir con qué perfil arranca la aplicación. Es el único punto donde aparece el perfil concreto fuera de `src/profiles`, y es deuda conocida (U-45): lo correcto sería resolverlo por parámetro de `startApp`, para que la elección la haga quien monta la página y no un módulo de interfaz.
+La interfaz depende del perfil inyectado (`ctx.profile`), no del módulo del R860: **ningún módulo de `src/ui` nombra un equipo concreto**. Quien lo elige es la raíz de composición, `src/main.ts`, que se lo entrega a `startApp` en `AppOptions.profile`; por eso el verificador de capas autoriza a `main` —y sólo a `main`— a alcanzar `profiles`. Un perfil pediátrico o de otro ventilador se cambia ahí, en una línea, sin tocar la interfaz.
 
 ## 5. Herramientas y puertas
 

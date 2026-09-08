@@ -377,30 +377,7 @@ export class VcController {
         const qCmd = this.timing.qTargetLps;
         const paw0 = p.pawForFlow(qCmd, this.pmusAt(this.simT), p.v);
         const paw1 = p.pawForFlow(qCmd, this.pmusAt(this.simT + h), p.v + qCmd * h);
-        let frac = 1;
-        let hit: 'plimit' | 'pmax' | null = null;
-        // Si al empezar el tramo la presión del flujo ordenado ya supera algún umbral, gana el que se cruza ANTES, que
-        // es el más bajo: durante la inspiración a flujo constante la presión sube de forma monótona. Antes se miraba
-        // Pmáx primero sin comparar, y eso invertía la jerarquía justo donde importa: con Plimit 30 y Pmáx 40, subir la
-        // resistencia de 69 a 70 cmH2O·s/L pasaba de entregar 314 mL a entregar CERO, porque se disparaba Pmáx contra
-        // una presión que la máquina nunca habría alcanzado — Plimit la habría recortado a 30 antes. Plimit existe para
-        // proteger sin dejar de ventilar. Con los dos umbrales iguales gana Pmáx, que es la acción de seguridad.
-        if (paw0 >= Math.min(s.pmax, s.plimit)) {
-          frac = 0;
-          hit = s.plimit < s.pmax ? 'plimit' : 'pmax';
-        } else {
-          if (paw1 >= s.pmax) {
-            frac = (s.pmax - paw0) / (paw1 - paw0);
-            hit = 'pmax';
-          }
-          if (paw1 >= s.plimit) {
-            const f = (s.plimit - paw0) / (paw1 - paw0);
-            if (f < frac) {
-              frac = f;
-              hit = 'plimit';
-            }
-          }
-        }
+        const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
         const used = Math.max(0, Math.min(h, frac * h));
         const { dV } = p.integrateFlowSource(qCmd, used, this.pmusAt(this.simT));
         if (this.breath) this.breath.vtInsp += dV;
@@ -768,6 +745,48 @@ export class VcController {
     };
     this.events.push({ type: 'breathEnd', record });
   }
+}
+
+/**
+ * Cuál de los dos techos de presión actúa dentro de un tramo, y en qué fracción de él.
+ *
+ * Durante la inspiración a flujo constante la presión sube de forma monótona, así que **gana el umbral que se cruza
+ * antes, que es el más bajo**. Vive aparte del `switch` porque es aritmética pura y porque es la jerarquía de
+ * seguridad del ventilador: aquí estuvo el peor defecto que ha tenido este proyecto. Se miraba Pmáx primero, sin
+ * compararlo con Plimit, y contra la presión que produciría el flujo ORDENADO en vez de la que la máquina dejaría
+ * alcanzar; con Plimit 30 y Pmáx 40, subir la resistencia de 69 a 70 cmH2O·s/L pasaba de entregar 314 mL a entregar
+ * CERO, porque saltaba Pmáx contra una presión que Plimit habría recortado a 30. Plimit existe para proteger sin
+ * dejar de ventilar.
+ *
+ * Con los dos umbrales iguales gana Pmáx, que es la acción de seguridad: terminar la inspiración.
+ *
+ * @param paw0 presión de vía aérea al empezar el tramo, con el flujo ordenado
+ * @param paw1 la misma al terminarlo
+ * @returns `frac` en 0..1 del tramo que se puede integrar antes de que actúe el techo, y cuál actúa (`null` si ninguno)
+ */
+export function thresholdCrossing(
+  paw0: number,
+  paw1: number,
+  plimit: number,
+  pmax: number,
+): { frac: number; hit: 'plimit' | 'pmax' | null } {
+  const primero = plimit < pmax ? 'plimit' : 'pmax';
+  if (paw0 >= Math.min(pmax, plimit)) return { frac: 0, hit: primero };
+  let frac = 1;
+  let hit: 'plimit' | 'pmax' | null = null;
+  const cruce = (umbral: number): number => (paw1 - paw0 > 0 ? (umbral - paw0) / (paw1 - paw0) : 1);
+  if (paw1 >= pmax) {
+    frac = cruce(pmax);
+    hit = 'pmax';
+  }
+  if (paw1 >= plimit) {
+    const f = cruce(plimit);
+    if (f < frac) {
+      frac = f;
+      hit = 'plimit';
+    }
+  }
+  return { frac, hit };
 }
 
 /**

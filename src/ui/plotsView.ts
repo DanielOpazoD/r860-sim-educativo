@@ -3,7 +3,8 @@
  * del ciclo de referencia y del planificador de dibujo (requestAnimationFrame sólo dibuja cuando algo cambió).
  */
 import type { EngineFrame } from '../engine/simulator';
-import { cyclePoints, drawGauge, drawLoop, drawMuscle, drawTrends, drawWave, format as f, type Point } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
+import { cyclePoints, drawGauge, drawLoop, drawMuscle, drawTrends, drawWave, type Point } from '../render/plots';
 import type { AppContext } from './context';
 import { $, icon, put } from './dom';
 import { clock } from './format';

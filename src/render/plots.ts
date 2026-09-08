@@ -1,3 +1,4 @@
+import { formatNumber as format } from '../domain/units';
 /**
  * Renderizado exclusivamente visual (canvas). Nunca modifica el estado de la simulación.
  * Estilo de curvas, bucles, manómetro, tendencias y esfuerzo derivado de «R860 Lab» v1.1 (src/plots.js, MIT 2026),
@@ -17,7 +18,6 @@ const setups = new WeakMap<HTMLCanvasElement, { w: number; h: number; dpr: numbe
 const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 const nice = (value: number, steps: number[]): number =>
   steps.find((x) => x >= value) ?? Math.ceil(value / (steps[steps.length - 1] as number)) * (steps[steps.length - 1] as number);
-export const format = (v: number | null | undefined, d = 0): string => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : '—'); // punto decimal como en las fotos (O)
 
 function context(canvas: HTMLCanvasElement) {
   if (!setups.has(canvas)) {

@@ -20,10 +20,14 @@ const ALLOWED = {
   fixtures: ['domain', 'engine', 'profiles', 'fixtures'],
   history: ['domain', 'engine', 'profiles', 'history'],
   app: ['domain', 'engine', 'profiles', 'scenarios', 'history', 'app'],
-  render: ['render'],
+  // `domain` es la capa que no depende de nadie: dibujar puede usar sus tipos y sus conversiones de unidades sin
+  // acoplarse a nada de arriba. Lo que `render` no puede es alcanzar el motor, la app ni la interfaz.
+  render: ['render', 'domain'],
   ui: ['domain', 'engine', 'profiles', 'scenarios', 'history', 'app', 'render', 'fixtures', 'ui'],
   workers: ['app'],
-  '': ['ui'],
+  // main.ts es la raíz de composición: elige el perfil del equipo y se lo entrega a la interfaz. Es el único sitio
+  // fuera de `profiles` que puede nombrar un perfil concreto, y por eso puede alcanzar esa capa.
+  '': ['ui', 'profiles'],
 };
 
 /** Las cuatro formas de alcanzar otro módulo, con la etiqueta que se muestra en el error y si liga sólo tipos. */

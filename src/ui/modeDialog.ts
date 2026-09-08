@@ -2,7 +2,7 @@
 import type { SettingRule } from '../domain/settingRules';
 import type { SettingsKey, VcSettings, VentMode } from '../domain/types';
 import { deriveVcTiming, validateDomains, validateVcSettings } from '../domain/validation';
-import { format as f } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
 import { CANCEL_BTN } from './dialogHost';
 import { btn, esc, put } from './dom';

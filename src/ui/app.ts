@@ -11,7 +11,8 @@ import type { Command } from '../domain/commands';
 import type { EngineFrame, SimulatorInit } from '../engine/simulator';
 import { ENGINE_VERSION } from '../engine/version';
 import { frameFromFixture, PHOTO_FIXTURES } from '../fixtures/photoFixtures';
-import { defaultInit, R860_PROFILE } from '../profiles';
+import type { ProfileSpec } from '../domain/profile';
+import { defaultInit } from '../profiles';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
 import { createActions } from './actions';
 import { createAlarmsUi } from './alarmsUi';
@@ -47,12 +48,19 @@ const FIRST_FRAME_TIMEOUT_MS = 5000;
 
 export interface AppOptions {
   params: URLSearchParams;
+  /**
+   * Perfil del equipo que se simula. Lo elige quien monta la página, no un módulo de interfaz: así la interfaz depende
+   * del contrato `ProfileSpec` y no de un equipo concreto, que es lo que hace posible un perfil pediátrico o de otro
+   * ventilador sin tocarla. Antes `app.ts` importaba `R860_PROFILE` directamente y era la única referencia al perfil
+   * concreto fuera de `src/profiles` — deuda registrada como U-45.
+   */
+  profile: ProfileSpec;
 }
 
 export function startApp(opts: AppOptions): void {
   const params = opts.params;
   const client = new EngineClient({ forceInline: params.get('inline') === '1' });
-  const profile = R860_PROFILE;
+  const profile = opts.profile;
   // ---------- estado de sesión ----------
   let frame: EngineFrame | null = null;
   let running = true,
@@ -285,17 +293,20 @@ export function startApp(opts: AppOptions): void {
     if (t0 && !Number.isFinite(t0Ms)) parametrosMalos.push(`t0=${t0}`);
     const seed = numParam('seed', 0, Number.MAX_SAFE_INTEGER);
     const dt = numParam('dt', 0.1, 50);
-    const init: SimulatorInit = defaultInit({
-      startWallTimeMs: Number.isFinite(t0Ms) ? t0Ms : Date.now(),
-      ...(seed !== undefined ? { seed } : {}),
-      ...(dt !== undefined ? { dtMs: dt } : {}),
-      patient: { ...scenario.patient },
-      effort: { ...scenario.effort },
-      sensors: { ...scenario.sensors },
-      settings: { ...defaultInit().settings, ...(scenario.settings ?? {}) },
-      alarmLimits: { ...defaultInit().alarmLimits, ...(scenario.alarmLimits ?? {}) },
-      initialV: scenario.initialV ?? 'equilibrium',
-    });
+    const init: SimulatorInit = defaultInit(
+      {
+        startWallTimeMs: Number.isFinite(t0Ms) ? t0Ms : Date.now(),
+        ...(seed !== undefined ? { seed } : {}),
+        ...(dt !== undefined ? { dtMs: dt } : {}),
+        patient: { ...scenario.patient },
+        effort: { ...scenario.effort },
+        sensors: { ...scenario.sensors },
+        settings: { ...defaultInit({}, profile).settings, ...(scenario.settings ?? {}) },
+        alarmLimits: { ...defaultInit({}, profile).alarmLimits, ...(scenario.alarmLimits ?? {}) },
+        initialV: scenario.initialV ?? 'equilibrium',
+      },
+      profile,
+    );
     speed = numParam('speed', 0.1, 10) ?? 1;
     ponerVelocidad(speed);
     const autopause = numParam('autopause', 0, 24 * 3600 * 1000);

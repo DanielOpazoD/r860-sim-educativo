@@ -1,6 +1,6 @@
 /** Casillas numéricas, datos grandes, tabla de datos, registro de eventos y diálogos de mecánica / medición. */
 import type { EngineFrame } from '../engine/simulator';
-import { format as f } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
 import { CLOSE_BTN } from './dialogHost';
 import { $, $$, btn, esc, icon, put } from './dom';

@@ -7,7 +7,7 @@ import type { SettingRule } from '../domain/settingRules';
 import type { SettingsKey } from '../domain/types';
 import { gridValues, isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
-import { format as f } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
 import { $, icon, put } from './dom';
 import { ieText, unitText } from './format';

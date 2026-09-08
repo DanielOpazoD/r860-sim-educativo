@@ -1,5 +1,15 @@
 /** Ayudas mínimas de DOM y de plantillas HTML compartidas por la interfaz. */
-export const $ = <T extends HTMLElement = HTMLElement>(s: string): T => document.querySelector(s) as T;
+/**
+ * Busca un elemento que TIENE que existir. Antes era `document.querySelector(s) as T`: un selector que no encontraba
+ * nada devolvía `null` disfrazado de elemento, y el fallo aparecía más tarde y más lejos —«Cannot set properties of
+ * null»— sin decir qué selector fallaba. Si un elemento es realmente opcional, se busca con `querySelector` a mano y
+ * se comprueba; esta ayuda es para los que forman parte del contrato de la página.
+ */
+export const $ = <T extends HTMLElement = HTMLElement>(s: string): T => {
+  const e = document.querySelector<T>(s);
+  if (!e) throw new Error(`No existe el elemento «${s}» en la página`);
+  return e;
+};
 export const $$ = <T extends HTMLElement = HTMLElement>(s: string): T[] => [...document.querySelectorAll<T>(s)];
 export const esc = (v: unknown): string =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);

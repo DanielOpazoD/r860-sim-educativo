@@ -1,7 +1,7 @@
 /** Panel de bloqueos (inspiratorio / espiratorio): solicitud idempotente, resultado y avisos de medición. */
 import type { SettingRule } from '../domain/settingRules';
 import { gridValues } from '../domain/validation';
-import { format as f } from '../render/plots';
+import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
 import { $, put } from './dom';
 import { wallDate } from './format';
