@@ -389,16 +389,20 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
  *   VMesp   la mitad y el doble del previsto   4 / 15 L/min
  *   FR      apnea práctica y taquipnea          5 / 35 /min
  *   FiO2    por debajo del aire y el tope      18 / 100 %
- *   Ppico   bajo: 8 cmH2O, que es lo más parecido a una alarma de desconexión que este modelo permite
+ *   Ppico   bajo: 12 cmH2O, un 40 % por debajo de la Ppico de trabajo (20), que es la proporción que muestran las
+ *           dos fotografías: P1 pone 22 con una Ppico medida de 38 y P3 pone 20 con 33 (O). No se justifica como
+ *           alarma de desconexión: este modelo no simula ni fuga ni desconexión (docs/03 §7), así que lo que detecta
+ *           es una caída real de la presión de trabajo — en SC-18, la respiración apilada que no llega a entrar.
  *   PEEPe   Off, como en las fotografías P1 y P3 (O)
  * El techo de presión no es una alarma sino un ajuste: lo pone Pmáx en la tecla rápida.
  *
- * Comprobado sobre los catorce escenarios: sólo dispara SC-18, y por lo que debe —VTesp bajo en la respiración que no
- * llega y VTesp alto en la apilada—. Los demás recorren su lección sin ruido. Cambiar el VT sin revisar los límites
+ * Comprobado sobre los catorce escenarios: sólo dispara SC-18, y por lo que debe —Ppico baja y VTesp bajo en la
+ * respiración que no llega a entrar, VTesp alto en la apilada—. Los demás recorren su lección sin ruido; el siguiente
+ * más bajo en presión es SC-13, con Ppico 15. Cambiar el VT sin revisar los límites
  * puede hacerlos saltar: eso es fiel a la cabecera, no un defecto.
  */
 export const DEFAULT_ALARM_LIMITS: AlarmLimits = {
-  ppeakLow: 8,
+  ppeakLow: 12,
   vteLow: 0.25,
   vteHigh: 0.75,
   mveLow: 4,

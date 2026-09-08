@@ -238,6 +238,6 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
       }
       if (vistas.size) ruidosos.push(`${e.id}: ${[...vistas].sort().join(',')}`);
     }
-    expect(ruidosos).toEqual(['SC-18: vteHigh,vteLow']);
+    expect(ruidosos).toEqual(['SC-18: ppeakLow,vteHigh,vteLow']);
   });
 });
