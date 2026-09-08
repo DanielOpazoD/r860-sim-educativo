@@ -79,7 +79,8 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await expect(page.locator('#loop-reference-label')).toContainText('Referencia');
     await screenshot(page, info, 'vis-05-loops');
     await page.click('[data-view="data"]');
-    await expect(page.locator('#data-table-body tr')).toHaveCount(16);
+    await expect(page.locator('#data-table-body tr')).toHaveCount(17); // 16 + índice de estrés (v0.6.1)
+    await expect(page.locator('#data-table-body')).toContainText('Índice de estrés');
     await expect(page.locator('#data-table-body')).toContainText('sensor del ventilador');
     await page.click('[data-view="trends"]');
     await page.waitForTimeout(200);

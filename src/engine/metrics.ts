@@ -85,7 +85,21 @@ export class MetricEngine {
     const last = this.records[this.records.length - 1] ?? null;
     const t = ctx.simTimeMs;
     if (!ctx.ventilating) {
-      for (const k of ['ppeak', 'peepe', 'pplatCycle', 'pmean', 'vte', 'vti', 'leakPct', 'mve', 'rr', 'mveSpont', 'rrSpont', 'vteSpont']) {
+      for (const k of [
+        'ppeak',
+        'peepe',
+        'pplatCycle',
+        'pmean',
+        'vte',
+        'vti',
+        'leakPct',
+        'mve',
+        'rr',
+        'mveSpont',
+        'rrSpont',
+        'vteSpont',
+        'stressIndex',
+      ]) {
         out[k] = sample(k, null, unitOf(k), { simTimeMs: t, breathId: null, quality: 'unavailable', reason: 'standby', windowMs: null });
       }
       out.fio2 = sample('fio2', null, 'fraction', {
@@ -120,9 +134,16 @@ export class MetricEngine {
           quality: stale ? 'stale' : 'unavailable',
           reason: last.pplatCycleReason ?? 'noPause',
         });
+      // Índice de estrés: sólo significa algo si la rampa a flujo constante es del pulmón y de nadie más. El
+      // controlador ya decide cuándo no lo es y dice por qué; aquí sólo se le pone calidad.
+      out.stressIndex =
+        last.stressIndex === null || last.stressIndex === undefined
+          ? sample('stressIndex', null, 'index', { ...base, quality: 'unavailable', reason: last.stressIndexReason ?? 'sinDato' })
+          : sample('stressIndex', last.stressIndex, 'index', { ...base, source: 'derivedModel' });
     } else {
       out.leakPct = sample('leakPct', null, 'fraction', base);
       out.pplatCycle = sample('pplatCycle', null, 'cmH2O', base);
+      out.stressIndex = sample('stressIndex', null, 'index', base);
     }
     // Ventana de respiraciones para FR y VMesp.
     const win = this.records.slice(-BREATH_WINDOW);
@@ -198,6 +219,8 @@ export class MetricEngine {
 
 function unitOf(k: string): string {
   switch (k) {
+    case 'stressIndex':
+      return 'index';
     case 'ppeak':
     case 'peepe':
     case 'pplatCycle':

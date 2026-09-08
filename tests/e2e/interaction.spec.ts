@@ -324,4 +324,62 @@ test.describe('EDU · pestaña Resumen', () => {
     if ((page.viewportSize()?.width ?? 0) >= 1000) expect(alturas.contenido).toBeLessThanOrEqual(alturas.cliente);
     else expect(alturas.contenido).toBeGreaterThan(0);
   });
+
+  test('la pantalla de protección lee el índice de estrés y construye la titulación con lo medido', async ({ page }) => {
+    await open(page, { scenario: 'SC-15', speed: 8, instructor: 0 });
+    await page.click('.monitor-nav [data-view="teaching"]');
+    await page.click('[data-edu-tab="proteccion"]');
+    // El índice se lee del ciclo actual; la titulación empieza vacía y dice cuántos puntos faltan.
+    await expect(page.locator('.edu-siluetas .activa')).toHaveCount(1);
+    await expect(page.locator('.edu-falta')).toContainText('0 de los 2 puntos');
+
+    for (const peep of [8, 14]) {
+      await page.click('.monitor-nav [data-view="waves"]');
+      // Hay que esperar a un bloqueo DISTINTO del anterior: el previo ya era válido y satisfacía la condición al
+      // instante, así que la prueba cerraba el panel antes de que el nuevo terminara. De ahí venía su intermitencia.
+      const previo = await page.evaluate(
+        () =>
+          (window.__r860.frame as unknown as { procedure: { last: { inspHold: { procedureId: string } | null } } })?.procedure.last.inspHold
+            ?.procedureId ?? '',
+      );
+      await page.click('[data-setting-quick="peep"]');
+      await page.fill('#quick-value', String(peep));
+      await page.click('[data-action="confirmEdit"]');
+      await page.waitForFunction((p) => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
+        timeout: 20_000,
+      });
+      await page.click('[data-action="inspiratory"]');
+      await page.click('[data-action="runHold"]');
+      // Esperar a que el bloqueo sea VÁLIDO y a esa misma PEEP: sólo entonces existe el punto. Esperar un plazo fijo
+      // hacía la prueba dependiente de la máquina, y en el runner llegaba tarde.
+      await page.waitForFunction(
+        ([p, anterior]) => {
+          const fr = window.__r860.frame as unknown as {
+            settings: { peep: number };
+            procedure: {
+              last: { inspHold: { procedureId: string; quality: string; values: { cstat?: { value: number | null } } } | null };
+            };
+          };
+          const h = fr?.procedure.last.inspHold;
+          return (
+            fr?.settings.peep === p &&
+            !!h &&
+            h.procedureId !== anterior &&
+            h.quality === 'valid' &&
+            typeof h.values.cstat?.value === 'number'
+          );
+        },
+        [peep, previo] as [number, string],
+        { timeout: 40_000 },
+      );
+      await page.click('[data-action="closeHold"]');
+    }
+    await page.click('.monitor-nav [data-view="teaching"]');
+    await page.click('[data-edu-tab="proteccion"]');
+    // Dos mediciones propias: la curva aparece con sus dos puntos y ninguno inventado.
+    await expect(page.locator('.edu-titulacion')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('.edu-titulacion circle')).toHaveCount(2);
+    // El textContent pega el número y su unidad, como en las tarjetas: «2» + «puntos».
+    await expect(page.locator('.edu-bloque').nth(1).locator('header b')).toHaveText('2puntos');
+  });
 });

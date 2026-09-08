@@ -113,6 +113,10 @@ interface BreathAccum {
   plimitReached: boolean;
   pmaxReached: boolean;
   pauseSamples: { t: number; paw: number }[];
+  /** Muestras de la rampa a flujo constante: de su forma sale el índice de estrés. */
+  flowSamples: { t: number; paw: number }[];
+  /** Si el paciente hizo fuerza durante esa rampa, la forma ya no es sólo del pulmón. */
+  effortInFlow: boolean;
   pplatCycle: number | null;
   pplatReason: string | null;
   peepeEnd: number;
@@ -383,6 +387,10 @@ export class VcController {
         if (this.breath) this.breath.vtInsp += dV;
         this.q = qCmd;
         this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
+        if (this.breath && used > 0) {
+          this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
+          if (Math.abs(this.pmusAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
+        }
         // En el instante del cruce la presión de vía aérea es exactamente el umbral: la válvula actúa allí (no se registra
         // la presión hipotética que habría producido el flujo completo).
         if (hit === 'pmax') {
@@ -702,6 +710,8 @@ export class VcController {
       plimitReached: false,
       pmaxReached: false,
       pauseSamples: [],
+      flowSamples: [],
+      effortInFlow: false,
       pplatCycle: null,
       pplatReason: null,
       peepeEnd: this.paw,
@@ -730,6 +740,7 @@ export class VcController {
       startSimTimeMs: sToMs(b.startSimT),
       endSimTimeMs: sToMs(this.simT),
       cyclingCause: b.cause,
+      ...indiceDeEstres(b),
       tInspS: b.tInspActual,
       tExpS: b.tExpActual,
       ppeak: b.ppeak,
@@ -787,6 +798,61 @@ export function thresholdCrossing(
     }
   }
   return { frac, hit };
+}
+
+/** El índice de estrés de una respiración y, si no lo hay, por qué. La forma sólo habla del pulmón si nadie más la tocó. */
+function indiceDeEstres(b: BreathAccum): { stressIndex: number | null; stressIndexReason: string | null } {
+  if (b.effortInFlow) return { stressIndex: null, stressIndexReason: 'esfuerzoDuranteLaRampa' };
+  if (b.plimitReached || b.pmaxReached) return { stressIndex: null, stressIndexReason: 'presionRecortadaPorElTecho' };
+  const v = stressIndex(b.flowSamples);
+  return v === null ? { stressIndex: null, stressIndexReason: 'sinRampaAFlujoConstante' } : { stressIndex: v, stressIndexReason: null };
+}
+
+/**
+ * Índice de estrés: el exponente b del ajuste Paw(t) = a·t^b + c sobre la rampa de INSPIRACIÓN A FLUJO CONSTANTE
+ * (Grasso, Ranieri). Con flujo constante el volumen crece con el tiempo, así que la forma de Paw frente a t es la
+ * forma de la presión elástica frente al volumen dentro del volumen corriente:
+ *
+ *   b ≈ 1  recta: la distensibilidad no cambia mientras entra el volumen
+ *   b < 1  cóncava hacia abajo: la distensibilidad MEJORA al insuflar (sigue reclutándose)
+ *   b > 1  cóncava hacia arriba: la distensibilidad EMPEORA al insuflar (sobredistensión)
+ *
+ * El término constante c es la presión al abrirse el flujo, PEEP + R·Q: con flujo constante la caída resistiva no
+ * cambia durante la rampa, así que restarla deja sólo el elástico. Con eso el ajuste es una regresión lineal sobre
+ * log(Paw − c) frente a log(t), sin iteraciones ni valores iniciales que elegir.
+ *
+ * Devuelve null cuando la forma no significa lo que se cree: pocas muestras, presión recortada por un techo, o un
+ * esfuerzo del paciente durante la rampa —entonces la curva es del paciente y del ventilador, no del pulmón—.
+ */
+export function stressIndex(muestras: { t: number; paw: number }[]): number | null {
+  if (muestras.length < 12) return null;
+  const t0 = muestras[0]!.t;
+  const c = muestras[0]!.paw;
+  const tFin = muestras[muestras.length - 1]!.t - t0;
+  if (!(tFin > 0)) return null;
+  // Se descarta el primer 10 % del tramo: ahí el logaritmo es singular y el escalón resistivo aún se está formando.
+  let n = 0,
+    sx = 0,
+    sy = 0,
+    sxx = 0,
+    sxy = 0;
+  for (const m of muestras) {
+    const t = m.t - t0;
+    const y = m.paw - c;
+    if (t < 0.1 * tFin || !(y > 1e-6)) continue;
+    const lx = Math.log(t),
+      ly = Math.log(y);
+    n += 1;
+    sx += lx;
+    sy += ly;
+    sxx += lx * lx;
+    sxy += lx * ly;
+  }
+  if (n < 8) return null;
+  const den = n * sxx - sx * sx;
+  if (Math.abs(den) < 1e-12) return null;
+  const b = (n * sxy - sx * sy) / den;
+  return Number.isFinite(b) ? b : null;
 }
 
 /**

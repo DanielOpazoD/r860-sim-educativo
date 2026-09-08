@@ -122,6 +122,14 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
       if (h.kind === 'inspHold' && h.quality === 'valid' && h.values.pplat?.value !== null && h.values.pplat?.value !== undefined) {
         const previos = (ctx.lesson.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
         ctx.lesson.flags.inspHolds = [...previos, { d: h.requestedDurationS ?? 0, p: h.values.pplat.value }];
+        // Cada medición válida es un punto de la curva de titulación que el alumno construye por su cuenta: la PEEP a
+        // la que midió y la distensibilidad que le salió. No se inventa ninguno; sólo se guardan los que él tomó.
+        const cstat = h.values.cstat?.value;
+        const peep = ctx.frame?.settings.peep;
+        if (typeof cstat === 'number' && typeof peep === 'number') {
+          const puntos = (ctx.lesson.flags.titulacion as { peep: number; cstat: number }[] | undefined) ?? [];
+          ctx.lesson.flags.titulacion = [...puntos.filter((x) => Math.abs(x.peep - peep) > 1e-9), { peep, cstat: cstat * 1000 }];
+        }
       }
       ctx.toast(
         h.quality === 'valid'
