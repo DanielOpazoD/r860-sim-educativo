@@ -906,10 +906,10 @@
     },
     {
       "id": "E-071",
-      "claim": "Los límites de alarma iniciales dejan de estar todos en Off. Criterio dimensionado sobre los ajustes por omisión: VTesp ±50 % del VT programado (250/750 mL), VMesp la mitad y el doble del previsto (4/15 L/min), FR 5/35 por minuto, FiO2 18/100 %, Ppico bajo 8 cmH2O como lo más parecido a una alarma de desconexión que este modelo permite, y PEEPe en Off como en las fotografías P1 y P3. Comprobado sobre los catorce escenarios: sólo dispara SC-18, con VTesp bajo en la respiración que no llega y VTesp alto en la apilada.",
-      "status": "P (los valores son propuestos; los rangos editables son D ficha 2014 p.3 y la PEEPe en Off es O)",
-      "source": "—",
-      "locator": "—",
+      "claim": "Los límites de alarma iniciales dejan de estar todos en Off. Criterio dimensionado sobre los ajustes por omisión: VTesp ±50 % del VT programado (250/750 mL), VMesp la mitad y el doble del previsto (4/15 L/min), FR 5/35 por minuto, FiO2 18/100 %, Ppico bajo 12 cmH2O, un 40 % por debajo de la Ppico de trabajo, que es la proporción observada en las dos fotografías (P1 pone 22 con Ppico 38; P3 pone 20 con 33), y PEEPe en Off como en las fotografías P1 y P3. Comprobado sobre los catorce escenarios: sólo dispara SC-18, con Ppico baja y VTesp bajo en la respiración que no llega a entrar y VTesp alto en la apilada. El límite de Ppico baja NO se justifica como alarma de desconexión: este modelo no simula fuga ni desconexión.",
+      "status": "P los valores (la proporción del límite de Ppico es O de P1 y P3); D los rangos editables, ficha 2014 p.3; O la PEEPe en Off",
+      "source": "P1, P3",
+      "locator": "límites de alarma visibles en las fotografías",
       "implemented": "src/profiles/r860-es-photo-reference/settings.ts (DEFAULT_ALARM_LIMITS)",
       "tests": [
         "tests/unit/objetivos.test.ts"
