@@ -349,7 +349,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         return;
       }
       if (ctx.locked && el.closest('#monitor') && !['mute', 'alarms', 'unlock', 'closeHold'].includes(el.dataset.action ?? '')) {
-        ctx.toast('Controles bloqueados.');
+        ctx.toast('Mandos protegidos.');
         return;
       }
       if (el.dataset.action) {

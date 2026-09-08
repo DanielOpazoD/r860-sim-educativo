@@ -379,12 +379,15 @@ export class VcController {
         const paw1 = p.pawForFlow(qCmd, this.pmusAt(this.simT + h), p.v + qCmd * h);
         let frac = 1;
         let hit: 'plimit' | 'pmax' | null = null;
-        if (paw0 >= s.pmax) {
+        // Si al empezar el tramo la presión del flujo ordenado ya supera algún umbral, gana el que se cruza ANTES, que
+        // es el más bajo: durante la inspiración a flujo constante la presión sube de forma monótona. Antes se miraba
+        // Pmáx primero sin comparar, y eso invertía la jerarquía justo donde importa: con Plimit 30 y Pmáx 40, subir la
+        // resistencia de 69 a 70 cmH2O·s/L pasaba de entregar 314 mL a entregar CERO, porque se disparaba Pmáx contra
+        // una presión que la máquina nunca habría alcanzado — Plimit la habría recortado a 30 antes. Plimit existe para
+        // proteger sin dejar de ventilar. Con los dos umbrales iguales gana Pmáx, que es la acción de seguridad.
+        if (paw0 >= Math.min(s.pmax, s.plimit)) {
           frac = 0;
-          hit = 'pmax';
-        } else if (paw0 >= s.plimit) {
-          frac = 0;
-          hit = 'plimit';
+          hit = s.plimit < s.pmax ? 'plimit' : 'pmax';
         } else {
           if (paw1 >= s.pmax) {
             frac = (s.pmax - paw0) / (paw1 - paw0);

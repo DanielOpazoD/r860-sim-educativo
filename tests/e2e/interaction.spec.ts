@@ -11,8 +11,10 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await expect(page.locator('[data-setting-quick="peep"]')).toHaveAttribute('aria-pressed', 'true');
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
-    await expect(page.locator('[data-quick-val="peep"]')).toHaveText('7');
+    // El borrador vive en el editor; la cara del equipo sigue mostrando lo que el ventilador ENTREGA.
     await expect(page.locator('#quick-value')).toHaveValue('7');
+    await expect(page.locator('[data-quick-val="peep"]')).toHaveText('5');
+    await expect(page.locator('[data-quick-next="peep"]')).toBeHidden();
     const after = await frame(page);
     expect(after.settings.peep).toBe(before.settings.peep);
     expect(after.pending).toBeNull();
@@ -52,7 +54,8 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await open(page, { speed: 4, instructor: 0, editTimeout: 1500 });
     await page.click('[data-setting-quick="rr"]');
     await page.keyboard.press('ArrowUp');
-    await expect(page.locator('[data-quick-val="rr"]')).toHaveText('16');
+    await expect(page.locator('#quick-value')).toHaveValue('16');
+    await expect(page.locator('[data-quick-val="rr"]')).toHaveText('15'); // el borrador no se pinta en la tecla
     await page.waitForTimeout(2600);
     await expect(page.locator('#quick-editor')).toBeHidden();
     await expect(page.locator('[data-quick-val="rr"]')).toHaveText('15');
@@ -142,7 +145,8 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.keyboard.press('Enter');
     await expect(page.locator('#quick-editor')).toBeVisible();
     await page.keyboard.press('ArrowUp');
-    await expect(page.locator('[data-quick-val="peep"]')).toHaveText('6');
+    await expect(page.locator('#quick-value')).toHaveValue('6');
+    await expect(page.locator('[data-quick-val="peep"]')).toHaveText('5');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === 6, null, {
       timeout: 15_000,
@@ -244,5 +248,31 @@ test.describe('CFG · parámetros de la dirección que no son números', () => {
     const f = await frame(page);
     expect(f.simTimeMs).toBeGreaterThan(0);
     expect(f.ventilation).toBe('ventilating');
+  });
+});
+
+test.describe('CFG · contrato de estado del ajuste', () => {
+  test('la tecla muestra lo entregado; la propuesta confirmada se anuncia aparte con su flecha', async ({ page }) => {
+    // El borrador se pintaba en la tecla con el mismo tratamiento que un ajuste vigente, incluso siendo inválido:
+    // escribir 99 en PEEP hacía que el equipo dijera «PEEP 99». Eso es lo contrario de «seleccionar ≠ aplicar».
+    await open(page, { paused: 1, instructor: 0 });
+    const valor = page.locator('[data-quick-val="peep"]');
+    const propuesta = page.locator('[data-quick-next="peep"]');
+    await expect(valor).toHaveText('5');
+    await expect(propuesta).toBeHidden();
+
+    await page.click('[data-setting-quick="peep"]');
+    await page.fill('#quick-value', '99'); // fuera de rango: no se entrega nunca
+    await expect(valor).toHaveText('5');
+    await expect(propuesta).toBeHidden();
+
+    await page.fill('#quick-value', '10');
+    await expect(valor).toHaveText('5');
+    await page.click('[data-action="confirmEdit"]');
+    // Confirmado y pendiente: la tecla sigue diciendo lo entregado y añade la propuesta.
+    await expect(valor).toHaveText('5');
+    await expect(propuesta).toBeVisible();
+    await expect(propuesta).toHaveText('→ 10');
+    expect((await frame(page)).settings.peep).toBe(5);
   });
 });

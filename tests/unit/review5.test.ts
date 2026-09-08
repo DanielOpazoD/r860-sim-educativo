@@ -150,3 +150,40 @@ describe('R5-06 · el contrato de calidad también cubre los procedimientos', ()
     }
   });
 });
+
+describe('R5-07 · Plimit protege sin dejar de ventilar', () => {
+  it('el volumen entregado decrece de forma continua al subir la resistencia', () => {
+    // El defecto: Pmáx se evaluaba antes que Plimit y contra la presión del flujo ORDENADO, no contra la que la máquina
+    // dejaría alcanzar. Con Plimit 30 y Pmáx 40, pasar de Rinsp 69 a 70 llevaba el volumen de 314 mL a CERO, con la
+    // Ppico publicada en 40 y la curva plana: Plimit habría recortado la presión a 30 y Pmáx nunca se alcanza.
+    const entregado = (rInsp: number): { vte: number; ppeak: number; causa: string } => {
+      const sim = benchSim({
+        patient: { ...BENCH_PATIENT, rInsp, rExp: 10 },
+        settings: { ...BENCH_SETTINGS, plimit: 30, pmax: 40 },
+      });
+      runUntilBreath(sim, 6);
+      const f = sim.frame();
+      return {
+        vte: (f.metrics.vte?.value as number) * 1000,
+        ppeak: f.metrics.ppeak?.value as number,
+        causa: sim.breaths.at(-1)!.cyclingCause,
+      };
+    };
+    let previo = Infinity;
+    for (const r of [40, 60, 69, 70, 71, 80, 120, 200, 400]) {
+      const e = entregado(r);
+      expect(e.ppeak, `R=${r}`).toBeCloseTo(30, 1); // Plimit sostiene el techo; Pmáx no se dispara nunca
+      expect(e.causa, `R=${r}`).toBe('time'); // la inspiración dura lo programado, no la termina Pmáx
+      expect(e.vte, `R=${r} entregó ${e.vte} mL tras ${previo}`).toBeGreaterThan(50);
+      expect(e.vte, `R=${r} rompe la monotonía`).toBeLessThan(previo);
+      previo = e.vte;
+    }
+  });
+
+  it('con Pmáx por debajo de Plimit manda Pmáx, que es la acción de seguridad', () => {
+    const sim = benchSim({ patient: { ...BENCH_PATIENT, rInsp: 40 }, settings: { ...BENCH_SETTINGS, plimit: 40, pmax: 20 } });
+    runUntilBreath(sim, 6);
+    expect(sim.frame().metrics.ppeak?.value).toBeCloseTo(20, 1);
+    expect(sim.breaths.at(-1)!.cyclingCause).toBe('pmax');
+  });
+});

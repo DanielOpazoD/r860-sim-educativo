@@ -175,7 +175,9 @@ export function startApp(opts: AppOptions): void {
     const fr = frame;
     if (!fr) return;
     put('#scenario-name', fixtureId ? `Referencia fotográfica ${fixtureId} (transcripción, sin motor)` : scenario.name);
-    put('#scenario-sub', `Adulto virtual · ${MODE_LABEL[fr.settings.mode]}${fr.pending ? ' · ajustes pendientes' : ''}`);
+    // Un solo canal: la propuesta se anuncia en la tecla que cambia («5 → 10») y, al confirmar, en un aviso efímero.
+    // Antes el mismo hecho se decía tres veces: listón sobre los botones de vista, aviso flotante y este subtítulo.
+    put('#scenario-sub', `Adulto virtual · ${MODE_LABEL[fr.settings.mode]}`);
     put(
       '#phase-status',
       !running
@@ -192,7 +194,7 @@ export function startApp(opts: AppOptions): void {
     $('#live-dot').classList.toggle('paused', !running);
     $('#sim-pause').innerHTML = icon(running ? 'pause' : 'play') + `<span>${running ? 'Pausar' : 'Reanudar'}</span>`;
     $('#sim-pause').setAttribute('aria-label', running ? 'Pausar simulación' : 'Reanudar simulación');
-    ($('#sim-speed') as HTMLSelectElement).value = String(speed);
+    ponerVelocidad(speed);
     const o2 = fr.procedure.o2;
     $('#o2-key').classList.toggle('o2-active', !!o2?.active);
     put('#o2-time', o2?.active ? clock(Math.ceil((o2.endsAtMs - fr.simTimeMs) / 1000)) : '');
@@ -261,6 +263,22 @@ export function startApp(opts: AppOptions): void {
     return v;
   }
 
+  /**
+   * El selector ofrece cinco velocidades, pero `?speed=` admite cualquiera entre 0,1 y 10. Cuando la efectiva no era
+   * una de las cinco, el desplegable se quedaba EN BLANCO —sin error— mientras el motor corría a otra cosa: la
+   * pantalla decía menos que la verdad. Si hace falta, la velocidad efectiva se añade como opción propia.
+   */
+  function ponerVelocidad(v: number): void {
+    const sel = $('#sim-speed') as HTMLSelectElement;
+    if (![...sel.options].some((o) => Number(o.value) === v)) {
+      const o = document.createElement('option');
+      o.value = String(v);
+      o.textContent = `${v}×`;
+      sel.append(o);
+    }
+    sel.value = String(v);
+  }
+
   function startEngine(): void {
     const t0 = params.get('t0');
     const t0Ms = t0 ? new Date(t0).getTime() : Number.NaN;
@@ -279,7 +297,7 @@ export function startApp(opts: AppOptions): void {
       initialV: scenario.initialV ?? 'equilibrium',
     });
     speed = numParam('speed', 0.1, 10) ?? 1;
-    ($('#sim-speed') as HTMLSelectElement).value = String(speed);
+    ponerVelocidad(speed);
     const autopause = numParam('autopause', 0, 24 * 3600 * 1000);
     if (parametrosMalos.length)
       engineBanner(

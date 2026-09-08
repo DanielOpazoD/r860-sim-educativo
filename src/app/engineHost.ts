@@ -233,9 +233,11 @@ export class EngineHost {
       this.accMs = plan.remainderMs;
       if (this.autopauseAtMs !== null && sim.simTimeMs >= this.autopauseAtMs) {
         this.running = false;
-        this.pauseReason = `pausa automática en t = ${sim.simTimeMs} ms (captura)`;
+        // En la cara del equipo va sólo el motivo, en castellano y corto: el instante exacto queda en el registro, que
+        // es donde sirve. Antes se leía «pausa automática en t = 12000 ms (captura)», que además no cabía y se cortaba.
+        this.pauseReason = 'pausa automática';
         this.autopauseAtMs = null;
-        sim.noteEvent('pause', 'system', { paused: true, reason: 'autopause' });
+        sim.noteEvent('pause', 'system', { paused: true, reason: 'pausa automática', simTimeMs: sim.simTimeMs });
         this.postFrame();
       }
     } else {
