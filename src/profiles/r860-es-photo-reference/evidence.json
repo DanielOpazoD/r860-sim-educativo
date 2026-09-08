@@ -144,7 +144,7 @@
     },
     {
       "id": "C01",
-      "title": "Literatura clínica citada en la pestaña Resumen: ARDS Network, NEJM 2000 (techo de meseta) y Amato et al., NEJM 2015 (presión motriz)",
+      "title": "Literatura clínica de las referencias docentes: ARDS Network, NEJM 2000 (meseta) y Amato et al., NEJM 2015 (presión motriz); índice de estrés según Grasso/Ranieri",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante ni del equipo. Se usa sólo para los rangos de referencia de la pestaña docente, que valen para un paciente pasivo en ventilación controlada y no son ajustes sugeridos para ningún paciente."
     }
@@ -942,6 +942,29 @@
       "tests": [
         "tests/unit/resumen.test.ts",
         "tests/e2e/interaction.spec.ts (EDU · pestaña Resumen)"
+      ]
+    },
+    {
+      "id": "E-074",
+      "claim": "Índice de estrés: exponente b del ajuste Paw(t) = a·t^b + c sobre la rampa de inspiración a FLUJO CONSTANTE. Con flujo constante el volumen crece con el tiempo, así que la forma de Paw frente a t es la de la presión elástica frente al volumen dentro del volumen corriente: b < 0,9 la distensibilidad mejora al insuflar (sigue reclutándose), b ≈ 1 recta, b > 1,1 empeora (sobredistensión). Se resuelve por regresión lineal sobre log(Paw − c) frente a log(t), con c la presión al abrirse el flujo (PEEP + R·Q, constante durante la rampa). Medido sobre el motor: pulmón lineal 1,000 exacto; con sigmoide, subir la PEEP lo lleva de 0,640 a 1,074 de forma monótona. No se publica —y dice por qué— en presión control (no hay rampa a flujo constante), con esfuerzo del paciente durante la rampa, o con la presión recortada por Plimit o Pmáx.",
+      "status": "D el método (Grasso, Ranieri) y las bandas; D la aritmética, verificada recuperando exponentes conocidos a tres decimales",
+      "source": "C01",
+      "locator": "índice de estrés en ventilación a flujo constante",
+      "implemented": "src/engine/controller.ts (stressIndex, indiceDeEstres, flowSamples); src/engine/metrics.ts; src/ui/teaching.ts (estres)",
+      "tests": [
+        "tests/unit/proteccion.test.ts"
+      ]
+    },
+    {
+      "id": "E-075",
+      "claim": "La curva de titulación de PEEP de la pestaña «Resumen» se construye ÚNICAMENTE con las distensibilidades que el alumno midió: cada punto es un bloqueo inspiratorio válido a una PEEP, y se señala el máximo. Sin al menos dos puntos no se dibuja nada y se dice cuántos faltan. No hay ningún punto precalculado ni interpolado.",
+      "status": "P (presentación docente)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/holdPanel.ts (flags.titulacion); src/ui/teaching.ts (titulacion); src/ui/teachingView.ts",
+      "tests": [
+        "tests/unit/proteccion.test.ts",
+        "tests/e2e/interaction.spec.ts (EDU · protección)"
       ]
     }
   ]

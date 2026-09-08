@@ -4,9 +4,10 @@
  */
 import type { EngineFrame } from '../engine/simulator';
 import type { AppContext } from './context';
-import { $, esc } from './dom';
+import { $, $$, esc } from './dom';
 import { formatNumber as f } from '../domain/units';
-import { niveles, tarjetas, type Tarjeta } from './teaching';
+import { estres, niveles, tarjetas, titulacion, type PuntoTitulacion, type Tarjeta } from './teaching';
+import { humanReason } from './humanize';
 
 export interface TeachingView {
   render(): void;
@@ -101,21 +102,140 @@ function tarjetaHTML(t: Tarjeta): string {
   );
 }
 
+/** Silueta de la rampa de presión para un exponente dado: la forma que tiene el índice de estrés. */
+function silueta(b: number, activo: boolean, titulo: string, pie: string): string {
+  const W = 132,
+    H = 62,
+    m = 8;
+  const pts: string[] = [];
+  for (let i = 0; i <= 24; i++) {
+    const u = i / 24;
+    pts.push(`${(m + u * (W - 2 * m)).toFixed(1)},${(H - m - Math.pow(u, b) * (H - 2 * m)).toFixed(1)}`);
+  }
+  const color = activo ? '#eaffff' : '#5f8bae';
+  return (
+    `<figure class="edu-silueta${activo ? ' activa' : ''}">` +
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">` +
+    `<polyline points="${m},${H - m} ${W - m},${H - m}" fill="none" stroke="#4b7fb5" stroke-width="1"/>` +
+    `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>` +
+    `</svg><figcaption><b>${esc(titulo)}</b><span>${esc(pie)}</span></figcaption></figure>`
+  );
+}
+
+/** Curva de titulación con los puntos que el alumno midió; sin puntos, dice cómo construirla. */
+function graficoTitulacion(puntos: PuntoTitulacion[]): string {
+  const { puntos: p, mejor } = titulacion(puntos);
+  if (p.length < 2)
+    return (
+      `<p class="edu-falta">Mide la distensibilidad con un bloqueo inspiratorio a distintas PEEP y aquí se dibuja tu curva. ` +
+      `Llevas ${p.length} de los 2 puntos que hacen falta para empezar a verla.</p>`
+    );
+  const W = 380,
+    H = 150,
+    izq = 44,
+    aba = 26;
+  const xs = p.map((q) => q.peep),
+    ys = p.map((q) => q.cstat);
+  const x0 = Math.min(...xs),
+    x1 = Math.max(...xs),
+    y1 = Math.max(...ys) * 1.12;
+  const X = (v: number): number => izq + ((v - x0) / Math.max(1e-9, x1 - x0)) * (W - izq - 12);
+  const Y = (v: number): number => H - aba - (v / y1) * (H - aba - 12);
+  const linea = p.map((q) => `${X(q.peep).toFixed(1)},${Y(q.cstat).toFixed(1)}`).join(' ');
+  const circulos = p
+    .map(
+      (q) =>
+        `<circle cx="${X(q.peep).toFixed(1)}" cy="${Y(q.cstat).toFixed(1)}" r="${q === mejor ? 5 : 3.5}" fill="${q === mejor ? '#7ce0b8' : '#bfe6ff'}"/>`,
+    )
+    .join('');
+  const marca = mejor
+    ? `<text x="${Math.min(W - 90, X(mejor.peep) + 8).toFixed(1)}" y="${(Y(mejor.cstat) - 8).toFixed(1)}" font-size="11" fill="#7ce0b8" font-weight="600">` +
+      `${f(mejor.cstat, 0)} a PEEP ${f(mejor.peep, 0)}</text>`
+    : '';
+  return (
+    `<svg viewBox="0 0 ${W} ${H}" class="edu-titulacion" role="img" aria-label="Distensibilidad estática medida a distintas PEEP">` +
+    `<line x1="${izq}" y1="${H - aba}" x2="${W - 12}" y2="${H - aba}" stroke="#4b7fb5" stroke-width="1"/>` +
+    `<line x1="${izq}" y1="12" x2="${izq}" y2="${H - aba}" stroke="#4b7fb5" stroke-width="1"/>` +
+    `<polyline points="${linea}" fill="none" stroke="#bfe6ff" stroke-width="1.5"/>` +
+    circulos +
+    marca +
+    `<text x="${izq + 4}" y="12" font-size="10" fill="#9dc4e2">${f(y1, 0)} mL/cmH₂O</text>` +
+    `<text x="${izq - 6}" y="${H - aba}" text-anchor="end" font-size="10" fill="#9dc4e2">0</text>` +
+    `<text x="${izq}" y="${H - 8}" font-size="10" fill="#9dc4e2">PEEP ${f(x0, 0)}</text>` +
+    `<text x="${W - 12}" y="${H - 8}" text-anchor="end" font-size="10" fill="#9dc4e2">PEEP ${f(x1, 0)}</text>` +
+    `</svg>`
+  );
+}
+
+function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[]): string {
+  const e = estres(fr);
+  const activo = (r: string): boolean => e.regimen === r;
+  const cabecera = e.valor === null ? '—' : f(e.valor, 2);
+  const lectura = e.valor === null ? `No se puede leer aquí: ${humanReason(e.motivo)}.` : e.lectura;
+  return (
+    `<div class="edu-prot">` +
+    `<section class="edu-bloque">` +
+    `<header><h3>Índice de estrés</h3><b>${esc(cabecera)}</b></header>` +
+    `<div class="edu-siluetas">` +
+    silueta(0.6, activo('reclutando'), 'b < 0,9', 'sigue reclutando') +
+    silueta(1.0, activo('recta'), 'b ≈ 1', 'recta') +
+    silueta(1.55, activo('sobredistension'), 'b > 1,1', 'sobredistensión') +
+    `</div>` +
+    `<p class="edu-nota">${esc(lectura)}</p>` +
+    `<p class="edu-ref">Es la forma de la rampa de presión con <b>flujo constante</b>: con el volumen creciendo a ritmo fijo, ` +
+    `esa forma es la de la curva presión-volumen dentro del volumen corriente. Sólo se lee con el paciente pasivo y sin techo de presión de por medio.</p>` +
+    `</section>` +
+    `<section class="edu-bloque">` +
+    `<header><h3>Titulación de PEEP</h3><b>${puntos.length}<small>${puntos.length === 1 ? 'punto' : 'puntos'}</small></b></header>` +
+    graficoTitulacion(puntos) +
+    `<p class="edu-nota">Tu propia curva: cada punto es una distensibilidad que mediste con un bloqueo a esa PEEP. ` +
+    `El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.</p>` +
+    `</section>` +
+    `</div>`
+  );
+}
+
 export function createTeachingView(ctx: AppContext): TeachingView {
   let firma = '';
-  return {
-    render() {
-      const fr = ctx.frame;
-      if (!fr || ctx.view !== 'teaching') return;
-      const t = tarjetas(fr);
-      // Sólo se vuelve a pintar cuando algún número cambia: la pestaña no debe parpadear a cada cuadro.
-      const nueva = JSON.stringify([t.map((x) => [x.valor, x.estado, x.sustituida]), niveles(fr)]);
-      if (nueva === firma) return;
-      firma = nueva;
-      $('#teaching-body').innerHTML =
-        `<div class="edu-diagram">${esquema(fr)}</div><div class="edu-cards">${t.map(tarjetaHTML).join('')}</div>` +
-        `<p class="edu-pie">Rangos de <b>literatura clínica</b>, no del fabricante: valen para un paciente <b>pasivo</b> en ` +
-        `ventilación controlada y no son ajustes sugeridos para ningún paciente.</p>`;
-    },
-  };
+  let pantalla: 'presiones' | 'proteccion' = 'presiones';
+  let montado = false;
+
+  /** Dos pantallas breves en vez de una larga: el resumen tiene que caber de un vistazo. */
+  function montarNav(): void {
+    if (montado) return;
+    montado = true;
+    $('#teaching-tabs').addEventListener('click', (ev) => {
+      const b = (ev.target as HTMLElement).closest('[data-edu-tab]') as HTMLElement | null;
+      if (!b) return;
+      pantalla = b.dataset.eduTab === 'proteccion' ? 'proteccion' : 'presiones';
+      firma = '';
+      ctx.lesson.flags[`edu-${pantalla}`] = true;
+      render();
+    });
+  }
+
+  function render(): void {
+    const fr = ctx.frame;
+    if (!fr || ctx.view !== 'teaching') return;
+    montarNav();
+    for (const b of $$('[data-edu-tab]')) {
+      const activa = b.dataset.eduTab === pantalla;
+      b.classList.toggle('chosen', activa);
+      b.setAttribute('aria-pressed', String(activa));
+    }
+    const puntos = (ctx.lesson.flags.titulacion as PuntoTitulacion[] | undefined) ?? [];
+    const t = tarjetas(fr);
+    // Sólo se vuelve a pintar cuando algún número cambia: la pestaña no debe parpadear a cada cuadro.
+    const nueva = JSON.stringify([pantalla, t.map((x) => [x.valor, x.estado, x.sustituida]), niveles(fr), estres(fr), puntos]);
+    if (nueva === firma) return;
+    firma = nueva;
+    $('#teaching-body').innerHTML =
+      pantalla === 'presiones'
+        ? `<div class="edu-diagram">${esquema(fr)}</div><div class="edu-cards">${t.map(tarjetaHTML).join('')}</div>` +
+          `<p class="edu-pie">Las referencias valen para un paciente <b>pasivo</b> en ventilación controlada: con esfuerzo ` +
+          `espontáneo la meseta y la presión motriz dejan de medir lo que se cree que miden.</p>`
+        : proteccionHTML(fr, puntos);
+  }
+
+  return { render };
 }

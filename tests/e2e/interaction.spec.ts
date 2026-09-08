@@ -324,4 +324,39 @@ test.describe('EDU · pestaña Resumen', () => {
     if ((page.viewportSize()?.width ?? 0) >= 1000) expect(alturas.contenido).toBeLessThanOrEqual(alturas.cliente);
     else expect(alturas.contenido).toBeGreaterThan(0);
   });
+
+  test('la pantalla de protección lee el índice de estrés y construye la titulación con lo medido', async ({ page }) => {
+    await open(page, { scenario: 'SC-15', speed: 8, instructor: 0 });
+    await page.click('.monitor-nav [data-view="teaching"]');
+    await page.click('[data-edu-tab="proteccion"]');
+    // El índice se lee del ciclo actual; la titulación empieza vacía y dice cuántos puntos faltan.
+    await expect(page.locator('.edu-siluetas .activa')).toHaveCount(1);
+    await expect(page.locator('.edu-falta')).toContainText('0 de los 2 puntos');
+
+    for (const peep of [8, 14]) {
+      await page.click('.monitor-nav [data-view="waves"]');
+      await page.click('[data-setting-quick="peep"]');
+      await page.fill('#quick-value', String(peep));
+      await page.click('[data-action="confirmEdit"]');
+      await page.waitForFunction((p) => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
+        timeout: 20_000,
+      });
+      await page.click('[data-action="inspiratory"]');
+      await page.click('[data-action="runHold"]');
+      await page.waitForFunction(
+        () => (window.__r860.frame as unknown as { procedure: { last: { inspHold: unknown } } })?.procedure.last.inspHold !== null,
+        null,
+        { timeout: 40_000 },
+      );
+      await page.waitForTimeout(400);
+      await page.click('[data-action="closeHold"]');
+    }
+    await page.click('.monitor-nav [data-view="teaching"]');
+    await page.click('[data-edu-tab="proteccion"]');
+    // Dos mediciones propias: la curva aparece con sus dos puntos y ninguno inventado.
+    await expect(page.locator('.edu-titulacion')).toBeVisible();
+    await expect(page.locator('.edu-titulacion circle')).toHaveCount(2);
+    // El textContent pega el número y su unidad, como en las tarjetas: «2» + «puntos».
+    await expect(page.locator('.edu-bloque').nth(1).locator('header b')).toHaveText('2puntos');
+  });
 });

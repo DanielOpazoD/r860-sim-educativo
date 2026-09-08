@@ -182,6 +182,13 @@ export interface BreathRecord {
   startSimTimeMs: number;
   endSimTimeMs: number;
   cyclingCause: CyclingCause;
+  /**
+   * Índice de estrés de la rampa a flujo constante, o null cuando la forma no significa lo que se cree (modo sin
+   * flujo constante, presión recortada por un techo, esfuerzo del paciente durante la rampa, o pocas muestras).
+   */
+  stressIndex?: number | null;
+  /** Por qué no hay índice de estrés, cuando no lo hay. */
+  stressIndexReason?: string | null;
   tInspS: number;
   tExpS: number;
   ppeak: CmH2O;

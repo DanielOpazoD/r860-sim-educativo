@@ -186,3 +186,60 @@ export function niveles(fr: EngineFrame): Niveles {
   const peepProg = fr.settings.peep === 'off' ? 0 : (fr.settings.peep as number);
   return { peep: metrica(fr, 'peepe') ?? peepProg, pplat: delBloqueo(fr, 'pplat').valor, ppico: metrica(fr, 'ppeak') };
 }
+
+/** Lectura del índice de estrés: qué régimen describe y qué significa. */
+export interface Estres {
+  valor: number | null;
+  /** Por qué no hay índice, cuando no lo hay. */
+  motivo: string | null;
+  regimen: 'reclutando' | 'recta' | 'sobredistension' | null;
+  lectura: string;
+}
+
+/**
+ * Bandas del índice de estrés. Por debajo de 0,9 la distensibilidad mejora mientras entra el volumen; por encima de
+ * 1,1 empeora. Entre medias la relación presión-volumen es recta dentro del volumen corriente, que es lo que se busca.
+ */
+const ESTRES_BAJO = 0.9;
+const ESTRES_ALTO = 1.1;
+
+export function estres(fr: EngineFrame): Estres {
+  const m = fr.metrics.stressIndex;
+  if (!m || m.quality !== 'valid' || m.value === null) {
+    return { valor: null, motivo: m?.reason ?? 'sinDato', regimen: null, lectura: '' };
+  }
+  const b = m.value;
+  if (b < ESTRES_BAJO)
+    return {
+      valor: b,
+      motivo: null,
+      regimen: 'reclutando',
+      lectura: 'La distensibilidad mejora mientras entra el volumen: queda pulmón por abrir dentro del ciclo.',
+    };
+  if (b > ESTRES_ALTO)
+    return {
+      valor: b,
+      motivo: null,
+      regimen: 'sobredistension',
+      lectura: 'La distensibilidad empeora mientras entra el volumen: el ciclo llega a la zona de sobredistensión.',
+    };
+  return {
+    valor: b,
+    motivo: null,
+    regimen: 'recta',
+    lectura: 'La relación presión-volumen es recta dentro del volumen corriente: ni sigue reclutándose ni se sobredistiende.',
+  };
+}
+
+/** Un punto de la curva de titulación que el alumno midió: la PEEP a la que ocluyó y la Cstat que obtuvo. */
+export interface PuntoTitulacion {
+  peep: number;
+  cstat: number;
+}
+
+/** Ordena los puntos por PEEP y señala el de mayor distensibilidad, que es el que la maniobra busca. */
+export function titulacion(puntos: PuntoTitulacion[]): { puntos: PuntoTitulacion[]; mejor: PuntoTitulacion | null } {
+  const orden = [...puntos].sort((a, b) => a.peep - b.peep);
+  const mejor = orden.reduce<PuntoTitulacion | null>((m, p) => (m === null || p.cstat > m.cstat ? p : m), null);
+  return { puntos: orden, mejor };
+}

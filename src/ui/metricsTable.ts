@@ -25,6 +25,7 @@ export const METRICS: MetricSpec[] = [
   { key: 'rrSpont', label: 'FR espont', unit: '/min', factor: 1, decimals: 0, source: 'metric' },
   { key: 'cstat', label: 'Cstat', unit: 'mL/cmH₂O', factor: 1000, decimals: 0, source: 'hold' },
   { key: 'driving', label: 'ΔP estática', unit: 'cmH₂O', factor: 1, decimals: 1, source: 'hold' },
+  { key: 'stressIndex', label: 'Índice de estrés', unit: '', factor: 1, decimals: 2, source: 'metric' },
 ];
 export const EXTRA_METRICS: MetricSpec[] = [
   { key: 'vti', label: 'VT inspirado', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
