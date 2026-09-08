@@ -58,7 +58,7 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
         `<button class="device-key quick-key mode-key" data-action="modes"><small>Modo actual</small><b id="quick-mode">${MODE_LABEL[fr.settings.mode]}</b></button>` +
         QUICK_KEYS.map(
           (k) =>
-            `<button class="device-key quick-key" data-setting-quick="${k}" data-key="${k}" aria-pressed="false"><small>${QUICK_LABEL[k]}</small><b data-quick-val="${k}"></b><em>${k === 'ie' ? '' : unitText(ruleOf(k).displayUnit)}</em></button>`,
+            `<button class="device-key quick-key" data-setting-quick="${k}" data-key="${k}" aria-pressed="false"><small>${QUICK_LABEL[k]}</small><b data-quick-val="${k}"></b><em>${k === 'ie' ? '' : unitText(ruleOf(k).displayUnit)}</em><i data-quick-next="${k}" hidden></i></button>`,
         ).join('') +
         `<button class="device-key quick-key standby-key" data-action="standby"><small>EN ESPERA</small>${icon('hand')}</button><button class="device-key quick-key power-key" data-action="powerInfo" aria-label="Estado de alimentación virtual">${icon('plug')}</button>`;
     }
@@ -66,21 +66,20 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     for (const k of QUICK_KEYS) {
       const b = $(`[data-setting-quick="${k}"]`);
       const sel = st.kind !== 'idle' && st.key === k;
-      put(
-        `[data-quick-val="${k}"]`,
-        sel && st.kind === 'editing'
-          ? st.draftDisplay === 'off'
-            ? 'Off'
-            : k === 'ie'
-              ? ieText(st.draftDisplay)
-              : st.draftDisplay.toFixed(ruleOf(k).decimals)
-          : displaySetting(ctx.profile.rules, k, fr.settings[k]),
-      );
+      // La cara del equipo muestra SIEMPRE lo que el ventilador está entregando. El borrador vive en el editor, que
+      // está abierto al lado y lo enseña en grande; pintarlo también aquí hacía que la tecla dijera «PEEP 99» —un
+      // valor rechazado— con el mismo tratamiento que un ajuste vigente, que es lo contrario de «seleccionar ≠ aplicar».
+      put(`[data-quick-val="${k}"]`, displaySetting(ctx.profile.rules, k, fr.settings[k]));
+      // Un cambio confirmado y aún sin aplicar sí se anuncia, pero como lo que es: una propuesta, con su flecha.
+      const propuesto = fr.pending && k in fr.pending;
+      const next = $(`[data-quick-next="${k}"]`);
+      next.hidden = !propuesto;
+      if (propuesto)
+        put(`[data-quick-next="${k}"]`, `→ ${displaySetting(ctx.profile.rules, k, (fr.pending as Record<string, unknown>)[k] as never)}`);
       b.classList.toggle('editing', sel);
       b.setAttribute('aria-pressed', String(sel));
-      b.classList.toggle('pending', !!fr.pending && k in fr.pending);
+      b.classList.toggle('pending', !!propuesto);
     }
-    $('#pending-ribbon').hidden = !fr.pending;
     $('#standby-overlay').hidden = fr.ventilation !== 'standby';
     $('.standby-key').classList.toggle('active-standby', fr.ventilation === 'standby');
   }
@@ -102,7 +101,7 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
   }
   function openQuick(k: SettingsKey, opener: HTMLElement | null = null): void {
     if (ctx.locked) {
-      ctx.toast('Desbloquea los controles para modificar ajustes.');
+      ctx.toast('Desprotege los mandos para modificar ajustes.');
       return;
     }
     if (!ctx.frame) return;

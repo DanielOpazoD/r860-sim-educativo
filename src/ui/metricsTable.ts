@@ -39,7 +39,7 @@ export const BIG_METRICS: [string, string, string][] = [
   ['peepe', 'PEEPe', 'cmH₂O'],
   ['ppeak', 'Presión pico', 'cmH₂O'],
   ['mve', 'Volumen minuto', 'L/min'],
-  ['vte', 'Volumen tidal', 'mL'],
+  ['vte', 'VTesp', 'mL'], // el ajuste se llama «Volumen tidal»: el medido no puede llamarse igual en la misma pantalla
   ['rr', 'Frecuencia resp.', '/min'],
 ];
 export const METRIC_HELP: Record<string, string> = {

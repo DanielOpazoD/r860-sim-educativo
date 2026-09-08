@@ -503,13 +503,18 @@ a {
   font-size: 10px;
   color: #adffdb;
 }
+/*
+ * El color de la banda significa alarma, y sólo alarma. Sin alarmas era un bloque verde de 620 px: lo más luminoso y
+ * ancho de la pantalla comunicaba AUSENCIA de información, y encima no llegaba al contraste exigido (3,22:1 el título,
+ * 2,74:1 el subtítulo). En reposo la banda es ahora del mismo azul del monitor y se retira; el color queda para cuando
+ * hay algo que decir. Medido: texto #cfe6f7 sobre #0a3d6e = 8,6:1.
+ */
 .alarm-band {
   display: flex;
   border-radius: 3px;
-  background: linear-gradient(95deg, #079675, #19b276);
-  color: #d7ffed;
-  border: 1px solid #37c793;
-  box-shadow: inset 0 1px 4px #83ddaf44;
+  background: linear-gradient(95deg, #0a3d6e, #0d4780);
+  color: #cfe6f7;
+  border: 1px solid #2d6ea8;
   transition: background 0.2s;
 }
 .alarm-band button {
@@ -677,9 +682,20 @@ a {
   color: #a6d0ed;
   margin-top: 2px;
 }
+/*
+ * El valor que alarma se marca como en un equipo real: bloque ámbar sólido con el número en negro. El relleno anterior
+ * era semitransparente y daba 1,41:1 contra el fondo —el estado más crítico era el de menor contraste de la pantalla—
+ * y el número encima caía a 5,35:1. Medido ahora: relleno 3,31:1 sobre el azul (exige 3:1) y número 8,2:1 sobre él.
+ */
 .numeric.alarm-value {
-  background: #d88c197a;
-  outline: 1px solid #f3c95f;
+  background: #e0a030;
+  outline: 1px solid #ffd98a;
+}
+.numeric.alarm-value b,
+.numeric.alarm-value strong,
+.numeric.alarm-value span,
+.numeric.alarm-value small {
+  color: #1a1200;
 }
 .pressure-column {
   width: 142px;
@@ -786,6 +802,15 @@ a {
   font-weight: 600;
   color: #eaffff;
   line-height: 1.3;
+  white-space: nowrap;
+}
+/* Propuesta pendiente de aplicarse: se lee como lo que es, «→ valor», sin ocupar el sitio del valor entregado. */
+.quick-key i {
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #ffd27a;
   white-space: nowrap;
 }
 .quick-key em {
@@ -1810,18 +1835,6 @@ a {
   font-size: 10px;
   z-index: 9;
   border-radius: 3px;
-}
-.pending-ribbon {
-  position: absolute;
-  z-index: 25;
-  left: 280px;
-  bottom: 103px;
-  background: #ba8b20;
-  color: #fffbe9;
-  box-shadow: 0 2px 8px #0005;
-  font-size: 12px;
-  padding: 10px 20px;
-  border-radius: 4px;
 }
 .quick-editor {
   width: 405px;

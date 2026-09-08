@@ -861,6 +861,37 @@
       "tests": [
         "tests/unit/cobertura.test.ts"
       ]
+    },
+    {
+      "id": "E-067",
+      "claim": "Gana el umbral que se cruza primero, que es el más bajo: durante la inspiración a flujo constante la presión sube de forma monótona. Antes se evaluaba Pmáx sin compararlo con Plimit y contra la presión del flujo ORDENADO, no contra la que la máquina dejaría alcanzar; con Plimit 30 y Pmáx 40, pasar de Rinsp 69 a 70 llevaba el volumen entregado de 314 mL a cero. Plimit protege sin dejar de ventilar. Con los dos umbrales iguales gana Pmáx, que es la acción de seguridad.",
+      "status": "D (consecuencia de la monotonía de la presión durante la fase de flujo constante)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (fase inspFlow)",
+      "tests": [
+        "tests/unit/review5.test.ts (R5-07)"
+      ]
+    },
+    {
+      "id": "E-068",
+      "claim": "Un solo contrato de estado del ajuste. La cara del equipo muestra siempre lo que el ventilador ENTREGA; el borrador vive en el editor, que está abierto al lado; y un cambio confirmado y aún sin aplicar se anuncia en la propia tecla como «→ valor». Antes la tecla pintaba el borrador con el mismo tratamiento que un ajuste vigente, incluso uno rechazado («PEEP 99»), y el mismo hecho se anunciaba tres veces: listón sobre los botones de vista, aviso flotante y subtítulo.",
+      "status": "P (presentación; el invariante que la sostiene —seleccionar ≠ aplicar— es del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/quickEditor.ts; src/ui/app.ts; index.html",
+      "tests": [
+        "tests/e2e/interaction.spec.ts (CFG · contrato de estado del ajuste)"
+      ]
+    },
+    {
+      "id": "E-069",
+      "claim": "El color de la banda de alarma significa alarma, y sólo alarma: en reposo es del azul del monitor y se retira. El valor que alarma se marca con un bloque ámbar sólido y el número en negro, como en un equipo real. Medido en contraste WCAG: la banda en reposo pasa de 3,22:1 (título) y 2,74:1 (subtítulo) a 8,6:1; el relleno de la celda en alarma, de 1,41:1 a 3,31:1 sobre el azul (exige 3:1) y el número sobre él a 8,2:1.",
+      "status": "P (paleta; la exigencia de contraste es D por WCAG 2.1 AA)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/styles.css (.alarm-band, .numeric.alarm-value)",
+      "tests": []
     }
   ]
 }
