@@ -141,6 +141,12 @@
         "status": "FALLIDO (HTTP 502 en en-us y en-ca)",
         "note": "Se usó la edición en español (R23)."
       }
+    },
+    {
+      "id": "C01",
+      "title": "Literatura clínica citada en la pestaña Resumen: ARDS Network, NEJM 2000 (techo de meseta) y Amato et al., NEJM 2015 (presión motriz)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante ni del equipo. Se usa sólo para los rangos de referencia de la pestaña docente, que valen para un paciente pasivo en ventilación controlada y no son ajustes sugeridos para ningún paciente."
     }
   ],
   "claims": [
@@ -924,6 +930,18 @@
       "implemented": "src/engine/controller.ts (thresholdCrossing)",
       "tests": [
         "tests/unit/review5.test.ts (R5-07)"
+      ]
+    },
+    {
+      "id": "E-073",
+      "claim": "La pestaña «Resumen» presenta las cuatro presiones con su fórmula, la misma fórmula con los números de la respiración en curso y su rango de referencia, sobre un esquema de la curva de presión que separa la carga resistiva (Ppico − Pplat) de la elástica (ΔP). No calcula física: todo sale de lo que el motor ya publica con su calidad y su procedencia, de modo que no puede decir algo distinto del resto del monitor. La Ppico se muestra SIN rango de referencia porque no tiene uno: sube con el flujo y con la resistencia sin que el pulmón cambie. Sin un bloqueo inspiratorio válido, meseta, presión motriz y distensibilidad muestran «—» y dicen qué hacer para medirlas. El veredicto frente al rango se decide sobre el valor redondeado como se muestra, para que la tarjeta no pueda contradecirse a sí misma.",
+      "status": "D los rangos (literatura clínica, fuente C01; no del fabricante); P la selección de las cuatro magnitudes y la presentación",
+      "source": "C01",
+      "locator": "ARDS Network NEJM 2000: meseta ≤ 30 cmH2O · Amato NEJM 2015: presión motriz < 15 cmH2O · distensibilidad estática 50–100 mL/cmH2O, rango orientativo del adulto pasivo intubado",
+      "implemented": "src/ui/teaching.ts; src/ui/teachingView.ts; index.html (vista «teaching»)",
+      "tests": [
+        "tests/unit/resumen.test.ts",
+        "tests/e2e/interaction.spec.ts (EDU · pestaña Resumen)"
       ]
     }
   ]

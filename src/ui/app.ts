@@ -28,6 +28,7 @@ import { bindKeyboard } from './keyboard';
 import { MODE_LABEL } from './labels';
 import { createLessonTracker } from './lessonTracker';
 import { createMetricsView } from './metricsView';
+import { createTeachingView } from './teachingView';
 import { createModeDialog } from './modeDialog';
 import { createPlotsView } from './plotsView';
 import { createQuickEditor } from './quickEditor';
@@ -174,6 +175,7 @@ export function startApp(opts: AppOptions): void {
   const modes = createModeDialog(ctx, { cancelQuick: () => quick.cancelQuick() });
   const alarms = createAlarmsUi(ctx);
   const metrics = createMetricsView(ctx);
+  const teaching = createTeachingView(ctx);
   const plots = createPlotsView(ctx, { teacherVisible: () => instructor.teacherVisible });
   const instructor = createInstructorPanel(ctx, { quick, hold, metrics, plots, initialVisible: params.get('instructor') !== '0' });
   const actions = createActions(ctx, { quick, hold, modes, alarms, metrics, plots, instructor });
@@ -212,6 +214,7 @@ export function startApp(opts: AppOptions): void {
     hold.updateHold();
     instructor.updateTeacher();
     metrics.updateLogs();
+    teaching.render();
     lesson.evaluate();
   }
   function ingest(
