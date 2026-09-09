@@ -44,6 +44,15 @@ export interface MetricsView {
   mechanics(metric?: string | null): void;
 }
 
+/**
+ * Celda de valor de la tabla. El dato ausente se marca como ausencia y no como un número: un guión del tamaño de la
+ * cifra se leía como una regla o como una muestra de leyenda.
+ */
+function celdaValor(texto: string, unidad: string): string {
+  if (texto === '—') return `<span class="sin-dato">sin dato</span>`;
+  return `${texto}${unidad ? `<small>${unidad}</small>` : ''}`;
+}
+
 export function createMetricsView(ctx: AppContext): MetricsView {
   let logSignature = '';
   const value = (spec: MetricSpec): number | null => metricValue(ctx.frame, spec);
@@ -78,11 +87,17 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         put(e.querySelector('b'), f(value(spec), spec.decimals));
         put(e.querySelector('.numeric-limits'), limitPair(fr, spec.key));
       }
-      if (ctx.view === 'data')
-        $('#data-table-body').innerHTML = ALL_METRICS.map(
-          (m) =>
-            `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td><td>${f(value(m), m.decimals)}</td><td>${m.unit}</td><td>${esc(quality(m))}</td></tr>`,
-        ).join('');
+      if (ctx.view === 'data') {
+        // Dos tablas en paralelo. Con una sola, diecisiete filas de 47 px no cabían en los 425 disponibles y nueve
+        // quedaban bajo el pliegue sin ninguna señal: entre ellas la Cstat, la ΔP y el índice de estrés, que son el
+        // núcleo docente. La unidad se pega al valor, como en la columna numérica, para dejar sitio a la procedencia.
+        const fila = (m: (typeof ALL_METRICS)[number]): string =>
+          `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td>` +
+          `<td>${celdaValor(f(value(m), m.decimals), m.unit)}</td><td>${esc(quality(m))}</td></tr>`;
+        const mitad = Math.ceil(ALL_METRICS.length / 2);
+        $('#data-table-body').innerHTML = ALL_METRICS.slice(0, mitad).map(fila).join('');
+        $('#data-table-body-2').innerHTML = ALL_METRICS.slice(mitad).map(fila).join('');
+      }
     },
     updateLogs() {
       const fr = ctx.frame as EngineFrame;
