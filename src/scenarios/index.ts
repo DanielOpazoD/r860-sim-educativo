@@ -89,7 +89,11 @@ export const SCENARIOS: Scenario[] = [
       tasks: [
         { id: 'meseta', text: 'Mide Pplat con un bloqueo inspiratorio antes del cambio.', test: 'validInsp' },
         { id: 'after', text: 'Repite el bloqueo después de los 20 s.', test: 'holdAfter20' },
-        { id: 'peep', text: 'Cambia la PEEP y observa que Pplat sube en la misma cantidad.', test: 'peepChanged' },
+        {
+          id: 'peep',
+          text: 'Sube la PEEP a 8 y repite el bloqueo: Pplat sube esos mismos 3 cmH₂O. Con C 20 no cabe más: a PEEP 10 la inspiración ya termina por Pmáx.',
+          test: 'peepChanged',
+        },
       ],
     },
     question: '¿Por qué Ppico y Pplat suben juntos al bajar C?',
@@ -366,7 +370,11 @@ export const SCENARIOS: Scenario[] = [
       tasks: [
         { id: 'corto', text: 'Pide un bloqueo inspiratorio de 2 s y observa por qué no es válido.', test: 'shortHoldInvalid' },
         { id: 'largo', text: 'Repítelo con 5 s o más: ahora sí se asienta.', test: 'longHoldValid' },
-        { id: 'peeptot', text: 'Mide la PEEP total con un bloqueo espiratorio: la relajación también atrapa aire.', test: 'validExp' },
+        {
+          id: 'peeptot',
+          text: 'Mide la PEEP total con un bloqueo espiratorio de 5 s: la relajación también atrapa aire, y también tarda.',
+          test: 'validExp',
+        },
         { id: 'modelo', text: 'Abre «Datos del modelo» y mira la presión viscoelástica.', test: 'truthOpen' },
       ],
     },
@@ -463,7 +471,11 @@ SCENARIOS.push({
     tasks: [
       { id: 'vt', text: 'Observa VTesp ≈ 430 mL con Pinsp 10 antes de los 30 s.', test: 'vtNear430' },
       { id: 'drop', text: 'Tras los 30 s, comprueba que VTesp cae y Ppico se mantiene.', test: 'vtDropPc' },
-      { id: 'ti', text: 'Alarga el tiempo inspiratorio (I:E 1:1) y observa el VT acercarse a C·ΔP = 500 mL.', test: 'ieOne' },
+      {
+        id: 'ti',
+        text: 'Con el VTesp ya caído a ~305 mL, alarga el tiempo inspiratorio (I:E 1:1): vuelve a ~430 mL. No llega a C·ΔP = 500 porque 2 s son sólo dos constantes de tiempo (τ = 1 s con la R doblada).',
+        test: 'ieOne',
+      },
     ],
   },
   question: '¿Por qué en PC un Tinsp más largo aumenta el VT sólo hasta cierto punto?',

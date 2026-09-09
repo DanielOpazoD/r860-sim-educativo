@@ -72,6 +72,8 @@ export const COMMAND_HANDLERS: Handlers = {
     );
     if (!v.ok) return reject(v.reasons.join(' '));
     ctx.alarms.setLimits(v.clean as Partial<AlarmLimits>);
+    // Ventilando, el límite nuevo se contrasta ya con la última respiración; en espera no hay nada monitorizado.
+    if (ctx.ventilation() === 'ventilating') ctx.alarms.onLimitsChanged(ctx.simTimeMs);
     ctx.logEvent('alarm', actor, { limits: v.clean });
     return ok;
   },

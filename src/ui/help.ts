@@ -451,6 +451,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Límites y alarmas',
     text: [
       'Los límites comparan mediciones de los ciclos con el intervalo elegido. Un valor fuera de rango debe persistir para activar ciertas alarmas.',
+      'Volumen, frecuencia y Ppico baja se evalúan al terminar cada respiración: a frecuencia baja, entre el cambio y la alarma puede pasar un ciclo entero. Un límite recién confirmado no espera: se compara enseguida con la última respiración medida. Pmáx actúa dentro del propio ciclo, sobre la presión antes de redondear.',
       'Silenciar sólo pausa el sonido. Reconocer registra la revisión; no elimina una condición que sigue activa. Pmáx se configura con los ajustes de ventilación.',
     ],
   },
