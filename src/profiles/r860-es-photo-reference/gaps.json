@@ -405,6 +405,13 @@
       "policy": "P: 200 L/min, por encima de todo lo fisiológico, para que el techo sólo actúe en regímenes irreales y no altere ningún escenario (el más obstructivo llega a 149 L/min). Si aparece la cifra documentada, se sustituye.",
       "status": "nueva (v0.4.8)",
       "blocks": []
+    },
+    {
+      "id": "U-51",
+      "question": "Con qué cadencia evalúa el R860 cada alarma fisiológica y qué retardo de confirmación aplica antes de activarla. U-11 recoge prioridades y enclavamientos; esto es la frecuencia de evaluación.",
+      "policy": "P: una evaluación por respiración cerrada (más el refresco del sensor de O2 y Pmáx dentro del ciclo), sin retardo de confirmación añadido. El retraso máximo es por tanto un ciclo, y se dice en la ayuda de alarmas en vez de dejarlo implícito. Un cambio de límites se contrasta de inmediato con la última respiración.",
+      "status": "nueva (v0.4.9)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

@@ -2,6 +2,7 @@ import type { MetricSample, ProcedureKind, ProcedureResult, Quality } from '../d
 import {
   PLATEAU_REVERSAL_CMH2O,
   PLATEAU_DRIFT_RATE_CMH2O_S,
+  PLATEAU_DRIFT_RATE_EXP_CMH2O_S,
   type ControllerEvent,
   type HoldKind,
   type HoldOutcome,
@@ -9,6 +10,9 @@ import {
 } from './controller';
 import { msToS, sToMs } from '../domain/units';
 import { guardFiniteness } from './metrics';
+
+/** Deriva admitida según lo que la maniobra publica: ver `PLATEAU_DRIFT_RATE_EXP_CMH2O_S`. */
+const driftLimit = (kind: HoldKind): number => (kind === 'expHold' ? PLATEAU_DRIFT_RATE_EXP_CMH2O_S : PLATEAU_DRIFT_RATE_CMH2O_S);
 
 /** Denominador mínimo para Cstat (cmH2O), P. */
 export const MIN_CSTAT_DENOMINATOR = 1;
@@ -150,7 +154,7 @@ export class ProcedureManager {
     } else if (!Number.isFinite(o.reversal) || o.reversal > PLATEAU_REVERSAL_CMH2O) {
       quality = 'invalid';
       reason = 'mesetaPerturbada';
-    } else if (!Number.isFinite(o.driftRate) || o.driftRate > PLATEAU_DRIFT_RATE_CMH2O_S) {
+    } else if (!Number.isFinite(o.driftRate) || o.driftRate > driftLimit(o.kind)) {
       quality = 'invalid';
       reason = 'mesetaInestable';
     }

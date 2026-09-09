@@ -780,13 +780,14 @@
     },
     {
       "id": "E-059",
-      "claim": "El criterio de estabilidad de la meseta es una TASA (cmH2O/s) sobre un tramo final de duración fija, no una diferencia absoluta sobre un tramo que crece con la oclusión. Así el veredicto es monótono en la duración: esperar más nunca empeora la medición aceptada. Umbral 0,45 cmH2O/s, calibrado sobre tres mecánicas (dos unidades dispares, viscoelástica y un compartimento).",
+      "claim": "El criterio de estabilidad de la meseta es una TASA (cmH2O/s) sobre un tramo final de duración fija, no una diferencia absoluta sobre un tramo que crece con la oclusión. Así el veredicto es monótono en la duración: esperar más nunca empeora la medición aceptada. El umbral es distinto según lo que la maniobra publica: 0,45 cmH2O/s en el bloqueo inspiratorio, que entrega una presión de 20-30 cmH2O, y 0,04 cmH2O/s en el espiratorio, que entrega una resta de dos presiones casi iguales (PEEPi). Ambos calibrados sobre tres mecánicas (dos unidades dispares, viscoelástica y un compartimento).",
       "status": "P (la forma del criterio es deducida; el valor está calibrado, no documentado por el fabricante)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (plateauQuality, PLATEAU_DRIFT_RATE_CMH2O_S); src/engine/procedures.ts",
+      "implemented": "src/engine/controller.ts (plateauQuality, PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S); src/engine/procedures.ts (driftLimit)",
       "tests": [
-        "tests/unit/review5.test.ts (R5-01)"
+        "tests/unit/review5.test.ts (R5-01)",
+        "tests/unit/review7.test.ts (R7-01)"
       ]
     },
     {
@@ -965,6 +966,28 @@
       "tests": [
         "tests/unit/proteccion.test.ts",
         "tests/e2e/interaction.spec.ts (EDU · protección)"
+      ]
+    },
+    {
+      "id": "E-076",
+      "claim": "La deriva medida en el tramo final acota lo que a la presión aún le falta por subir: con una aproximación de primer orden, resto = deriva x T / (e^(T/tau) - 1), con T = 0,5 s. El umbral espiratorio de 0,04 cmH2O/s deja ese resto por debajo de 0,1 cmH2O -la cifra que la pantalla muestra- para las constantes de redistribución de los escenarios (tau 1,3-2,7 s). Un pulmón que vacía rápido sigue dando una PEEP total válida a los 2 s; uno que redistribuye despacio exige 5-6 s, que es lo que de verdad tarda.",
+      "status": "P (la forma del criterio es deducida; el valor está calibrado, no documentado por el fabricante)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (PLATEAU_DRIFT_RATE_EXP_CMH2O_S)",
+      "tests": [
+        "tests/unit/review7.test.ts (R7-01, R7-02)"
+      ]
+    },
+    {
+      "id": "E-077",
+      "claim": "Las alarmas fisiológicas se evalúan al cerrar cada respiración (volumen, frecuencia, Ppico baja, PEEPe) o al refrescar el sensor (FiO2); Pmáx se evalúa dentro del ciclo sobre la presión bruta. Un cambio de límites no espera al ciclo siguiente: se contrasta de inmediato con la última respiración monitorizada, que es lo que declara `applyPolicy: 'immediate'` de las reglas de límite. En espera no hay medición con la que comparar y un límite nuevo no activa nada.",
+      "status": "P (cadencia propuesta; la tabla de retardos del fabricante es U-11)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/alarms.ts (onLimitsChanged, checkBreathLimits); src/engine/commandHandlers.ts (setAlarmLimits)",
+      "tests": [
+        "tests/unit/review7.test.ts (R7-03)"
       ]
     }
   ]

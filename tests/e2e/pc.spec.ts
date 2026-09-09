@@ -173,8 +173,12 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
     const senal = serie.slice(i, i + 12).map((s) => s[0]);
     const bajada = serie.slice(i, i + 12).map((s) => s[1]);
     // La señal pierde de golpe lo resistivo (Ppico → presión alveolar) y luego baja con la válvula abriéndose.
+    // La afirmación es que hay un descenso con valores intermedios, no un salto a PEEP. Dónde caiga exactamente el
+    // primer fotograma tras el cambio de fase depende de la carga de la máquina: pedirle 8 cmH2O hacía fallar la
+    // prueba cuando el navegador se saltaba un fotograma y llegaba con la caída ya empezada.
     expect(senal[0]).toBeLessThan(serie[i - 1]![0] - 3);
-    expect(senal[0]).toBeGreaterThan(8);
+    expect(senal[0], 'todavía por encima de PEEP').toBeGreaterThan(5.5);
+    expect(new Set(senal.map((v) => Math.round(v))).size, 'la bajada pasa por valores intermedios').toBeGreaterThan(1);
     expect(senal.at(-1)).toBeLessThan(6); // en menos de 200 ms ya está en PEEP
     // La columna sigue esa bajada amortiguada, escalón a escalón.
     expect(bajada[0]).toBeGreaterThan(12);

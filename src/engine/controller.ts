@@ -30,6 +30,25 @@ export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
  * P: lo principiado es la forma del criterio (tasa, ventana fija, monótona); el valor está calibrado, no deducido.
  */
 export const PLATEAU_DRIFT_RATE_CMH2O_S = 0.45;
+/**
+ * Deriva máxima admitida en el bloqueo ESPIRATORIO (cmH2O/s), P. Más estrecha que la inspiratoria porque el producto
+ * de la maniobra no es la presión leída sino una resta de dos presiones casi iguales: la PEEP intrínseca. Un error de
+ * 0,3 cmH2O sobre una meseta de 25 es despreciable; sobre una PEEPi de 0,6 es la mitad del dato.
+ *
+ * Con la aproximación de primer orden `paw(t) = A − B·e^(−t/tau)`, la deriva medida sobre el tramo final de duración
+ * T = PLATEAU_TAIL_S acota lo que aún falta por subir: `resto = deriva · T / (e^(T/tau) − 1)`. Medido sobre los dos
+ * escenarios con redistribución lenta (resto en cmH2O frente a la asíntota a 40 s):
+ *
+ *     oclusión      2 s     3 s     4 s     6 s     8 s    12 s
+ *     SC-17        0,111   0,080   0,057   0,029   0,015   0,004   (tau 2,7 s; resto 0,30 / 0,22 / 0,15 / 0,08 / 0,04)
+ *     SC-14        0,240   0,123   0,063   0,017   0,004   0,000   (tau 1,3 s; resto 0,31 / 0,16 / 0,08 / 0,02 / 0,01)
+ *     un compartim. 0,000   0,000   0,000   0,000   0,000   0,000
+ *
+ * 0,04 deja el resto por debajo de 0,1 cmH2O —la cifra que la pantalla muestra— en ese rango de tau: los pulmones que
+ * vacían rápido siguen dando una PEEP total válida a los 2 s, y los que redistribuyen despacio exigen 6 s, que es lo
+ * que de verdad tardan. Con 0,45 se certificaba a los 2 s una PEEPi de 0,33 cuando la real era 0,63.
+ */
+export const PLATEAU_DRIFT_RATE_EXP_CMH2O_S = 0.04;
 /** Tramo final sobre el que se mide la deriva. Fijo a propósito: ver `PLATEAU_DRIFT_RATE_CMH2O_S`. */
 export const PLATEAU_TAIL_S = 0.5;
 /** Excursión contra la tendencia que delata una perturbación (esfuerzo, fuga, oscilación) en cmH2O. */

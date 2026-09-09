@@ -57,6 +57,9 @@ export interface AlarmBar {
 export class AlarmEngine {
   limits: AlarmLimits;
   private alarms = new Map<string, AlarmState>();
+  /** Última respiración monitorizada y su ventana de métricas: contra ellas se compara un límite recién cambiado. */
+  private lastBreath: { record: BreathRecord; metrics: Record<string, MetricSample> } | null = null;
+  private lastFio2: number | null = null;
 
   constructor(limits: AlarmLimits) {
     this.limits = { ...limits };
@@ -162,8 +165,16 @@ export class AlarmEngine {
 
   /** Evaluación por respiración completa y ventana de métricas. */
   onBreath(record: BreathRecord, metrics: Record<string, MetricSample>, simTimeMs: number): void {
-    const L = this.limits;
+    this.lastBreath = { record, metrics };
     if (!record.pmaxReached) this.resolve('pmax', simTimeMs);
+    this.checkBreathLimits(simTimeMs);
+  }
+
+  /** Compara los límites con la última respiración monitorizada. Sin ninguna, no hay nada que comparar. */
+  private checkBreathLimits(simTimeMs: number): void {
+    if (!this.lastBreath) return;
+    const { record, metrics } = this.lastBreath;
+    const L = this.limits;
     this.check('ppeakLow', simTimeMs, record.ppeak, L.ppeakLow, 'low', Math.round(record.ppeak));
     // Las alarmas de volumen comparan el valor MEDIDO, como el equipo real, no el volumen verdadero del modelo.
     const vteM = record.vtExpMeasured ?? record.vtExp;
@@ -180,6 +191,12 @@ export class AlarmEngine {
   }
 
   onSensor(simTimeMs: number, fio2Measured: number | null): void {
+    this.lastFio2 = fio2Measured;
+    this.checkFio2Limits(simTimeMs);
+  }
+
+  private checkFio2Limits(simTimeMs: number): void {
+    const fio2Measured = this.lastFio2;
     this.check(
       'fio2Low',
       simTimeMs,
@@ -198,9 +215,22 @@ export class AlarmEngine {
     );
   }
 
+  /**
+   * Un límite recién confirmado se compara enseguida con lo último medido, sin esperar a que termine la respiración en
+   * curso: a 5 /min esa espera son doce segundos de banda verde con la condición ya incumplida. La hora de inicio es la
+   * del cambio, que es cuando la condición pasó a ser cierta.
+   */
+  onLimitsChanged(simTimeMs: number): void {
+    this.checkBreathLimits(simTimeMs);
+    this.checkFio2Limits(simTimeMs);
+  }
+
   /** En espera se resuelven las condiciones fisiológicas (no hay monitorización, D QRG p.14); las pendientes de reconocer permanecen. */
   onStandby(simTimeMs: number): void {
     for (const a of this.alarms.values()) this.resolve(a.id, simTimeMs);
+    // Sin monitorización no queda medición con la que comparar un límite nuevo: la de antes de la espera ya no vale.
+    this.lastBreath = null;
+    this.lastFio2 = null;
   }
 
   /** Estado de la banda (D: verde sin alarmas; color de la prioridad más alta; gris con alarma previa por reconocer). */
