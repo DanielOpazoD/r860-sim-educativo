@@ -79,8 +79,16 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await expect(page.locator('#loop-reference-label')).toContainText('Referencia');
     await screenshot(page, info, 'vis-05-loops');
     await page.click('[data-view="data"]');
-    await expect(page.locator('#data-table-body tr')).toHaveCount(17); // 16 + índice de estrés (v0.6.1)
-    await expect(page.locator('#data-table-body')).toContainText('Índice de estrés');
+    // Las diecisiete mediciones se ven a la vez, en dos columnas: con una sola tabla nueve quedaban bajo el pliegue
+    // sin ninguna señal, entre ellas la Cstat, la ΔP y el índice de estrés.
+    await expect(page.locator('#data-table-body tr, #data-table-body-2 tr')).toHaveCount(17);
+    const caben = await page.evaluate(() => {
+      const c = document.querySelector('.data-tables') as HTMLElement;
+      return c.scrollHeight <= c.clientHeight;
+    });
+    // En móvil las dos columnas se apilan y el desplazamiento es inevitable y correcto; ahí no se exige.
+    if ((page.viewportSize()?.width ?? 0) >= 900) expect(caben, 'la tabla de mediciones no puede esconder filas').toBe(true);
+    await expect(page.locator('.data-tables')).toContainText('Índice de estrés');
     await expect(page.locator('#data-table-body')).toContainText('sensor del ventilador');
     await page.click('[data-view="trends"]');
     await page.waitForTimeout(200);

@@ -1585,10 +1585,35 @@ a {
   color: #a7ccef;
   margin: 12px 15px 6px;
 }
-.data-table-scroll {
+.data-tables {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
   height: 425px;
   overflow: auto;
   scrollbar-color: #438bc0 #104893;
+  align-content: start;
+  padding: 0 4px;
+}
+.device-table td:nth-child(2) {
+  white-space: nowrap;
+}
+.device-table td .sin-dato {
+  font-size: 11px;
+  font-weight: 400;
+  color: #7fa9c9;
+  font-style: italic;
+}
+.device-table td:nth-child(2) small {
+  font-size: 10px;
+  font-weight: 400;
+  color: #a6d0ed;
+  margin-left: 4px;
+}
+@media (max-width: 900px) {
+  .data-tables {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .device-table {
   width: 100%;
@@ -1607,7 +1632,7 @@ a {
   color: #9ad4f5;
 }
 .device-table td {
-  padding: 11px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid #4a87bb50;
 }
 .device-table td:nth-child(2) {
