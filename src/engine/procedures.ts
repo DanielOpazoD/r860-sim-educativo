@@ -177,7 +177,12 @@ export class ProcedureManager {
         values.driving = mkSample('drivingHold', denom, 'cmH2O', {
           ...base,
           quality: 'valid',
-          reason: 'Pplat − PEEPe al inicio de esa inspiración (P)',
+          // El motivo tiene que decir QUÉ PEEP hay en la resta. Decía siempre «PEEPe» aunque el denominador fuera la
+          // PEEP total medida, que es justo la distinción que esta magnitud existe para enseñar.
+          reason:
+            peepTotPrev === null
+              ? 'Pplat − PEEPe al inicio de esa inspiración (sin PEEPtot medida)'
+              : 'Pplat − PEEPtot (bloqueo espiratorio previo)',
         });
         values.vt = mkSample('vtHold', o.vtInspL, 'L', { ...base, quality: 'valid', reason: null });
       } else {

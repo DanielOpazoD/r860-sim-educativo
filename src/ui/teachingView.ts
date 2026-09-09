@@ -29,6 +29,7 @@ function esquema(fr: EngineFrame): string {
     xMes = izq + 300, // fin de la meseta: Pplat
     xFin = W - der;
   const peep = nv.peep;
+  const peepe = nv.peepe; // sólo cuando difiere de la anterior: entre las dos está la PEEP intrínseca
   const pplat = nv.pplat;
   const ppico = nv.ppico;
   const hayMeseta = pplat !== null && ppico !== null;
@@ -36,7 +37,9 @@ function esquema(fr: EngineFrame): string {
   // Sin meseta medida se dibuja igualmente la forma, pero sin las llaves ni los números que exigen la oclusión.
   const pPico = ppico ?? peep + 15;
   const pPlat = pplat ?? peep + 10;
-  const curva = `M ${x0} ${y(peep)} L ${xIns} ${y(pPico)} L ${xIns} ${y(pPlat)} L ${xMes} ${y(pPlat)} L ${xMes} ${y(peep)} L ${xFin} ${y(peep)}`;
+  // La curva de la vía aérea vuelve a la PEEP PROGRAMADA al espirar: la total es alveolar y no se ve en el trazado.
+  const pBase = peepe ?? peep;
+  const curva = `M ${x0} ${y(pBase)} L ${xIns} ${y(pPico)} L ${xIns} ${y(pPlat)} L ${xMes} ${y(pPlat)} L ${xMes} ${y(pBase)} L ${xFin} ${y(pBase)}`;
 
   const linea = (p: number, rotulo: string, color: string): string =>
     `<line x1="${izq}" y1="${y(p)}" x2="${xFin + 8}" y2="${y(p)}" stroke="${color}" stroke-width="1" stroke-dasharray="4 4" opacity=".65"/>` +
@@ -62,7 +65,10 @@ function esquema(fr: EngineFrame): string {
   const llaves = hayMeseta
     ? llave(pPico, pPlat, 'resistiva, R·Q', `${f(pPico - pPlat, 1)} cmH₂O`, '#ffd27a') +
       llave(pPlat, peep, 'elástica, ΔP', `${f(pPlat - peep, 1)} cmH₂O`, '#7ce0b8') +
-      llave(peep, 0, 'PEEP', `${f(peep, 1)} cmH₂O`, '#9fd0f0')
+      // Con atrapamiento la carga elástica se mide desde la PEEP TOTAL, y el tramo que va de la programada a la total
+      // es la PEEP intrínseca: el esquema la dibuja aparte en vez de esconderla dentro de la elástica.
+      (peepe !== null ? llave(peep, peepe, 'PEEP intrínseca', `${f(peep - peepe, 1)} cmH₂O`, '#ffb0c8') : '') +
+      llave(peepe ?? peep, 0, peepe !== null ? 'PEEP programada' : 'PEEP', `${f(peepe ?? peep, 1)} cmH₂O`, '#9fd0f0')
     : `<text x="${xFin + 14}" y="${y(pPlat)}" font-size="12" fill="#a6d0ed">Haz un bloqueo inspiratorio</text>` +
       `<text x="${xFin + 14}" y="${y(pPlat) + 15}" font-size="12" fill="#a6d0ed">para separar las dos cargas</text>`;
 
@@ -70,7 +76,8 @@ function esquema(fr: EngineFrame): string {
     `<svg viewBox="0 0 ${W} ${H}" class="edu-svg" role="img" aria-label="Esquema de la presión de vía aérea en una respiración, con la carga resistiva y la elástica separadas">` +
     `<line x1="${izq}" y1="${base}" x2="${xFin + 8}" y2="${base}" stroke="#4b7fb5" stroke-width="1"/>` +
     `<text x="${izq + 4}" y="14" font-size="12" fill="#bfe6ff" font-family="ui-monospace, Menlo, monospace">Paw = PEEP + R·Q + V/C</text>` +
-    linea(peep, 'PEEP', '#9fd0f0') +
+    linea(peepe ?? peep, peepe !== null ? 'PEEP' : 'PEEP', '#9fd0f0') +
+    (peepe !== null ? linea(peep, 'PEEPtot', '#ffb0c8') : '') +
     (hayMeseta ? linea(pPlat, 'Pplat', '#7ce0b8') + linea(pPico, 'Ppico', '#ffd27a') : '') +
     `<path d="${curva}" fill="none" stroke="#eaffff" stroke-width="2.5" stroke-linejoin="round"/>` +
     `<text x="${(x0 + xIns) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="#8fb8d8">flujo entrando</text>` +
