@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { EngineFrame } from '../../src/engine/simulator';
-import { tarjetas } from '../../src/ui/teaching';
+import { Simulator } from '../../src/engine/simulator';
+import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { SCENARIOS } from '../../src/scenarios';
+import { niveles, tarjetas } from '../../src/ui/teaching';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // La pestaña «Resumen» no calcula física: presenta lo que el motor publica. Estas pruebas fijan justo eso —que sus
@@ -94,5 +97,68 @@ describe('RES · el resumen dice lo mismo que el monitor', () => {
       expect(por(fr, id).valor, id).toBeNull();
       expect(por(fr, id).sustituida, id).toBeNull();
     }
+  });
+});
+
+describe('RES · con atrapamiento aéreo la resta es contra la PEEP total', () => {
+  /** Un obstructivo con auto-PEEP, con la PEEP total ya medida por un bloqueo espiratorio válido. */
+  function conAutoPeep(): EngineFrame {
+    const e = SCENARIOS.find((s) => s.id === 'SC-03')!;
+    const base = defaultInit({});
+    const sim = new Simulator(
+      defaultInit({
+        patient: { ...e.patient },
+        effort: { ...e.effort },
+        sensors: { ...e.sensors },
+        settings: { ...base.settings, ...(e.settings ?? {}) },
+        initialV: 'equilibrium',
+      }),
+      R860_PROFILE,
+    );
+    const bloqueo = (kind: 'inspHold' | 'expHold', durationS: number): void => {
+      sim.command({ type: 'requestHold', kind, durationS });
+      for (let i = 0; i < 80_000 && sim.frame().procedure.current; i++) sim.step();
+      for (let i = 0; i < 80_000; i++) {
+        sim.step();
+        if (sim.frame().procedure.last[kind]) break;
+      }
+    };
+    runUntilBreath(sim, 6);
+    bloqueo('expHold', 10);
+    runUntilBreath(sim, sim.breaths.length + 3);
+    bloqueo('inspHold', 5);
+    return sim.frame();
+  }
+
+  it('las identidades de la pantalla cuadran, y el esquema no contradice a la tarjeta', () => {
+    // El defecto: se restaba siempre la PEEP espiratoria. Con auto-PEEP 8,3 la tarjeta decía «23,4 = 5,0 + 10,0»
+    // —que suma 15— y el esquema marcaba una ΔP de 18,4 junto a una tarjeta que decía 10,0. Dos presiones motrices a
+    // la vez, en la pantalla que existe para enseñar precisamente eso.
+    const fr = conAutoPeep();
+    const exp = fr.procedure.last.expHold!;
+    expect(exp.quality).toBe('valid');
+    const peepTot = exp.values.peepTot?.value as number;
+    const peepe = fr.metrics.peepe?.value as number;
+    expect(peepTot - peepe, 'el escenario tiene que tener atrapamiento').toBeGreaterThan(3);
+
+    const pplat = por(fr, 'pplat').valor as number;
+    const dp = por(fr, 'driving').valor as number;
+    // La resta es contra la PEEP total medida, no contra la espiratoria.
+    expect(pplat - dp).toBeCloseTo(peepTot, 1);
+    // Y las dos sustituciones que se muestran son aritméticamente ciertas.
+    expect(por(fr, 'pplat').sustituida).toBe(`${pplat.toFixed(1)} = ${peepTot.toFixed(1)} + ${dp.toFixed(1)}`);
+    expect(por(fr, 'driving').sustituida).toBe(`${dp.toFixed(1)} = ${pplat.toFixed(1)} − ${peepTot.toFixed(1)}`);
+
+    // El esquema mide la carga elástica desde la misma PEEP que la tarjeta, y separa la intrínseca.
+    const nv = niveles(fr);
+    expect(nv.peep).toBeCloseTo(peepTot, 1);
+    expect(nv.pplat! - nv.peep).toBeCloseTo(dp, 1);
+    expect(nv.peepe as number).toBeCloseTo(peepe, 1);
+  });
+
+  it('el motor dice qué PEEP hay en la resta, y lo dice bien', () => {
+    // El motivo estaba escrito a mano y decía siempre «PEEPe», aunque el denominador fuera la PEEP total.
+    const fr = conAutoPeep();
+    expect(fr.procedure.last.inspHold?.values.driving?.reason).toMatch(/PEEPtot/);
   });
 });

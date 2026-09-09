@@ -105,7 +105,13 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
   const driving = delBloqueo(fr, 'driving');
   const cstat = delBloqueo(fr, 'cstat');
   const vtHold = delBloqueo(fr, 'vt');
-  const base = peepe ?? peepProg;
+  // La PEEP que hay REALMENTE en el denominador de la presión motriz. El motor resta la PEEP total cuando el alumno la
+  // midió con un bloqueo espiratorio, y la PEEPe cuando no; aquí se recupera exactamente de la propia resta. Restar la
+  // PEEPe siempre, como se hacía, rompía las identidades en pantalla en cuanto había atrapamiento aéreo: en un
+  // obstructivo con auto-PEEP 8,3 la tarjeta decía «23,4 = 5,0 + 10,0» y el esquema marcaba una ΔP de 18,4 junto a una
+  // tarjeta que decía 10,0. Dos presiones motrices distintas a la vez, en la pantalla que existe para enseñar eso.
+  const peepUsada = pplat.valor !== null && driving.valor !== null ? pplat.valor - driving.valor : null;
+  const base = peepUsada ?? peepe ?? peepProg;
 
   // Ppico: lo que la vía aérea alcanza con el flujo entrando. Se descompone en los tres sumandos de la ecuación de
   // movimiento, que es lo que hace legible el resto de la pestaña.
@@ -131,7 +137,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
   const tarjetaPplat: Tarjeta = {
     id: 'pplat',
     titulo: 'Presión meseta',
-    formula: 'Pplat = PEEP + ΔP',
+    formula: 'Pplat = PEEPtot + ΔP',
     sustituida: pplat.valor !== null && driving.valor !== null ? `${n(pplat.valor, 1)} = ${n(base, 1)} + ${n(driving.valor, 1)}` : null,
     valor: pplat.valor,
     unidad: 'cmH₂O',
@@ -177,14 +183,21 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
 
 /** Las tres alturas que el esquema de la curva necesita, o null si aún no hay meseta medida. */
 export interface Niveles {
+  /** La PEEP de la que se mide la carga elástica: la total si se midió, y si no la espiratoria. */
   peep: number;
+  /** La PEEP espiratoria, cuando difiere de la anterior: entre las dos está la PEEP intrínseca. */
+  peepe: number | null;
   pplat: number | null;
   ppico: number | null;
 }
 
 export function niveles(fr: EngineFrame): Niveles {
   const peepProg = fr.settings.peep === 'off' ? 0 : (fr.settings.peep as number);
-  return { peep: metrica(fr, 'peepe') ?? peepProg, pplat: delBloqueo(fr, 'pplat').valor, ppico: metrica(fr, 'ppeak') };
+  const peepe = metrica(fr, 'peepe') ?? peepProg;
+  const pplat = delBloqueo(fr, 'pplat').valor;
+  const driving = delBloqueo(fr, 'driving').valor;
+  const peep = pplat !== null && driving !== null ? pplat - driving : peepe;
+  return { peep, peepe: Math.abs(peep - peepe) > 0.05 ? peepe : null, pplat, ppico: metrica(fr, 'ppeak') };
 }
 
 /** Lectura del índice de estrés: qué régimen describe y qué significa. */

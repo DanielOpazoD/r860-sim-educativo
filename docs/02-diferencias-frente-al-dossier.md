@@ -315,3 +315,19 @@ El resumen pasa a tener dos pantallas breves en vez de una: **Presiones** (lo de
   - **No se publica cuando la forma no es del pulmón**, y dice por qué: en presión control no hay rampa a flujo constante; con esfuerzo del paciente la curva es suya y del ventilador; con la presión recortada por Plimit o Pmáx la forma está truncada. Tres motivos distintos, tres mensajes distintos.
 - **Titulación de PEEP con las mediciones del propio alumno.** Cada bloqueo inspiratorio válido deja un punto (PEEP, Cstat) y la pantalla dibuja la curva que él construyó, señalando el máximo. Con menos de dos puntos no se dibuja nada y se dice cuántos faltan. **No hay ningún punto precalculado ni interpolado**: si la curva no aparece es porque no se ha medido, no porque falle.
 - El índice de estrés entra también en la tabla de mediciones, con su calidad y su procedencia, como cualquier otro dato.
+
+## v0.6.2 · la presión motriz con atrapamiento aéreo (08-09-2026)
+
+Defecto propio de la ronda anterior, encontrado por una revisión clínica de contexto limpio y del peor tipo posible para esta herramienta: **la pantalla que existe para enseñar la presión motriz enseñaba una falsa en cuanto había auto-PEEP**.
+
+La pestaña restaba siempre la PEEP espiratoria, mientras que el motor —correctamente— pone en el denominador la PEEP total cuando el alumno la ha medido con un bloqueo espiratorio. En SC-03, con auto-PEEP de 8,3 cmH₂O, la misma pantalla mostraba a la vez:
+
+- la tarjeta de presión motriz: **10,0**
+- la llave del esquema «elástica, ΔP»: **18,4**
+- y la sustitución `Pplat = PEEP + ΔP → 23,4 = 5,0 + 10,0`, que suma **15**
+
+Dos presiones motrices distintas y una identidad que no cuadra, en un obstructivo, que es justo el caso donde el concepto importa.
+
+- **La corrección**: la PEEP del denominador se recupera exactamente de la propia resta, `Pplat − ΔP`, así que la pantalla no puede volver a discrepar del motor por construcción. Las cuatro sustituciones cuadran ahora en el mismo caso: `27,5 = 13,3 + 4,2 + 10,0`, `23,3 = 13,3 + 10,0`, `10,0 = 23,3 − 13,3`, `50 = 500 / 10,0`.
+- **El arreglo mejoró la figura**: el esquema dibuja ahora cuatro niveles y la **PEEP intrínseca como su propia llave** (8,3 cmH₂O), y la curva de la vía aérea vuelve a la PEEP programada mientras la total va como línea aparte — que es la verdad, porque el atrapamiento es alveolar y no aparece en el trazado.
+- **Y el motor mentía en la procedencia**: el motivo de la presión motriz decía siempre «Pplat − PEEPe al inicio de esa inspiración» aunque el denominador fuera la PEEP total medida. Ahora dice cuál de las dos usó, que es la distinción que esta magnitud existe para enseñar.
