@@ -24,6 +24,8 @@ El motor (`src/engine/patient.ts`) parte del modelo lineal de un compartimento, 
 
 Se acepta que 3–5 τ bastan para una inspiración o espiración «completa» (D: Mireles-Cabodevila y Chatburn 2025 cita ~3 τ ≈ 95 % de la espiración; Chatburn 2026). En el banco de referencia (C 0,05 L/cmH₂O, R 10) τ = 0,5 s; el panel docente muestra τ espiratoria = Rexp·C.
 
+**Energía y potencia mecánica.** En cada inspiración el ventilador entrega al sistema respiratorio la energía ∫ Pva·dV (el área bajo la curva presión-volumen, con 1 cmH₂O·L = 0,098 J); la potencia mecánica es esa energía por la frecuencia (D: Gattinoni et al. 2016). El motor integra el área en cada sub-paso (`energyInspJ` en el registro de la respiración) y publica `mechPower` sobre la misma ventana que FR y VMesp. Para el pulmón lineal pasivo con flujo constante tiene solución cerrada, E = PEEP·VT + R·Q·VT + VT²/(2C), que es exactamente la fórmula de Gattinoni 0,098·FR·VT·[Ppico − ½(Pplat − PEEP)]: en el banco de referencia, 2,5 + 2,5 + 2,5 = 7,5 cmH₂O·L por respiración, 11,0 J/min. En PC con presión constante es (PEEP + Pinsp)·VT. En soporte de presión sólo cuenta lo que pone el ventilador: el trabajo del paciente (Pmus) no entra en Pva.
+
 **Banco de referencia** (SC-01, `tests/helpers.ts`): C 50 mL/cmH₂O, Rinsp = Rexp = 10, PEEP 5, VT 500 mL, FR 15, I:E 1:3 → ciclo 4 s, Tinsp 1 s, Tesp 3 s, flujo 0,5 L/s (30 L/min), sin pausa, sin esfuerzo. Todos los números de este documento salen de ahí salvo indicación.
 
 ## 2. A/C VC: fuente de flujo constante
@@ -204,6 +206,9 @@ Cada afirmación anterior está anclada en una prueba automática (`npm test`). 
 | Validación CPAP/PS y transacción A/C → CPAP/PS | PHY-03c | PEEP + PS ≥ Pmáx y PEEP + Pinsp de respaldo ≥ Pmáx rechazados; FRmín 60 con Tinsp 1 s rechazado; ciclaje 27 % rechazado y 30 % aceptado; tras cambiar de modo con paciente activo, todas las nuevas son `spontaneous` (sin obligatoria colada) |
 | Sesiones anteriores sin los ajustes de CPAP/PS | PHY-03c | Importación aceptada con aviso «completados con el valor por omisión» |
 | Retardo de disparo y trabajo de disparo | SYN-04 (`tests/unit/sync.test.ts`) | Inicio de la asistida 80 ± 4 ms tras la detección; Pva 1–3 cmH₂O bajo PEEP en ese lapso con Pmus 8 y base 4; menor con base 10 o Pmus 4; > 3 con disparo por presión a −2; sin disparo asistido la Pva no baja de PEEP |
+| Potencia mecánica: integral exacta = solución cerrada = fórmula de flujo constante | POT-01 (`tests/unit/potencia.test.ts`) | Banco: 7,5 cmH₂O·L por respiración (±1 %) y 11,0 J/min = 0,098·15·0,5·[20 − ½(15 − 5)] (±1,2 %); FR 20 → ×1,25 o más; VT 0,35 → menos que ×0,7 |
+| Potencia en PC con presión constante | POT-02 | Rampa 0: (PEEP + Pinsp)·VT = 15 · 0,4323 cmH₂O·L (±1 %) |
+| Calidad de la potencia | POT-03 | `inProgress` con una respiración, `valid` con tres, `unavailable` en espera |
 | Cambiar PEEP en VC no suma PEEP dos veces | PHY-06 (`tests/unit/physics.test.ts`) | PEEP 5 → 10: PEEPe 10; Pplat 20 (< 21; 25 delataría el error); Cstat 50 |
 | La auto-PEEP emerge del vaciamiento | PHY-07 | Rexp 30, Tesp corto: PEEPtot > 5,5 y PEEPi > 0,5; tras alargar Tesp PEEPi menor y < 0,3 |
 | R sube Ppico y no Pplat; C sube ambos | PHY-08 | Rinsp 10 → 20: Ppico +5, Pplat igual; C 0,05 → 0,025: Ppico +10 y Pplat +10 |

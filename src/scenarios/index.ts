@@ -586,6 +586,44 @@ SCENARIOS.push({
     'Porque el criterio es un porcentaje del flujo pico y el flujo decae con τ = R·C: con resistencia alta el pico es bajo y la caída lenta, así que el umbral llega tarde. El porcentaje de ciclaje se ajusta a la mecánica, no al revés.',
 });
 
+SCENARIOS.push({
+  id: 'SC-21',
+  name: 'Ventilación protectora: la presión de distensión y la potencia',
+  synthetic: true,
+  category: 'Ventilación protectora',
+  level: 2,
+  description:
+    'Pulmón rígido (C 25 mL/cmH2O) en A/C VC con VT 500 a 20/min y PEEP 8: la ΔP estática pasa de 15 y la potencia mecánica ronda los 23 J/min. Qué cambia al bajar el VT, y qué no.',
+  patient: { crs: 0.025, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
+  effort: passive,
+  sensors: idealSensors,
+  settings: { vt: 0.5, rr: 20, ie: 1 / 2, peep: 8, pmax: 45, plimit: 100, pausePct: 0.1 },
+  initialV: 'equilibrium',
+  perturbations: [],
+  observe: 'Pplat, ΔP estática y potencia mecánica en la tabla y en el resumen; cómo se mueven con el VT y con la frecuencia.',
+  caution: 'Las cifras son de un modelo lineal pasivo; no son umbrales ni ajustes para ningún paciente.',
+  lesson: {
+    title: 'Un número para presión, volumen y frecuencia',
+    text: 'La ΔP estática dice cuánta presión elástica cuesta cada volumen corriente; la potencia mecánica junta esa presión con el volumen y la frecuencia. Antes de tocar nada, anticipa cómo cambiará cada una al bajar el VT.',
+    tasks: [
+      { id: 'dp', text: 'Mide Pplat con un bloqueo inspiratorio y lee la ΔP estática: 15 o más.', test: 'dpHigh' },
+      {
+        id: 'vt',
+        text: 'Baja el VT hasta que un nuevo bloqueo dé una ΔP por debajo de 15 (con C 25, 350 mL o menos).',
+        test: 'dpProtective',
+      },
+      {
+        id: 'mp',
+        text: 'Comprueba en la tabla de mediciones que la potencia mecánica bajó de 15 J/min, y piensa qué le pasaría si subieras la frecuencia para recuperar el volumen minuto.',
+        test: 'mpBelow',
+      },
+    ],
+  },
+  question: '¿Por qué bajar el VT reduce más la potencia que lo que reduce la ΔP?',
+  answer:
+    'Porque la potencia es presión por volumen por frecuencia: al bajar el VT cae el volumen y, con él, la presión elástica que ese volumen cuesta; el producto cae más que cada factor. Si después se sube la frecuencia para mantener el volumen minuto, la potencia vuelve a subir aunque la ΔP se quede baja.',
+});
+
 /** Referencia visual de las fotografías P1/P3 (O): sólo los AJUSTES visibles; C y R son artificiales; las lecturas se calculan. */
 SCENARIOS.push({
   id: 'SC-P',
