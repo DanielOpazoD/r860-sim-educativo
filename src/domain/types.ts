@@ -225,6 +225,8 @@ export interface BreathRecord {
   vtExpMeasured?: Liters;
   plimitReached: boolean;
   pmaxReached: boolean;
+  /** Energía que el ventilador entregó en la inspiración (J): ∫ Pva·dV, con 1 cmH2O·L = 0,098 J. Base de la potencia mecánica. */
+  energyInspJ?: number;
   /** Estado verdadero al inicio (docente): volumen absoluto sobre relajación. */
   truthVStartL: Liters;
 }

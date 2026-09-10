@@ -174,6 +174,34 @@ function graficoTitulacion(puntos: PuntoTitulacion[]): string {
   );
 }
 
+/** Potencia mecánica con su descomposición: la energía que va contra la PEEP, la resistiva y la elástica de la última respiración. */
+function potenciaHTML(fr: EngineFrame): string {
+  const pm = fr.metrics.mechPower;
+  const valor = pm && pm.value !== null ? `${f(pm.value, 1)}<small>J/min</small>` : '—';
+  const s = fr.settings;
+  const peep = s.peep === 'off' ? 0 : s.peep;
+  const vte = fr.metrics.vte?.value ?? null,
+    ppeak = fr.metrics.ppeak?.value ?? null,
+    pplat = fr.metrics.pplatCycle?.value ?? fr.procedure.last.inspHold?.values.pplat?.value ?? null,
+    rr = fr.metrics.rr?.value ?? null;
+  const partes =
+    vte !== null && ppeak !== null && rr !== null
+      ? `Con la última respiración (${f(vte * 1000, 0)} mL a ${f(rr, 0)}/min): contra la PEEP ${f(0.098 * rr * vte * peep, 1)} J/min` +
+        (pplat !== null
+          ? ` · resistiva ${f(0.098 * rr * vte * Math.max(0, ppeak - pplat), 1)} · elástica ${f(0.098 * rr * vte * 0.5 * Math.max(0, pplat - peep), 1)}`
+          : ' · resistiva y elástica juntas: mide una Pplat para separarlas') +
+        '.'
+      : 'Aparece con la ventana de respiraciones completa.';
+  return (
+    `<section class="edu-bloque">` +
+    `<header><h3>Potencia mecánica</h3><b>${valor}</b></header>` +
+    `<p class="edu-nota">${esc(partes)}</p>` +
+    `<p class="edu-ref">Es el área presión-volumen de cada inspiración por la frecuencia: presión, volumen y frecuencia en un solo número. ` +
+    `Bajar el VT la reduce; subir la frecuencia para recuperar el volumen minuto la devuelve.</p>` +
+    `</section>`
+  );
+}
+
 function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[]): string {
   const e = estres(fr);
   const activo = (r: string): boolean => e.regimen === r;
@@ -198,6 +226,7 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[]): string {
     `<p class="edu-nota">Tu propia curva: cada punto es una distensibilidad que mediste con un bloqueo a esa PEEP. ` +
     `El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.</p>` +
     `</section>` +
+    potenciaHTML(fr) +
     `</div>`
   );
 }

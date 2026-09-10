@@ -118,6 +118,25 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
     return c.frame.settings.mode === 'CPAP_PS' && ti !== null && ti >= c.frame.truth.effort.tiS + 0.2;
   },
   ets50: (c) => c.frame.settings.mode === 'CPAP_PS' && c.frame.settings.expTriggerPct >= 0.5,
+  /** SC-21: un bloqueo válido de ESTA lección muestra una ΔP estática de 15 o más. */
+  dpHigh: (c) => {
+    const h = c.frame.procedure.last.inspHold;
+    return !!h && h.quality === 'valid' && after(h, c.lessonStartMs) && (h.values.driving?.value ?? 0) >= 15;
+  },
+  /** Tras cambiar ajustes, un bloqueo válido con ΔP estática por debajo de 15 y el VT ya reducido. */
+  dpProtective: (c) => {
+    const h = c.frame.procedure.last.inspHold;
+    return (
+      !!h &&
+      h.quality === 'valid' &&
+      c.settingsChangeMs >= 0 &&
+      (h.completedAtMs ?? 0) > c.settingsChangeMs &&
+      (h.values.driving?.value ?? 99) < 15 &&
+      c.frame.settings.vt <= 0.4
+    );
+  },
+  /** La potencia mecánica de la ventana bajó de 15 J/min con el VT reducido. */
+  mpBelow: (c) => c.frame.settings.vt <= 0.4 && (c.frame.metrics.mechPower?.value ?? 99) < 15,
   /** Con el ciclaje subido, el Ti mecánico ya no supera al esfuerzo. */
   cyclingFixed: (c) => {
     const ti = ultimoTiEspontaneo(c.frame);

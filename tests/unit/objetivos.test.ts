@@ -165,6 +165,28 @@ describe('OBJ · las lecciones se pueden terminar', () => {
     expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
   });
 
+  it('SC-21 · ventilación protectora: ΔP alta, VT reducido con ΔP < 15 y potencia bajo 15 J/min', () => {
+    const esc = SCENARIOS.find((s) => s.id === 'SC-21')!;
+    const sim = simular('SC-21');
+    const a = new Alumno('SC-21', esc.lesson!.tasks);
+    runUntilBreath(sim, 4);
+    a.mirar(sim.frame());
+    expect(a.hechos.size, 'sin medir nada no hay objetivo cumplido').toBe(0);
+    const primero = bloqueo(sim, 3);
+    expect(primero.procedure.last.inspHold?.values.driving?.value ?? 0).toBeGreaterThanOrEqual(15);
+    expect(sim.frame().metrics.mechPower!.value!).toBeGreaterThan(18);
+    a.mirar(primero);
+    expect(a.hechos.has('dp')).toBe(true);
+    expect(sim.command({ type: 'confirmSettings', changes: { vt: 0.35 } }).accepted).toBe(true);
+    a.settingsChangeMs = sim.simTimeMs;
+    runUntilBreath(sim, sim.breaths.length + 10);
+    a.mirar(bloqueo(sim, 3));
+    expect(a.hechos.has('vt')).toBe(true);
+    expect(a.hechos.has('mp')).toBe(true);
+    expect(sim.frame().metrics.mechPower!.value!).toBeLessThan(15);
+    expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
+  });
+
   it('SC-17 · pendelluft: la meseta corta que se pide es una que el equipo acepta', () => {
     const esc = SCENARIOS.find((s) => s.id === 'SC-17')!;
     const sim = simular('SC-17');

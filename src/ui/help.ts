@@ -417,6 +417,15 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Q = −(V − V∞) / τ · · · τ ≈ Rexp × C',
   },
+  'metric.mechPower': {
+    title: 'Potencia mecánica',
+    text: [
+      'Energía que el ventilador entrega al sistema respiratorio por minuto: en cada inspiración, la presión de vía aérea por el volumen que entra (el área bajo la curva presión-volumen), multiplicada por la frecuencia. El simulador integra esa área en cada respiración; no usa una fórmula aproximada.',
+      'Reúne en un solo número lo que la lesión por ventilador tiene de presión, de volumen y de frecuencia: bajar el VT la reduce, pero subir la frecuencia para recuperar el volumen minuto la devuelve. En un pulmón lineal pasivo con flujo constante coincide con la fórmula de Gattinoni: 0,098 · FR · VT · [Ppico − ½ (Pplat − PEEP)].',
+      'La PEEP forma parte de la energía entregada (se empuja el gas contra ella); en soporte de presión sólo se cuenta lo que pone el ventilador, no el trabajo del paciente.',
+    ],
+    equation: 'PM = FR · ∫ Pva · dV · 0,098 J/(cmH₂O·L)',
+  },
   'metric.stressIndex': {
     title: 'Índice de estrés',
     text: [

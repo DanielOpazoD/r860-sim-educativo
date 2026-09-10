@@ -32,6 +32,7 @@ export const METRICS: MetricSpec[] = [
 export const EXTRA_METRICS: MetricSpec[] = [
   { key: 'raw', label: 'Resistencia insp.', unit: 'cmH₂O·s/L', factor: 1, decimals: 1, source: 'hold' },
   { key: 'tauExp', label: 'Constante de tiempo esp.', unit: 's', factor: 1, decimals: 2, source: 'metric' },
+  { key: 'mechPower', label: 'Potencia mecánica', unit: 'J/min', factor: 1, decimals: 1, source: 'metric' },
   { key: 'vti', label: 'VT inspirado', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
   { key: 'leakPct', label: 'Fuga volumétrica', unit: '%', factor: 100, decimals: 1, source: 'metric' },
   { key: 'pplatCycle', label: 'Pplat de ciclo (pausa)', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'metric' },
@@ -66,6 +67,7 @@ export const METRIC_HELP: Record<string, string> = {
   vteSpont: 'metric.vte',
   raw: 'metric.rinsp',
   tauExp: 'metric.tauExp',
+  mechPower: 'metric.mechPower',
   stressIndex: 'metric.stressIndex',
 };
 /** Límites de alarma que colorean cada casilla numérica. */

@@ -20,6 +20,8 @@ export const TRIGGER_DELAY_S = 0.08;
  * habitual en la literatura de soporte de presión (U-52).
  */
 export const SUPPORT_TI_MAX_S = 3;
+/** Julios por cmH2O·litro: la energía de la ventilación se mide en presión × volumen (1 cmH2O = 98,07 Pa; 1 L = 1e-3 m³). */
+export const JOULES_PER_CMH2O_L = 0.09807;
 /** Frecuencia de las respiraciones de respaldo mientras dura la apnea sin frecuencia mínima programada (/min), P (U-52). */
 export const APNEA_BACKUP_RATE_PER_MIN = 12;
 /** Duración mínima de pausa para estimar Pplat de ciclo (P). */
@@ -185,6 +187,8 @@ interface BreathAccum {
   pplatReason: string | null;
   peepeEnd: number;
   cause: CyclingCause;
+  /** ∫ Pva·dV de la inspiración (cmH2O·L): lo que el ventilador entrega al sistema respiratorio en esa respiración. */
+  energyInsp: number;
   /** Flujo inspiratorio máximo de la respiración (L/s): la referencia del ciclado por flujo del soporte. */
   qPeak: number;
   /** Presión objetivo sobre PEEP de una respiración por presión: Pinsp, Pinsp de respaldo o PS. */
@@ -429,7 +433,13 @@ export class VcController {
     b.pawIntegral += this.paw * used;
     if (this.phase === 'exp' || this.phase === 'holdExp') b.tExpActual += used;
     else if (INSP_PHASES.has(this.phase)) b.tInspActual += used;
-    if (INSP_PHASES.has(this.phase)) b.ppeak = Math.max(b.ppeak, this.paw);
+    if (INSP_PHASES.has(this.phase)) {
+      b.ppeak = Math.max(b.ppeak, this.paw);
+      // Energía entregada: presión de vía aérea por el volumen que entra en este sub-paso (Gattinoni 2016 define la
+      // potencia mecánica como esa integral por la frecuencia). El gas que sale por la válvula durante una
+      // inspiración por presión (flujo negativo) no cuenta: no es trabajo sobre el pulmón.
+      if (this.q > 0) b.energyInsp += this.paw * this.q * used;
+    }
     // Mientras entra gas se va guardando el par (Paw, Q) del instante. Cuando la fase deja de dar flujo, lo último
     // guardado es exactamente lo que había justo antes de ocluir, que es lo que la resistencia necesita: el salto de
     // presión que desaparece al parar el flujo, dividido por ese flujo.
@@ -897,6 +907,7 @@ export class VcController {
       pplatReason: null,
       peepeEnd: this.paw,
       cause: 'time',
+      energyInsp: 0,
       qPeak: 0,
       pAbove: cpap ? (type === 'spontaneous' ? s.psupport : s.backupPinsp) : s.pinsp,
       tInspTargetS: cpap ? (type === 'spontaneous' ? SUPPORT_TI_MAX_S : s.backupTinspS) : this.timing.tInspS,
@@ -937,6 +948,7 @@ export class VcController {
       vtExp: b.vtExp,
       plimitReached: b.plimitReached,
       pmaxReached: b.pmaxReached,
+      energyInspJ: b.energyInsp * JOULES_PER_CMH2O_L,
       truthVStartL: b.vStart,
     };
     this.events.push({ type: 'breathEnd', record });

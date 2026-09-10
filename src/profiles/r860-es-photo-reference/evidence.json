@@ -147,6 +147,12 @@
       "title": "Literatura clínica de las referencias docentes: ARDS Network, NEJM 2000 (meseta) y Amato et al., NEJM 2015 (presión motriz); índice de estrés según Grasso/Ranieri",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante ni del equipo. Se usa sólo para los rangos de referencia de la pestaña docente, que valen para un paciente pasivo en ventilación controlada y no son ajustes sugeridos para ningún paciente."
+    },
+    {
+      "id": "C02",
+      "title": "Gattinoni L et al. Ventilator-related causes of lung injury: the mechanical power. Intensive Care Med 2016;42:1567–75 (definición de potencia mecánica y fórmula de flujo constante)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Se usa para la definición (energía por respiración × frecuencia) y para comprobar que la integral del motor coincide con la fórmula en el caso lineal pasivo; no aporta umbrales ni ajustes sugeridos."
     }
   ],
   "claims": [
@@ -1101,6 +1107,18 @@
       "tests": [
         "tests/unit/sync.test.ts (SYN-04)",
         "tests/unit/asynchrony.test.ts (ASI-01)"
+      ]
+    },
+    {
+      "id": "E-087",
+      "claim": "Potencia mecánica = frecuencia × energía entregada por respiración, con la energía como ∫ Pva·dV de la inspiración (1 cmH2O·L = 0,098 J). El motor integra esa área en cada sub-paso —no aplica la fórmula— y la publica sobre la ventana de FR y VMesp. En el pulmón lineal pasivo con flujo constante la integral es exactamente PEEP·VT + R·Q·VT + VT²/(2C) = 0,098·FR·VT·[Ppico − ½(Pplat − PEEP)]: 7,5 cmH2O·L y 11,0 J/min en el banco. En soporte de presión sólo se cuenta lo que pone el ventilador. La tabla de mediciones la muestra; el resumen docente la descompone en lo que va contra la PEEP, lo resistivo y lo elástico de la última respiración. El escenario SC-21 (C 25, VT 500 a 20/min, PEEP 8) la usa con la ΔP estática.",
+      "status": "D (definición, C02) / P (integración en el motor, ventana y presentación)",
+      "source": "C02",
+      "locator": "Gattinoni 2016: definición y ecuación de flujo constante",
+      "implemented": "src/engine/controller.ts (energyInsp, JOULES_PER_CMH2O_L); src/engine/metrics.ts (mechPower); src/ui/metricsTable.ts; src/ui/teachingView.ts (potenciaHTML); src/ui/help.ts (metric.mechPower); src/scenarios/index.ts (SC-21); src/ui/lesson.ts (dpHigh, dpProtective, mpBelow)",
+      "tests": [
+        "tests/unit/potencia.test.ts (POT-01..03)",
+        "tests/unit/objetivos.test.ts (SC-21)"
       ]
     }
   ]

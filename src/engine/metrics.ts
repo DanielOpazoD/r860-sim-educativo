@@ -101,6 +101,7 @@ export class MetricEngine {
         'rrSpont',
         'vteSpont',
         'stressIndex',
+        'mechPower',
       ]) {
         out[k] = sample(k, null, unitOf(k), { simTimeMs: t, breathId: null, quality: 'unavailable', reason: 'standby', windowMs: null });
       }
@@ -176,6 +177,17 @@ export class MetricEngine {
         reason: stale ? 'sinRespiracionReciente' : null,
         windowMs: sumPeriodMs,
       });
+      // Potencia mecánica: energía entregada por el ventilador en la ventana, por minuto (Gattinoni 2016). Es la
+      // integral exacta de cada respiración, no la fórmula de flujo constante; en un pulmón lineal pasivo coinciden.
+      const energiaJ = win.reduce((a, r) => a + (r.energyInspJ ?? 0), 0);
+      out.mechPower = sample('mechPower', (energiaJ * S_PER_MIN * MS_PER_S) / sumPeriodMs, 'J/min', {
+        simTimeMs: t,
+        breathId: bid,
+        quality: wq,
+        reason: stale ? 'sinRespiracionReciente' : null,
+        windowMs: sumPeriodMs,
+        source: 'derivedModel',
+      });
     } else {
       out.rr = sample('rr', null, 'perMin', {
         simTimeMs: t,
@@ -185,6 +197,13 @@ export class MetricEngine {
         windowMs: null,
       });
       out.mve = sample('mve', null, 'L/min', {
+        simTimeMs: t,
+        breathId: bid,
+        quality: 'inProgress',
+        reason: 'ventanaInsuficiente',
+        windowMs: null,
+      });
+      out.mechPower = sample('mechPower', null, 'J/min', {
         simTimeMs: t,
         breathId: bid,
         quality: 'inProgress',
@@ -242,6 +261,8 @@ function unitOf(k: string): string {
       return 'index';
     case 'tauExp':
       return 's';
+    case 'mechPower':
+      return 'J/min';
     case 'ppeak':
     case 'peepe':
     case 'pplatCycle':
