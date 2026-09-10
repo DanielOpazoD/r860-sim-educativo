@@ -98,4 +98,4 @@ No ejecutadas todavía: ALM-04 automatizada de extremo a extremo, PHY-05 (fuga n
 - **U-11/U-23**: sin catálogo de alarmas, Auto Limits, apnea y High Alert Audio permanecen desactivados; límites iniciales Off.
 - **U-14/U-15/U-16**: Futuro, oxigenoterapia, neonatal, energía y gases desactivados.
 - **U-19** (nueva): la compensación de flujo entre respiraciones en VC descrita por el curso JB72469XX no se implementa; el VT real queda por debajo del programado bajo Plimit y así se muestra.
-- PC quedó habilitado en v0.3 tras BM-03 en el motor y PHY-02. CPAP/PS pasa PHY-03 en el motor desde v0.4.0 (esfuerzo, disparo, ciclaje por flujo, frecuencia mínima, apnea y respaldo: `tests/unit/soporte.test.ts`); el perfil lo habilita cuando la interfaz tiene sus escenarios y pruebas de extremo a extremo.
+- PC quedó habilitado en v0.3 tras BM-03 en el motor y PHY-02. CPAP/PS pasa PHY-03 en el motor desde v0.4.0 (esfuerzo, disparo, ciclaje por flujo, frecuencia mínima, apnea y respaldo: `tests/unit/soporte.test.ts`); el perfil lo habilita en v0.4 con los escenarios SC-19 y SC-20 y sus pruebas de extremo a extremo (`tests/e2e/ps.spec.ts`).

@@ -1071,7 +1071,10 @@
       "locator": "R03 p.2 «Presión Soporte sobre nivel PEEP», «Trigger Espiratorio», «Tiempo de Rampa en PS», «Frecuencia … para CPAP/PS»; p.3 «Alarma de apnea: 5 a 60 seg»; R23 tabla «Modo · Parámetros · Sincronización · Seguridad» y sección «Presión Positiva continua en la Vía Aérea/Presión Soporte»",
       "implemented": "src/domain/types.ts (VcSettings: psupport, expTriggerPct, minRate, backupPinsp, backupTinspS, apneaTimeS); src/profiles/r860-es-photo-reference/settings.ts (reglas y rangos); src/engine/controller.ts (fase inspSupport, plazoDeRespaldo)",
       "tests": [
-        "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)"
+        "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)",
+        "tests/unit/objetivos.test.ts (SC-19, SC-20)",
+        "tests/e2e/ps.spec.ts",
+        "tests/e2e/visual.spec.ts (VIS-08)"
       ]
     },
     {
@@ -1082,7 +1085,10 @@
       "locator": "—",
       "implemented": "src/engine/controller.ts (inspSupport, SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN, onPlazoDeRespaldo, esperarDisparo); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
       "tests": [
-        "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)"
+        "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)",
+        "tests/unit/objetivos.test.ts (SC-19, SC-20)",
+        "tests/e2e/ps.spec.ts",
+        "tests/e2e/visual.spec.ts (VIS-08)"
       ]
     }
   ]

@@ -113,4 +113,13 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await expect(page.locator('#big-metrics .big-numeric')).toHaveCount(6);
     await screenshot(page, info, 'vis-07-basic-p3-layout', { view: 'basic' });
   });
+  test('VIS-08 · CPAP/PS (SC-19): presión a PEEP + PS, flujo cortado al 25 % del pico, volumen del paciente', async ({ page }, info) => {
+    await open(page, { scenario: 'SC-19', autopause: 16000, instructor: 0, speed: 4 });
+    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
+    await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
+    const f = await frame(page);
+    expect(f.metrics.ppeak?.value ?? 0).toBeCloseTo(15, 0);
+    expect(f.metrics.rrSpont?.value ?? 0).toBeGreaterThan(10);
+    await screenshot(page, info, 'vis-08-ps-sc19-t16s', { mode: 'CPAP_PS' });
+  });
 });
