@@ -13,7 +13,7 @@ import { $, icon, put } from './dom';
 import { ieText, unitText } from './format';
 import { collapseHelp, helpContent } from './helpPanels';
 import { joinSentences } from './humanize';
-import { displaySetting, HELP_KEY, isMobile, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL } from './labels';
+import { displaySetting, HELP_KEY, isMobile, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL, textoRespaldo } from './labels';
 
 /** Últimos segundos del plazo de edición en los que se muestra la cuenta atrás. */
 const COUNTDOWN_WINDOW_MS = 10_000;
@@ -182,7 +182,11 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     const t = p.derived;
     put(
       '#quick-timing',
-      p.valid && t ? `Con este ajuste: Ti ${f(t.tInspS, 2)} s · Te ${f(t.tExpS, 2)} s · flujo ${f(t.qTargetLps * 60, 1)} L/min` : '',
+      !p.valid || !t
+        ? ''
+        : p.candidate?.mode === 'CPAP_PS'
+          ? `Con este ajuste: ${textoRespaldo(p.candidate)}`
+          : `Con este ajuste: Ti ${f(t.tInspS, 2)} s · Te ${f(t.tExpS, 2)} s · flujo ${f(t.qTargetLps * 60, 1)} L/min`,
     );
     ($('[data-action="confirmEdit"]') as HTMLButtonElement).disabled = !p.valid || !p.changed;
     $('#trim-knob').style.setProperty('--knob-angle', `${knobAngle}deg`);

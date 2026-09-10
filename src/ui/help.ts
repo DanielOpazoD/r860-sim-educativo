@@ -148,18 +148,32 @@ export const HELP: Record<string, HelpEntry> = {
       'El respaldo del simulador utiliza control por presión. Sus ajustes de frecuencia y presión se definen por separado.',
     ],
   },
+  'setting.minRate': {
+    title: 'Frecuencia mínima',
+    text: [
+      'En CPAP/PS el paciente decide la frecuencia. Si pasa más de 60/FRmín segundos sin ninguna respiración, el ventilador entrega una controlada por presión con la Pinsp y el Tinsp de respaldo.',
+      'Off deja al paciente sin ese suelo: entonces sólo el tiempo de apnea protege, con su alarma y su respaldo.',
+    ],
+  },
+  'setting.backupPinsp': {
+    title: 'Pinsp de respaldo',
+    text: [
+      'Presión sobre PEEP de las respiraciones que el ventilador entrega por su cuenta en CPAP/PS: las de la frecuencia mínima y las del respaldo por apnea.',
+      'No cambia el soporte de las respiraciones que dispara el paciente; ésas usan PS.',
+    ],
+    equation: 'Pva objetivo = PEEP + Pinsp de respaldo',
+  },
+  'setting.backupTinsp': {
+    title: 'Tinsp de respaldo',
+    text: [
+      'Duración de las respiraciones de respaldo. Las que dispara el paciente no la usan: terminan cuando el flujo cae al porcentaje de ciclaje o, como tope, a los 3 s.',
+    ],
+  },
   'setting.backupRR': {
     title: 'Frecuencia de respaldo',
     text: [
       'Frecuencia de los ciclos obligatorios utilizados cuando se activa el respaldo por apnea.',
       'No modifica la frecuencia de los esfuerzos del paciente: determina la asistencia por tiempo durante el respaldo.',
-    ],
-  },
-  'setting.backupPinsp': {
-    title: 'Presión inspiratoria de respaldo',
-    text: [
-      'Presión adicional sobre PEEP utilizada durante los ciclos de respaldo por apnea.',
-      'Como en PC, el volumen resultante cambia con la mecánica y el esfuerzo; no es un volumen garantizado.',
     ],
   },
   'setting.pmin': {

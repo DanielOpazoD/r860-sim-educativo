@@ -22,6 +22,12 @@ export const BENCH_SETTINGS: VcSettings = {
   pressureTrigger: -2,
   pinsp: 10,
   riseMs: 100,
+  psupport: 10,
+  expTriggerPct: 0.25,
+  minRate: 'off',
+  backupPinsp: 10,
+  backupTinspS: 1,
+  apneaTimeS: 20,
 };
 
 /** El banco analítico lee el volumen sin ruido de sensor: las referencias BM/PHY son exactas. */

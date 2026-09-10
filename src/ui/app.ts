@@ -39,6 +39,7 @@ const PHASE_TEXT: Record<string, string> = {
   inspLimited: 'Inspiración · Plimit',
   inspPause: 'Pausa inspiratoria',
   inspPressure: 'Inspiración · presión',
+  inspSupport: 'Inspiración · soporte',
   exp: 'Espiración',
   holdInsp: 'Bloqueo inspiratorio',
   holdExp: 'Bloqueo espiratorio',

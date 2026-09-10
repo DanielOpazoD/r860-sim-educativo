@@ -57,6 +57,136 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },
+  psupport: {
+    key: 'psupport',
+    label: 'Presión de soporte',
+    unit: 'cmH2O',
+    displayUnit: 'cmH2O',
+    displayFactor: 1,
+    decimals: 0,
+    allowedPatientTypes: ['adult'],
+    allowedModes: ['CPAP_PS'],
+    domain: [{ min: 0, max: 60, step: 1 }],
+    allowOff: false,
+    dependencies: ['peep', 'pmax'],
+    applyPolicy: 'nextBreath',
+    evidence: {
+      sourceId: 'R03',
+      locator:
+        'p.2 «Presión Soporte sobre nivel PEEP: 0 a 60 cm H2O para SIMV VC, SIMV PC, SIMV PRVC, BiLevel, BiLevel VG y CPAP/PS (incrementos de 1 cm H2O)»',
+      status: 'D',
+    },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  expTriggerPct: {
+    key: 'expTriggerPct',
+    label: 'Ciclaje espiratorio',
+    unit: 'fraction',
+    displayUnit: '%',
+    displayFactor: 100,
+    decimals: 0,
+    allowedPatientTypes: ['adult'],
+    allowedModes: ['CPAP_PS'],
+    domain: [{ min: 5, max: 80, step: 5 }],
+    allowOff: false,
+    dependencies: [],
+    applyPolicy: 'nextBreath',
+    evidence: {
+      sourceId: 'R03',
+      locator:
+        'p.2 «Trigger Espiratorio: 5 a 80 % de flujo pico para NIV, SIMV VC, SIMV PC, SIMV PRVC, BiLevel, BiLevel VG, VS y CPAP/PS (incrementos de 5 %)»',
+      status: 'D',
+      note: 'Valor inicial 25 %: P (habitual en la literatura de soporte de presión).',
+    },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  minRate: {
+    key: 'minRate',
+    label: 'Frecuencia mínima',
+    unit: 'perMin',
+    displayUnit: '/min',
+    displayFactor: 1,
+    decimals: 0,
+    allowedPatientTypes: ['adult'],
+    allowedModes: ['CPAP_PS'],
+    domain: [{ min: 1, max: 60, step: 1 }],
+    allowOff: true,
+    dependencies: ['backupTinspS'],
+    applyPolicy: 'nextBreath',
+    evidence: {
+      sourceId: 'R03',
+      locator:
+        'p.2 «Frecuencia … Off, 1 a 60 respiros por minuto para CPAP/PS (incrementos de 1)»; JB72469XX: «cuando la frecuencia mínima es programada, el ventilador suministrará una presión controlada si la frecuencia del paciente es menor a la programada»',
+      status: 'D',
+    },
+    policyEvidence: {
+      status: 'P',
+      note: 'Siguiente respiración; la respiración mínima entra cuando pasa 60/FRmín s sin ninguna respiración.',
+    },
+  },
+  backupPinsp: {
+    key: 'backupPinsp',
+    label: 'Pinsp de respaldo',
+    unit: 'cmH2O',
+    displayUnit: 'cmH2O',
+    displayFactor: 1,
+    decimals: 0,
+    allowedPatientTypes: ['adult'],
+    allowedModes: ['CPAP_PS'],
+    domain: [{ min: 1, max: 98, step: 1 }],
+    allowOff: false,
+    dependencies: ['peep', 'pmax'],
+    applyPolicy: 'nextBreath',
+    evidence: {
+      sourceId: 'R23',
+      locator: 'tabla «CPAP/PS … Seguridad: Pmax, Minimum Rate, Backup Pinsp, Backup Tinsp»',
+      status: 'D',
+      note: 'Existencia D; rango P: se toma el de Pinsp (ficha 2014, 1–98).',
+    },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  backupTinspS: {
+    key: 'backupTinspS',
+    label: 'Tinsp de respaldo',
+    unit: 's',
+    displayUnit: 's',
+    displayFactor: 1,
+    decimals: 2,
+    allowedPatientTypes: ['adult'],
+    allowedModes: ['CPAP_PS'],
+    domain: [{ min: 0.25, max: 4, step: 0.05 }],
+    allowOff: false,
+    dependencies: ['minRate', 'riseMs'],
+    applyPolicy: 'nextBreath',
+    evidence: {
+      sourceId: 'R23',
+      locator: 'tabla «CPAP/PS … Backup Tinsp»; ficha 2014 p.2 «Tiempo inspiratorio: 0.1 a 10 seg»',
+      status: 'D',
+      note: 'Existencia D; tramo adulto 0,25–4 s en pasos de 0,05: P (subconjunto del rango de la ficha).',
+    },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
+  },
+  apneaTimeS: {
+    key: 'apneaTimeS',
+    label: 'Tiempo de apnea',
+    unit: 's',
+    displayUnit: 's',
+    displayFactor: 1,
+    decimals: 0,
+    allowedPatientTypes: ['adult'],
+    allowedModes: ['CPAP_PS'],
+    domain: [{ min: 5, max: 60, step: 1 }],
+    allowOff: false,
+    dependencies: [],
+    applyPolicy: 'nextBreath',
+    evidence: {
+      sourceId: 'R03',
+      locator: 'p.3 «Alarma de apnea: 5 a 60 seg»',
+      status: 'D',
+      note: 'Valor inicial 20 s: P. Sólo se evalúa en CPAP/PS: en A/C la frecuencia programada garantiza respiraciones (P).',
+    },
+    policyEvidence: { status: 'P', note: 'Siguiente respiración; la cuenta corre desde el inicio de la última respiración.' },
+  },
   fio2: {
     key: 'fio2',
     label: 'FiO2',
@@ -375,6 +505,12 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
   pressureTrigger: -2,
   pinsp: 10,
   riseMs: 100,
+  psupport: 10,
+  expTriggerPct: 0.25,
+  minRate: 'off',
+  backupPinsp: 10,
+  backupTinspS: 1,
+  apneaTimeS: 20,
 };
 
 /**
@@ -391,7 +527,7 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
  *   FiO2    por debajo del aire y el tope      18 / 100 %
  *   Ppico   bajo: 12 cmH2O, un 40 % por debajo de la Ppico de trabajo (20), que es la proporción que muestran las
  *           dos fotografías: P1 pone 22 con una Ppico medida de 38 y P3 pone 20 con 33 (O). No se justifica como
- *           alarma de desconexión: este modelo no simula ni fuga ni desconexión (docs/03 §7), así que lo que detecta
+ *           alarma de desconexión: este modelo no simula ni fuga ni desconexión (docs/03 §8), así que lo que detecta
  *           es una caída real de la presión de trabajo — en SC-18, la respiración apilada que no llega a entrar.
  *   PEEPe   Off, como en las fotografías P1 y P3 (O)
  * El techo de presión no es una alarma sino un ajuste: lo pone Pmáx en la tecla rápida.

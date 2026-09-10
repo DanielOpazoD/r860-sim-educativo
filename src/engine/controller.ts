@@ -6,6 +6,14 @@ import type { PatientModel } from './patient';
 
 /** Periodo refractario tras el inicio de la espiración antes de admitir disparo (P; inspirado en Texp mínimo 0.25 s, D). */
 export const TRIGGER_REFRACTORY_S = 0.25;
+/**
+ * Tiempo inspiratorio máximo de una respiración soportada (s), P. El ciclado por flujo puede no llegar —esfuerzo
+ * sostenido, flujo que se aplana por encima del umbral— y el soporte no puede durar indefinidamente; 3 s es un tope
+ * habitual en la literatura de soporte de presión (U-52).
+ */
+export const SUPPORT_TI_MAX_S = 3;
+/** Frecuencia de las respiraciones de respaldo mientras dura la apnea sin frecuencia mínima programada (/min), P (U-52). */
+export const APNEA_BACKUP_RATE_PER_MIN = 12;
 /** Duración mínima de pausa para estimar Pplat de ciclo (P). */
 export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 /**
@@ -131,6 +139,8 @@ export type ControllerEvent =
   | { type: 'plimitReached'; breathId: string; simTimeS: number; paw: number }
   | { type: 'pmaxReached'; breathId: string; simTimeS: number; paw: number }
   | { type: 'trigger'; breathId: string; simTimeS: number; qLps: number }
+  | { type: 'apnea'; simTimeS: number; apneaS: number }
+  | { type: 'apneaEnded'; simTimeS: number; breathId: string }
   | { type: 'holdStarted'; procedureId: string; kind: HoldKind; simTimeS: number }
   | { type: 'holdEnded'; outcome: HoldOutcome }
   | { type: 'settingsApplied'; changes: Partial<VcSettings>; simTimeS: number; breathId: string }
@@ -167,6 +177,12 @@ interface BreathAccum {
   pplatReason: string | null;
   peepeEnd: number;
   cause: CyclingCause;
+  /** Flujo inspiratorio máximo de la respiración (L/s): la referencia del ciclado por flujo del soporte. */
+  qPeak: number;
+  /** Presión objetivo sobre PEEP de una respiración por presión: Pinsp, Pinsp de respaldo o PS. */
+  pAbove: number;
+  /** Duración de una inspiración por presión: Tinsp programado, Tinsp de respaldo o tope del soporte. */
+  tInspTargetS: number;
 }
 
 interface HoldRun {
@@ -179,7 +195,7 @@ interface HoldRun {
 }
 
 const EPS = 1e-9;
-const INSP_PHASES: ReadonlySet<ControllerPhase> = new Set(['inspFlow', 'inspLimited', 'inspPause', 'inspPressure']);
+const INSP_PHASES: ReadonlySet<ControllerPhase> = new Set(['inspFlow', 'inspLimited', 'inspPause', 'inspPressure', 'inspSupport']);
 
 /**
  * Controlador de respiración A/C VC (P · dossier §13), familia de temporización «I:E, control de flujo apagado»
@@ -211,6 +227,8 @@ export class VcController {
   private lastExpPaw: number | null = null;
   private hold: HoldRun | null = null;
   private manualRequested = false;
+  /** CPAP/PS: se declaró apnea y el ventilador está entregando respaldo hasta que el paciente vuelva a disparar. */
+  private apnea = false;
   private events: ControllerEvent[] = [];
   private transition: (() => void) | null = null;
 
@@ -296,7 +314,20 @@ export class VcController {
     this.paw = this.peepTarget;
     this.lastExpPaw = this.peepTarget;
     if (this.phase !== 'standby') return;
+    if (this.settings.mode === 'CPAP_PS') {
+      // Sin frecuencia programada no hay respiración que entregar: se espera al disparo del paciente o al respaldo.
+      this.esperarDisparo();
+      return;
+    }
     this.startBreath('mandatory');
+  }
+
+  /** CPAP/PS: espiración sin respiración en curso, a la espera del paciente; los temporizadores de respaldo corren desde aquí. */
+  private esperarDisparo(): void {
+    this.breath = null;
+    this.phase = 'exp';
+    this.tPhase = 0;
+    this.tBreath = 0;
   }
 
   enterStandby(): void {
@@ -305,6 +336,7 @@ export class VcController {
     this.holdRequest = null;
     this.manualRequested = false;
     this.breath = null; // la respiración en curso se descarta (causa standby); no se registra como completa
+    this.apnea = false;
     this.phase = 'standby';
     this.tPhase = 0;
     this.paw = 0;
@@ -389,7 +421,7 @@ export class VcController {
     // Mientras entra gas se va guardando el par (Paw, Q) del instante. Cuando la fase deja de dar flujo, lo último
     // guardado es exactamente lo que había justo antes de ocluir, que es lo que la resistencia necesita: el salto de
     // presión que desaparece al parar el flujo, dividido por ese flujo.
-    if (this.phase === 'inspFlow' || this.phase === 'inspLimited' || this.phase === 'inspPressure') {
+    if (this.phase === 'inspFlow' || this.phase === 'inspLimited' || this.phase === 'inspPressure' || this.phase === 'inspSupport') {
       b.pawAtFlowEnd = this.paw;
       b.qAtFlowEnd = this.q;
     }
@@ -411,12 +443,14 @@ export class VcController {
       case 'inspPause':
         return Math.max(0, t.tInspS - this.tBreath);
       case 'inspPressure':
-        return Math.max(0, t.tInspS - this.tBreath);
+      case 'inspSupport':
+        return Math.max(0, (this.breath?.tInspTargetS ?? t.tInspS) - this.tBreath);
       case 'holdInsp':
       case 'holdExp':
         return Math.max(0, (this.hold?.req.durationS ?? 0) - this.tPhase);
       // El temporizador de FR gobierna la siguiente obligatoria: el tiempo no usado por una inspiración acortada (Pmáx) va a la espiración (P).
       case 'exp':
+        if (this.settings.mode === 'CPAP_PS') return Math.max(0, this.plazoDeRespaldo() - this.tBreath - this.tPhase);
         return Math.max(0, t.tCycleS - this.tBreath - this.tPhase);
       default:
         return Number.POSITIVE_INFINITY;
@@ -461,10 +495,13 @@ export class VcController {
         }
         return used;
       }
-      case 'inspPressure': {
+      case 'inspPressure':
+      case 'inspSupport': {
         // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma lineal P).
+        // CPAP/PS: la misma fuente de presión con PEEP + PS (D ficha 2014), ciclada por la caída del flujo (más abajo).
         const rise = s.riseMs / 1000;
-        const targetAt = (tb: number): number => this.peepTarget + s.pinsp * (rise > 0 ? Math.min(1, tb / rise) : 1);
+        const pAbove = this.breath?.pAbove ?? s.pinsp;
+        const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? Math.min(1, tb / rise) : 1);
         const tb0 = this.tBreath;
         const nSub = rise > 0 && tb0 < rise ? Math.max(1, Math.ceil(h / 0.001)) : 1;
         let dVtot = 0;
@@ -489,6 +526,15 @@ export class VcController {
         this.q = qLast;
         this.paw = pawLast;
         if (this.paw >= s.pmax) this.transition = () => this.onPmax();
+        else if (this.phase === 'inspSupport' && this.breath) {
+          // Ciclado por flujo (D ficha 2014 «Trigger Espiratorio: % de flujo pico»): pasada la rampa se registra el flujo pico y
+          // la inspiración termina cuando el flujo ya cayó al porcentaje programado. Con el flujo aún subiendo no hay pico
+          // que comparar; el tope de tiempo (SUPPORT_TI_MAX_S) lo pone el temporizador de la fase.
+          const b = this.breath;
+          if (tb0 + h >= rise) b.qPeak = Math.max(b.qPeak, qLast);
+          if (b.qPeak > 1e-6 && qLast < b.qPeak - 1e-9 && qLast <= s.expTriggerPct * b.qPeak)
+            this.transition = () => this.endInspiration('flow');
+        }
         return h;
       }
       case 'inspLimited': {
@@ -565,14 +611,16 @@ export class VcController {
           this.manualRequested = false;
           this.transition = () => this.endExpiration('manual');
         } else if (
-          s.assistControl &&
+          (s.assistControl || s.mode === 'CPAP_PS') &&
           this.tPhase + h >= TRIGGER_REFRACTORY_S &&
           (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : qEnd >= s.flowTrigger)
         ) {
           const bid = this.breath?.breathId ?? '';
+          // En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida del modo.
+          const next: BreathType = s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted';
           this.transition = () => {
             this.events.push({ type: 'trigger', breathId: bid, simTimeS: this.simT, qLps: qEnd });
-            this.endExpiration('assisted');
+            this.endExpiration(next);
           };
         }
         return h;
@@ -609,11 +657,15 @@ export class VcController {
       case 'inspPressure':
         this.endInspiration('time');
         break;
+      case 'inspSupport':
+        this.endInspiration('tiMax'); // el flujo no cayó al umbral: el tope de tiempo del soporte corta la inspiración (P)
+        break;
       case 'holdInsp':
         this.finishHold(false);
         break;
       case 'exp':
-        this.endExpiration('mandatory');
+        if (this.settings.mode === 'CPAP_PS') this.onPlazoDeRespaldo();
+        else this.endExpiration('mandatory');
         break;
       case 'holdExp':
         this.finishHold(false);
@@ -623,12 +675,35 @@ export class VcController {
     }
   }
 
+  /**
+   * CPAP/PS: segundos desde el inicio de la última respiración (o de la ventilación) tras los que el ventilador respira por
+   * el paciente: la frecuencia mínima si está programada, el tiempo de apnea, y durante la apnea la cadencia del respaldo.
+   */
+  private plazoDeRespaldo(): number {
+    const s = this.settings;
+    const minimo = s.minRate === 'off' ? Number.POSITIVE_INFINITY : 60 / s.minRate;
+    return Math.min(minimo, this.apnea ? 60 / APNEA_BACKUP_RATE_PER_MIN : s.apneaTimeS);
+  }
+
+  /** Venció un plazo de la espiración en CPAP/PS: apnea (alarma y respaldo) o frecuencia mínima (respiración por presión). */
+  private onPlazoDeRespaldo(): void {
+    const elapsed = this.tBreath + this.tPhase;
+    const plazoApnea = this.apnea ? 60 / APNEA_BACKUP_RATE_PER_MIN : this.settings.apneaTimeS;
+    if (elapsed + EPS >= plazoApnea) {
+      if (!this.apnea) {
+        this.apnea = true;
+        this.events.push({ type: 'apnea', simTimeS: this.simT, apneaS: this.settings.apneaTimeS });
+      }
+      this.endExpiration('backup');
+    } else this.endExpiration('mandatory');
+  }
+
   private endInspiration(cause: CyclingCause): void {
     const b = this.breath;
     if (b) {
       if (this.phase === 'inspPause') this.evaluateCyclePlateau(b);
-      else if (this.phase === 'inspPressure')
-        b.pplatReason = 'noOcclusion'; // en PC el fin de inspiración no es una meseta válida sin oclusión (dossier §11)
+      else if (this.phase === 'inspPressure' || this.phase === 'inspSupport')
+        b.pplatReason = 'noOcclusion'; // en PC y en soporte el fin de inspiración no es una meseta válida sin oclusión (dossier §11)
       else if (b.pplatCycle === null && b.pplatReason === null)
         b.pplatReason = b.plimitReached && this.timing.tPauseS > EPS ? 'plimitReached' : 'noPause';
       if (cause === 'pmax') {
@@ -659,6 +734,10 @@ export class VcController {
   /** Fin de la espiración: registra PEEPe y encadena bloqueo espiratorio o nueva respiración. */
   private endExpiration(next: BreathType): void {
     if (this.breath) this.breath.peepeEnd = this.paw;
+    if (this.apnea && (next === 'spontaneous' || next === 'assisted')) {
+      this.apnea = false;
+      this.events.push({ type: 'apneaEnded', simTimeS: this.simT, breathId: `b${this.breathSeq + 1}` });
+    }
     // El bloqueo espiratorio en cola ocluye al final de la espiración, la termine el temporizador, un disparo o una orden manual (P):
     // con esfuerzo la meseta será inestable y el resultado inválido con motivo, en vez de esperar indefinidamente.
     if (this.holdRequest?.kind === 'expHold') {
@@ -754,9 +833,21 @@ export class VcController {
   private startBreath(type: BreathType): void {
     const prev = this.breath;
     if (prev) this.finishBreath(prev);
-    this.breathSeq += 1;
-    const breathId = `b${this.breathSeq}`;
+    const breathId = `b${this.breathSeq + 1}`;
+    const modeBefore = this.settings.mode;
     this.flushPending(breathId);
+    const s = this.settings;
+    const cpap = s.mode === 'CPAP_PS';
+    if (cpap && modeBefore !== 'CPAP_PS' && type === 'mandatory') {
+      // Al cambiar a CPAP/PS, la respiración que iba a entregar el temporizador de A/C no existe en el modo nuevo: se espera al paciente.
+      this.esperarDisparo();
+      return;
+    }
+    // Un disparo resuelto en un modo y entregado en otro (el cambio de modo se aplica aquí) lleva el nombre del modo que lo entrega.
+    if (cpap && type === 'assisted') type = 'spontaneous';
+    else if (!cpap && type === 'spontaneous') type = 'assisted';
+    else if (!cpap && type === 'backup') type = 'mandatory';
+    this.breathSeq += 1;
     this.breath = {
       breathId,
       sequence: this.breathSeq,
@@ -785,8 +876,11 @@ export class VcController {
       pplatReason: null,
       peepeEnd: this.paw,
       cause: 'time',
+      qPeak: 0,
+      pAbove: cpap ? (type === 'spontaneous' ? s.psupport : s.backupPinsp) : s.pinsp,
+      tInspTargetS: cpap ? (type === 'spontaneous' ? SUPPORT_TI_MAX_S : s.backupTinspS) : this.timing.tInspS,
     };
-    this.phase = this.settings.mode === 'AC_PC' ? 'inspPressure' : 'inspFlow';
+    this.phase = cpap ? (type === 'spontaneous' ? 'inspSupport' : 'inspPressure') : s.mode === 'AC_PC' ? 'inspPressure' : 'inspFlow';
     this.tPhase = 0;
     this.tBreath = 0;
     this.events.push({
