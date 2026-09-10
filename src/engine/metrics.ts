@@ -140,10 +140,17 @@ export class MetricEngine {
         last.stressIndex === null || last.stressIndex === undefined
           ? sample('stressIndex', null, 'index', { ...base, quality: 'unavailable', reason: last.stressIndexReason ?? 'sinDato' })
           : sample('stressIndex', last.stressIndex, 'index', { ...base, source: 'derivedModel' });
+      // Constante de tiempo espiratoria: se lee en la propia rama espiratoria, sin ninguna maniobra. Cuando el
+      // vaciamiento no es una sola exponencial el controlador no la publica y dice por qué, que es el dato útil.
+      out.tauExp =
+        last.tauExpS === null || last.tauExpS === undefined
+          ? sample('tauExp', null, 's', { ...base, quality: 'unavailable', reason: last.tauExpReason ?? 'sinDato' })
+          : sample('tauExp', last.tauExpS, 's', { ...base, source: 'derivedModel' });
     } else {
       out.leakPct = sample('leakPct', null, 'fraction', base);
       out.pplatCycle = sample('pplatCycle', null, 'cmH2O', base);
       out.stressIndex = sample('stressIndex', null, 'index', base);
+      out.tauExp = sample('tauExp', null, 's', base);
     }
     // Ventana de respiraciones para FR y VMesp.
     const win = this.records.slice(-BREATH_WINDOW);
@@ -221,6 +228,8 @@ function unitOf(k: string): string {
   switch (k) {
     case 'stressIndex':
       return 'index';
+    case 'tauExp':
+      return 's';
     case 'ppeak':
     case 'peepe':
     case 'pplatCycle':

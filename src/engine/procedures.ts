@@ -16,6 +16,12 @@ const driftLimit = (kind: HoldKind): number => (kind === 'expHold' ? PLATEAU_DRI
 
 /** Denominador mínimo para Cstat (cmH2O), P. */
 export const MIN_CSTAT_DENOMINATOR = 1;
+/**
+ * Flujo mínimo para estimar la resistencia (L/s), P. Por debajo, el cociente (Ppico − Pplat)/Q divide una resta
+ * pequeña por un número pequeño y devuelve ruido con aspecto de medición. 0,1 L/s son 6 L/min: por debajo de eso
+ * ningún ventilador de adultos está entregando una rampa.
+ */
+export const MIN_FLOW_FOR_RAW_LPS = 0.1;
 
 export interface O2ProcedureState {
   procedureId: string;
@@ -189,6 +195,24 @@ export class ProcedureManager {
               : 'Pplat − PEEPtot (bloqueo espiratorio previo)',
         });
         values.vt = mkSample('vtHold', o.vtInspL, 'L', { ...base, quality: 'valid', reason: null });
+        // Resistencia INSPIRATORIA: la otra mitad de lo que una oclusión enseña. La caída de presión que desaparece al
+        // parar el flujo es toda resistiva; dividida por ese flujo da cmH2O·s/L. Ojo con lo que NO es: el vaciamiento no
+        // lo gobierna ésta sino la resistencia espiratoria, que en un obstructivo es mucho mayor (SC-03: 10 frente a
+        // 30). La constante de tiempo se mide aparte, sobre la rama espiratoria (métrica `tauExp`).
+        const rawOk = o.constantFlowInsp && o.qAtFlowEndLps >= MIN_FLOW_FOR_RAW_LPS && o.pawAtFlowEnd > o.pawEnd;
+        const raw = rawOk ? (o.pawAtFlowEnd - o.pawEnd) / o.qAtFlowEndLps : null;
+        const motivoRaw = o.constantFlowInsp
+          ? o.qAtFlowEndLps < MIN_FLOW_FOR_RAW_LPS
+            ? 'flujoInsuficienteParaR'
+            : o.pawAtFlowEnd <= o.pawEnd
+              ? 'sinCaidaResistiva'
+              : null
+          : 'sinRampaAFlujoConstante';
+        values.raw = mkSample('rawHold', raw, 'cmH2O/(L/s)', {
+          ...base,
+          quality: raw === null ? 'invalid' : 'valid',
+          reason: raw === null ? motivoRaw : '(Ppico − Pplat) / flujo inspiratorio al ocluir',
+        });
       } else {
         values.cstat = mkSample('cstatHold', null, 'L/cmH2O', {
           ...base,
@@ -196,6 +220,11 @@ export class ProcedureManager {
           reason: quality !== 'valid' ? reason : 'denominadorInsuficiente',
         });
         values.driving = mkSample('drivingHold', null, 'cmH2O', {
+          ...base,
+          quality: 'invalid',
+          reason: quality !== 'valid' ? reason : 'denominadorInsuficiente',
+        });
+        values.raw = mkSample('rawHold', null, 'cmH2O/(L/s)', {
           ...base,
           quality: 'invalid',
           reason: quality !== 'valid' ? reason : 'denominadorInsuficiente',

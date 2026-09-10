@@ -81,7 +81,7 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await page.click('[data-view="data"]');
     // Las diecisiete mediciones se ven a la vez, en dos columnas: con una sola tabla nueve quedaban bajo el pliegue
     // sin ninguna señal, entre ellas la Cstat, la ΔP y el índice de estrés.
-    await expect(page.locator('#data-table-body tr, #data-table-body-2 tr')).toHaveCount(17);
+    await expect(page.locator('#data-table-body tr, #data-table-body-2 tr')).toHaveCount(19);
     const caben = await page.evaluate(() => {
       const c = document.querySelector('.data-tables') as HTMLElement;
       return c.scrollHeight <= c.clientHeight;

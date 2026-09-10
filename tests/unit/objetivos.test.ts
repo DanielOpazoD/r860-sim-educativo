@@ -239,7 +239,5 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
       if (vistas.size) ruidosos.push(`${e.id}: ${[...vistas].sort().join(',')}`);
     }
     expect(ruidosos).toEqual(['SC-18: ppeakLow,vteHigh,vteLow']);
-    // Recorre veintidós respiraciones de cada escenario: con la instrumentación de cobertura no cabe en los 5 s por
-    // omisión, y agotar el plazo no dice nada sobre las alarmas, que es lo único que esta prueba mide.
-  }, 60_000);
+  });
 });

@@ -53,6 +53,21 @@ export const PLATEAU_DRIFT_RATE_EXP_CMH2O_S = 0.04;
 export const PLATEAU_TAIL_S = 0.5;
 /** Excursión contra la tendencia que delata una perturbación (esfuerzo, fuga, oscilación) en cmH2O. */
 export const PLATEAU_REVERSAL_CMH2O = 0.3;
+/**
+ * Bondad mínima del ajuste de la rama espiratoria para dar por buena una constante de tiempo (P). Medido sobre los
+ * escenarios, con la ventana del 5 % al 95 % de lo espirado: un compartimento lineal y el obstructivo de SC-03 dan
+ * 1,0000; la espiración estrangulada de SC-16 da 0,9838 y el tejido viscoelástico de SC-14, 0,9840. 0,99 separa el
+ * vaciamiento que sí es una exponencial de los dos que no lo son.
+ */
+export const TAU_EXP_MIN_R2 = 0.99;
+/**
+ * Tramo del vaciado sobre el que se ajusta la recta, en fracción de lo espirado. Ancho a propósito: la curvatura que
+ * delata un vaciamiento que no es una sola exponencial vive en los extremos, y un tramo central estrecho la esconde
+ * —con el 25-75 % la espiración estrangulada de SC-16 ajustaba a 0,9987 y pasaba por buena—. Se recortan las puntas
+ * porque el principio lo ensucia la apertura de la válvula y el final, una señal que tiende a cero.
+ */
+export const TAU_EXP_FIT_FROM = 0.05;
+export const TAU_EXP_FIT_TO = 0.95;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 /**
@@ -100,6 +115,11 @@ export interface HoldOutcome {
   /** Bloqueo insp: VT inspirado de esa respiración (L) y PEEPe al inicio de la inspiración. */
   vtInspL: number;
   peepeStart: number;
+  /** Paw y flujo en el último instante en que aún entraba gas: numerador y denominador de la resistencia inspiratoria. */
+  pawAtFlowEnd: number;
+  qAtFlowEndLps: number;
+  /** La rampa fue a flujo constante y sin esfuerzo: sin eso, (Ppico − Pplat)/Q no mide una resistencia. */
+  constantFlowInsp: boolean;
   /** Bloqueo esp: PEEPe medida justo antes de ocluir. */
   peepeBeforeOcclusion: number;
 }
@@ -134,6 +154,13 @@ interface BreathAccum {
   pauseSamples: { t: number; paw: number }[];
   /** Muestras de la rampa a flujo constante: de su forma sale el índice de estrés. */
   flowSamples: { t: number; paw: number }[];
+  /** Paw y flujo en el ÚLTIMO instante en que aún entraba gas: el numerador y el denominador de la resistencia. */
+  pawAtFlowEnd: number;
+  qAtFlowEnd: number;
+  /** Volumen absoluto y flujo a lo largo de la espiración: de su pendiente sale la constante de tiempo espiratoria. */
+  expSamples: { vAbsL: number; qLps: number }[];
+  /** Hubo esfuerzo muscular durante la espiración: entonces el vaciamiento no es pasivo y la pendiente no es del pulmón. */
+  effortInExp: boolean;
   /** Si el paciente hizo fuerza durante esa rampa, la forma ya no es sólo del pulmón. */
   effortInFlow: boolean;
   pplatCycle: number | null;
@@ -359,6 +386,19 @@ export class VcController {
     if (this.phase === 'exp' || this.phase === 'holdExp') b.tExpActual += used;
     else if (INSP_PHASES.has(this.phase)) b.tInspActual += used;
     if (INSP_PHASES.has(this.phase)) b.ppeak = Math.max(b.ppeak, this.paw);
+    // Mientras entra gas se va guardando el par (Paw, Q) del instante. Cuando la fase deja de dar flujo, lo último
+    // guardado es exactamente lo que había justo antes de ocluir, que es lo que la resistencia necesita: el salto de
+    // presión que desaparece al parar el flujo, dividido por ese flujo.
+    if (this.phase === 'inspFlow' || this.phase === 'inspLimited' || this.phase === 'inspPressure') {
+      b.pawAtFlowEnd = this.paw;
+      b.qAtFlowEnd = this.q;
+    }
+    // Espiración: el par (volumen que queda, flujo que sale). En un vaciamiento pasivo de un compartimento son
+    // proporcionales, y la constante de proporcionalidad es el tiempo que tarda en salir el 63 %.
+    if (this.phase === 'exp') {
+      b.expSamples.push({ vAbsL: this.patient.vTotal, qLps: this.q });
+      if (Math.abs(this.pmusAt(this.simT)) > 0.05) b.effortInExp = true;
+    }
   }
 
   private timeToScheduledEvent(): number {
@@ -695,6 +735,12 @@ export class VcController {
       cancelReason,
       vtInspL: b.vtInsp,
       peepeStart: b.pawStart,
+      pawAtFlowEnd: b.pawAtFlowEnd,
+      qAtFlowEndLps: b.qAtFlowEnd,
+      // Sólo la rampa a flujo constante de VC sirve: en PC el flujo decae y no hay un caudal único que dividir, y si
+      // Plimit recortó la entrega la presión dejó de ser la que el flujo pedía. El esfuerzo mete a los músculos en la
+      // resta y el resultado ya no es del pulmón.
+      constantFlowInsp: b.flowSamples.length > 0 && !b.plimitReached && !b.effortInFlow,
       peepeBeforeOcclusion: hold.peepeBefore,
     };
     this.events.push({ type: 'holdEnded', outcome });
@@ -730,6 +776,10 @@ export class VcController {
       pmaxReached: false,
       pauseSamples: [],
       flowSamples: [],
+      pawAtFlowEnd: this.paw,
+      qAtFlowEnd: 0,
+      expSamples: [],
+      effortInExp: false,
       effortInFlow: false,
       pplatCycle: null,
       pplatReason: null,
@@ -760,6 +810,7 @@ export class VcController {
       endSimTimeMs: sToMs(this.simT),
       cyclingCause: b.cause,
       ...indiceDeEstres(b),
+      ...constanteEspiratoria(b),
       tInspS: b.tInspActual,
       tExpS: b.tExpActual,
       ppeak: b.ppeak,
@@ -825,6 +876,78 @@ function indiceDeEstres(b: BreathAccum): { stressIndex: number | null; stressInd
   if (b.plimitReached || b.pmaxReached) return { stressIndex: null, stressIndexReason: 'presionRecortadaPorElTecho' };
   const v = stressIndex(b.flowSamples);
   return v === null ? { stressIndex: null, stressIndexReason: 'sinRampaAFlujoConstante' } : { stressIndex: v, stressIndexReason: null };
+}
+
+/**
+ * La constante de tiempo espiratoria de una respiración y, si no la hay, por qué.
+ *
+ * El umbral de bondad del ajuste es P y es el corazón del asunto: por debajo de 0,98 la rama espiratoria ya no es una
+ * recta, y eso significa que el pulmón no se vacía como un solo compartimento. Medido sobre los escenarios: un
+ * compartimento lineal da 1,000; el obstructivo SC-03 da 1,000 con tau larga; dos unidades dispares y la espiración
+ * estrangulada de SC-16 caen por debajo, que es exactamente lo que esos escenarios enseñan.
+ */
+function constanteEspiratoria(b: BreathAccum): { tauExpS: number | null; tauExpReason: string | null } {
+  if (b.effortInExp) return { tauExpS: null, tauExpReason: 'esfuerzoDuranteLaEspiracion' };
+  const r = expiratoryTimeConstant(b.expSamples);
+  if (r === null) return { tauExpS: null, tauExpReason: 'espiracionInsuficienteParaAjustar' };
+  if (r.r2 < TAU_EXP_MIN_R2) return { tauExpS: null, tauExpReason: 'vaciamientoNoExponencial' };
+  return { tauExpS: r.tau, tauExpReason: null };
+}
+
+/**
+ * Constante de tiempo espiratoria medida sobre la propia rama espiratoria (Brunner, «RCexp»), en segundos.
+ *
+ * En un vaciamiento pasivo de un compartimento, el flujo que sale es proporcional al volumen que todavía queda por
+ * salir: Q = −(V − V∞)/tau. Es decir, la rama espiratoria del bucle flujo-volumen es una RECTA cuya pendiente es
+ * −1/tau. No hace falta ninguna oclusión: el número está en la curva que ya se dibuja.
+ *
+ * Se ajusta sobre el grueso del vaciado, recortando las puntas: el principio lo ensucia la apertura de la válvula y
+ * el final, una señal que tiende a cero.
+ *
+ * Devuelve también la bondad del ajuste. Es lo más docente del asunto: cuando el pulmón NO se vacía como una sola
+ * exponencial —un tejido que sigue relajando, o una vía aérea que se estrangula al bajar la presión— la recta deja de
+ * ajustar, y eso es un hallazgo, no un fallo de la medición.
+ *
+ * Lo que este número NO es: la constante del pulmón entero cuando hay dos unidades muy dispares. Si una vacía en dos
+ * décimas y la otra en diez segundos, en el tiempo espiratorio disponible sale casi todo por la rápida y la recta
+ * ajusta perfectamente: lo medido es la constante de LO QUE SE ESTÁ VACIANDO. Es la misma limitación que tiene la
+ * medida de cabecera, y la unidad lenta se delata por otro camino —la meseta que sigue bajando al alargar la oclusión—.
+ */
+export function expiratoryTimeConstant(muestras: { vAbsL: number; qLps: number }[]): { tau: number; r2: number } | null {
+  if (muestras.length < 12) return null;
+  const vInicio = (muestras[0] as { vAbsL: number }).vAbsL;
+  const vFinal = (muestras[muestras.length - 1] as { vAbsL: number }).vAbsL;
+  const espirado = vInicio - vFinal;
+  if (!(espirado > 0.02)) return null; // menos de 20 mL: no hay vaciamiento del que sacar una pendiente
+  const tramo = muestras.filter((m) => {
+    const f = (vInicio - m.vAbsL) / espirado;
+    return f >= TAU_EXP_FIT_FROM && f <= TAU_EXP_FIT_TO && m.qLps < 0;
+  });
+  if (tramo.length < 6) return null;
+  // Regresión de Q sobre el volumen que queda: Q = pendiente · restante, con pendiente = −1/tau.
+  let sx = 0,
+    sy = 0,
+    sxx = 0,
+    sxy = 0,
+    syy = 0;
+  const n = tramo.length;
+  for (const m of tramo) {
+    const x = m.vAbsL - vFinal;
+    const y = m.qLps;
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    sxy += x * y;
+    syy += y * y;
+  }
+  const den = n * sxx - sx * sx;
+  if (Math.abs(den) < 1e-12) return null;
+  const pendiente = (n * sxy - sx * sy) / den;
+  if (!(pendiente < -1e-9)) return null; // pendiente no negativa: no es un vaciamiento
+  const varY = n * syy - sy * sy;
+  const r2 = varY > 1e-12 ? Math.pow(n * sxy - sx * sy, 2) / (den * varY) : 0;
+  const tau = -1 / pendiente;
+  return Number.isFinite(tau) && tau > 0 ? { tau, r2 } : null;
 }
 
 /**
