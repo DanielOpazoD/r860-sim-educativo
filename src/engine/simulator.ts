@@ -317,6 +317,7 @@ export class Simulator {
           cause: ev.record.cyclingCause,
           vte: ev.record.vtExp,
           ppeak: ev.record.ppeak,
+          tInspS: ev.record.tInspS,
         });
         break;
       }

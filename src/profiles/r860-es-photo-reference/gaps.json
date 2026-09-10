@@ -423,8 +423,8 @@
   ],
   "disabledFeatures": [
     {
-      "feature": "Modos distintos de A/C VC y A/C PC",
-      "reason": "CPAP/PS sólo tras pruebas de banco propias (PHY-03: esfuerzo, disparo, ciclaje, respaldo); adaptativos U-09; opcionales U-15. A/C PC habilitado en v0.3 con BM-03 en el motor y PHY-02."
+      "feature": "Modos distintos de A/C VC, A/C PC y CPAP/PS",
+      "reason": "CPAP/PS habilitado en v0.4 tras PHY-03 (esfuerzo, disparo, ciclaje, respaldo); SIMV pendiente de su propio banco; adaptativos U-09; opcionales U-15. A/C PC habilitado en v0.3 con BM-03 en el motor y PHY-02."
     },
     {
       "feature": "Nuevo paciente, pediátrico, neonatal, tipo/diámetro de tubo",

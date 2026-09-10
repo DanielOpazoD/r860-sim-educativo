@@ -482,6 +482,106 @@ SCENARIOS.push({
   answer: 'Porque el volumen sigue V = C·ΔP·(1 − e^(−t/τ)): tras 3–5 constantes de tiempo el flujo ya es casi cero y no entra más gas.',
 });
 
+SCENARIOS.push({
+  id: 'SC-19',
+  name: 'Presión de soporte: el paciente manda',
+  synthetic: true,
+  category: 'Modos',
+  level: 2,
+  description:
+    'CPAP/PS con PS 10 sobre PEEP 5, ciclaje al 25 % del flujo pico. Esfuerzo de 8 cmH2O a 15/min: cada respiración la dispara y la termina el paciente; sin esfuerzo, apnea y respaldo.',
+  patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
+  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.8, phaseS: 0.5 },
+  sensors: idealSensors,
+  settings: {
+    mode: 'CPAP_PS',
+    psupport: 10,
+    expTriggerPct: 0.25,
+    riseMs: 100,
+    peep: 5,
+    pmax: 40,
+    flowTrigger: 2 / 60,
+    biasFlow: 4 / 60,
+    minRate: 'off',
+    apneaTimeS: 20,
+    backupPinsp: 12,
+    backupTinspS: 1,
+  },
+  initialV: 'equilibrium',
+  perturbations: [],
+  observe: 'Ppico = PEEP + PS en todas; el flujo se corta al 25 % de su pico; FR, Ti y VT los decide el paciente.',
+  caution: 'El ciclado por flujo y el respaldo por apnea son la lógica del simulador (P, E-085), no la del equipo fotografiado.',
+  lesson: {
+    title: 'En soporte, el volumen es del paciente y del ventilador',
+    text: 'No hay frecuencia programada: el paciente dispara, el ventilador sube a PEEP + PS y cicla cuando el flujo cae al 25 % de su pico. El VT no es una consigna: sale de PS, del esfuerzo y de la mecánica.',
+    tasks: [
+      {
+        id: 'spont',
+        text: 'Observa en el registro que todas las respiraciones son espontáneas: Ppico = 15 y el flujo se corta antes de llegar a cero.',
+        test: 'spontSeen',
+      },
+      { id: 'ps', text: 'Sube la presión de soporte a 15: el VTesp sube (≈ 750 mL) sin que cambie el esfuerzo.', test: 'psRaised' },
+      {
+        id: 'apnea',
+        text: 'Provoca una apnea en «Eventos»: a los 20 s alarma de apnea y respiraciones de respaldo. Deshazla y mira cómo el primer disparo del paciente resuelve la alarma.',
+        test: 'apneaRecovered',
+      },
+    ],
+  },
+  question: '¿Por qué el VT cambia entre respiraciones aunque PS no cambie?',
+  answer:
+    'Porque en soporte el gradiente que mueve el gas es PS más el esfuerzo del paciente, y el final de la inspiración lo fija el flujo, no un tiempo: un esfuerzo distinto da un flujo distinto, un Ti distinto y un volumen distinto.',
+});
+
+SCENARIOS.push({
+  id: 'SC-20',
+  name: 'Ciclado tardío: el ventilador inspira más que el paciente',
+  synthetic: true,
+  category: 'Sincronía',
+  level: 3,
+  description:
+    'CPAP/PS con PS 12 y ciclaje al 25 % en un pulmón obstructivo (R 30, τ = 1,5 s). El esfuerzo dura 0,6 s pero el flujo tarda ~1 s en caer al umbral: el soporte sigue cuando el paciente ya espira.',
+  patient: { crs: 0.05, rInsp: 30, rExp: 30, r2: 0, p0: 0 },
+  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.6, phaseS: 0.5 },
+  sensors: idealSensors,
+  settings: {
+    mode: 'CPAP_PS',
+    psupport: 12,
+    expTriggerPct: 0.25,
+    riseMs: 100,
+    peep: 5,
+    pmax: 40,
+    flowTrigger: 2 / 60,
+    biasFlow: 4 / 60,
+    minRate: 'off',
+    apneaTimeS: 20,
+    backupPinsp: 12,
+    backupTinspS: 1,
+  },
+  initialV: 'equilibrium',
+  perturbations: [],
+  observe:
+    'Ti mecánico mayor que el esfuerzo (curva de Pmus del panel docente); al subir el ciclaje al 50 % la inspiración se acorta hasta el esfuerzo.',
+  caution:
+    'Asincronía de ciclado por la mecánica y el criterio de flujo; el modelo no simula la espiración activa con la que el paciente real pelea.',
+  lesson: {
+    title: 'El ciclaje espiratorio es un ajuste, no una constante',
+    text: 'Con τ larga el flujo decae despacio y tarda en caer al 25 % de su pico: el ventilador sigue insuflando cuando el paciente ya terminó su esfuerzo. Subir el porcentaje de ciclaje termina antes la inspiración sin tocar PS.',
+    tasks: [
+      {
+        id: 'late',
+        text: 'Compara el Ti del ventilador con la duración del esfuerzo (curva de Pmus, 0,6 s): el soporte sigue cuando el paciente ya espira.',
+        test: 'lateCycling',
+      },
+      { id: 'ets', text: 'Sube el ciclaje espiratorio al 50 % o más.', test: 'ets50' },
+      { id: 'fixed', text: 'Comprueba que el Ti baja hasta la duración del esfuerzo, con la misma PS.', test: 'cyclingFixed' },
+    ],
+  },
+  question: '¿Por qué el mismo criterio de ciclaje acaba bien en un pulmón y tarde en otro?',
+  answer:
+    'Porque el criterio es un porcentaje del flujo pico y el flujo decae con τ = R·C: con resistencia alta el pico es bajo y la caída lenta, así que el umbral llega tarde. El porcentaje de ciclaje se ajusta a la mecánica, no al revés.',
+});
+
 /** Referencia visual de las fotografías P1/P3 (O): sólo los AJUSTES visibles; C y R son artificiales; las lecturas se calculan. */
 SCENARIOS.push({
   id: 'SC-P',

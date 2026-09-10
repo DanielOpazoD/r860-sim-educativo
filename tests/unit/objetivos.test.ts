@@ -116,6 +116,55 @@ describe('OBJ · las lecciones se pueden terminar', () => {
     expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
   });
 
+  it('SC-19 · presión de soporte: espontáneas, PS a 15 y apnea con recuperación', () => {
+    const esc = SCENARIOS.find((s) => s.id === 'SC-19')!;
+    const sim = simular('SC-19');
+    const a = new Alumno('SC-19', esc.lesson!.tasks);
+    runUntilBreath(sim, 6);
+    a.mirar(sim.frame());
+    expect(sim.breaths.every((b) => b.type === 'spontaneous')).toBe(true);
+    expect(a.hechos.has('spont')).toBe(true);
+    expect(a.hechos.size, 'PS sigue en 10 y no hubo apnea').toBe(1);
+    // Objetivo 2: PS 15 → el VT sube claramente (≈ 750 mL con C 50 y Pmus 8).
+    expect(sim.command({ type: 'confirmSettings', changes: { psupport: 15 } }).accepted).toBe(true);
+    runUntilBreath(sim, 14);
+    a.mirar(sim.frame());
+    expect(sim.frame().metrics.vte!.value!).toBeGreaterThan(0.65);
+    expect(a.hechos.has('ps')).toBe(true);
+    // Objetivo 3: apnea (el evento del panel apaga el esfuerzo) → alarma; deshacerla → espontánea → resuelta.
+    expect(sim.command({ type: 'setEffort', params: { enabled: false } }).accepted).toBe(true);
+    sim.run(26_000);
+    a.mirar(sim.frame());
+    expect(sim.alarms.get('apnea')!.conditionActive).toBe(true);
+    expect(a.hechos.has('apnea'), 'con la alarma activa el objetivo aún no está cumplido').toBe(false);
+    expect(sim.command({ type: 'setEffort', params: { enabled: true } }).accepted).toBe(true);
+    sim.run(10_000);
+    a.mirar(sim.frame());
+    expect(sim.alarms.get('apnea')!.conditionActive).toBe(false);
+    expect(a.hechos.has('apnea')).toBe(true);
+    expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
+  });
+
+  it('SC-20 · ciclado tardío: el Ti supera al esfuerzo hasta subir el ciclaje al 50 %', () => {
+    const esc = SCENARIOS.find((s) => s.id === 'SC-20')!;
+    const sim = simular('SC-20');
+    const a = new Alumno('SC-20', esc.lesson!.tasks);
+    runUntilBreath(sim, 6);
+    a.mirar(sim.frame());
+    const ti = sim.breaths.at(-1)!.tInspS;
+    expect(ti, `Ti ${ti.toFixed(2)} s frente a un esfuerzo de 0,6 s`).toBeGreaterThan(0.9);
+    expect(a.hechos.has('late')).toBe(true);
+    expect(a.hechos.size).toBe(1);
+    expect(sim.command({ type: 'confirmSettings', changes: { expTriggerPct: 0.5 } }).accepted).toBe(true);
+    runUntilBreath(sim, 12);
+    a.mirar(sim.frame());
+    const ti2 = sim.breaths.at(-1)!.tInspS;
+    expect(ti2, `Ti ${ti2.toFixed(2)} s con ciclaje al 50 %`).toBeLessThan(0.7);
+    expect(a.hechos.has('ets')).toBe(true);
+    expect(a.hechos.has('fixed')).toBe(true);
+    expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
+  });
+
   it('SC-17 · pendelluft: la meseta corta que se pide es una que el equipo acepta', () => {
     const esc = SCENARIOS.find((s) => s.id === 'SC-17')!;
     const sim = simular('SC-17');

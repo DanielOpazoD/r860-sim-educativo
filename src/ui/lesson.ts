@@ -106,6 +106,25 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
     (c.frame.metrics.vte?.value ?? 1) < 0.38 &&
     Math.abs((c.frame.metrics.ppeak?.value ?? 0) - 15) < 0.5,
   ieOne: (c) => c.frame.settings.mode === 'AC_PC' && Math.abs(c.frame.settings.ie - 1) < 1e-6,
+  /** CPAP/PS (SC-19): ya hubo respiraciones espontáneas —del paciente, cicladas por flujo—. */
+  spontSeen: (c) => c.frame.settings.mode === 'CPAP_PS' && !!c.flags.spontSeen,
+  /** PS ≥ 15 y el VT lo acusa: con C 50 y Pmus 8, de ≈ 570 a ≈ 750 mL. */
+  psRaised: (c) => c.frame.settings.mode === 'CPAP_PS' && c.frame.settings.psupport >= 15 && (c.frame.metrics.vte?.value ?? 0) > 0.65,
+  /** Hubo apnea (alarma vista) y ya se resolvió: el paciente volvió a disparar. */
+  apneaRecovered: (c) => !!c.flags.apneaSeen && !c.frame.alarms.some((a) => a.id === 'apnea' && a.conditionActive),
+  /** SC-20: la inspiración del ventilador dura claramente más que el esfuerzo (Ti neural). */
+  lateCycling: (c) => {
+    const ti = ultimoTiEspontaneo(c.frame);
+    return c.frame.settings.mode === 'CPAP_PS' && ti !== null && ti >= c.frame.truth.effort.tiS + 0.2;
+  },
+  ets50: (c) => c.frame.settings.mode === 'CPAP_PS' && c.frame.settings.expTriggerPct >= 0.5,
+  /** Con el ciclaje subido, el Ti mecánico ya no supera al esfuerzo. */
+  cyclingFixed: (c) => {
+    const ti = ultimoTiEspontaneo(c.frame);
+    return (
+      c.frame.settings.mode === 'CPAP_PS' && c.frame.settings.expTriggerPct >= 0.5 && ti !== null && ti <= c.frame.truth.effort.tiS + 0.1
+    );
+  },
 };
 
 /** Banderas que se activan al observar el cuadro (sesgo del sensor, alarma activa vista). */
@@ -116,8 +135,22 @@ export function updateLessonFlags(frame: EngineFrame, flags: Record<string, unkn
   // que es otra cosa: con la ventana móvil de ocho respiraciones hacen falta muchos disparos seguidos para moverla,
   // así que el objetivo parecía roto aunque el alumno hubiera conseguido lo que se le pedía.
   for (const e of frame.eventsTail) {
-    if (e.kind === 'breath' && (e.payload as { type?: string }).type === 'assisted') flags.assistedSeen = true;
+    const tipo = e.kind === 'breath' ? (e.payload as { type?: string }).type : undefined;
+    if (tipo === 'assisted') flags.assistedSeen = true;
+    if (tipo === 'spontaneous') flags.spontSeen = true;
   }
+  if (frame.alarms.some((a) => a.id === 'apnea' && a.conditionActive)) flags.apneaSeen = true;
+}
+
+/** Duración de la última inspiración espontánea registrada (s), o null si no hay ninguna en la cola de eventos. */
+function ultimoTiEspontaneo(frame: EngineFrame): number | null {
+  for (let i = frame.eventsTail.length - 1; i >= 0; i--) {
+    const e = frame.eventsTail[i] as EngineFrame['eventsTail'][number];
+    if (e.kind !== 'breath') continue;
+    const p = e.payload as { type?: string; tInspS?: number };
+    if (p.type === 'spontaneous' && typeof p.tInspS === 'number') return p.tInspS;
+  }
+  return null;
 }
 
 /**
