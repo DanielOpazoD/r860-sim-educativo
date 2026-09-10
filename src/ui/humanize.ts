@@ -67,6 +67,17 @@ export const CHANNEL: Record<string, string> = {
   'ventilator.o2': 'sensor de O₂',
 };
 export const PRIORITY: Record<string, string> = { high: 'alta', medium: 'media', informational: 'informativa' };
+/**
+ * Título de la banda de alarmas. La prioridad va en palabras, no sólo en el color: sin ellas un lector de pantalla —o
+ * quien no distingue rojo de ámbar— oye el mensaje sin saber cuánto urge. «Sin alarmas» y «Alarmas resueltas» son
+ * estados, no alarmas, y no llevan prioridad.
+ */
+export function alarmBandLabel(bar: { color: string; message: string }): string {
+  if (bar.color === 'green') return 'Sin alarmas';
+  if (bar.color === 'grey') return 'Alarmas resueltas';
+  const prioridad = bar.color === 'red' ? 'alta' : bar.color === 'yellow' ? 'media' : 'informativa';
+  return `Prioridad ${prioridad} · ${learnerText(bar.message)}`;
+}
 const MODE: Record<string, string> = { AC_VC: 'A/C VC', AC_PC: 'A/C PC' };
 const SETTING: Record<string, string> = {
   fio2: 'FiO₂',

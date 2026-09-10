@@ -192,9 +192,11 @@
       "status": "D",
       "source": "R02",
       "locator": "p.9 «Alarm Priority»",
-      "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12)",
+      "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12); styles.css (.bezel-light.high: luz roja intermitente, fija con prefers-reduced-motion); humanize.ts (alarmBandLabel: la prioridad también en palabras, P)",
       "tests": [
-        "ALM-06"
+        "ALM-06",
+        "tests/unit/contraste.test.ts (CTR-03)",
+        "tests/e2e/visual.spec.ts (VIS-04)"
       ]
     },
     {
@@ -893,12 +895,14 @@
     },
     {
       "id": "E-069",
-      "claim": "El color de la banda de alarma significa alarma, y sólo alarma: en reposo es del azul del monitor y se retira. El valor que alarma se marca con un bloque ámbar sólido y el número en negro, como en un equipo real. Medido en contraste WCAG: la banda en reposo pasa de 3,22:1 (título) y 2,74:1 (subtítulo) a 8,6:1; el relleno de la celda en alarma, de 1,41:1 a 3,31:1 sobre el azul (exige 3:1) y el número sobre él a 8,2:1.",
+      "claim": "El color de la banda de alarma significa alarma, y sólo alarma: en reposo es del azul del monitor y se retira. El valor que alarma se marca con un bloque ámbar sólido y el número en negro, como en un equipo real. Medido en contraste WCAG 2.1 (mínimo AA 4,5:1 para texto normal), en los DOS extremos de cada degradado: reposo 8,6:1 y 7,3:1; prioridad alta (texto claro sobre rojo) 6,8:1 y 5,4:1; prioridad media (texto oscuro sobre ámbar, como la celda que alarma) 6,8:1 y 8,7:1; alarma previa (blanco sobre gris) 7,3:1 y 5,5:1. Antes la banda media daba 3,6:1 y 2,4:1 y el subtítulo, con opacidad 0,85, caía a 2,1:1. Las cifras pequeñas de la columna numérica (límites, antigüedad) suben de 5,4:1 y 6,2:1 a 6,7:1 y 7,2:1. El relleno de la celda en alarma, 3,31:1 sobre el azul (exige 3:1), y el número sobre él, 8,2:1.",
       "status": "P (paleta; la exigencia de contraste es D por WCAG 2.1 AA)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/ui/styles.css (.alarm-band, .numeric.alarm-value)",
-      "tests": []
+      "implemented": "src/ui/styles.css (.alarm-band y estados, .alarm-message small, .numeric-limits, .numeric-age, .numeric.alarm-value)",
+      "tests": [
+        "tests/unit/contraste.test.ts (CTR-01, CTR-02)"
+      ]
     },
     {
       "id": "E-070",

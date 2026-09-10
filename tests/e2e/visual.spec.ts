@@ -66,10 +66,17 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     const f = await frame(page);
     expect(f.alarmBar.color).toBe('red');
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);
-    await expect(page.locator('#alarm-label')).toContainText('Pmáx alcanzada');
+    // La prioridad va en palabras, no sólo en el color.
+    await expect(page.locator('#alarm-label')).toHaveText(/^Prioridad alta · Pmáx alcanzada/);
     await expect(page.locator('#bezel-light')).toHaveClass(/high/);
     await expect(page.locator('#numeric-grid [data-metric="ppeak"]')).toHaveClass(/alarm-value/);
     await screenshot(page, info, 'vis-04-alarm-sc09-t20s', { scenario: 'SC-09' });
+    // Luz roja intermitente (D), salvo que el sistema pida reducir movimiento.
+    const animacion = (): Promise<string> => page.evaluate(() => getComputedStyle(document.querySelector('#bezel-light')!).animationName);
+    expect(await animacion()).toBe('bezel-blink');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await animacion()).toBe('none');
+    await page.emulateMedia({ reducedMotion: null });
   });
   test('VIS-05 · vistas de bucles, tabla, tendencias y registro son funcionales', async ({ page }, info) => {
     await open(page, { autopause: 16000, instructor: 0, speed: 4 });

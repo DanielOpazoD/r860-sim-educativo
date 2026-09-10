@@ -96,6 +96,7 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     const hadFocus = editor.contains(document.activeElement);
     editor.hidden = true;
     put('#quick-countdown', '');
+    put('#quick-announce', '');
     if (restoreFocus && hadFocus && quickOpener?.isConnected) quickOpener.focus({ preventScroll: true });
     quickOpener = null;
   }
@@ -187,12 +188,19 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     $('#trim-knob').style.setProperty('--knob-angle', `${knobAngle}deg`);
     updateQuick();
   }
-  /** Cuenta atrás visible en los últimos segundos del plazo de edición. */
+  /**
+   * Cuenta atrás visible en los últimos segundos del plazo de edición. El texto visible cambia cada segundo; la región
+   * viva para lectores de pantalla se escribe UNA vez al entrar en la ventana (antes leía cada segundo en voz alta).
+   */
   function renderCountdown(now: number): void {
     const st = edit.state;
     if (st.kind === 'idle') return;
     const left = ctx.editTimeoutMs - (now - st.at);
-    put('#quick-countdown', left <= COUNTDOWN_WINDOW_MS ? `Se cancela por inactividad en ${Math.max(1, Math.ceil(left / 1000))} s` : '');
+    const enVentana = left <= COUNTDOWN_WINDOW_MS;
+    put('#quick-countdown', enVentana ? `Se cancela por inactividad en ${Math.max(1, Math.ceil(left / 1000))} s` : '');
+    if (!enVentana) put('#quick-announce', '');
+    else if (!$('#quick-announce').textContent)
+      put('#quick-announce', `Quedan ${Math.max(1, Math.ceil(left / 1000))} s para confirmar o cancelar el ajuste`);
   }
   function stepQuick(dir: 1 | -1): void {
     if (edit.state.kind === 'idle') {
