@@ -48,9 +48,9 @@
 <header class="app-top">
   <a class="wordmark" href="#" data-action="home" aria-label="R860 Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>R860<span>LAB</span></strong></a>
   <div class="top-actions">
-    <button class="button subtle" data-action="scenarios"><svg class="icon"><use href="#i-grid"/></svg><span>Escenarios</span></button>
-    <button class="button subtle" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Guía</span></button>
-    <button class="button subtle" data-action="session"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
+    <button class="button subtle" data-action="scenarios" aria-label="Escenarios" title="Escenarios"><svg class="icon"><use href="#i-grid"/></svg><span>Escenarios</span></button>
+    <button class="button subtle" data-action="help" aria-label="Guía" title="Guía"><svg class="icon"><use href="#i-help"/></svg><span>Guía</span></button>
+    <button class="button subtle" data-action="session" aria-label="Sesión" title="Sesión"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
     <button class="button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel docente" title="Ocultar panel docente" aria-pressed="true"><svg class="icon"><use href="#i-lung"/></svg></button>
     <div class="toolbar-divider"></div>
     <button class="button simulation-pause" id="sim-pause" data-action="pause" aria-label="Pausar simulación"><svg class="icon"><use href="#i-pause"/></svg><span>Pausar</span></button>
@@ -120,14 +120,14 @@
             <button class="nav-key" data-view="log" title="Registro de eventos" aria-label="Registro de eventos"><svg class="icon"><use href="#i-list"/></svg></button>
             <div class="nav-divider"></div>
             <button class="nav-key" data-action="tools" title="Mecánica y procedimientos" aria-label="Mecánica y procedimientos"><svg class="icon"><use href="#i-lung"/></svg></button>
-            <span class="monitor-clock" id="monitor-clock">00:00</span><span class="phase-status" id="phase-status" role="status" aria-live="polite">Inicializando</span>
+            <span class="monitor-clock" id="monitor-clock">00:00</span><span class="phase-status" id="phase-status">Inicializando</span>
           </nav>
           <footer class="quick-controls" id="quick-controls"></footer>
           <div class="quick-editor" id="quick-editor" hidden role="dialog" aria-labelledby="quick-editor-title">
             <div class="editor-top"><div><small>AJUSTE EN EDICIÓN</small><h2 id="quick-editor-title">Volumen tidal</h2></div><div class="editor-header-actions"><button type="button" class="info-button" id="quick-help-button" data-help-key="setting.vt" data-help-target="quick-explanation" aria-controls="quick-explanation" aria-expanded="false" aria-label="Información sobre el parámetro" title="Información"><svg class="icon"><use href="#i-info"/></svg></button><button class="close-button" data-action="cancelEdit" aria-label="Cancelar edición"><svg class="icon"><use href="#i-close"/></svg></button></div></div>
             <div class="editor-value"><button class="step-button" data-action="editMinus" aria-label="Disminuir"><svg class="icon"><use href="#i-minus"/></svg></button><input type="number" id="quick-value" aria-label="Valor del ajuste"><span id="quick-unit">mL</span><button class="step-button" data-action="editPlus" aria-label="Aumentar"><svg class="icon"><use href="#i-plus"/></svg></button></div>
             <input type="range" id="quick-range" aria-label="Deslizador de ajuste"><div id="quick-explanation" class="parameter-help" hidden></div><div id="quick-validation" class="inline-validation" role="status" hidden></div>
-            <div class="editor-actions"><span class="edit-countdown" id="quick-countdown" role="status" aria-live="polite"></span><button class="secondary-button" data-action="cancelEdit">Cancelar</button><button class="primary-button" data-action="confirmEdit">Confirmar</button></div>
+            <div class="editor-actions"><span class="edit-countdown" id="quick-countdown"></span><span class="sr-only" id="quick-announce" role="status" aria-live="polite"></span><button class="secondary-button" data-action="cancelEdit">Cancelar</button><button class="primary-button" data-action="confirmEdit">Confirmar</button></div>
             <small class="knob-hint">Rueda / ↑ ↓ para ajustar · Enter para confirmar · Esc para cancelar</small>
           </div>
         </section>

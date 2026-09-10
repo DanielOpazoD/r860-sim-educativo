@@ -8,7 +8,7 @@ import type { AppContext } from './context';
 import { $, $$, btn, esc, icon, put } from './dom';
 import { clock, unitText } from './format';
 import { infoButton, infoPanel } from './helpPanels';
-import { CHANNEL, joinSentences, learnerText, PRIORITY } from './humanize';
+import { alarmBandLabel, CHANNEL, joinSentences, learnerText, PRIORITY } from './humanize';
 
 export interface AlarmsUi {
   updateAlarm(): void;
@@ -63,7 +63,7 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     const lev = bar.color === 'red' ? 'high' : bar.color === 'yellow' ? 'medium' : bar.color === 'grey' ? 'previous' : '';
     $('#alarm-band').className = 'alarm-band ' + lev;
     $('#bezel-light').className = 'bezel-light ' + (lev === 'previous' ? '' : lev);
-    put('#alarm-label', bar.color === 'grey' ? 'Alarmas resueltas' : learnerText(bar.message));
+    put('#alarm-label', alarmBandLabel(bar));
     put('#alarm-detail', alarmDetailText(fr));
     const muteLeft = fr.audioPauseUntilMs !== null ? fr.audioPauseUntilMs - fr.simTimeMs : 0;
     put('#mute-time', muteLeft > 0 ? clock(Math.ceil(muteLeft / 1000)) : '');
