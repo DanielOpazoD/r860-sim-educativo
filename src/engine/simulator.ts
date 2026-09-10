@@ -320,6 +320,14 @@ export class Simulator {
         });
         break;
       }
+      case 'apnea':
+        this.alarms.onApnea(t, ev.apneaS);
+        this.logEvent('alarm', 'controller', { apnea: ev.apneaS });
+        break;
+      case 'apneaEnded':
+        this.alarms.onPatientBreath(t);
+        this.logEvent('alarm', 'controller', { apneaEnded: true, breathId: ev.breathId });
+        break;
       case 'pmaxReached':
         this.alarms.onPmaxReached(
           t,

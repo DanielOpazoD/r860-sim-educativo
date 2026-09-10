@@ -412,6 +412,13 @@
       "policy": "P: una evaluación por respiración cerrada (más el refresco del sensor de O2 y Pmáx dentro del ciclo), sin retardo de confirmación añadido. El retraso máximo es por tanto un ciclo, y se dice en la ayuda de alarmas en vez de dejarlo implícito. Un cambio de límites se contrasta de inmediato con la última respiración.",
       "status": "nueva (v0.4.9)",
       "blocks": []
+    },
+    {
+      "id": "U-52",
+      "question": "CPAP/PS: tiempo inspiratorio máximo de una respiración soportada, cadencia y salida del respaldo por apnea, y si el tiempo de apnea del equipo cuenta también las respiraciones de respaldo o sólo las del paciente.",
+      "policy": "P: Ti máximo 3 s; respaldo a 12/min mientras dura la apnea, que termina con el primer disparo del paciente; la apnea se cuenta desde la última respiración de cualquier tipo y sólo en CPAP/PS. Los rangos (PS, trigger espiratorio, apnea, frecuencia mínima) son D (E-084); la lógica es P (E-085).",
+      "status": "nueva (v0.4.0)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

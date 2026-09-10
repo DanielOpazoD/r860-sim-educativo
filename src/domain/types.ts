@@ -38,11 +38,12 @@ export type ModeId =
 
 export type OffOr<T> = T | 'off';
 
-export type VentMode = 'AC_VC' | 'AC_PC';
+export type VentMode = 'AC_VC' | 'AC_PC' | 'CPAP_PS';
 
 /**
  * Ajustes programados (familia de temporización «I:E, control de flujo apagado», O en P1/P3 + D ficha 2014).
- * A/C VC usa vt/plimit/pausePct; A/C PC usa pinsp/riseMs. Los demás son comunes.
+ * A/C VC usa vt/plimit/pausePct; A/C PC usa pinsp/riseMs; CPAP/PS usa psupport/expTriggerPct/riseMs y el respaldo
+ * (minRate, backupPinsp, backupTinspS, apneaTimeS). Los demás son comunes.
  */
 export interface VcSettings {
   mode: VentMode;
@@ -74,8 +75,20 @@ export interface VcSettings {
   pressureTrigger: CmH2O;
   /** A/C PC: presión inspiratoria SOBRE PEEP (cmH2O). D ficha 2014 «Pinsp 1–98». */
   pinsp: CmH2O;
-  /** A/C PC: rampa de presión (ms). D ficha 2014 «Tiempo de rampa 0–500 ms (50)». */
+  /** A/C PC y CPAP/PS: rampa de presión (ms). D ficha 2014 «Tiempo de rampa 0–500 ms (50)»; «en PS … sólo para respiración soportada». */
   riseMs: number;
+  /** CPAP/PS: presión de soporte SOBRE PEEP (cmH2O). D ficha 2014 «Presión Soporte sobre nivel PEEP: 0 a 60 … CPAP/PS». */
+  psupport: CmH2O;
+  /** CPAP/PS: fin de la inspiración soportada como fracción del flujo pico. D ficha 2014 «Trigger Espiratorio: 5 a 80 % de flujo pico». */
+  expTriggerPct: Fraction;
+  /** CPAP/PS: frecuencia mínima; por debajo de ella entra una respiración controlada por presión (D curso JB72469XX). Off = sin mínimo. */
+  minRate: OffOr<number>;
+  /** CPAP/PS: Pinsp sobre PEEP de las respiraciones de respaldo (D existencia «Backup Pinsp», JB72469XX). */
+  backupPinsp: CmH2O;
+  /** CPAP/PS: Tinsp (s) de las respiraciones de respaldo (D existencia «Backup Tinsp», JB72469XX). */
+  backupTinspS: number;
+  /** Tiempo sin respiración que declara apnea (s). D ficha 2014 «Alarma de apnea: 5 a 60 seg». Sólo se evalúa en CPAP/PS (P). */
+  apneaTimeS: number;
 }
 export type VentSettings = VcSettings;
 
@@ -172,8 +185,10 @@ export interface SensorParams {
   flowNoiseFraction?: Fraction;
 }
 
-export type BreathType = 'mandatory' | 'assisted' | 'manual' | 'spontaneous';
-export type CyclingCause = 'time' | 'pmax' | 'standby' | 'procedureAbort';
+/** `backup`: respaldo por apnea en CPAP/PS; `mandatory` en CPAP/PS es la respiración de la frecuencia mínima. */
+export type BreathType = 'mandatory' | 'assisted' | 'manual' | 'spontaneous' | 'backup';
+/** `flow`: ciclado por caída del flujo (soporte); `tiMax`: soporte cortado por el tiempo inspiratorio máximo. */
+export type CyclingCause = 'time' | 'pmax' | 'standby' | 'procedureAbort' | 'flow' | 'tiMax';
 
 export interface BreathRecord {
   breathId: string;
@@ -258,7 +273,8 @@ export interface AlarmState {
 }
 
 export type VentilationState = 'standby' | 'ventilating';
-export type ControllerPhase = 'standby' | 'inspFlow' | 'inspLimited' | 'inspPause' | 'inspPressure' | 'holdInsp' | 'exp' | 'holdExp';
+export type ControllerPhase =
+  'standby' | 'inspFlow' | 'inspLimited' | 'inspPause' | 'inspPressure' | 'inspSupport' | 'holdInsp' | 'exp' | 'holdExp';
 
 export type Actor = 'learner' | 'instructor' | 'controller' | 'scenario' | 'system';
 

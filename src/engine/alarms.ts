@@ -26,6 +26,8 @@ export const ALARM_RULES: Record<string, RuleDef> = {
     source: 'ventilator.paw',
   },
   ppeakLow: { id: 'ppeakLow', priority: 'medium', message: 'Ppico baja', responseAction: 'none', latching: true, source: 'ventilator.paw' },
+  /** Apnea: ninguna respiración en el tiempo programado (D ficha 2014 «Alarma de apnea: 5 a 60 seg»; prioridad alta P). */
+  apnea: { id: 'apnea', priority: 'high', message: 'Apnea', responseAction: 'enterBackup', latching: true, source: 'ventilator.flow' },
   vteLow: { id: 'vteLow', priority: 'medium', message: 'VTesp bajo', responseAction: 'none', latching: true, source: 'ventilator.flow' },
   vteHigh: { id: 'vteHigh', priority: 'medium', message: 'VTesp alto', responseAction: 'none', latching: true, source: 'ventilator.flow' },
   mveLow: { id: 'mveLow', priority: 'high', message: 'VMesp bajo', responseAction: 'none', latching: true, source: 'ventilator.flow' },
@@ -161,6 +163,16 @@ export class AlarmEngine {
     const out = kind === 'low' ? value < limit : value > limit;
     if (out) this.activate(id, simTimeMs, value, displayed, limit, `${kind === 'low' ? '<' : '>'} ${limit}`);
     else this.resolve(id, simTimeMs);
+  }
+
+  /** El controlador declaró apnea: ninguna respiración en `apneaS` segundos. La condición dura hasta que el paciente vuelve a disparar. */
+  onApnea(simTimeMs: number, apneaS: number): void {
+    this.activate('apnea', simTimeMs, apneaS, apneaS, apneaS, `sin respiración en ${apneaS} s`);
+  }
+
+  /** Una respiración disparada por el paciente termina la apnea (las de respaldo no: son la respuesta a ella). */
+  onPatientBreath(simTimeMs: number): void {
+    this.resolve('apnea', simTimeMs);
   }
 
   /** Evaluación por respiración completa y ventana de métricas. */

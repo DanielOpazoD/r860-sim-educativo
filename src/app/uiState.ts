@@ -17,6 +17,8 @@ export interface EditPreview {
   reasons: string[];
   derived: DerivedTiming | null;
   changed: boolean;
+  /** Ajustes completos que quedarían al confirmar (null sin edición en curso). */
+  candidate: VcSettings | null;
 }
 
 export type EditEvent =
@@ -101,7 +103,7 @@ export class EditController {
 
   /** Vista previa antes de confirmar: valida rango, rejilla y consecuencias cruzadas (Tinsp, flujo). */
   preview(): EditPreview {
-    if (this.state.kind === 'idle') return { valid: false, reasons: [], derived: null, changed: false };
+    if (this.state.kind === 'idle') return { valid: false, reasons: [], derived: null, changed: false, candidate: null };
     const { key, draftDisplay, originalDisplay } = this.state;
     const rule = this.rules[key];
     const reasons: string[] = [];
@@ -112,7 +114,7 @@ export class EditController {
     const v = validateVcSettings(candidate, this.limits);
     reasons.push(...v.reasons);
     const changed = draftDisplay !== originalDisplay;
-    return { valid: reasons.length === 0, reasons, derived: v.derived, changed };
+    return { valid: reasons.length === 0, reasons, derived: v.derived, changed, candidate };
   }
 
   /** Confirmar: transacción única; un valor inválido produce explicación, no aproximación silenciosa. */

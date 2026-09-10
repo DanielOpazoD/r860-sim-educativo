@@ -1062,6 +1062,28 @@
         "tests/unit/leccion.test.ts (LEC-01, LEC-02)",
         "tests/e2e/interaction.spec.ts (LEC · la lección responde)"
       ]
+    },
+    {
+      "id": "E-084",
+      "claim": "CPAP/PS en la ficha técnica y el curso de modos: presión de soporte sobre nivel PEEP 0 a 60 cmH2O (1); trigger espiratorio 5 a 80 % del flujo pico (5 %); tiempo de rampa 0 a 500 ms activo en PS «sólo para respiración soportada con presión»; frecuencia Off, 1 a 60 /min para CPAP/PS, y «cuando la frecuencia mínima es programada, el ventilador suministrará una presión controlada si la frecuencia del paciente es menor a la programada»; alarma de apnea 5 a 60 s; la tabla del curso lista como seguridad Pmax, Minimum Rate, Backup Pinsp y Backup Tinsp, y el paciente «determina su frecuencia, tiempo inspiratorio y el volumen corriente».",
+      "status": "D",
+      "source": "R03; R23",
+      "locator": "R03 p.2 «Presión Soporte sobre nivel PEEP», «Trigger Espiratorio», «Tiempo de Rampa en PS», «Frecuencia … para CPAP/PS»; p.3 «Alarma de apnea: 5 a 60 seg»; R23 tabla «Modo · Parámetros · Sincronización · Seguridad» y sección «Presión Positiva continua en la Vía Aérea/Presión Soporte»",
+      "implemented": "src/domain/types.ts (VcSettings: psupport, expTriggerPct, minRate, backupPinsp, backupTinspS, apneaTimeS); src/profiles/r860-es-photo-reference/settings.ts (reglas y rangos); src/engine/controller.ts (fase inspSupport, plazoDeRespaldo)",
+      "tests": [
+        "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)"
+      ]
+    },
+    {
+      "id": "E-085",
+      "claim": "Lo que la fuente no fija y el simulador decide para CPAP/PS: el ciclado compara el flujo instantáneo con el pico registrado después de la rampa y termina la inspiración al alcanzar el porcentaje (resuelto al final del paso de 4 ms); una inspiración soportada dura como máximo 3 s (SUPPORT_TI_MAX_S) si el flujo no cae al umbral; la apnea se cuenta desde el inicio de la última respiración de cualquier tipo (o del comienzo de la ventilación) y sólo se evalúa en CPAP/PS; al declararla el ventilador entrega respiraciones de respaldo por presión (Pinsp y Tinsp de respaldo) a 12/min (APNEA_BACKUP_RATE_PER_MIN) hasta que el paciente vuelve a disparar, momento en que la alarma se resuelve; la frecuencia mínima entrega una respiración por presión cuando pasan 60/FRmín s sin ninguna respiración; al pasar de A/C a CPAP/PS no se entrega la obligatoria que el temporizador tenía en cola; al iniciar ventilación en CPAP/PS se espera al paciente. Las asistidas de A/C no son espontáneas; FR y VM espontáneos se cuentan sobre la misma ventana que FR y VMesp.",
+      "status": "P (U-52)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (inspSupport, SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN, onPlazoDeRespaldo, esperarDisparo); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
+      "tests": [
+        "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)"
+      ]
     }
   ]
 }

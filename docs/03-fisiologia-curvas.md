@@ -1,6 +1,6 @@
 # Fisiología de las curvas: qué debe verse y por qué
 
-Documento de referencia para clínicos e ingenieros que usan o auditan el simulador. Explica qué forma deben tener las curvas de presión, flujo y volumen en A/C VC y A/C PC según la mecánica que el motor implementa, y enlaza cada afirmación con la prueba automática que la comprueba. Es física de un modelo, no de un paciente: el simulador no contiene datos de pacientes reales.
+Documento de referencia para clínicos e ingenieros que usan o auditan el simulador. Explica qué forma deben tener las curvas de presión, flujo y volumen en A/C VC, A/C PC y CPAP/PS según la mecánica que el motor implementa, y enlaza cada afirmación con la prueba automática que la comprueba. Es física de un modelo, no de un paciente: el simulador no contiene datos de pacientes reales.
 
 Convención de marcas (la misma de `02-diferencias-frente-al-dossier.md`): **D** documentado por una fuente (manual, ficha o bibliografía citada), **O** observado en las fotografías P1/P3, **P** plausible o supuesto por diseño del simulador, **U** desconocido.
 
@@ -8,11 +8,11 @@ Unidades en todo el documento: presión en cmH₂O, volumen en L (la interfaz mu
 
 ## 1. Ecuación de movimiento y modelo
 
-El motor (`src/engine/patient.ts`) parte del modelo lineal de un compartimento, que sigue siendo el comportamiento por omisión. Sobre él se añaden, sólo si el paciente los declara, la relajación viscoelástica, la curva sigmoidea, la resistencia de Rohrer, la limitación al flujo, el calibre dependiente del volumen y una segunda unidad alveolar en paralelo (§7):
+El motor (`src/engine/patient.ts`) parte del modelo lineal de un compartimento, que sigue siendo el comportamiento por omisión. Sobre él se añaden, sólo si el paciente los declara, la relajación viscoelástica, la curva sigmoidea, la resistencia de Rohrer, la limitación al flujo, el calibre dependiente del volumen y una segunda unidad alveolar en paralelo (§8):
 
     Pva + Pmus = P0 + V/C + R(Q)·Q        Q = dV/dt        R(Q) = R1 + R2·|Q|
 
-- **Pva** es la presión de vía aérea que impone o mide el ventilador; **Pmus** el esfuerzo muscular (positivo cuando favorece la entrada de gas); **P0** la presión de relajación (0 en todos los escenarios); **V** el volumen absoluto sobre el volumen de relajación (no se reinicia al cambiar PEEP ni al empezar una maniobra); **C** la distensibilidad del sistema respiratorio; **R1** la resistencia lineal, distinta en inspiración (`rInsp`) y espiración (`rExp`) según el signo del flujo; **R2** un término cuadrático opcional (0 en todos los escenarios, ver §7).
+- **Pva** es la presión de vía aérea que impone o mide el ventilador; **Pmus** el esfuerzo muscular (positivo cuando favorece la entrada de gas); **P0** la presión de relajación (0 en todos los escenarios); **V** el volumen absoluto sobre el volumen de relajación (no se reinicia al cambiar PEEP ni al empezar una maniobra); **C** la distensibilidad del sistema respiratorio; **R1** la resistencia lineal, distinta en inspiración (`rInsp`) y espiración (`rExp`) según el signo del flujo; **R2** un término cuadrático opcional (0 en todos los escenarios, ver §8).
 - La forma bibliográfica equivalente es Pvent + Pmus = E·V + R·Q con E = 1/C (D: Mireles-Cabodevila y Chatburn 2025; Chatburn 2026).
 - Dos formas de operar el mismo modelo: **fuente de flujo** (el ventilador impone Q y la presión resulta: `pawForFlow`) y **fuente de presión** (el ventilador impone Pva y el flujo resulta: `flowForPaw`, integrado con RK2/Heun y sub-pasos de 0,2·τ). VC usa la primera durante la inspiración; PC, la espiración y las fases limitadas por presión usan la segunda.
 
@@ -108,7 +108,41 @@ Consecuencias didácticas:
 
 **Regla de oro, opuesta en cada modo** (D: Mireles-Cabodevila y Chatburn 2025): en VC el volumen es la consigna y la presión revela la mecánica; en PC la presión es la consigna y el volumen (y el flujo) revelan la mecánica. Un cambio de R o C que en VC aparece en Ppico/Pplat, en PC aparece en VTe.
 
-## 4. Auto-PEEP y atrapamiento aéreo
+## 4. CPAP/PS: fuente de presión ciclada por el flujo del paciente
+
+En CPAP/PS no hay frecuencia ni tiempo inspiratorio programados: el paciente dispara cada respiración (disparo por flujo o por presión, como en A/C) y el controlador (`inspSupport`) impone Pva objetivo = PEEP + PS con la misma rampa lineal de PC (D ficha 2014: «Presión Soporte sobre nivel PEEP 0 a 60 cm H2O», «Tiempo de Rampa en PS … sólo para respiración soportada»). La diferencia está en el final: la inspiración termina cuando el flujo inspiratorio cae al porcentaje programado de su pico (D ficha 2014: «Trigger Espiratorio: 5 a 80 % de flujo pico»), o, si no llega, a los 3 s (P, U-52). Sin esfuerzo no hay respiración: la frecuencia mínima entrega una respiración por presión (Pinsp y Tinsp de respaldo) cuando pasan 60/FRmín s sin ninguna, y el tiempo de apnea (D 5–60 s) dispara la alarma y un respaldo a 12/min (P) hasta que el paciente vuelve a disparar. E-084 (D) y E-085 (P).
+
+### 4.1 Forma esperada (paciente activo, Pmus de medio seno)
+
+    Q(t) = (PS + Pmus(t) − Pel(t))/R        cicla cuando Q ≤ ETS · Qpico        VT no es una consigna: sale de PS, Pmus, R y C
+
+| Curva | Inspiración | Espiración |
+| --- | --- | --- |
+| **Pva** | Sube en rampa a PEEP + PS y se mantiene plana; **Ppico = PEEP + PS con independencia de R, C y del esfuerzo** (la fuente de presión lo absorbe) | PEEP |
+| **Flujo** | Pico temprano (PS + Pmus)/R y decaimiento; la inspiración se corta **antes de que el flujo llegue a cero**, exactamente al porcentaje de ciclaje | Exponencial negativa |
+| **Volumen** | Crece mientras dura el soporte; cada respiración puede diferir de la anterior porque Pmus cambia | Hacia el equilibrio |
+
+Cifras del banco PHY-03 (`tests/unit/soporte.test.ts`): PS 10 sobre PEEP 5, R 10, C 0,05, Pmus 8 cmH₂O en medio seno de 0,8 s a 15/min, rampa 100 ms, ciclaje 25 %:
+
+- Ppico = **15 cmH₂O** en todas las respiraciones; flujo pico ≈ **73 L/min**; Ti ≈ **0,64 s**; VTe ≈ **570 mL**. Con ciclaje al 50 %: Ti ≈ 0,54 s y VTe ≈ 527 mL; al 10 %: Ti ≈ 0,70 s y VTe ≈ 582 mL.
+- PS 15: VTe ≈ 748 mL; PS 5: ≈ 393 mL; Pmus 4 en vez de 8: ≈ 461 mL. El volumen es la suma de lo que ponen el ventilador y el paciente: **en soporte, VT no mide la mecánica, mide la mecánica más el esfuerzo**.
+- R 25 (τ = 1,25 s): flujo pico ≈ 35 L/min, Ti ≈ 0,74 s, VTe ≈ 321 mL: el flujo tarda más en caer al 25 % de un pico más bajo, así que la inspiración se alarga mientras el volumen baja. Es el **ciclado tardío** del paciente obstructivo (D: Mireles-Cabodevila y Chatburn 2025 sobre asincronía de ciclado; Messina y Olarewaju 2023): el remedio en el simulador es subir el porcentaje de ciclaje.
+
+### 4.2 Efecto de cada parámetro en CPAP/PS
+
+| Cambio | Pva | Flujo | Volumen | Por qué |
+| --- | --- | --- | --- | --- |
+| ↑ PS | ↑ Ppico en ΔPS | ↑ pico (PS + Pmus)/R | ↑ VT | Más gradiente para el mismo esfuerzo |
+| ↑ ciclaje (% del pico) | Meseta más corta | Se corta más arriba | ↓ VT | Termina antes de que entre el volumen lento |
+| ↓ ciclaje | Meseta más larga | Llega más cerca de cero | ↑ VT leve; riesgo de Ti > Ti neural | El tope de 3 s corta lo que el flujo no cierra |
+| ↑ Rinsp | **Sin cambio de Ppico** | ↓ pico; decae más lento | ↓ VT y ↑ Ti | τ más larga: el 25 % del pico llega más tarde |
+| ↓ C | **Sin cambio de Ppico** | Mismo pico; decae más rápido | ↓ VT y ↓ Ti | τ más corta |
+| ↑ Pmus | Sin cambio de Ppico | ↑ pico y ↑ flujo durante el esfuerzo | ↑ VT | El paciente pone parte del gradiente |
+| Sin esfuerzo | Respiraciones de respaldo a PEEP + Pinsp de respaldo (forma de PC) | Decaimiento de PC | C·ΔP·(1 − e^(−Tinsp/τ)) | Frecuencia mínima o apnea (alarma alta) |
+
+**Regla de oro:** en A/C VC el volumen es la consigna; en A/C PC lo es la presión y el volumen revela la mecánica; en CPAP/PS la presión es la consigna, **el paciente decide cuándo y cuánto**, y el volumen revela la mecánica *y* el esfuerzo. FR espont y VMesp espont cuentan sólo estas respiraciones: las asistidas de A/C, aunque las dispare el paciente, las cicla el ventilador.
+
+## 5. Auto-PEEP y atrapamiento aéreo
 
 La espiración es pasiva y se resuelve como fuente de presión a PEEP: el volumen decae hacia el equilibrio con τ_exp = Rexp·C. La válvula espiratoria mantiene la PEEP mientras el paciente no demande más que el **flujo de base** programado (D ficha 2014: 2–10 L/min en pasos de 0,5; ajuste `biasFlow`, 2 L/min por omisión, P); si un esfuerzo pide más, el circuito pasa a fuente de flujo al tope y la **Pva cae por debajo de PEEP** (la deflexión que se observa antes de un disparo, o en un esfuerzo ineficaz). El disparo puede ser **por flujo** (el paciente desvía al menos el umbral del flujo de base, por eso el umbral no puede superar el flujo de base) o **por presión** (D ficha 2014: −10 a −0,25 cmH₂O bajo PEEP). Con asistencia apagada, el flujo de base limita lo que el paciente puede inhalar durante la espiración. Si se activa la **resistencia de la rama espiratoria** (0–6 cmH₂O·s/L, E-041), la Pva en la pieza en Y queda por encima de PEEP mientras sale gas, Pva = PEEP + R_rama·|Q|, y el flujo espiratorio pico se reduce a (Pplat − PEEP)/(Rexp + R_rama). Si el siguiente ciclo llega antes de 3–4 τ_exp, queda volumen sin espirar y su presión elástica se suma a la PEEP externa: PEEPtot = PEEPe + PEEPi, con PEEPi = V_atrapado/C. En el motor la auto-PEEP **emerge** del vaciamiento incompleto; no es un parámetro ajustable (P, escenario SC-03).
 
@@ -127,16 +161,16 @@ Cómo verlo:
 
 Remedios en el simulador: alargar Tesp (↓ FR, I:E más bajo, ↓ pausa), reducir VT o, si el escenario lo permite, bajar Rexp. Alargar Tesp a ≥ 3 s en SC-03 reduce PEEPi por debajo de 0,3 cmH₂O.
 
-## 5. Bucles
+## 6. Bucles
 
 | Bucle | Forma esperada en VC (flujo constante) | Forma esperada en PC | Señales de alarma |
 | --- | --- | --- | --- |
 | **P-V** (presión en x, volumen en y) | Asa en sentido antihorario; rama inspiratoria inclinada con un desplazamiento inicial hacia la derecha igual a R·Q; el área entre ramas crece con R y con Q; la pendiente entre inicio y fin de inspiración es la distensibilidad dinámica | Rama inspiratoria que se hace casi vertical al final (presión constante mientras entra volumen) | «Pico» o **beak** en el extremo superior: la presión sigue subiendo con poco volumen adicional (sobredistensión; el modelo lineal sólo lo reproduce si se baja C a mitad de escenario, no por sí mismo); inicio de la asa desplazado en volumen: atrapamiento |
 | **F-V** (volumen en x, flujo en y) | Rama inspiratoria plana (flujo constante); rama espiratoria con pico inmediato y caída exponencial hasta el origen | Rama inspiratoria con pico inicial y decaimiento; espiratoria igual que en VC | Rama espiratoria que no llega a cero: auto-PEEP; caída espiratoria cóncava y lenta: ↑ Rexp |
 
-Descripción D (Mellema 2013): en PC la porción final de la rama inspiratoria del P-V aparece casi vertical; el beak refleja aumentos de presión con incremento mínimo de volumen. Con compliance constante el modelo **no** genera beak espontáneo; con la sigmoide de Venegas activada (E-048) sí (§7); lo que el alumno verá es una asa lineal que rota cuando C cambia.
+Descripción D (Mellema 2013): en PC la porción final de la rama inspiratoria del P-V aparece casi vertical; el beak refleja aumentos de presión con incremento mínimo de volumen. Con compliance constante el modelo **no** genera beak espontáneo; con la sigmoide de Venegas activada (E-048) sí (§8); lo que el alumno verá es una asa lineal que rota cuando C cambia.
 
-## 6. Verificación en el simulador
+## 7. Verificación en el simulador
 
 Cada afirmación anterior está anclada en una prueba automática (`npm test`). Se citan las expectativas numéricas tal como están escritas en el código; tolerancias del dossier §26: presión ±0,5 cmH₂O, volumen ±1 %.
 
@@ -161,6 +195,14 @@ Cada afirmación anterior está anclada en una prueba automática (`npm test`). 
 | Cambiar PEEP en PC conserva V y desplaza la base | PHY-02 | PEEP 5 → 10: V continuo; PEEPe 10; Ppico 20; VT ≈ 0,4323 L (±0,005) |
 | El esfuerzo aumenta flujo y VT sin cambiar Ppico | PHY-02 | Pmus 5 cmH₂O a 15/min: Ppico igual; VT mayor |
 | Validación PC y transacción VC → PC | PHY-02 | PEEP + Pinsp ≥ Pmáx rechazado; rampa > Tinsp rechazado; el modo cambia en la siguiente respiración; Ppico 17 con Pinsp 12 |
+| CPAP/PS: espontáneas a PEEP + PS cicladas por flujo | PHY-03a (`tests/unit/soporte.test.ts`) | PS 10, PEEP 5, Pmus 8 a 15/min: todas `spontaneous` con causa `flow`; Ppico 15 (±0,5); la última muestra inspiratoria está entre el 22 y el 26 % del flujo pico; FR = FR espont ≈ 15; VMesp espont = VMesp; VTesp espont válido |
+| El porcentaje de ciclaje gobierna el Ti; R alta lo alarga (ciclado tardío) | PHY-03a | Ti(50 %) < Ti(25 %) − 0,05 s; Ti(R 25) > Ti(R 10) + 0,1 s |
+| Tope de tiempo del soporte | PHY-03a | τ 2 s y ciclaje 5 %: respiraciones con causa `tiMax` y Ti = 3,00 s |
+| Apnea: alarma alta y respaldo por presión a 12/min | PHY-03b | Sin esfuerzo: ninguna respiración antes de 20 s; alarma `apnea` activa entre 20,0 y 20,1 s, banda roja; primera `backup` con Ppico 17 (PEEP 5 + 12) y Tinsp 1,00 s; la siguiente 5 s después |
+| El disparo del paciente termina la apnea y el respaldo | PHY-03b | Tras dos de respaldo, al activar el esfuerzo aparece una `spontaneous`, la alarma se resuelve y no vuelve a haber respaldo |
+| Frecuencia mínima entre espontáneas | PHY-03b | Paciente a 6/min y FRmín 10: hay `spontaneous` y `mandatory`, ninguna `backup` ni apnea; FR espont ≈ 6 y FR > FR espont + 3; Ppico 17 en las obligatorias y 15 en las espontáneas |
+| Validación CPAP/PS y transacción A/C → CPAP/PS | PHY-03c | PEEP + PS ≥ Pmáx y PEEP + Pinsp de respaldo ≥ Pmáx rechazados; FRmín 60 con Tinsp 1 s rechazado; ciclaje 27 % rechazado y 30 % aceptado; tras cambiar de modo con paciente activo, todas las nuevas son `spontaneous` (sin obligatoria colada) |
+| Sesiones anteriores sin los ajustes de CPAP/PS | PHY-03c | Importación aceptada con aviso «completados con el valor por omisión» |
 | Cambiar PEEP en VC no suma PEEP dos veces | PHY-06 (`tests/unit/physics.test.ts`) | PEEP 5 → 10: PEEPe 10; Pplat 20 (< 21; 25 delataría el error); Cstat 50 |
 | La auto-PEEP emerge del vaciamiento | PHY-07 | Rexp 30, Tesp corto: PEEPtot > 5,5 y PEEPi > 0,5; tras alargar Tesp PEEPi menor y < 0,3 |
 | R sube Ppico y no Pplat; C sube ambos | PHY-08 | Rinsp 10 → 20: Ppico +5, Pplat igual; C 0,05 → 0,025: Ppico +10 y Pplat +10 |
@@ -172,7 +214,7 @@ Escenarios que ejercitan cada fenómeno en la interfaz (`src/scenarios/index.ts`
 
 Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resultados.md`.
 
-## 7. Límites explícitos del modelo
+## 8. Límites explícitos del modelo
 
 | Simplificación | Consecuencia observable | Marca |
 | --- | --- | --- |
@@ -194,6 +236,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Canal de volumen con dispersión de lectura (±2,5 % por ciclo) separado del volumen verdadero | VTesp y VMesp mostrados cambian entre ciclos aunque el modelo entregue exactamente el VT programado; las referencias analíticas del banco se leen del volumen verdadero, con el ruido apagado | D envolvente ±10 % (ficha 2014); P dispersión típica (E-042, U-36) |
 | Sigmoide unívoca: sin histéresis ni reclutamiento | La curva de inflación y la de deflación son la misma, así que **la PEEP decremental no se puede enseñar**: una escalera 5→24→5 cmH₂O devuelve Cstat idénticos bit a bit en los dos sentidos (39,1 · 59,6 · 76,7 · 65,0 mL/cmH₂O). En un pulmón real la rama de deflación va por encima y ahí está el fundamento de la maniobra | P (limitación conocida; U-47) |
 | Esfuerzo sólo inspiratorio: Pmus ≥ 0 siempre | No hay espiración activa, ni frenado espiratorio, ni meseta contaminada por contracción espiratoria, ni disparo reverso. El paciente que «pelea» contra el ventilador exhalando no existe en este modelo | P (U-48) |
+| Ciclado del soporte resuelto al final del paso de 4 ms; Ti máximo 3 s; respaldo por apnea a 12/min hasta el primer disparo del paciente | El flujo de ciclado queda hasta un paso por debajo del porcentaje exacto (≈ 0,4 % del pico con τ 0,5 s); un equipo real fija su propio tope de tiempo y su propia salida del respaldo, no publicados | P (E-085, U-52) |
 | Disparo instantáneo, sin dinámica de válvula | Del inicio del esfuerzo al disparo pasan 20 ms con 0,026 cmH₂O de caída de Pva; en un equipo real son 60–150 ms y 1–3 cmH₂O. El **trabajo de disparo** no se puede medir ni enseñar aquí | P (E-039, U-43) |
 | La Pva no ve el esfuerzo durante la espiración salvo con resistencia de rama | Con `rExpValve = 0` la presión espiratoria es exactamente la PEEP aunque Pmus llegue a 8 cmH₂O: el esfuerzo ineficaz se ve en la curva de **flujo** (muesca de −14,8 a −3,4 L/min) y no en la de presión. Con `rExpValve = 4` la excursión es de 1,14 cmH₂O — **ningún escenario de los que se entregan la activa**, así que en la práctica el alumno nunca ve esa muesca en la presión | P (E-041, U-42) |
 | Con dos unidades, lo que el equipo mide no es lo que el pulmón tiene | Es una propiedad del sistema real, no un defecto del modelo, y por eso importa enseñarla: en SC-17 una oclusión de 2 s da Cstat 45,6 frente a 60 verdadera (−24 %) y una resistencia aparente (Ppico−Pplat)/Q de 9,66 frente a 4,88 del paralelo (+98 %); a 15 s la resistencia aparente llega a 14,61. **La fórmula que enseña SC-01 no vale en SC-17**, y hoy la aplicación no lo advierte | D el fenómeno; U la advertencia al alumno (U-49) |

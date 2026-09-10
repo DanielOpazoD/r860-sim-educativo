@@ -124,6 +124,13 @@ export function importSession(text: string): ImportResult {
       if (!init[k] || typeof init[k] !== 'object') errors.push(`init.${k} ausente`);
     if (init.settings && typeof init.settings === 'object') {
       const st = init.settings as SimulatorInit['settings'];
+      // Una sesión de un motor anterior no trae los ajustes que se añadieron después (CPAP/PS en 0.4.0). Como los
+      // modos que sí conocía no los usan, completar con el valor por omisión reproduce exactamente la misma física.
+      if (profile) {
+        const faltan = (Object.keys(profile.defaults.settings) as (keyof SimulatorInit['settings'])[]).filter((k) => !(k in st));
+        for (const k of faltan) (st as unknown as Record<string, unknown>)[k] = profile.defaults.settings[k];
+        if (faltan.length) warnings.push(`Ajustes ausentes completados con el valor por omisión del perfil: ${faltan.join(', ')}`);
+      }
       const ke = validateSettingsKeys(st as unknown as Record<string, unknown>, profile?.rules ?? {});
       if (ke.length) errors.push(...ke.map((r) => `init.settings: ${r}`));
       else if (profile) {

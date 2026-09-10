@@ -144,6 +144,12 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
     pressureTrigger: -2,
     pinsp: 10,
     riseMs: 100,
+    psupport: 10,
+    expTriggerPct: 0.25,
+    minRate: 'off',
+    backupPinsp: 10,
+    backupTinspS: 1,
+    apneaTimeS: 20,
   };
   const limits: AlarmLimits = {
     ppeakLow: f.limits.ppeakLow ?? 'off',

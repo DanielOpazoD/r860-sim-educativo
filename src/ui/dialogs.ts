@@ -3,6 +3,7 @@ import type { EngineFrame } from '../engine/simulator';
 import type { LessonTask, Scenario } from '../scenarios';
 import { esc, icon } from './dom';
 import { clock } from './format';
+import { modeLabel as etiquetaModo } from './labels';
 
 export const MENU_ENTRIES: [string, string, string, string][] = [
   ['modes', 'wave', 'Modo y ajustes', 'Volumen, límites de presión y sincronización'],
@@ -96,7 +97,7 @@ export function debriefHTML(d: DebriefInput): string {
     )}</div><div class="info-box"><b>${esc(d.scenario.question ?? '')}</b><p>${esc(d.scenario.answer ?? '')}</p></div><div class="notice-box">Este resumen registra acciones del simulador; no puntúa seguridad clínica ni acredita competencia.</div>`;
 }
 export function debriefText(d: DebriefInput, fr: EngineFrame): string {
-  return `R860 LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nTiempo simulado: ${clock(d.simS)}\nModo: ${fr.settings.mode === 'AC_PC' ? 'A/C PC' : 'A/C VC'}\nObjetivos de interfaz: ${d.done.size}/${d.tasks.length}\n\n${d.tasks.map((x) => `${d.done.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
+  return `R860 LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nTiempo simulado: ${clock(d.simS)}\nModo: ${etiquetaModo(fr.settings.mode)}\nObjetivos de interfaz: ${d.done.size}/${d.tasks.length}\n\n${d.tasks.map((x) => `${d.done.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
 }
 
 export const SOURCES: [string, string, string][] = [

@@ -147,11 +147,19 @@ export function eventSentence(e: SessionEvent): string {
     case 'breath': {
       if (p.plimitReached !== undefined) return `Plimit alcanzada a ${(p.plimitReached as number).toFixed(1)} cmH₂O`;
       if (p.trigger !== undefined) return `Disparo del paciente (${((p.trigger as number) * 60).toFixed(1)} L/min)`;
-      const type: Record<string, string> = { mandatory: 'obligatoria', assisted: 'asistida', manual: 'manual', spontaneous: 'espontánea' };
-      return `Respiración ${String(p.breathId).replace('b', '')} ${type[String(p.type)] ?? ''} · VTe ${Math.round((p.vte as number) * 1000)} mL · Ppico ${(p.ppeak as number).toFixed(0)}${p.cause === 'pmax' ? ' · terminada por Pmáx' : ''}`;
+      const type: Record<string, string> = {
+        mandatory: 'obligatoria',
+        assisted: 'asistida',
+        manual: 'manual',
+        spontaneous: 'espontánea',
+        backup: 'de respaldo',
+      };
+      return `Respiración ${String(p.breathId).replace('b', '')} ${type[String(p.type)] ?? ''} · VTe ${Math.round((p.vte as number) * 1000)} mL · Ppico ${(p.ppeak as number).toFixed(0)}${p.cause === 'pmax' ? ' · terminada por Pmáx' : p.cause === 'tiMax' ? ' · soporte cortado por Ti máximo' : ''}`;
     }
     case 'alarm':
       if (p.pmaxReached !== undefined) return `Alarma: Pmáx alcanzada (${(p.pmaxReached as number).toFixed(1)} cmH₂O)`;
+      if (p.apnea !== undefined) return `Alarma: apnea (sin respiración en ${String(p.apnea)} s) · respaldo por presión`;
+      if (p.apneaEnded !== undefined) return 'Apnea terminada: el paciente volvió a disparar';
       if (p.acknowledge) return `${who} reconoció las alarmas`;
       if (p.limits) return `${who} cambió límites de alarma`;
       return 'Alarma';

@@ -59,7 +59,9 @@ export function guardFiniteness(
  * - Ppico, PEEPe, Pmedia, VTesp, VTinsp, Fuga %: última respiración completa.
  * - FR y VMesp: ventana de las últimas 8 respiraciones (Σ VTesp / Σ periodo × 60); no VT programado × FR programada.
  * - Pplat de ciclo: sólo con pausa válida; null con motivo.
- * - Espontáneas: no existen en A/C VC; FR espont y VMesp espont son 0 (conteo real), VTesp espont es null.
+ * - Espontáneas: las respiraciones de soporte de CPAP/PS. FR espont y VMesp espont se cuentan sobre la MISMA ventana que
+ *   FR y VMesp (0 cuando no hay ninguna: conteo real, no dato ausente); VTesp espont es el de la última espontánea.
+ *   Las asistidas de A/C no cuentan como espontáneas: el ciclo lo gobierna el ventilador aunque lo dispare el paciente.
  */
 export class MetricEngine {
   private records: BreathRecord[] = [];
@@ -191,27 +193,37 @@ export class MetricEngine {
       });
     }
     const spont = win.filter((r) => r.type === 'spontaneous');
-    out.rrSpont = sample('rrSpont', spont.length === 0 ? 0 : null, 'perMin', {
-      simTimeMs: t,
-      breathId: bid,
-      quality: last ? 'valid' : 'inProgress',
-      reason: last ? null : 'sinRespiracionCompleta',
-      windowMs: null,
-    });
-    out.mveSpont = sample('mveSpont', spont.length === 0 ? 0 : null, 'L/min', {
-      simTimeMs: t,
-      breathId: bid,
-      quality: last ? 'valid' : 'inProgress',
-      reason: last ? null : 'sinRespiracionCompleta',
-      windowMs: null,
-    });
-    out.vteSpont = sample('vteSpont', null, 'L', {
-      simTimeMs: t,
-      breathId: null,
-      quality: 'unavailable',
-      reason: 'sinRespiracionesEspontaneas',
-      windowMs: null,
-    });
+    const ventana = win.length >= 2 && sumPeriodMs > 0;
+    // Sin ventana todavía: «0» es un conteo real cuando no hay ninguna espontánea; con alguna, aún no se puede tasar.
+    const meta = ventana
+      ? { quality: (stale ? 'stale' : 'valid') as Quality, reason: stale ? 'sinRespiracionReciente' : null, windowMs: sumPeriodMs }
+      : spont.length === 0
+        ? { quality: (last ? 'valid' : 'inProgress') as Quality, reason: last ? null : 'sinRespiracionCompleta', windowMs: null }
+        : { quality: 'inProgress' as Quality, reason: 'ventanaInsuficiente', windowMs: null };
+    const rrSpont = ventana ? (spont.length * S_PER_MIN * MS_PER_S) / sumPeriodMs : spont.length === 0 ? 0 : null;
+    const mveSpont = ventana
+      ? (spont.reduce((a, r) => a + (r.vtExpMeasured ?? r.vtExp), 0) * S_PER_MIN * MS_PER_S) / sumPeriodMs
+      : spont.length === 0
+        ? 0
+        : null;
+    out.rrSpont = sample('rrSpont', rrSpont, 'perMin', { simTimeMs: t, breathId: bid, ...meta });
+    out.mveSpont = sample('mveSpont', mveSpont, 'L/min', { simTimeMs: t, breathId: bid, ...meta });
+    const ultimaEspont = spont.at(-1) ?? null;
+    out.vteSpont = ultimaEspont
+      ? sample('vteSpont', ultimaEspont.vtExpMeasured ?? ultimaEspont.vtExp, 'L', {
+          simTimeMs: t,
+          breathId: ultimaEspont.breathId,
+          quality: stale ? 'stale' : 'valid',
+          reason: stale ? 'sinRespiracionReciente' : null,
+          windowMs: ultimaEspont.endSimTimeMs - ultimaEspont.startSimTimeMs,
+        })
+      : sample('vteSpont', null, 'L', {
+          simTimeMs: t,
+          breathId: null,
+          quality: 'unavailable',
+          reason: 'sinRespiracionesEspontaneas',
+          windowMs: null,
+        });
     const fio2Ok = ctx.fio2Measured !== null && Number.isFinite(ctx.fio2Measured);
     out.fio2 = sample('fio2', fio2Ok ? ctx.fio2Measured : null, 'fraction', {
       simTimeMs: t,

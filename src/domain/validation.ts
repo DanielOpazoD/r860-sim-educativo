@@ -123,7 +123,7 @@ export interface ValidationResult {
   derived: DerivedTiming;
 }
 
-export const VENT_MODES = ['AC_VC', 'AC_PC'] as const;
+export const VENT_MODES = ['AC_VC', 'AC_PC', 'CPAP_PS'] as const;
 
 /** Claves desconocidas o modo no admitido en un cambio de ajustes (la rejilla y los rangos se validan aparte). */
 export function validateSettingsKeys(changes: Record<string, unknown>, rules: Record<string, SettingRule>): string[] {
@@ -311,13 +311,31 @@ export function validateVcSettings(s: VcSettings, limits: CrossLimits): Validati
   const reasons: string[] = [];
   const warnings: string[] = [];
   const d = deriveVcTiming(s);
+  const peep = s.peep === 'off' ? 0 : s.peep;
+  if (s.mode === 'CPAP_PS') {
+    // Sin frecuencia programada no hay Ti ni Te que validar: el paciente los decide. Se validan los techos de presión y el respaldo.
+    if (peep + s.psupport >= s.pmax) reasons.push(`PEEP + PS (${peep + s.psupport}) debe quedar por debajo de Pmáx (${s.pmax}).`);
+    if (peep + s.backupPinsp >= s.pmax)
+      reasons.push(`PEEP + Pinsp de respaldo (${peep + s.backupPinsp}) debe quedar por debajo de Pmáx (${s.pmax}).`);
+    if (s.riseMs / 1000 > s.backupTinspS)
+      reasons.push(`La rampa (${s.riseMs} ms) no puede superar el Tinsp de respaldo (${s.backupTinspS.toFixed(2)} s).`);
+    if (s.minRate !== 'off' && 60 / s.minRate < s.backupTinspS + limits.tExpMinS)
+      reasons.push(
+        `Con frecuencia mínima ${s.minRate}/min el ciclo (${(60 / s.minRate).toFixed(2)} s) no deja ${limits.tExpMinS} s de espiración tras el Tinsp de respaldo (${s.backupTinspS.toFixed(2)} s).`,
+      );
+    if (s.pmax <= peep) reasons.push(`Pmáx (${s.pmax}) debe ser mayor que PEEP (${peep}).`);
+    if (!s.triggerByPressure && s.flowTrigger > s.biasFlow + EPS)
+      reasons.push(
+        `El disparo por flujo (${lpsToLpm(s.flowTrigger).toFixed(1)} L/min) no puede superar el flujo de base (${lpsToLpm(s.biasFlow).toFixed(1)} L/min).`,
+      );
+    return { ok: reasons.length === 0, reasons, warnings, derived: d };
+  }
   if (d.tInspS < limits.tInspMinS - EPS || d.tInspS > limits.tInspMaxS + EPS) {
     reasons.push(`El tiempo inspiratorio resultante (${d.tInspS.toFixed(2)} s) queda fuera de ${limits.tInspMinS}–${limits.tInspMaxS} s.`);
   }
   if (d.tExpS < limits.tExpMinS - EPS || d.tExpS > limits.tExpMaxS + EPS) {
     reasons.push(`El tiempo espiratorio resultante (${d.tExpS.toFixed(2)} s) queda fuera de ${limits.tExpMinS}–${limits.tExpMaxS} s.`);
   }
-  const peep = s.peep === 'off' ? 0 : s.peep;
   if (s.mode === 'AC_VC') {
     const qLpm = lpsToLpm(d.qTargetLps);
     if (!Number.isFinite(qLpm) || qLpm > limits.flowMaxLpm + EPS) {

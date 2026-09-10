@@ -9,15 +9,15 @@ import { btn, esc, put } from './dom';
 import { ieText, unitText } from './format';
 import { infoButton, infoPanel } from './helpPanels';
 import { joinSentences } from './humanize';
-import { HELP_KEY, QUICK_LABEL } from './labels';
+import { HELP_KEY, QUICK_LABEL, textoRespaldo } from './labels';
 
 /** Modos ofrecidos y motivo de los no disponibles. Sólo se habilitan los declarados por el perfil. */
 const MODE_OPTIONS: [VentMode, string][] = [
   ['AC_VC', 'A/C VC'],
   ['AC_PC', 'A/C PC'],
+  ['CPAP_PS', 'CPAP/PS'],
 ];
 const OTHER_MODES: [string, string][] = [
-  ['CPAP/PS', 'Próximamente: requiere validar esfuerzo, disparo, ciclaje y respaldo'],
   ['A/C PRVC', 'No disponible: el algoritmo adaptativo del fabricante no está publicado'],
   ['SIMV VC / PC', 'Próximamente'],
   ['BiLevel / APRV / NIV', 'No disponible en este simulador'],
@@ -55,15 +55,24 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
   }
   function modeFields(): string {
     const s = modeDraft as VcSettings;
-    const pc = s.mode === 'AC_PC';
-    const main: SettingsKey[] = pc
-      ? ['fio2', 'peep', 'pinsp', 'rr', 'ie', 'riseMs', 'pmax']
-      : ['fio2', 'peep', 'vt', 'rr', 'ie', 'pausePct', 'pmax'];
-    const title = pc ? 'Asistido / controlado por presión' : 'Asistido / controlado por volumen';
-    const desc = pc
-      ? 'Presión objetivo = PEEP + Pinsp durante el tiempo inspiratorio, con rampa. El flujo empieza alto y decae; el volumen depende de la compliance, la resistencia, el tiempo y el esfuerzo.'
-      : 'Flujo constante calculado de VT, Tinsp y pausa. Pmáx es el techo de presión: alcanzarlo termina la inspiración.';
-    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${fieldHTML('assistControl', s)}${pc ? '' : `<div class="settings-subtitle">Avanzado</div>${fieldHTML('plimit', s)}`}${fieldHTML('flowTrigger', s)}${fieldHTML('biasFlow', s)}${fieldHTML('triggerByPressure', s)}${fieldHTML('pressureTrigger', s)}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
+    const pc = s.mode === 'AC_PC',
+      ps = s.mode === 'CPAP_PS';
+    const main: SettingsKey[] = ps
+      ? ['fio2', 'peep', 'psupport', 'riseMs', 'expTriggerPct', 'pmax']
+      : pc
+        ? ['fio2', 'peep', 'pinsp', 'rr', 'ie', 'riseMs', 'pmax']
+        : ['fio2', 'peep', 'vt', 'rr', 'ie', 'pausePct', 'pmax'];
+    const title = ps ? 'Presión de soporte sobre CPAP' : pc ? 'Asistido / controlado por presión' : 'Asistido / controlado por volumen';
+    const desc = ps
+      ? 'El paciente dispara cada respiración y decide su frecuencia; el ventilador sube a PEEP + PS con rampa y cicla cuando el flujo cae al porcentaje programado de su pico. Sin esfuerzo no hay respiración: la frecuencia mínima y el tiempo de apnea son el respaldo.'
+      : pc
+        ? 'Presión objetivo = PEEP + Pinsp durante el tiempo inspiratorio, con rampa. El flujo empieza alto y decae; el volumen depende de la compliance, la resistencia, el tiempo y el esfuerzo.'
+        : 'Flujo constante calculado de VT, Tinsp y pausa. Pmáx es el techo de presión: alcanzarlo termina la inspiración.';
+    const sync = `${ps ? '' : fieldHTML('assistControl', s)}${pc || ps ? '' : `<div class="settings-subtitle">Avanzado</div>${fieldHTML('plimit', s)}`}${fieldHTML('flowTrigger', s)}${fieldHTML('biasFlow', s)}${fieldHTML('triggerByPressure', s)}${fieldHTML('pressureTrigger', s)}`;
+    const respaldo = ps
+      ? `<div class="settings-subtitle">Respaldo</div>${fieldHTML('minRate', s)}${fieldHTML('backupPinsp', s)}${fieldHTML('backupTinspS', s)}${fieldHTML('apneaTimeS', s)}`
+      : '';
+    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${sync}${respaldo}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
   }
   function openModes(): void {
     if (!ctx.frame) return;
@@ -100,7 +109,9 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const t = deriveVcTiming(s);
     put(
       '#mode-timing',
-      `Ti ${f(t.tInspS, 2)} s · Te ${f(t.tExpS, 2)} s · ciclo ${f(t.tCycleS, 2)} s · flujo ${f(t.qTargetLps * 60, 1)} L/min`,
+      s.mode === 'CPAP_PS'
+        ? textoRespaldo(s)
+        : `Ti ${f(t.tInspS, 2)} s · Te ${f(t.tExpS, 2)} s · ciclo ${f(t.tCycleS, 2)} s · flujo ${f(t.qTargetLps * 60, 1)} L/min`,
     );
     put('#mode-error', joinSentences(errors));
     put('#mode-warning', joinSentences(warnings));
