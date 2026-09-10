@@ -989,6 +989,29 @@
       "tests": [
         "tests/unit/review7.test.ts (R7-03)"
       ]
+    },
+    {
+      "id": "E-078",
+      "claim": "La oclusión inspiratoria publica dos números, no uno: la distensibilidad estática y la RESISTENCIA INSPIRATORIA, R = (Ppico − Pplat) / flujo al ocluir. Sólo se publica si la inspiración fue una rampa a flujo constante sin recorte de Plimit y sin esfuerzo; en presión control el flujo decae y no hay un caudal único que dividir, y se dice en vez de dar un número.",
+      "status": "D-secundario (medida de cabecera clásica; el valor lo produce el modelo)",
+      "source": "—",
+      "locator": "Tobin, Principles and Practice of Mechanical Ventilation — resistencia por oclusión al final de la inspiración",
+      "implemented": "src/engine/controller.ts (pawAtFlowEnd, qAtFlowEnd); src/engine/procedures.ts (values.raw)",
+      "tests": [
+        "tests/unit/mecanica.test.ts (MEC-01, MEC-02)",
+        "tests/bench/bm.test.ts (BM-02)"
+      ]
+    },
+    {
+      "id": "E-079",
+      "claim": "La constante de tiempo espiratoria se mide sobre la propia rama espiratoria y sin ninguna maniobra: en un vaciamiento pasivo el flujo es proporcional al volumen que queda, de modo que la rama del bucle flujo-volumen es una recta de pendiente −1/tau. Se ajusta del 5 % al 95 % de lo espirado y se exige r2 ≥ 0,99; por debajo no se publica y se declara que el pulmón no se vacía como un solo compartimento. NO es la constante del pulmón entero cuando hay dos unidades muy dispares: es la de lo que se está vaciando, la misma limitación que la medida de cabecera. La resistencia que gobierna el vaciamiento es la espiratoria, no la que mide la oclusión inspiratoria (SC-03: 30 frente a 10).",
+      "status": "D-secundario (RCexp, método de cabecera; los umbrales son P calibrados sobre los escenarios)",
+      "source": "—",
+      "locator": "Brunner et al., «Simple method to measure total expiratory time constant»",
+      "implemented": "src/engine/controller.ts (expiratoryTimeConstant, TAU_EXP_MIN_R2, TAU_EXP_FIT_FROM/TO); src/engine/metrics.ts (out.tauExp)",
+      "tests": [
+        "tests/unit/mecanica.test.ts (MEC-03)"
+      ]
     }
   ]
 }

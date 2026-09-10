@@ -393,6 +393,25 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Rinsp ≈ (Ppico − Pplat) / flujo inspiratorio (L/s)',
   },
+  'metric.tauExp': {
+    title: 'Constante de tiempo espiratoria · τ',
+    text: [
+      'En un vaciamiento pasivo el flujo que sale es proporcional al volumen que aún queda por salir, de modo que la rama espiratoria del bucle flujo-volumen es una recta. Su pendiente da τ sin ninguna maniobra: no hace falta ocluir nada.',
+      'En una constante de tiempo sale alrededor del 63 % del volumen; en tres, el 95 %. De ahí la regla de cabecera: si el tiempo espiratorio no llega a tres τ, el pulmón empieza la siguiente respiración sin haber terminado de vaciar, y aparece atrapamiento aéreo.',
+      'Se mide sobre el tramo central del vaciado, y sólo se publica si la recta ajusta. Cuando no ajusta —dos unidades con constantes distintas, una vía aérea que se estrangula al bajar la presión, o el paciente soplando— el simulador dice por qué en vez de dar un número: que el pulmón no se vacíe como un solo compartimento es un hallazgo, no un fallo de la medición.',
+      'Ojo con confundirla con la resistencia que mide el bloqueo inspiratorio: ésa es la inspiratoria, y en un obstructivo la espiratoria es bastante mayor.',
+    ],
+    equation: 'Q = −(V − V∞) / τ · · · τ ≈ Rexp × C',
+  },
+  'metric.stressIndex': {
+    title: 'Índice de estrés',
+    text: [
+      'Forma de la curva de presión durante una inspiración a flujo constante. Con flujo constante el volumen entra a ritmo fijo, así que la forma de la presión frente al tiempo es la forma de la presión elástica frente al volumen dentro del volumen corriente.',
+      'Cerca de 1 la subida es una recta: la distensibilidad no cambia mientras entra el volumen. Por debajo de 1 la curva se dobla hacia abajo —el pulmón admite mejor el volumen a medida que se insufla—. Por encima de 1 se dobla hacia arriba: cuesta cada vez más, que es el aspecto de la sobredistensión.',
+      'Sólo significa algo si la rampa es del pulmón y de nadie más: si el paciente hace fuerza, si un techo de presión recorta la señal o si el modo no entrega flujo constante, no se publica y se dice el motivo.',
+    ],
+    equation: 'Paw(t) = a · t^b + c · · · el índice es b',
+  },
   'metric.rsbi': {
     title: 'Índice de respiración rápida superficial · FR/VT',
     text: [

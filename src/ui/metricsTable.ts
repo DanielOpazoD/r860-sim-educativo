@@ -27,7 +27,11 @@ export const METRICS: MetricSpec[] = [
   { key: 'driving', label: 'ΔP estática', unit: 'cmH₂O', factor: 1, decimals: 1, source: 'hold' },
   { key: 'stressIndex', label: 'Índice de estrés', unit: '', factor: 1, decimals: 2, source: 'metric' },
 ];
+// Sólo en la tabla de mediciones, no en la columna numérica del monitor: con quince casillas esa columna montaba las
+// etiquetas sobre las unidades. Van primero para quedar junto a Cstat, ΔP e índice de estrés, que es su familia.
 export const EXTRA_METRICS: MetricSpec[] = [
+  { key: 'raw', label: 'Resistencia insp.', unit: 'cmH₂O·s/L', factor: 1, decimals: 1, source: 'hold' },
+  { key: 'tauExp', label: 'Constante de tiempo esp.', unit: 's', factor: 1, decimals: 2, source: 'metric' },
   { key: 'vti', label: 'VT inspirado', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
   { key: 'leakPct', label: 'Fuga volumétrica', unit: '%', factor: 100, decimals: 1, source: 'metric' },
   { key: 'pplatCycle', label: 'Pplat de ciclo (pausa)', unit: 'cmH₂O', factor: 1, decimals: 0, source: 'metric' },
@@ -60,6 +64,9 @@ export const METRIC_HELP: Record<string, string> = {
   leakPct: 'metric.leak',
   pplatCycle: 'metric.pplat',
   vteSpont: 'metric.vte',
+  raw: 'metric.rinsp',
+  tauExp: 'metric.tauExp',
+  stressIndex: 'metric.stressIndex',
 };
 /** Límites de alarma que colorean cada casilla numérica. */
 export const ALARM_IDS_BY_METRIC: Record<string, string[]> = {
@@ -72,7 +79,7 @@ export const ALARM_IDS_BY_METRIC: Record<string, string[]> = {
 };
 
 export function metricSample(frame: EngineFrame, key: string): MetricSample | null {
-  if (key === 'pplat' || key === 'cstat' || key === 'driving') {
+  if (key === 'pplat' || key === 'cstat' || key === 'driving' || key === 'raw') {
     const h = frame.procedure.last.inspHold;
     return h?.values[key] ?? null;
   }

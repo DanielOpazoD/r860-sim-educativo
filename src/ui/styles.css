@@ -1626,13 +1626,14 @@ a {
   position: sticky;
   top: 0;
   background: #123e77;
-  padding: 12px;
+  padding: 8px 12px;
   font-size: 10px;
   font-weight: 500;
   color: #9ad4f5;
 }
 .device-table td {
-  padding: 8px 10px;
+  /* Diecinueve filas en 425 px sin esconder ninguna: con 8 px arriba y abajo las dos últimas quedaban fuera. */
+  padding: 6px 10px;
   border-bottom: 1px solid #4a87bb50;
 }
 .device-table td:nth-child(2) {
@@ -1642,6 +1643,7 @@ a {
 }
 .device-table td:last-child {
   font-size: 10px;
+  line-height: 1.25;
   color: #91bcd9;
   max-width: 270px;
 }

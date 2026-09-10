@@ -11,5 +11,10 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts', 'tests/bench/**/*.test.ts'],
     environment: 'node',
     reporters: ['default'],
+    // Estas pruebas simulan minutos de ventilación paso a paso: varias tardan segundos por derecho propio. Con los 5 s
+    // por omisión, agotar el plazo no señalaba ninguna regresión —sólo que la máquina estaba ocupada— y ya hizo fallar
+    // la integración continua dos veces sin que nada estuviera mal. El plazo sigue existiendo para atrapar un bucle
+    // infinito, que es lo único que tarda un minuto entero.
+    testTimeout: 60_000,
   },
 });

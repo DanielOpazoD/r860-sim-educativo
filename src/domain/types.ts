@@ -189,6 +189,13 @@ export interface BreathRecord {
   stressIndex?: number | null;
   /** Por qué no hay índice de estrés, cuando no lo hay. */
   stressIndexReason?: string | null;
+  /**
+   * Constante de tiempo espiratoria (s) ajustada sobre la rama espiratoria, o null cuando el vaciamiento no es una sola
+   * exponencial pasiva (esfuerzo, dos unidades, flujo estrangulado) y la pendiente ya no significa lo que se cree.
+   */
+  tauExpS?: number | null;
+  /** Por qué no hay constante de tiempo, cuando no la hay. */
+  tauExpReason?: string | null;
   tInspS: number;
   tExpS: number;
   ppeak: CmH2O;
