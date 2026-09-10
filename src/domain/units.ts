@@ -39,8 +39,13 @@ export const rrToCycleS = (rrPerMin: number): Seconds => S_PER_MIN / rrPerMin;
  * también la capa de formato y no se podía sustituir sin tocar toda la interfaz. Aquí es de la capa que no depende
  * de nadie, y la usan tanto el dibujo como la interfaz.
  */
-export const formatNumber = (v: number | null | undefined, d = 0): string =>
-  typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : '—';
+export const formatNumber = (v: number | null | undefined, d = 0): string => {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+  const texto = v.toFixed(d);
+  // Un valor que redondea a cero no lleva signo. Al final de la espiración el flujo y el volumen quedan en millonésimas
+  // negativas, y «Flujo -0.0 L/min» se lee como gas que sale cuando no sale nada.
+  return Number(texto) === 0 ? texto.replace('-', '') : texto;
+};
 
 /** Comparación con tolerancia para valores en unidades internas. */
 export const approxEqual = (a: number, b: number, tol: number): boolean => Math.abs(a - b) <= tol;

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { expectSafetyMark, frame, open } from './helpers';
 
 test.describe('INT · selección, edición, confirmación y cancelación', () => {
@@ -381,5 +381,81 @@ test.describe('EDU · pestaña Resumen', () => {
     await expect(page.locator('.edu-titulacion circle')).toHaveCount(2);
     // El textContent pega el número y su unidad, como en las tarjetas: «2» + «puntos».
     await expect(page.locator('.edu-bloque').nth(1).locator('header b')).toHaveText('2puntos');
+  });
+});
+
+test.describe('CUR · medir sobre la curva congelada', () => {
+  /** Deja 30 s de curva, pausa y congela. */
+  async function congelar(page: Page): Promise<void> {
+    await open(page, { speed: 4, instructor: 0, autopause: 30_000 });
+    await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
+      timeout: 40_000,
+    });
+    await page.click('#freeze-button');
+    await expect(page.locator('#signal-inspector')).toBeVisible();
+  }
+  /** Mueve un deslizador como lo haría el usuario: valor nuevo y evento `input`. */
+  const mover = (page: Page, id: string, v: number): Promise<void> =>
+    page.locator(id).evaluate((el, val) => {
+      (el as HTMLInputElement).value = String(val);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, v);
+
+  test('el cursor se maneja con el teclado, se anuncia, y sigue midiendo al recorrer la historia', async ({ page }) => {
+    await congelar(page);
+    const cursor = page.locator('#cursor-slider');
+    await cursor.focus();
+    for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
+    const etiqueta = page.locator('#inspector-label');
+    await expect(etiqueta).toContainText('Paw');
+    const lectura = (await etiqueta.textContent()) ?? '';
+    await expect(cursor).toHaveAttribute('aria-valuetext', lectura);
+    await mover(page, '#history-slider', 0);
+    await expect(etiqueta).toContainText('Paw');
+    await expect(etiqueta).not.toHaveText(lectura);
+  });
+
+  test('tocar o pulsar la curva congelada basta para medir', async ({ page }, info) => {
+    await congelar(page);
+    const lienzo = page.locator('#waves-canvas');
+    const caja = (await lienzo.boundingBox())!;
+    const donde = { x: caja.width * 0.5, y: caja.height * 0.3 };
+    if (info.project.use.hasTouch) await lienzo.tap({ position: donde });
+    else await lienzo.click({ position: donde });
+    await expect(page.locator('#inspector-label')).toContainText('Paw');
+  });
+
+  test('recorrer la historia desplaza la ventana en el tiempo', async ({ page }) => {
+    await congelar(page);
+    const finDeVentana = async (): Promise<number> => {
+      const texto = (await page.locator('#inspector-label').textContent()) ?? '';
+      const m = /final de ventana ([\d:]+)/.exec(texto);
+      expect(m, texto).not.toBeNull();
+      return (m as RegExpExecArray)[1]!.split(':').reduce((a, x) => a * 60 + Number(x), 0);
+    };
+    await mover(page, '#history-slider', 0);
+    const temprano = await finDeVentana();
+    await mover(page, '#history-slider', 1000);
+    const tarde = await finDeVentana();
+    expect(tarde - temprano).toBeGreaterThanOrEqual(10);
+  });
+
+  test('el cursor cae donde apunta el puntero: el centro de la rejilla es el centro de la ventana', async ({ page }) => {
+    await open(page, { speed: 4, instructor: 0, autopause: 30_000 });
+    await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
+      timeout: 40_000,
+    });
+    // En continuo el centro del área de trazado es «final − ventana/2». La conversión anterior usaba márgenes distintos
+    // de los del dibujo y el cursor caía unos 90 ms más allá.
+    await page.selectOption('#wave-style', 'scroll');
+    await page.click('#freeze-button');
+    const lienzo = page.locator('#waves-canvas');
+    const caja = (await lienzo.boundingBox())!;
+    const escala = caja.width / 608;
+    await lienzo.click({ position: { x: (47 + 552 / 2) * escala, y: caja.height * 0.3 } });
+    const texto = (await page.locator('#inspector-label').textContent()) ?? '';
+    const t = Number((/t ([\d.,]+) s/.exec(texto) as RegExpExecArray)[1]!.replace(',', '.'));
+    const fin = (await frame(page)).simTimeMs / 1000;
+    expect(Math.abs(t - (fin - 6)), texto).toBeLessThan(0.025);
   });
 });

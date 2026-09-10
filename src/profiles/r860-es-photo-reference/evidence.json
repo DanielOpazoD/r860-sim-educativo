@@ -360,7 +360,7 @@
       "status": "D",
       "source": "R03",
       "locator": "p.4 «Pantalla»",
-      "implemented": "3 curvas con tres juegos de escala manual (P); favoritos fijos como en P1 (O)"
+      "implemented": "3 curvas con escala automática estable, con histéresis (E-081). Sin escala manual por canal: fijarla recortaría la señal contra el techo, que se lee como una meseta que no existe, y añadiría controles a una barra que se quiere limpia (P). Favoritos fijos como en P1 (O)."
     },
     {
       "id": "E-021",
@@ -1011,6 +1011,40 @@
       "implemented": "src/engine/controller.ts (expiratoryTimeConstant, TAU_EXP_MIN_R2, TAU_EXP_FIT_FROM/TO); src/engine/metrics.ts (out.tauExp)",
       "tests": [
         "tests/unit/mecanica.test.ts (MEC-03)"
+      ]
+    },
+    {
+      "id": "E-080",
+      "claim": "Las curvas se dibujan con cada muestra que publica el motor (un paso cada 4 ms, más los instantes de transición resueltos dentro del paso), sin diezmar. Con una de cada cinco, un evento de un solo paso desaparecía: en SC-09 la presión toca Pmáx durante 4 ms y la curva seguía plana en 5 mientras la alarma y la Ppico decían 40; además la pérdida dependía del tamaño de cada cuadro. La traza guarda hasta 30 000 muestras (120 s) y la exportación CSV de señal pasa a esa misma resolución.",
+      "status": "P (decisión de presentación del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/render/plots.ts (appendSamples, TRACE_CAP, nearestSample, cyclePoints); src/ui/plotsView.ts (ingest)",
+      "tests": [
+        "tests/unit/curvas.test.ts (CUR-01)"
+      ]
+    },
+    {
+      "id": "E-081",
+      "claim": "La escala de dibujo de las curvas tiene histéresis: crece en el acto —nunca recorta la señal— y encoge sólo cuando lo visible lleva una ventana entera cabiendo en una escala menor y, en barrido, al volver el cursor al origen. El rango sigue saliendo de los datos (getBounds); lo que se decide es cuándo cambia. Antes el eje de flujo de SC-18 pasaba de ±160 a ±60 en tres saltos en 300 ms, a mitad del barrido. Con las curvas congeladas la escala es la de lo que se ve, sin memoria.",
+      "status": "P (legibilidad; decisión del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/render/plots.ts (stableBounds); src/ui/plotsView.ts (waveBounds)",
+      "tests": [
+        "tests/unit/curvas.test.ts (CUR-02)"
+      ]
+    },
+    {
+      "id": "E-082",
+      "claim": "Al congelar las curvas se conserva el trazado elegido —congelar es capturar la imagen que se estaba mirando— y, en barrido, una línea discontinua marca la unión entre la pasada nueva y la anterior, que sin marca parece un salto de la señal. Al recorrer la historia el trazado pasa a continuo: en barrido la ventana rotaba alrededor de la unión y el eje no podía decir qué tiempo se miraba. El cursor de medición usa la misma geometría que el dibujo en ambos trazados; se maneja con un deslizador —teclado— que anuncia la lectura con aria-valuetext y con un toque sobre la curva, y conserva su posición en la ventana al recorrer la historia. La conversión del puntero usaba márgenes distintos de los del dibujo: unos 90 ms de error en el centro de una ventana de 12 s.",
+      "status": "P (interfaz; decisión del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/plotsView.ts (drawStyle, setCursorAt, onPointer); src/render/plots.ts (cursorTimeAt, timeAxisLabels, WAVE_MARGIN, marca de unión en drawWave); index.html (#cursor-slider)",
+      "tests": [
+        "tests/unit/curvas.test.ts (CUR-03)",
+        "tests/e2e/interaction.spec.ts (CUR · medir sobre la curva congelada)"
       ]
     }
   ]

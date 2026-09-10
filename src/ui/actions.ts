@@ -373,6 +373,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (el.dataset.modeField) modes.readModeField(el);
       if (el.dataset.limit) alarms.readLimits();
       if (el.id === 'history-slider') plots.slideHistory(Number(el.value));
+      if (el.id === 'cursor-slider') plots.slideCursor(Number(el.value));
     });
     document.addEventListener('change', (e) => {
       const el = e.target as HTMLInputElement | HTMLSelectElement;
