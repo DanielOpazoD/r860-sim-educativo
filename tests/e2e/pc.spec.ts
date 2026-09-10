@@ -168,8 +168,11 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
           requestAnimationFrame(step);
         }),
     );
-    const i = serie.findIndex((s) => s[2] === 'exp');
+    let i = serie.findIndex((s) => s[2] === 'exp');
     expect(i).toBeGreaterThan(0);
+    // Cuando el fin de la inspiración cae justo en el borde de un paso de 4 ms, el cuadro de ese instante ya dice
+    // «espiración» pero todavía lleva la presión pico: la válvula no ha empezado a abrirse. Ese cuadro no es la bajada.
+    if (serie[i]![0] >= serie[i - 1]![0] - 3) i += 1;
     const senal = serie.slice(i, i + 12).map((s) => s[0]);
     const bajada = serie.slice(i, i + 12).map((s) => s[1]);
     // La señal pierde de golpe lo resistivo (Ppico → presión alveolar) y luego baja con la válvula abriéndose.

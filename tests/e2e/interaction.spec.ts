@@ -208,8 +208,9 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.fill('[data-phys-number="resistance"]', '10');
     await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
+    // VMesp bajo se resuelve con la ventana de ocho respiraciones (32 s simulados): bajo carga, a 4× no bastan 20 s de reloj.
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'grey', null, {
-      timeout: 20_000,
+      timeout: 45_000,
     });
     await page.click('[data-action="alarms"]');
     await page.click('[data-action="acknowledge"]');
@@ -518,5 +519,25 @@ test.describe('LEC · la lección responde', () => {
     await page.waitForTimeout(1500);
     await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(0);
     expect(await page.locator('#toast-stack .toast', { hasText: 'Objetivo' }).count()).toBe(0);
+  });
+});
+
+test.describe('DESC · desconexión del circuito', () => {
+  test('abrir el circuito en «Eventos» dispara la alarma alta; deshacer la resuelve y reconocer devuelve la banda al azul', async ({
+    page,
+  }) => {
+    await open(page, { scenario: 'SC-23', speed: 4 });
+    await page.click('[data-instructor="events"]');
+    await page.click('[data-event="disconnect"]');
+    await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Paciente desconectado', { timeout: 20_000 });
+    await expect(page.locator('#alarm-band')).toHaveClass(/high/);
+    await expect.poll(async () => (await frame(page)).metrics.vte?.value ?? 1, { timeout: 15_000 }).toBeLessThan(0.01);
+    await page.click('[data-action="undoEvent"]');
+    await expect(page.locator('#alarm-label')).toHaveText('Alarmas resueltas', { timeout: 20_000 });
+    await page.click('[data-action="alarms"]');
+    await page.click('[data-action="acknowledge"]');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#alarm-label')).toHaveText('Sin alarmas');
+    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 3/3', { timeout: 10_000 });
   });
 });

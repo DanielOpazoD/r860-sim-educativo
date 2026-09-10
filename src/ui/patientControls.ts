@@ -53,6 +53,16 @@ export const PHYS: Record<string, PhysSpec> = {
     get: (fr) => fr.truth.patient.rExpValve ?? 0,
     cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
   },
+  leak: {
+    label: 'Fuga en la Y',
+    unit: 'L/min a 10 cmH₂O',
+    min: 0,
+    max: 40,
+    step: 1,
+    help: 'patient.leak',
+    get: (fr) => fr.truth.patient.leakLpmAt10 ?? 0,
+    cmd: (v) => ({ type: 'setPatient', params: { leakLpmAt10: v } }),
+  },
   sigmoidB: {
     label: 'Curva P-V: capacidad (b)',
     unit: 'mL',
@@ -241,6 +251,7 @@ export const PATIENT_EXTRA = [
   'viscTau',
   'rohrer',
   'expValve',
+  'leak',
   'patientRR',
   'muscleTi',
   'o2Tau',
@@ -252,8 +263,8 @@ export const FAULTS: [string, string, string, string, boolean][] = [
   ['compliance', 'lung', 'C ÷2', 'Aumenta la carga elástica', false],
   ['apnea', 'pause', 'Apnea', 'Interrumpe el esfuerzo', false],
   ['obstruction', 'lock', 'Oclusión', 'Resistencia extrema (Pmáx)', false],
-  ['leak', 'wave', 'Fuga', 'No modelada en esta etapa', true],
-  ['disconnect', 'plug', 'Desconexión', 'No modelada en esta etapa', true],
+  ['leak', 'wave', 'Fuga', '6 L/min a 10 cmH₂O en la Y', false],
+  ['disconnect', 'plug', 'Desconexión', 'Circuito abierto en la Y', false],
 ];
 
 export function physHtml(

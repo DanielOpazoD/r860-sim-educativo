@@ -26,6 +26,18 @@ export const ALARM_RULES: Record<string, RuleDef> = {
     source: 'ventilator.paw',
   },
   ppeakLow: { id: 'ppeakLow', priority: 'medium', message: 'Ppico baja', responseAction: 'none', latching: true, source: 'ventilator.paw' },
+  /**
+   * Paciente desconectado (D existencia: QRG 2020 p.13 «Patient disconnected, RR low, MVexp low, Vtexp low, Apnea and
+   * other alarms may occur»; condición y prioridad P): una respiración sin presión —Ppico bajo 3 cmH2O— y sin volumen espirado.
+   */
+  disconnect: {
+    id: 'disconnect',
+    priority: 'high',
+    message: 'Paciente desconectado',
+    responseAction: 'none',
+    latching: true,
+    source: 'ventilator.paw',
+  },
   /** Apnea: ninguna respiración en el tiempo programado (D ficha 2014 «Alarma de apnea: 5 a 60 seg»; prioridad alta P). */
   apnea: { id: 'apnea', priority: 'high', message: 'Apnea', responseAction: 'enterBackup', latching: true, source: 'ventilator.flow' },
   vteLow: { id: 'vteLow', priority: 'medium', message: 'VTesp bajo', responseAction: 'none', latching: true, source: 'ventilator.flow' },
@@ -48,6 +60,9 @@ export const ALARM_RULES: Record<string, RuleDef> = {
 };
 
 const PRIORITY_RANK: Record<AlarmPriority, number> = { high: 3, medium: 2, informational: 1 };
+/** Umbrales de la desconexión (P): sin presión de trabajo y sin volumen que vuelva. */
+export const DISCONNECT_PPEAK_CMH2O = 3;
+export const DISCONNECT_VTE_L = 0.02;
 
 export interface AlarmBar {
   color: 'green' | 'red' | 'yellow' | 'blue' | 'grey';
@@ -187,6 +202,18 @@ export class AlarmEngine {
     if (!this.lastBreath) return;
     const { record, metrics } = this.lastBreath;
     const L = this.limits;
+    // Desconexión: el ventilador no consigue presión ni recupera volumen. Se resuelve sola en cuanto vuelve una respiración normal.
+    const vteMedido = record.vtExpMeasured ?? record.vtExp;
+    if (record.ppeak < DISCONNECT_PPEAK_CMH2O && vteMedido < DISCONNECT_VTE_L)
+      this.activate(
+        'disconnect',
+        simTimeMs,
+        record.ppeak,
+        Math.round(record.ppeak),
+        DISCONNECT_PPEAK_CMH2O,
+        `Ppico ${record.ppeak.toFixed(1)} y VTe ${Math.round(vteMedido * 1000)} mL`,
+      );
+    else this.resolve('disconnect', simTimeMs);
     this.check('ppeakLow', simTimeMs, record.ppeak, L.ppeakLow, 'low', Math.round(record.ppeak));
     // Las alarmas de volumen comparan el valor MEDIDO, como el equipo real, no el volumen verdadero del modelo.
     const vteM = record.vtExpMeasured ?? record.vtExp;

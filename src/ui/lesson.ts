@@ -135,6 +135,14 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
       c.frame.settings.vt <= 0.4
     );
   },
+  /** SC-22: la fuga se ve en la tabla: más del 15 % del VT inspirado no vuelve. */
+  leakSeen: (c) => (c.frame.metrics.leakPct?.value ?? 0) >= 0.15,
+  /** Disparo por flujo subido a 4 L/min o más: por encima de la fuga a la PEEP, el autodisparo cesa. */
+  trigger4: (c) => !c.frame.settings.triggerByPressure && c.frame.settings.flowTrigger >= 4 / 60 - 1e-9,
+  /** SC-23: se vio la alarma de desconexión. */
+  disconnectSeen: (c) => !!c.flags.disconnectSeen,
+  /** Reconectado: la alarma de desconexión se vio y ya no está activa. */
+  reconnected: (c) => !!c.flags.disconnectSeen && !c.frame.alarms.some((a) => a.id === 'disconnect' && a.conditionActive),
   /** La potencia mecánica de la ventana bajó de 15 J/min con el VT reducido. */
   mpBelow: (c) => c.frame.settings.vt <= 0.4 && (c.frame.metrics.mechPower?.value ?? 99) < 15,
   /** Con el ciclaje subido, el Ti mecánico ya no supera al esfuerzo. */
@@ -159,6 +167,7 @@ export function updateLessonFlags(frame: EngineFrame, flags: Record<string, unkn
     if (tipo === 'spontaneous') flags.spontSeen = true;
   }
   if (frame.alarms.some((a) => a.id === 'apnea' && a.conditionActive)) flags.apneaSeen = true;
+  if (frame.alarms.some((a) => a.id === 'disconnect' && a.conditionActive)) flags.disconnectSeen = true;
 }
 
 /** Duración de la última inspiración espontánea registrada (s), o null si no hay ninguna en la cola de eventos. */
