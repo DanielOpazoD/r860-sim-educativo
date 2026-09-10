@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIGGER_REFRACTORY_S } from '../../src/engine/controller';
+import { TRIGGER_DELAY_S, TRIGGER_REFRACTORY_S } from '../../src/engine/controller';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim } from '../helpers';
 
 // ASI-01 · asincronías EMERGENTES. No hay ninguna regla que las produzca: salen de la mecánica, del perfil de esfuerzo
@@ -27,10 +27,15 @@ describe('ASI-01 · doble disparo con Ti neural mayor que el mecánico', () => {
     while (sim.breaths.length < 14) sim.step();
     const cortos = intervalos(sim).filter((g) => g < 2000);
     expect(cortos.length).toBeGreaterThanOrEqual(4);
-    // El segundo disparo llega lo antes que el motor lo permite: tiempo inspiratorio mecánico + refractario.
-    const esperado = 1000 + TRIGGER_REFRACTORY_S * 1000;
-    for (const g of cortos) expect(Math.abs(g - esperado)).toBeLessThan(60);
-    expect(sim.breaths.filter((b) => b.type === 'assisted').length).toBeGreaterThan(8);
+    // El segundo disparo llega lo antes que el motor lo permite: tiempo inspiratorio mecánico + refractario + retardo de
+    // respuesta. Ninguno puede llegar antes, y el más temprano llega exactamente entonces; los demás dependen de la fase
+    // del esfuerzo y del gas atrapado en ese momento, no del refractario.
+    const esperado = 1000 + (TRIGGER_REFRACTORY_S + TRIGGER_DELAY_S) * 1000;
+    for (const g of cortos) expect(g).toBeGreaterThanOrEqual(esperado - 8);
+    // Hasta dos pasos de 4 ms de holgura: el refractario y el umbral se resuelven al final del paso en que se cumplen.
+    expect(Math.abs(Math.min(...cortos) - esperado)).toBeLessThanOrEqual(12);
+    // Con el retardo de respuesta la fase entre esfuerzo y ciclo cambia y alguna apilada no llega: siguen siendo la mayoría.
+    expect(sim.breaths.filter((b) => b.type === 'assisted').length).toBeGreaterThanOrEqual(8);
   });
 
   it('la respiración apilada entra sobre un pulmón sin vaciar: más volumen y más presión', () => {

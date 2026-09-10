@@ -419,6 +419,13 @@
       "policy": "P: Ti máximo 3 s; respaldo a 12/min mientras dura la apnea, que termina con el primer disparo del paciente; la apnea se cuenta desde la última respiración de cualquier tipo y sólo en CPAP/PS. Los rangos (PS, trigger espiratorio, apnea, frecuencia mínima) son D (E-084); la lógica es P (E-085).",
       "status": "nueva (v0.4.0)",
       "blocks": []
+    },
+    {
+      "id": "U-53",
+      "question": "Tiempo de respuesta del disparo del R860 (detección, decisión y apertura de válvula) y ancho de banda de su regulador de PEEP durante ese lapso; no publicados en las fuentes leídas.",
+      "policy": "P: retardo fijo de 80 ms, dentro del rango de banco de los ventiladores de cuidados intensivos (60–150 ms), con el regulador de PEEP ideal hasta el flujo de base (U-43). La caída de presión resultante (≈ 2 cmH2O con Pmus 8 y base 4) es del orden de la publicada en bancos; no reproduce la cifra del equipo.",
+      "status": "nueva (v0.4.1)",
+      "blocks": []
     }
   ],
   "disabledFeatures": [

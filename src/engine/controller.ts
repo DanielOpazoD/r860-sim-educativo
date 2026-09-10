@@ -7,6 +7,14 @@ import type { PatientModel } from './patient';
 /** Periodo refractario tras el inicio de la espiración antes de admitir disparo (P; inspirado en Texp mínimo 0.25 s, D). */
 export const TRIGGER_REFRACTORY_S = 0.25;
 /**
+ * Retardo de respuesta del disparo (s), P (U-53): del cruce del umbral a la apertura de la válvula inspiratoria. Un
+ * equipo real tarda unas decenas de milisegundos en detectar, decidir y actuar; en ese lapso el paciente sigue tirando
+ * del gas de la válvula espiratoria y la Pva cae por debajo de la PEEP en cuanto la demanda supera el flujo de base.
+ * Esa caída es el trabajo de disparo que se enseña en la curva de presión; con respuesta instantánea no existía
+ * (20 ms y 0,026 cmH2O). 80 ms está dentro del rango de banco de los ventiladores de cuidados intensivos (60–150 ms).
+ */
+export const TRIGGER_DELAY_S = 0.08;
+/**
  * Tiempo inspiratorio máximo de una respiración soportada (s), P. El ciclado por flujo puede no llegar —esfuerzo
  * sostenido, flujo que se aplana por encima del umbral— y el soporte no puede durar indefinidamente; 3 s es un tope
  * habitual en la literatura de soporte de presión (U-52).
@@ -227,6 +235,8 @@ export class VcController {
   private lastExpPaw: number | null = null;
   private hold: HoldRun | null = null;
   private manualRequested = false;
+  /** Disparo detectado y pendiente de servir cuando pase el retardo de respuesta. */
+  private triggerPending: { atS: number; next: BreathType } | null = null;
   /** CPAP/PS: se declaró apnea y el ventilador está entregando respaldo hasta que el paciente vuelva a disparar. */
   private apnea = false;
   private events: ControllerEvent[] = [];
@@ -324,6 +334,7 @@ export class VcController {
 
   /** CPAP/PS: espiración sin respiración en curso, a la espera del paciente; los temporizadores de respaldo corren desde aquí. */
   private esperarDisparo(): void {
+    this.triggerPending = null;
     this.breath = null;
     this.phase = 'exp';
     this.tPhase = 0;
@@ -337,6 +348,7 @@ export class VcController {
     this.manualRequested = false;
     this.breath = null; // la respiración en curso se descarta (causa standby); no se registra como completa
     this.apnea = false;
+    this.triggerPending = null;
     this.phase = 'standby';
     this.tPhase = 0;
     this.paw = 0;
@@ -449,9 +461,13 @@ export class VcController {
       case 'holdExp':
         return Math.max(0, (this.hold?.req.durationS ?? 0) - this.tPhase);
       // El temporizador de FR gobierna la siguiente obligatoria: el tiempo no usado por una inspiración acortada (Pmáx) va a la espiración (P).
-      case 'exp':
-        if (this.settings.mode === 'CPAP_PS') return Math.max(0, this.plazoDeRespaldo() - this.tBreath - this.tPhase);
-        return Math.max(0, t.tCycleS - this.tBreath - this.tPhase);
+      case 'exp': {
+        const pendiente = this.triggerPending
+          ? Math.max(0, this.triggerPending.atS + TRIGGER_DELAY_S - this.simT)
+          : Number.POSITIVE_INFINITY;
+        const plazo = this.settings.mode === 'CPAP_PS' ? this.plazoDeRespaldo() : t.tCycleS;
+        return Math.min(pendiente, Math.max(0, plazo - this.tBreath - this.tPhase));
+      }
       default:
         return Number.POSITIVE_INFINITY;
     }
@@ -611,17 +627,15 @@ export class VcController {
           this.manualRequested = false;
           this.transition = () => this.endExpiration('manual');
         } else if (
+          !this.triggerPending &&
           (s.assistControl || s.mode === 'CPAP_PS') &&
           this.tPhase + h >= TRIGGER_REFRACTORY_S &&
           (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : qEnd >= s.flowTrigger)
         ) {
-          const bid = this.breath?.breathId ?? '';
-          // En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida del modo.
-          const next: BreathType = s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted';
-          this.transition = () => {
-            this.events.push({ type: 'trigger', breathId: bid, simTimeS: this.simT, qLps: qEnd });
-            this.endExpiration(next);
-          };
+          // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
+          // paciente tira del flujo de base. En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida.
+          this.triggerPending = { atS: this.simT + h, next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted' };
+          this.events.push({ type: 'trigger', breathId: this.breath?.breathId ?? '', simTimeS: this.simT + h, qLps: qEnd });
         }
         return h;
       }
@@ -664,7 +678,12 @@ export class VcController {
         this.finishHold(false);
         break;
       case 'exp':
-        if (this.settings.mode === 'CPAP_PS') this.onPlazoDeRespaldo();
+        // Un disparo pendiente se sirve al vencer su retardo; si el temporizador del modo llega antes, la respiración es igualmente del paciente.
+        if (this.triggerPending) {
+          const pendiente = this.triggerPending;
+          this.triggerPending = null;
+          this.endExpiration(pendiente.next);
+        } else if (this.settings.mode === 'CPAP_PS') this.onPlazoDeRespaldo();
         else this.endExpiration('mandatory');
         break;
       case 'holdExp':
@@ -778,6 +797,7 @@ export class VcController {
     const req = this.holdRequest;
     if (!req || !this.breath) return;
     this.holdRequest = null;
+    this.triggerPending = null; // la oclusión anula un disparo detectado: no hay gas que servir
     this.hold = { req, tStart: this.simT, pawStart: this.paw, samples: [], pmaxHit: false, peepeBefore: this.paw };
     this.phase = req.kind === 'inspHold' ? 'holdInsp' : 'holdExp';
     this.tPhase = 0;
@@ -834,6 +854,7 @@ export class VcController {
     const prev = this.breath;
     if (prev) this.finishBreath(prev);
     const breathId = `b${this.breathSeq + 1}`;
+    this.triggerPending = null;
     const modeBefore = this.settings.mode;
     this.flushPending(breathId);
     const s = this.settings;

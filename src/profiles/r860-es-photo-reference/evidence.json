@@ -1090,6 +1090,18 @@
         "tests/e2e/ps.spec.ts",
         "tests/e2e/visual.spec.ts (VIS-08)"
       ]
+    },
+    {
+      "id": "E-086",
+      "claim": "Retardo de respuesta del disparo: entre el cruce del umbral (flujo o presión) y el inicio de la respiración pasan 80 ms fijos, durante los cuales la espiración continúa y el paciente tira del flujo de base; en cuanto su demanda supera ese flujo la Pva cae bajo la PEEP. Medido: 1,97 cmH2O con Pmus 8 y flujo de base 4 L/min; 0,87 con base 10; 0,73 con Pmus 4; 4,0 con disparo por presión a −2 (que ya está 2 por debajo al detectar). Con respuesta instantánea la caída era de 0,026 cmH2O y el trabajo de disparo no existía en la curva. Una oclusión en cola anula el disparo detectado; un temporizador del modo que venza antes sirve la respiración igualmente como del paciente. El doble disparo pasa de Ti + 0,25 s a Ti + 0,33 s.",
+      "status": "P (U-53)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/controller.ts (TRIGGER_DELAY_S, triggerPending, fase exp y su temporizador)",
+      "tests": [
+        "tests/unit/sync.test.ts (SYN-04)",
+        "tests/unit/asynchrony.test.ts (ASI-01)"
+      ]
     }
   ]
 }
