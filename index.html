@@ -150,8 +150,8 @@
 </nav>
 <aside class="instructor" id="instructor" aria-label="Panel docente">
     <div class="instructor-header"><div><h2>Laboratorio de mecánica</h2></div><svg class="icon"><use href="#i-lung"/></svg></div>
-    <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="learn">Entrenar</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button></div>
-    <section class="instructor-pane active" id="instructor-patient">
+    <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button role="tab" aria-selected="false" data-instructor="patient">Paciente</button><button class="active" role="tab" aria-selected="true" data-instructor="learn">Entrenar</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button></div>
+    <section class="instructor-pane" id="instructor-patient">
       <div id="patient-controls"></div>
       <details class="advanced-patient"><summary>Esfuerzo, sensor de O₂ y más parámetros</summary><div id="patient-extra-controls"></div></details>
       <details class="truth-details" id="truth-details"><summary>Datos del modelo</summary>
@@ -160,7 +160,7 @@
       </details>
       <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
     </section>
-    <section class="instructor-pane" id="instructor-learn">
+    <section class="instructor-pane active" id="instructor-learn">
       <div class="lesson-count" id="lesson-count">0 de 3 objetivos</div><h3 class="lesson-title" id="lesson-title"></h3><p class="lesson-text" id="lesson-text"></p><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa las curvas y el registro para explicar qué cambió.</div>
       <details class="reflection" id="reflection"><summary id="reflection-question"></summary><p id="reflection-answer"></p></details>
       <button class="button full" data-action="debrief"><svg class="icon"><use href="#i-book"/></svg>Resumen de práctica</button><button class="button full subtle" data-action="scenarios">Elegir otro escenario<svg class="icon"><use href="#i-arrow"/></svg></button>

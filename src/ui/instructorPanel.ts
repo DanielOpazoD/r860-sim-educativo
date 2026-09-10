@@ -118,10 +118,21 @@ export function createInstructorPanel(
       await setPhys([{ type: 'setPatient', params: { rInsp: on ? 10 : 400 } }], [{ type: 'setPatient', params: { rInsp: p.rInsp } }]);
     } else ctx.toast('Fuga y desconexión no están modeladas en esta etapa.', true);
   }
+  function switchInstructor(tab: string): void {
+    for (const e of $$('[data-instructor]')) {
+      const on = e.dataset.instructor === tab;
+      e.classList.toggle('active', on);
+      e.setAttribute('aria-selected', String(on));
+    }
+    for (const id of ['patient', 'learn', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
+  }
   function loadScenario(id: string): void {
     const sc = findScenario(id);
     if (!sc) return;
     ctx.setScenario(sc);
+    ctx.lesson.setSessionImported(false);
+    // Lo primero que necesita quien abre un escenario es qué tiene que hacer en él.
+    switchInstructor('learn');
     ctx.dialog.close();
     deps.quick.cancelQuick();
     deps.hold.closeHoldPanel();
@@ -156,14 +167,7 @@ export function createInstructorPanel(
     setPhys,
     fault,
     loadScenario,
-    switchInstructor(tab) {
-      for (const e of $$('[data-instructor]')) {
-        const on = e.dataset.instructor === tab;
-        e.classList.toggle('active', on);
-        e.setAttribute('aria-selected', String(on));
-      }
-      for (const id of ['patient', 'learn', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
-    },
+    switchInstructor,
     toggleTeacher() {
       teacherVisible = !teacherVisible;
       renderToggle();

@@ -80,7 +80,9 @@ export function startApp(opts: AppOptions): void {
     e.textContent = learnerText(message);
     const stack = $('#toast-stack');
     stack.append(e);
-    while (stack.children.length > 2) stack.firstElementChild?.remove();
+    // Tres a la vez: el aviso de un objetivo llega en el mismo cuadro que el resultado del bloqueo que lo cumplió, y no
+    // debe expulsarlo de la pantalla.
+    while (stack.children.length > 3) stack.firstElementChild?.remove();
     setTimeout(() => e.remove(), 4200);
   }
   function notice(message: string): void {

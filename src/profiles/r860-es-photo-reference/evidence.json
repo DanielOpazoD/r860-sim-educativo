@@ -1046,6 +1046,18 @@
         "tests/unit/curvas.test.ts (CUR-03)",
         "tests/e2e/interaction.spec.ts (CUR · medir sobre la curva congelada)"
       ]
+    },
+    {
+      "id": "E-083",
+      "claim": "La lección responde a lo que hace el alumno: la pestaña «Entrenar» se abre primero y cuenta lo hecho (n/N) sin abrirla; cumplir un objetivo por sí mismo se anuncia en un aviso que convive con el resultado del bloqueo que lo cumplió; lo que ya estaba cumplido con el primer cuadro de la lección —una observación sobre el estado inicial— se marca sin aviso, decidido por lista y no por reloj (una gracia de 5 s callaba al alumno que hacía su primer bloqueo nada más abrir); y una sesión importada no evalúa los objetivos del escenario que estaba abierto, porque no dice de qué escenario es.",
+      "status": "P (didáctica; decisión del proyecto)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/lesson.ts (tareasCumplidasAlAbrir, avisoDeObjetivo); src/ui/lessonTracker.ts (alAbrir, sessionImported); src/ui/instructorPanel.ts (loadScenario); index.html (pestaña Entrenar activa)",
+      "tests": [
+        "tests/unit/leccion.test.ts (LEC-01, LEC-02)",
+        "tests/e2e/interaction.spec.ts (LEC · la lección responde)"
+      ]
     }
   ]
 }

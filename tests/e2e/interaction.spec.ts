@@ -200,6 +200,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     // que entrega 0 mL no alarma sólo por Pmáx: también saltan VTesp bajo y VMesp bajo, y esas dos se activaron DESPUÉS
     // del reconocimiento anterior. Así que al resolverse la causa la banda queda gris —resuelta, pendiente de
     // reconocer— y hace falta reconocer otra vez para limpiarla. Ése es justamente el contrato que esta prueba fija.
+    await page.click('[data-instructor="patient"]'); // la pestaña que se abre es «Entrenar»
     await page.fill('[data-phys-number="resistance"]', '10');
     await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
@@ -457,5 +458,61 @@ test.describe('CUR · medir sobre la curva congelada', () => {
     const t = Number((/t ([\d.,]+) s/.exec(texto) as RegExpExecArray)[1]!.replace(',', '.'));
     const fin = (await frame(page)).simTimeMs / 1000;
     expect(Math.abs(t - (fin - 6)), texto).toBeLessThan(0.025);
+  });
+});
+
+test.describe('LEC · la lección responde', () => {
+  test('la pestaña de la lección se abre primero, cuenta lo hecho y avisa al cumplir un objetivo', async ({ page }) => {
+    await open(page, { speed: 4 });
+    const pestana = page.locator('[data-instructor="learn"]');
+    await expect(pestana).toHaveAttribute('aria-selected', 'true');
+    await expect(pestana).toHaveText('Entrenar · 0/3');
+    // SC-01: el primer objetivo es un bloqueo inspiratorio válido.
+    await page.click('[data-action="inspiratory"]');
+    await page.click('#hold-run');
+    const avisos = page.locator('#toast-stack .toast');
+    await expect(avisos.filter({ hasText: 'Objetivo 1 de 3 cumplido' })).toBeVisible({ timeout: 25_000 });
+    // El aviso del objetivo convive con el del resultado del bloqueo que lo cumplió.
+    await expect(avisos.filter({ hasText: 'Bloqueo medido' })).toBeVisible();
+    await expect(pestana).toHaveText('Entrenar · 1/3');
+  });
+
+  test('lo que ya se cumple al abrir se marca sin aviso', async ({ page }) => {
+    // SC-13: el primer objetivo es observar el VT inicial, y ya está cumplido con el primer cuadro.
+    await open(page, { scenario: 'SC-13', speed: 4 });
+    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 1/3');
+    await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(1);
+    // Sin reintentos: un aviso dura 4 s y `toHaveCount(0)` esperaría a que se fuera solo.
+    const avisos = page.locator('#toast-stack .toast', { hasText: 'Objetivo' });
+    expect(await avisos.count(), 'el objetivo se marca en el mismo cuadro que anunciaría').toBe(0);
+    await page.waitForTimeout(1000);
+    expect(await avisos.count()).toBe(0);
+  });
+
+  test('una sesión importada no marca objetivos del escenario que estaba abierto', async ({ page }, info) => {
+    // Con la resistencia en 25, el objetivo «duplica la resistencia» de SC-01 se cumpliría con el primer cuadro de la
+    // sesión reproducida: sin la guarda aparecería marcado aunque nadie lo hubiera hecho en esa sesión.
+    await open(page, { speed: 4 });
+    await page.click('[data-instructor="patient"]');
+    await page.fill('[data-phys-number="resistance"]', '25');
+    await page.locator('[data-phys-number="resistance"]').press('Enter');
+    await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
+    await page.waitForFunction(
+      () => (window.__r860.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp >= 20,
+      null,
+      { timeout: 10_000 },
+    );
+    // El objetivo sí se cumple en la sesión original; se espera a que su aviso se retire para no confundirlo después.
+    await expect(page.locator('#toast-stack .toast', { hasText: 'Objetivo' })).toHaveCount(0, { timeout: 10_000 });
+    await page.click('[data-action="session"]');
+    const [descarga] = await Promise.all([page.waitForEvent('download'), page.click('[data-action="exportSession"]')]);
+    const ruta = info.outputPath('sesion.json');
+    await descarga.saveAs(ruta);
+    await page.keyboard.press('Escape');
+    await page.setInputFiles('#session-input', ruta);
+    await expect(page.locator('#lesson-count')).toHaveText('Sesión importada: sus objetivos no se evalúan', { timeout: 15_000 });
+    await page.waitForTimeout(1500);
+    await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(0);
+    expect(await page.locator('#toast-stack .toast', { hasText: 'Objetivo' }).count()).toBe(0);
   });
 });

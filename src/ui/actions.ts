@@ -393,13 +393,19 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         return;
       }
       const text = await file.text();
+      // Antes de esperar la respuesta: el motor manda el primer cuadro de la sesión reproducida justo después de ella, y
+      // los objetivos del escenario anterior no deben evaluarse contra él ni un cuadro.
+      ctx.lesson.setSessionImported(true);
       const r = await ctx.client.importSession(text);
       if (r.ok) {
         plots.reset();
         ctx.clearFixture();
         ctx.dialog.close();
         ctx.toast(`Sesión importada y reproducida en pausa. ${r.warnings?.join(' ') ?? ''} Pulsa Reanudar.`);
-      } else ctx.toast(`Rechazada: ${r.errors?.join(' · ')}`, true);
+      } else {
+        ctx.lesson.setSessionImported(false);
+        ctx.toast(`Rechazada: ${r.errors?.join(' · ')}`, true);
+      }
     });
     $('#truth-details').addEventListener('toggle', () => {
       if ($<HTMLDetailsElement>('#truth-details').open) ctx.lesson.flags.truthOpen = true;
