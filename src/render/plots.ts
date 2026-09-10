@@ -94,12 +94,154 @@ export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
   };
 }
 
+/** Tope de la traza en memoria: 120 s a la resolución del motor (un paso cada 4 ms). */
+export const TRACE_CAP = 30_000;
+
+/** Búferes de muestras tal como los publica el motor en cada cuadro: tiempo en ms, flujo en L/s y volumen en L. */
+export interface SampleBuffers {
+  t: ArrayLike<number>;
+  paw: ArrayLike<number>;
+  flow: ArrayLike<number>;
+  vol: ArrayLike<number>;
+  pmus: ArrayLike<number>;
+  breath: ArrayLike<number>;
+}
+
+/**
+ * Añade a la traza TODAS las muestras nuevas del cuadro, en unidades de pantalla, y recorta al tope.
+ *
+ * Se guardaba una de cada cinco, y un evento de un solo paso desaparecía de la curva: cuando Pmáx corta la inspiración
+ * la presión toca el umbral durante 4 ms, y en SC-09 la alarma y la Ppico decían 40 mientras la curva seguía plana en
+ * 5. Una curva que contradice al número y a la alarma enseña que la alarma miente. Ni siquiera era reproducible: el
+ * salto de cinco reempezaba en cada cuadro, así que el pico salía o no según cuántos pasos trajera. Con 12 s de ventana
+ * caen unas tres muestras por píxel de dispositivo: dibujarlas todas es barato.
+ */
+export function appendSamples(points: Point[], s: SampleBuffers, cap = TRACE_CAP): void {
+  let lastT = points.length ? (points[points.length - 1] as Point)[0] : Number.NEGATIVE_INFINITY;
+  for (let i = 0; i < s.t.length; i++) {
+    const tMuestra = (s.t[i] as number) / 1000;
+    // Sólo se descarta lo que es de verdad anterior. Una transición al principio de un paso (Pmáx cortando la
+    // inspiración en su primer instante) llega como muestra de sub-paso con el mismo instante que la muestra previa, y
+    // el reloj del controlador —segundos acumulados— puede quedar unos picosegundos por debajo del de la simulación.
+    // Esa muestra es el pico: con un filtro estricto se perdía justo ella, en unas respiraciones sí y en otras no.
+    if (tMuestra < lastT - 1e-9) continue;
+    const t = Math.max(tMuestra, lastT);
+    points.push([
+      t,
+      s.paw[i] as number,
+      (s.flow[i] as number) * 60,
+      (s.vol[i] as number) * 1000,
+      s.pmus[i] as number,
+      s.breath[i] as number,
+    ]);
+    lastT = t;
+  }
+  if (points.length > cap) points.splice(0, points.length - cap);
+}
+
+/** Lo que cae dentro de la ventana que se dibuja: la misma selección sirve para la escala y para la traza. */
+export function visiblePoints(all: Point[], end: number, win: number): Point[] {
+  return all.filter((p) => p[0] >= end - win - 0.05 && p[0] <= end + 0.001);
+}
+
+/** Muestra más cercana a `t` en una traza ordenada por tiempo; ante un empate, la anterior. Búsqueda binaria. */
+export function nearestSample(points: Point[], t: number): Point | null {
+  if (!points.length) return null;
+  let lo = 0,
+    hi = points.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if ((points[mid] as Point)[0] < t) lo = mid + 1;
+    else hi = mid;
+  }
+  const a = points[lo] as Point,
+    b = lo > 0 ? (points[lo - 1] as Point) : null;
+  return b && Math.abs(b[0] - t) <= Math.abs(a[0] - t) ? b : a;
+}
+
+/** Estado de la escala de dibujo de un lienzo entre un cuadro y el siguiente. */
+export interface ScaleState {
+  bounds: Bounds;
+  /** Desde qué instante (s de simulación) lo visible cabría en una escala menor; null mientras no quepa. */
+  shrinkSinceS: number | null;
+  /** Instante del cuadro anterior: para saber si el barrido acaba de volver al origen. */
+  lastEndS: number;
+}
+
+/**
+ * Escala de dibujo con histéresis (P: decisión de legibilidad; el rango sigue saliendo de los datos).
+ *
+ * `getBounds` recalcula la escala cada cuadro sobre lo visible, y el eje saltaba en mitad del barrido: al salir de la
+ * ventana la última respiración alta, la traza ya dibujada cambiaba de tamaño bajo el ojo del alumno. En SC-18 el eje
+ * de flujo pasaba de ±160 a ±60 en tres saltos en 300 ms, con el barrido al 15 %. La regla:
+ *
+ *   - crecer SIEMPRE en el acto: una señal recortada contra el techo se lee como una meseta que no existe;
+ *   - encoger sólo cuando lo visible lleva una ventana entera cabiendo en una escala menor, y en barrido además al
+ *     volver el cursor al origen, que es cuando la traza empieza a redibujarse desde la izquierda.
+ */
+export function stableBounds(prev: ScaleState | null, measured: Bounds, endS: number, win: number, style: 'sweep' | 'scroll'): ScaleState {
+  // Sin historia, o con el tiempo hacia atrás (escenario nuevo, sesión importada): la escala de lo que se ve.
+  if (!prev || endS < prev.lastEndS) return { bounds: measured, shrinkSinceS: null, lastEndS: endS };
+  const p = prev.bounds;
+  const grown: Bounds = {
+    pressure: Math.max(p.pressure, measured.pressure),
+    flow: Math.max(p.flow, measured.flow),
+    volume: Math.max(p.volume, measured.volume),
+    minPressure: Math.min(p.minPressure, measured.minPressure),
+    minVolume: Math.min(p.minVolume, measured.minVolume),
+  };
+  const cabeEnMenos =
+    measured.pressure < grown.pressure ||
+    measured.flow < grown.flow ||
+    measured.volume < grown.volume ||
+    measured.minPressure > grown.minPressure ||
+    measured.minVolume > grown.minVolume;
+  if (!cabeEnMenos) return { bounds: grown, shrinkSinceS: null, lastEndS: endS };
+  const desde = prev.shrinkSinceS ?? endS;
+  const enOrigen = style === 'scroll' || Math.floor(endS / win) > Math.floor(prev.lastEndS / win);
+  if (endS - desde >= win && enOrigen) return { bounds: measured, shrinkSinceS: null, lastEndS: endS };
+  return { bounds: grown, shrinkSinceS: desde, lastEndS: endS };
+}
+
+/** Rótulos del eje de tiempo: en barrido, la fase dentro de la ventana; en continuo, el tiempo de simulación. */
+export function timeAxisLabels(style: 'sweep' | 'scroll', end: number, win: number): number[] {
+  return [0, 1, 2, 3].map((k) => (style === 'sweep' ? (k * win) / 3 : Math.max(0, end - win + (k * win) / 3)));
+}
+
+/**
+ * Instante bajo una fracción horizontal de la ventana (0 = borde izquierdo, 1 = derecho), con la misma geometría con
+ * que se dibuja la traza, para que cursor y lector nunca se separen del dibujo. En continuo el borde derecho es `end`.
+ * En barrido la posición es la fase de la pasada: a la izquierda de la unión están los datos de la pasada en curso y a
+ * la derecha los de la anterior.
+ */
+export function cursorTimeAt(ratio: number, style: 'sweep' | 'scroll', end: number, win: number): number {
+  // En barrido el borde derecho es la fase 1, que coincide con la 0: se queda justo antes para no saltar a la izquierda.
+  const r = Math.max(0, Math.min(style === 'sweep' ? 1 - 1e-9 : 1, ratio));
+  if (style === 'scroll') return end - win + r * win;
+  const t = Math.floor(end / win) * win + r * win;
+  return t > end ? t - win : t;
+}
+
+/** Márgenes horizontales de la rejilla de curvas: el puntero los necesita para convertir su posición en tiempo. */
+export const WAVE_MARGIN = { left: 47, right: 9 } as const;
+
+/**
+ * Ancho lógico de un lienzo de curvas. No se puede leer del atributo `width`: al preparar el lienzo se reescribe con el
+ * ancho en píxeles de dispositivo (608 × 2 en una pantalla de alta densidad), y el puntero convertía con el doble de
+ * ancho: el cursor caía unos 0,2 s más allá en el centro de la ventana en cualquier Retina o teléfono.
+ */
+export function canvasLogicalWidth(canvas: HTMLCanvasElement): number {
+  return setups.get(canvas)?.w ?? Number(canvas.getAttribute('width'));
+}
+
 export interface WaveOptions {
   window?: number;
   style?: 'sweep' | 'scroll';
   single?: boolean;
   frozen?: boolean;
   cursorTime?: number | null;
+  /** Escala ya decidida por quien llama (con histéresis, `stableBounds`); sin ella, la de lo visible en este cuadro. */
+  bounds?: Bounds;
 }
 
 /** Tres curvas apiladas (o sólo Pva con `single`) con relleno degradado y barrido con hueco por delante del cursor. */
@@ -115,8 +257,8 @@ export function drawWave(
     { ctx, w, h } = o,
     win = options.window ?? 12,
     style = options.style ?? 'sweep';
-  const points = all.filter((p) => p[0] >= end - win - 0.05 && p[0] <= end + 0.001);
-  const range = getBounds(points, peep, vtMl),
+  const points = visiblePoints(all, end, win);
+  const range = options.bounds ?? getBounds(points, peep, vtMl),
     single = options.single ?? false;
   type Spec = {
     label: string;
@@ -174,8 +316,8 @@ export function drawWave(
           fill: 'volume',
         },
       ];
-  const left = 47,
-    right = 9,
+  const left = WAVE_MARGIN.left,
+    right = WAVE_MARGIN.right,
     plotW = w - left - right,
     rowH = h / specs.length;
   const xfn = (t: number): number => left + (style === 'sweep' ? (((t % win) + win) % win) / win : (t - (end - win)) / win) * plotW;
@@ -252,6 +394,14 @@ export function drawWave(
       ctx.fillStyle = '#0555b4f0';
       ctx.fillRect(cursor + 1, ytop, 8, ph);
       line(ctx, cursor, ytop, cursor, ybottom, '#c4f5ff88', 0.8);
+    } else if (style === 'sweep') {
+      // Congeladas en barrido: a la izquierda de esta línea está la pasada nueva y a la derecha la anterior. Sin marca,
+      // el salto de la señal en la unión se lee como un defecto de la curva.
+      const union = xfn(end);
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      line(ctx, union, ytop, union, ybottom, '#c4f5ffaa', 0.9);
+      ctx.restore();
     }
     if (typeof options.cursorTime === 'number' && Number.isFinite(options.cursorTime)) {
       const x = xfn(options.cursorTime);
@@ -259,18 +409,23 @@ export function drawWave(
     }
     ctx.restore();
     if (i === specs.length - 1)
-      for (let k = 0; k <= 3; k++) {
-        const val = style === 'sweep' ? (k * win) / 3 : Math.max(0, end - win + (k * win) / 3);
-        text(ctx, format(val, 0) + ' s', left + (k * plotW) / 3, h - 1, 8, '#77b5d4', k === 3 ? 'right' : k === 0 ? 'left' : 'center');
-      }
+      timeAxisLabels(style, end, win).forEach((val, k) =>
+        text(ctx, format(val, 0) + ' s', left + (k * plotW) / 3, h - 1, 8, '#77b5d4', k === 3 ? 'right' : k === 0 ? 'left' : 'center'),
+      );
   });
   return { left, right, plotW, win };
 }
 
 /** Puntos del último ciclo completo ('last') o del ciclo en curso ('current'). */
 export function cyclePoints(points: Point[], which: 'last' | 'current' = 'last'): Point[] {
-  const ids = [...new Set(points.map((p) => p[5]).filter((v) => v > 0))];
-  const id = which === 'current' ? ids[ids.length - 1] : ids[ids.length - 2];
+  // La traza guarda cada muestra del motor (hasta 30 000): los dos últimos ciclos se buscan desde el final, en vez de
+  // reunir en cada dibujo del bucle todos los identificadores de la historia.
+  const ids: number[] = [];
+  for (let i = points.length - 1; i >= 0 && ids.length < 2; i--) {
+    const id = (points[i] as Point)[5];
+    if (id > 0 && id !== ids[ids.length - 1]) ids.push(id);
+  }
+  const id = which === 'current' ? ids[0] : ids[1];
   return id === undefined ? [] : points.filter((p) => p[5] === id);
 }
 

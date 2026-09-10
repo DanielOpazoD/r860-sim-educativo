@@ -1009,6 +1009,22 @@ a {
   accent-color: #88cdec;
   width: 100%;
 }
+/* Dos deslizadores en el inspector: cada uno con su nombre visible, para que «cursor» e «historia» no se confundan. */
+.inspector-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: #9fc3d8;
+}
+.inspector-field > span {
+  flex: none;
+  min-width: 46px;
+}
+.signal-inspector .inspector-field input {
+  flex: 1;
+  width: auto;
+}
 .stage-footnote {
   display: flex;
   align-items: center;
