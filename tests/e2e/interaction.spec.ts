@@ -54,11 +54,12 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await open(page, { speed: 4, instructor: 0, editTimeout: 1500 });
     await page.click('[data-setting-quick="rr"]');
     await page.keyboard.press('ArrowUp');
-    await expect(page.locator('#quick-value')).toHaveValue('16');
-    await expect(page.locator('[data-quick-val="rr"]')).toHaveText('15'); // el borrador no se pinta en la tecla
-    // El lector de pantalla oye el plazo UNA vez; la cuenta visible cambia cada segundo sin región viva.
+    // El lector de pantalla oye el plazo UNA vez; la cuenta visible cambia cada segundo sin región viva. Se comprueba
+    // lo primero: con un plazo de 1,5 s, cualquier espera anterior bajo carga se lo come.
     await expect(page.locator('#quick-announce')).toContainText('para confirmar o cancelar');
     await expect(page.locator('#quick-countdown')).not.toHaveAttribute('aria-live', /.+/);
+    await expect(page.locator('#quick-value')).toHaveValue('16');
+    await expect(page.locator('[data-quick-val="rr"]')).toHaveText('15'); // el borrador no se pinta en la tecla
     await page.waitForTimeout(2600);
     await expect(page.locator('#quick-editor')).toBeHidden();
     await expect(page.locator('[data-quick-val="rr"]')).toHaveText('15');

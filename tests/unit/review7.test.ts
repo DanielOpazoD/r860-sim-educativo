@@ -26,10 +26,26 @@ function escenario(id: string): Simulator {
 /** Bloqueo espiratorio de la duración pedida, desde un estado ya estacionario. */
 function bloquear(id: string, durationS: number): { valida: boolean; motivo: string | null; peepTot: number | null } {
   const sim = escenario(id);
-  runUntilBreath(sim, 6);
-  sim.command({ type: 'requestHold', kind: 'expHold', durationS });
-  for (let i = 0; i < 200_000 && !sim.frame().procedure.last.expHold; i++) sim.step();
-  const h = sim.frame().procedure.last.expHold!;
+  // Si la lección dice «tras la perturbación», el bloqueo se hace después de ella: se aplican las del escenario a su hora.
+  const e = SCENARIOS.find((x) => x.id === id)!;
+  for (const p of e.perturbations) {
+    sim.run(Math.max(0, p.atSimTimeMs - sim.simTimeMs));
+    if (p.patient) sim.command({ type: 'setPatient', params: p.patient });
+    if (p.effort) sim.command({ type: 'setEffort', params: p.effort });
+    if (p.sensors) sim.command({ type: 'setSensors', params: p.sensors });
+  }
+  runUntilBreath(sim, sim.breaths.length + 6);
+  // Con esfuerzo activo la oclusión puede caer encima de un esfuerzo: la meseta sale perturbada y eso es correcto.
+  // Como haría el alumno, se repite en la siguiente espiración; lo que se juzga aquí es la DURACIÓN, no la puntería.
+  let h = sim.frame().procedure.last.expHold;
+  for (let intento = 0; intento < 6; intento++) {
+    const antes = h;
+    sim.command({ type: 'requestHold', kind: 'expHold', durationS });
+    for (let i = 0; i < 200_000 && sim.frame().procedure.last.expHold === antes; i++) sim.step();
+    h = sim.frame().procedure.last.expHold;
+    if (h && h.reason !== 'mesetaPerturbada') break;
+  }
+  if (!h) throw new Error(`${id}: el bloqueo espiratorio no terminó`);
   return { valida: h.quality === 'valid', motivo: h.reason, peepTot: h.values.peepTot?.value ?? null };
 }
 

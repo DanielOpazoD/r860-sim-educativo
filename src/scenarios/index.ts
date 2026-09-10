@@ -229,7 +229,11 @@ export const SCENARIOS: Scenario[] = [
       text: 'El paciente inspira durante 2 s pero el ventilador cicla al segundo: el esfuerzo sobrevive al ciclado y dispara una segunda respiración sobre un pulmón sin vaciar. A los 40 s la resistencia espiratoria se dispara: aparece auto-PEEP y esos mismos esfuerzos dejan de llegar al umbral.',
       tasks: [
         { id: 'ver', text: 'Observa en el registro las respiraciones asistidas seguidas de otra al poco tiempo.', test: 'assisted' },
-        { id: 'peepi', text: 'Tras la perturbación, mide la PEEP total con un bloqueo espiratorio.', test: 'validExp' },
+        {
+          id: 'peepi',
+          text: 'Tras la perturbación, mide la PEEP total con un bloqueo espiratorio de 2 s: el hueco entre dos esfuerzos dura 3 s y uno más largo sale perturbado.',
+          test: 'validExp',
+        },
         { id: 'trig', text: 'Baja el disparo por flujo a 1 L/min y comprueba si recupera alguna respiración.', test: 'trigger1' },
       ],
     },

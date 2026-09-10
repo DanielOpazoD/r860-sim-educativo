@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TRIGGER_DELAY_S } from '../../src/engine/controller';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 import { validateVcSettings } from '../../src/domain/validation';
 import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
@@ -88,5 +89,69 @@ describe('SYN-03 · resistencia de la rama espiratoria', () => {
     expect(benchSim().command({ type: 'setPatient', params: { rExpValve: 7 } }).accepted).toBe(false);
     expect(benchSim().command({ type: 'setPatient', params: { rExpValve: 2.5 } }).accepted).toBe(true);
     expect(() => benchSim({ patient: { ...BENCH_PATIENT, rExpValve: -1 } })).toThrow(/rama espiratoria/);
+  });
+});
+
+describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo aparece en la curva de presión', () => {
+  /** Por respiración asistida: retardo entre la detección y el inicio, y caída máxima de Pva bajo PEEP en ese lapso. */
+  function disparos(over: Partial<typeof BENCH_SETTINGS>, amplitude = 8): { retardoMs: number; caida: number }[] {
+    const sim = benchSim({
+      effort: { enabled: true, amplitude, ratePerMin: 15, tiS: 0.8, phaseS: 0.5 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, rr: 10, biasFlow: 4 / 60, flowTrigger: 2 / 60, ...over },
+    });
+    const out: { retardoMs: number; caida: number }[] = [];
+    let deteccionMs: number | null = null,
+      pawMin = Infinity,
+      enExp = false;
+    while (sim.breaths.length < 10) {
+      sim.step();
+      const f = sim.frame();
+      const ultimo = f.eventsTail.filter((e) => e.kind === 'breath' && (e.payload as { trigger?: number }).trigger !== undefined).at(-1);
+      if (ultimo && ultimo.simTimeMs !== deteccionMs) {
+        deteccionMs = ultimo.simTimeMs;
+        pawMin = Infinity;
+      }
+      const exp = f.live.phase === 'exp';
+      if (exp && deteccionMs !== null) pawMin = Math.min(pawMin, f.live.paw);
+      // Empieza una inspiración: si hubo detección hace poco, es la respiración que ese disparo pidió.
+      if (enExp && !exp && deteccionMs !== null && f.simTimeMs - deteccionMs < 500) {
+        out.push({ retardoMs: f.simTimeMs - deteccionMs, caida: 5 - pawMin });
+        deteccionMs = null;
+      }
+      enExp = exp;
+    }
+    return out;
+  }
+
+  it('la respiración empieza 80 ms después de cruzar el umbral, y en ese lapso la Pva cae ≈ 2 cmH₂O con Pmus 8 y flujo de base 4', () => {
+    const d = disparos({});
+    expect(d.length).toBeGreaterThanOrEqual(5);
+    for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_S * 1000)).toBeLessThanOrEqual(4);
+    for (const x of d.slice(2)) {
+      expect(x.caida).toBeGreaterThan(1);
+      expect(x.caida).toBeLessThan(3);
+    }
+  });
+
+  it('más flujo de base o menos esfuerzo, menos trabajo de disparo; el disparo por presión lo duplica', () => {
+    const base = disparos({}).at(-1)!.caida;
+    expect(disparos({ biasFlow: 10 / 60 }).at(-1)!.caida).toBeLessThan(base - 0.5);
+    expect(disparos({}, 4).at(-1)!.caida).toBeLessThan(base - 0.5);
+    // Con disparo por presión a −2 la Pva ya está 2 por debajo al detectar y sigue cayendo durante el retardo.
+    expect(disparos({ triggerByPressure: true, pressureTrigger: -2 }).at(-1)!.caida).toBeGreaterThan(3);
+  });
+
+  it('sin disparo asistido nada cambia: la espiración termina por el temporizador y la Pva no baja de PEEP', () => {
+    const sim = benchSim({
+      effort: { enabled: true, amplitude: 2, ratePerMin: 15, tiS: 0.8, phaseS: 0.5 },
+      settings: { ...BENCH_SETTINGS, assistControl: false, biasFlow: 10 / 60 },
+    });
+    let pawMin = Infinity;
+    while (sim.breaths.length < 8) {
+      sim.step();
+      if (sim.frame().live.phase === 'exp') pawMin = Math.min(pawMin, sim.frame().live.paw);
+    }
+    expect(sim.breaths.every((b) => b.type === 'mandatory')).toBe(true);
+    expect(pawMin).toBeCloseTo(5, 6);
   });
 });
