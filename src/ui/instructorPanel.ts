@@ -116,7 +116,16 @@ export function createInstructorPanel(
     } else if (kind === 'obstruction') {
       const on = p.rInsp >= 300;
       await setPhys([{ type: 'setPatient', params: { rInsp: on ? 10 : 400 } }], [{ type: 'setPatient', params: { rInsp: p.rInsp } }]);
-    } else ctx.toast('Fuga y desconexión no están modeladas en esta etapa.', true);
+    } else if (kind === 'leak')
+      await setPhys(
+        [{ type: 'setPatient', params: { leakLpmAt10: 6 } }],
+        [{ type: 'setPatient', params: { leakLpmAt10: p.leakLpmAt10 ?? 0 } }],
+      );
+    else if (kind === 'disconnect')
+      await setPhys(
+        [{ type: 'setPatient', params: { disconnected: true } }],
+        [{ type: 'setPatient', params: { disconnected: !!p.disconnected } }],
+      );
   }
   function switchInstructor(tab: string): void {
     for (const e of $$('[data-instructor]')) {
@@ -154,7 +163,7 @@ export function createInstructorPanel(
       $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
       $('#patient-extra-controls').innerHTML =
         physHtml(PATIENT_EXTRA, infoButton, infoPanel) +
-        `<p class="settings-annotation">Fuga en Y, desconexión y compensaciones: no modeladas en esta etapa.</p>`;
+        `<p class="settings-annotation">La fuga se modela en la pieza en Y, lineal con la presión; sin compensación de fuga ni distensibilidad del circuito.</p>`;
       $('#fault-grid').innerHTML = FAULTS.map(
         ([id, i, l, d, off]) =>
           `<button data-event="${id}" id="event-${id}" ${off ? 'disabled' : ''}>${icon(i)}<b>${l}</b><small>${d}</small></button>`,

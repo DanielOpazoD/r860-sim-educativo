@@ -187,6 +187,58 @@ describe('OBJ · las lecciones se pueden terminar', () => {
     expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
   });
 
+  it('SC-22 · fuga: se ve en la tabla, dispara sola y se calla subiendo el umbral', () => {
+    const esc = SCENARIOS.find((s) => s.id === 'SC-22')!;
+    const sim = simular('SC-22');
+    const a = new Alumno('SC-22', esc.lesson!.tasks);
+    for (let n = 2; n <= 8; n++) {
+      runUntilBreath(sim, n);
+      a.mirar(sim.frame());
+    }
+    expect(sim.frame().metrics.leakPct!.value!).toBeGreaterThan(0.15);
+    expect(
+      sim.breaths.some((b) => b.type === 'assisted'),
+      'autodisparo con el esfuerzo apagado',
+    ).toBe(true);
+    expect(a.hechos.has('leak')).toBe(true);
+    expect(a.hechos.has('auto')).toBe(true);
+    expect(a.hechos.has('trig')).toBe(false);
+    expect(sim.command({ type: 'confirmSettings', changes: { flowTrigger: 4 / 60 } }).accepted).toBe(true);
+    const antes = sim.breaths.length;
+    runUntilBreath(sim, antes + 7);
+    a.mirar(sim.frame());
+    expect(
+      sim.breaths.slice(antes + 2).every((b) => b.type === 'mandatory'),
+      'sin autodisparo por encima de la fuga',
+    ).toBe(true);
+    expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
+  });
+
+  it('SC-23 · desconexión: alarma, reconexión que la resuelve y reconocimiento que limpia la banda', () => {
+    const esc = SCENARIOS.find((s) => s.id === 'SC-23')!;
+    const sim = simular('SC-23');
+    const a = new Alumno('SC-23', esc.lesson!.tasks);
+    runUntilBreath(sim, 3);
+    a.mirar(sim.frame());
+    expect(a.hechos.size).toBe(0);
+    sim.command({ type: 'setPatient', params: { disconnected: true } });
+    runUntilBreath(sim, 6);
+    a.mirar(sim.frame());
+    expect(a.hechos.has('disc')).toBe(true);
+    expect(a.hechos.has('back')).toBe(false);
+    sim.command({ type: 'setPatient', params: { disconnected: false } });
+    runUntilBreath(sim, 9);
+    a.mirar(sim.frame());
+    expect(a.hechos.has('back')).toBe(true);
+    expect(a.hechos.has('ack'), 'la banda gris no es azul').toBe(false);
+    a.flags.alarmSeen = true; // abrió la lista de alarmas
+    sim.command({ type: 'acknowledgeAlarms' });
+    sim.step();
+    a.mirar(sim.frame());
+    expect(a.hechos.has('ack')).toBe(true);
+    expect(a.hechos.size).toBe(esc.lesson!.tasks.length);
+  });
+
   it('SC-17 · pendelluft: la meseta corta que se pide es una que el equipo acepta', () => {
     const esc = SCENARIOS.find((s) => s.id === 'SC-17')!;
     const sim = simular('SC-17');

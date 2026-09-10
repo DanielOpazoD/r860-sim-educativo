@@ -154,6 +154,14 @@ export interface PatientParams {
   /** Resistencia de la rama espiratoria + válvula (cmH2O·s/L), en serie con Rexp. D techo del sistema respiratorio; valor P. 0 = ideal. */
   rExpValve?: CmH2OSecondsPerLiter;
   /**
+   * Fuga en la pieza en Y, expresada como el flujo que escapa a 10 cmH2O (L/min); lineal con la presión del nodo (P).
+   * Con ella el volumen que entrega el ventilador no es el que recibe el pulmón, la PEEP se sostiene sólo mientras el
+   * flujo de base cubra la fuga y el disparo por flujo ve la fuga como si fuera el paciente. Ausente o 0 = sin fuga.
+   */
+  leakLpmAt10?: number;
+  /** Circuito abierto en la Y: el nodo queda a presión ambiente. */
+  disconnected?: boolean;
+  /**
    * Tiempo de apertura de la válvula espiratoria (ms). La válvula no pasa de cerrada a abierta de golpe: mientras se
    * abre, su resistencia decae y la presión de la vía aérea baja desde la presión alveolar hasta la PEEP en lugar de
    * saltar. 0 = válvula ideal instantánea (banco analítico).

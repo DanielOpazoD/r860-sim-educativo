@@ -237,6 +237,8 @@ export function validatePatientParams(p: {
   p0: number;
   rExpValve?: number;
   expValveOpenMs?: number;
+  leakLpmAt10?: number;
+  disconnected?: boolean;
   eVisc?: number;
   tauViscS?: number;
   sigmoid?: { b: number; c: number; d: number };
@@ -246,11 +248,13 @@ export function validatePatientParams(p: {
 }): string[] {
   const r: string[] = [];
   for (const [k, v] of Object.entries(p))
-    if (!['sigmoid', 'efl', 'rExpVolumeDep', 'second'].includes(k) && (typeof v !== 'number' || !Number.isFinite(v)))
+    if (!['sigmoid', 'efl', 'rExpVolumeDep', 'second', 'disconnected'].includes(k) && (typeof v !== 'number' || !Number.isFinite(v)))
       r.push(`${k}: no numérico`);
+  if (p.disconnected !== undefined && typeof p.disconnected !== 'boolean') r.push('disconnected: debe ser booleano');
   if (r.length) return r;
   if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
     r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
+  if (p.leakLpmAt10 !== undefined && (p.leakLpmAt10 < 0 || p.leakLpmAt10 > 60)) r.push('Fuga fuera de 0–60 L/min a 10 cmH2O');
   if (p.expValveOpenMs !== undefined && (!Number.isFinite(p.expValveOpenMs) || p.expValveOpenMs < 0 || p.expValveOpenMs > 200))
     r.push('Apertura de la válvula espiratoria fuera de 0–200 ms');
   if (p.crs < 1e-4 || p.crs > 1) r.push('Crs fuera de 0.1–1000 mL/cmH2O');

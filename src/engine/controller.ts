@@ -15,6 +15,12 @@ export const TRIGGER_REFRACTORY_S = 0.25;
  */
 export const TRIGGER_DELAY_S = 0.08;
 /**
+ * Caída de la Pva espiratoria bajo la PEEP programada a partir de la cual el disparo no se evalúa (cmH2O), P. Con el
+ * circuito abierto o una fuga que el flujo de base no cubre, el sensor de flujo ve salir gas de forma continua y
+ * dispararía sin parar; un equipo real declara la desconexión y deja de buscar esfuerzos.
+ */
+export const TRIGGER_MIN_PEEP_DROP_CMH2O = 3;
+/**
  * Tiempo inspiratorio máximo de una respiración soportada (s), P. El ciclado por flujo puede no llegar —esfuerzo
  * sostenido, flujo que se aplana por encima del umbral— y el soporte no puede durar indefinidamente; 3 s es un tope
  * habitual en la literatura de soporte de presión (U-52).
@@ -531,6 +537,7 @@ export class VcController {
         const tb0 = this.tBreath;
         const nSub = rise > 0 && tb0 < rise ? Math.max(1, Math.ceil(h / 0.001)) : 1;
         let dVtot = 0;
+        let dVLeakTot = 0;
         let qLast = 0;
         let pawLast = targetAt(tb0 + h);
         const hs = h / nSub;
@@ -539,14 +546,15 @@ export class VcController {
           const tb = tb0 + (i + 1) * hs;
           const tg = targetAt(tb);
           // Fuente de presión con tope de flujo del actuador dentro del integrador: si el tope actúa, la presión queda por debajo del objetivo.
-          const { dV, qEnd, clamped } = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, false, ACTUATOR_MAX_FLOW_LPS);
-          if (dV >= 0) dVtot += dV;
-          else dVexp -= dV; // flujo negativo (válvula espiratoria activa tras bajar la PEEP): cuenta como espirado, nunca VTi negativo
-          qLast = qEnd;
-          pawLast = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + (i + 1) * hs), p.v) : tg;
+          const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, false, ACTUATOR_MAX_FLOW_LPS);
+          if (r.dV >= 0) dVtot += r.dV;
+          else dVexp -= r.dV; // flujo negativo (válvula espiratoria activa tras bajar la PEEP): cuenta como espirado, nunca VTi negativo
+          dVLeakTot += r.dVLeak;
+          qLast = r.qEnd + r.qLeakEnd; // lo que mide el ventilador: al pulmón y a la fuga
+          pawLast = r.clamped ? r.pyEnd : tg;
         }
         if (this.breath) {
-          this.breath.vtInsp += dVtot;
+          this.breath.vtInsp += dVtot + dVLeakTot; // VTi de pantalla: lo entregado, fuga incluida
           this.breath.vtExp += dVexp;
         }
         this.q = qLast;
@@ -606,9 +614,10 @@ export class VcController {
         const rValve = p.params.rExpValve ?? 0;
         const tOpen = Math.max(0, (p.params.expValveOpenMs ?? DEFAULT_EXP_VALVE_OPEN_MS) / 1000);
         let dV = 0,
+          dVLeak = 0,
           qEnd = 0,
-          clamped = false,
-          rNow = rValve;
+          qLeakEnd = 0,
+          pyEnd = peep;
         if (this.tPhase < tOpen) {
           // La válvula se abre progresivamente: su resistencia decae desde la de cerrada hasta la de la rama.
           // El flujo arranca casi nulo y la Pva parte de la presión alveolar, en vez de saltar a la PEEP.
@@ -616,21 +625,28 @@ export class VcController {
           const hs = h / nSub;
           for (let i = 0; i < nSub; i++) {
             const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
-            rNow = rValve + VALVE_CLOSED_R * u * u;
+            const rNow = rValve + VALVE_CLOSED_R * u * u;
             const r = p.integratePressureSource(peep, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
             dV += r.dV;
+            dVLeak += r.dVLeak;
             qEnd = r.qEnd;
-            clamped = r.clamped;
+            qLeakEnd = r.qLeakEnd;
+            pyEnd = r.pyEnd;
           }
         } else {
           const r = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve, EXP_MAX_FLOW_LPS);
           dV = r.dV;
+          dVLeak = r.dVLeak;
           qEnd = r.qEnd;
-          clamped = r.clamped;
+          qLeakEnd = r.qLeakEnd;
+          pyEnd = r.pyEnd;
         }
-        if (this.breath) this.breath.vtExp += Math.max(0, -dV);
-        this.q = qEnd;
-        this.paw = clamped ? p.pawForFlow(qEnd, this.pmusAt(this.simT + h), p.v) + rNow * qEnd : peep - rNow * qEnd;
+        // VTe de pantalla: lo que vuelve por la válvula espiratoria, que es lo que sale del pulmón menos lo que se va por la fuga.
+        if (this.breath) this.breath.vtExp += Math.max(0, -dV - dVLeak);
+        // Flujo de pantalla: el del sensor del ventilador, que ve la fuga como si fuera el paciente.
+        this.q = qEnd + qLeakEnd;
+        // La presión mostrada es la del nodo (pieza en Y): con resistencia de rama queda sobre la PEEP mientras sale gas.
+        this.paw = pyEnd;
         this.lastExpPaw = this.paw;
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
@@ -640,7 +656,9 @@ export class VcController {
           !this.triggerPending &&
           (s.assistControl || s.mode === 'CPAP_PS') &&
           this.tPhase + h >= TRIGGER_REFRACTORY_S &&
-          (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : qEnd >= s.flowTrigger)
+          // Sin PEEP en el circuito (desconexión, fuga mayor que el flujo de base) no hay disparo que evaluar (P).
+          this.paw > peep - TRIGGER_MIN_PEEP_DROP_CMH2O &&
+          (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : this.q >= s.flowTrigger)
         ) {
           // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
           // paciente tira del flujo de base. En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida.

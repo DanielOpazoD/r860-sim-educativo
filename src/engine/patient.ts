@@ -48,6 +48,9 @@ export function sigmoidCompliance(s: SigmoidPV, p0: number, v: number): number {
   return sigmoidSlope(s, u);
 }
 /** Volumen de equilibrio pasivo a una presión dada, con el modelo elástico que declare el paciente. */
+/** Conductancia con la que se representa el circuito abierto (L/s por cmH2O): 0,5 L/s bajan el nodo a 0,25 cmH2O (P). */
+export const DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O = 2;
+
 export function equilibriumVolumeFor(params: { crs: number; p0: number; sigmoid?: SigmoidPV }, paw: number): number {
   const s = params.sigmoid;
   return s && s.b > 0 ? sigmoidVolume(s, params.p0, paw) : params.crs * (paw - params.p0);
@@ -250,6 +253,20 @@ export class PatientModel {
   get hasSecond(): boolean {
     return !!this.params.second && this.params.second.crs > 0;
   }
+  /**
+   * Conductancia de la fuga en la pieza en Y (L/s por cmH2O): Qfuga = G · Py, lineal con la presión del nodo (P). El
+   * instructor la fija como litros por minuto a 10 cmH2O; la desconexión es una fuga tan grande que el nodo queda a
+   * presión ambiente sea cual sea el flujo que entregue el ventilador.
+   */
+  get leakG(): number {
+    if (this.params.disconnected) return DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O;
+    const lpm = this.params.leakLpmAt10 ?? 0;
+    return lpm > 0 ? lpm / 60 / 10 : 0;
+  }
+  /** Flujo que escapa por la fuga a la presión de nodo dada (L/s; negativo si el nodo queda bajo el ambiente). */
+  leakFlow(py: number): number {
+    return this.leakG * py;
+  }
   /** Presión elástica de la segunda unidad (lineal: sin sigmoide ni viscoelástico, simplificación declarada). */
   pel2(v2: number = this.v2): number {
     return this.params.p0 + v2 / Math.max(1e-6, this.params.second?.crs ?? 1);
@@ -291,7 +308,8 @@ export class PatientModel {
     v: number = this.v,
     v2: number = this.v2,
     minFlow: number = Number.NEGATIVE_INFINITY,
-  ): { py: number; q1: number; q2: number; clamped: boolean } {
+  ): { py: number; q1: number; q2: number; qLeak: number; clamped: boolean } {
+    const g = this.leakG;
     const ramas = (py: number): { q1: number; q2: number } => ({
       q1: this.branch1Flow(py, pmus, v),
       q2: this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0,
@@ -299,20 +317,22 @@ export class PatientModel {
     let py = rSeries > 0 ? this.nodePressureWithSeries(paw, pmus, rSeries, v, v2) : paw;
     let { q1, q2 } = ramas(py);
     let clamped = false;
+    // Lo que el ventilador entrega o admite es el flujo de las ramas MÁS la fuga: los topes se aplican a esa suma.
     const fijarTotal = (qTotal: number): void => {
       py = this.nodePressureForFlow(qTotal, pmus, v, v2);
       ({ q1, q2 } = ramas(py));
     };
-    if (q1 + q2 > maxFlow) {
+    const qVent = q1 + q2 + g * py;
+    if (qVent > maxFlow) {
       clamped = true;
       fijarTotal(maxFlow);
-    } else if (q1 + q2 < minFlow) {
+    } else if (qVent < minFlow) {
       clamped = true;
       fijarTotal(minFlow);
-    } else if (nonNegativeFlow && q1 + q2 < 0) {
-      fijarTotal(0); // válvula inspiratoria de un solo sentido: el circuito queda ocluido
+    } else if (nonNegativeFlow && qVent < 0) {
+      fijarTotal(0); // válvula inspiratoria de un solo sentido: el circuito queda ocluido (lo que sale del pulmón se va por la fuga)
     }
-    return { py, q1, q2, clamped };
+    return { py, q1, q2, qLeak: g * py, clamped };
   }
 
   /** Las dos ramas son lineales por tramos en la presión del nodo: entonces el nodo se resuelve en forma cerrada. */
@@ -328,7 +348,18 @@ export class PatientModel {
   private solveNodeLinear(pmus: number, v: number, v2: number, pendiente: number, termino: number, objetivo: number): number | null {
     if (!this.branchesLinear()) return null;
     const sec = this.params.second;
-    if (!sec) return null;
+    if (!sec || sec.crs <= 0) {
+      // Una sola rama lineal: q1 = (py − p1)/r con r según el sentido del flujo; se prueba cada sentido.
+      const p1 = this.pel(v) - pmus;
+      for (const r of [this.params.rInsp, this.params.rExp]) {
+        const a = 1 / r + pendiente;
+        if (Math.abs(a) < 1e-12) continue;
+        const py = (objetivo - (termino - p1 / r)) / a;
+        const dp = py - p1;
+        if ((r === this.params.rInsp && dp >= -1e-9) || (r === this.params.rExp && dp <= 1e-9)) return py;
+      }
+      return null;
+    }
     const p1 = this.pel(v) - pmus,
       p2 = this.pel2(v2) - pmus;
     const cortes = [p1, p2].sort((a, b) => a - b);
@@ -360,13 +391,14 @@ export class PatientModel {
   /** Presión del nodo cuando el circuito interpone una resistencia en serie: por ella pasa el flujo total de las ramas. */
   nodePressureWithSeries(paw: number, pmus: number, rSeries: number, v: number = this.v, v2: number = this.v2): number {
     if (!(rSeries > 0)) return paw;
-    if (this.hasSecond) {
-      const exacto = this.solveNodeLinear(pmus, v, v2, 1 / rSeries, -paw / rSeries, 0);
+    const gFuga = this.leakG;
+    if (this.hasSecond || gFuga > 0) {
+      const exacto = this.solveNodeLinear(pmus, v, v2, 1 / rSeries + gFuga, -paw / rSeries, 0);
       if (exacto !== null) return exacto;
     }
     const g = (py: number): number => {
       this.solverEvals++;
-      return this.branch1Flow(py, pmus, v) + (this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0) - (paw - py) / rSeries;
+      return this.branch1Flow(py, pmus, v) + (this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0) + gFuga * py - (paw - py) / rSeries;
     };
     let lo = Math.min(paw, this.pel(v), this.hasSecond ? this.pel2(v2) : paw) - pmus - 1;
     let hi = Math.max(paw, this.pel(v), this.hasSecond ? this.pel2(v2) : paw) - pmus + 1;
@@ -385,13 +417,14 @@ export class PatientModel {
    * no lineales (Rohrer, limitación al flujo), pero el flujo total crece de forma monótona con la presión del nodo.
    */
   nodePressureForFlow(qTotal: number, pmus: number, v: number = this.v, v2: number = this.v2): number {
-    if (this.hasSecond) {
-      const exacto = this.solveNodeLinear(pmus, v, v2, 0, 0, qTotal);
+    const gFuga = this.leakG;
+    if (this.hasSecond || gFuga > 0) {
+      const exacto = this.solveNodeLinear(pmus, v, v2, gFuga, 0, qTotal);
       if (exacto !== null) return exacto;
     }
     const f = (py: number): number => {
       this.solverEvals++;
-      return this.branch1Flow(py, pmus, v) + this.branch2Flow(py, pmus, v2);
+      return this.branch1Flow(py, pmus, v) + this.branch2Flow(py, pmus, v2) + gFuga * py;
     };
     let lo = Math.min(this.pel(v), this.pel2(v2)) - pmus - 1;
     let hi = Math.max(this.pel(v), this.pel2(v2)) - pmus + 1;
@@ -407,8 +440,8 @@ export class PatientModel {
 
   /** Paw resultante para un flujo impuesto (fuente de flujo). */
   pawForFlow(q: number, pmus: number, v: number = this.v): number {
-    // Con dos unidades o con limitación al flujo la relación no es invertible en forma cerrada: se resuelve el nodo.
-    if (this.hasSecond || this.params.efl) return this.nodePressureForFlow(q, pmus, v);
+    // Con dos unidades, con limitación al flujo o con fuga la relación no es invertible en forma cerrada: se resuelve el nodo.
+    if (this.hasSecond || this.params.efl || this.leakG > 0) return this.nodePressureForFlow(q, pmus, v);
     const r = this.r1For(q, v) + this.params.r2 * Math.abs(q);
     return this.pel(v) + r * q - pmus;
   }
@@ -426,8 +459,11 @@ export class PatientModel {
     maxFlow = Number.POSITIVE_INFINITY,
     rSeries = 0,
     minFlow = Number.NEGATIVE_INFINITY,
-  ): { dV: number; qEnd: number; clamped: boolean } {
-    if (!(dt > 0)) return { dV: 0, qEnd: this.flowForPaw(paw, pmusAt(t0), this.v, rSeries), clamped: false };
+  ): { dV: number; qEnd: number; clamped: boolean; dVLeak: number; qLeakEnd: number; pyEnd: number } {
+    if (!(dt > 0)) {
+      const n = this.nodeState(paw, pmusAt(t0), rSeries, maxFlow, nonNegativeFlow, this.v, this.v2, minFlow);
+      return { dV: 0, qEnd: n.q1 + n.q2, clamped: false, dVLeak: 0, qLeakEnd: n.qLeak, pyEnd: n.py };
+    }
     const tauMin = this.minBranchTau();
     const nSub = Math.min(1000, Math.max(1, Math.ceil(dt / (0.2 * Math.max(1e-6, tauMin)))));
     // El tope de flujo (válvula/actuador) se aplica dentro de cada etapa del RK2, no en un paso aparte: así no hay
@@ -443,17 +479,20 @@ export class PatientModel {
     let v2 = v20;
     let t = t0;
     let q = 0;
-    // Con dos unidades el nodo se resuelve primero (circuito y tope del ventilador) y después se reparte entre ramas.
-    const nodo = (pm: number, vv: number, vv2: number): { q1: number; q2: number; clamped: boolean } =>
+    // Con dos unidades o con fuga el nodo se resuelve primero (circuito, fuga y tope del ventilador) y después se reparte.
+    const nodo = (pm: number, vv: number, vv2: number): { py: number; q1: number; q2: number; qLeak: number; clamped: boolean } =>
       this.nodeState(paw, pm, rSeries, maxFlow, nonNegativeFlow, vv, vv2, minFlow);
+    const porNodo = this.hasSecond || this.leakG > 0;
     let clampedAlguna = false;
+    let dVLeak = 0;
     for (let i = 0; i < nSub; i++) {
       const vSub = v;
-      if (this.hasSecond) {
+      if (porNodo) {
         const a = nodo(pmusAt(t), v, v2);
         const b = nodo(pmusAt(t + h), v + h * a.q1, v2 + h * a.q2);
         v += (h / 2) * (a.q1 + b.q1);
         v2 += (h / 2) * (a.q2 + b.q2);
+        dVLeak += (h / 2) * (a.qLeak + b.qLeak);
         q = b.q1 + b.q2;
         clampedAlguna = clampedAlguna || a.clamped || b.clamped;
       } else {
@@ -468,14 +507,25 @@ export class PatientModel {
     }
     this.v = v;
     this.v2 = v2;
-    if (this.hasSecond) {
+    if (porNodo) {
       const fin = nodo(pmusAt(t), v, v2);
       const qFin = fin.q1 + fin.q2;
-      return { dV: v - v0 + (v2 - v20), qEnd: Number.isFinite(qFin) ? qFin : q, clamped: fin.clamped || clampedAlguna };
+      return {
+        dV: v - v0 + (v2 - v20),
+        qEnd: Number.isFinite(qFin) ? qFin : q,
+        clamped: fin.clamped || clampedAlguna,
+        dVLeak,
+        qLeakEnd: fin.qLeak,
+        pyEnd: fin.py,
+      };
     }
     const qFree = this.flowForPaw(paw, pmusAt(t), v, rSeries, v2);
     const qFin = f(paw, pmusAt(t), v);
-    return { dV: v - v0, qEnd: Number.isFinite(qFin) ? qFin : q, clamped: qFree > maxFlow || qFree < minFlow };
+    const qEnd = Number.isFinite(qFin) ? qFin : q;
+    const clamped = qFree > maxFlow || qFree < minFlow;
+    // Sin fuga la presión del nodo es la impuesta menos la caída en la resistencia en serie (o la del flujo topado).
+    const pyEnd = clamped ? this.pawForFlow(qEnd, pmusAt(t), v) : paw - rSeries * qEnd;
+    return { dV: v - v0, qEnd, clamped, dVLeak: 0, qLeakEnd: 0, pyEnd };
   }
 
   /**
@@ -485,7 +535,7 @@ export class PatientModel {
    */
   integrateFlowSource(q: number, dt: number, pmus = 0): { dV: number } {
     if (!(dt > 0)) return { dV: 0 };
-    if (!this.hasSecond) {
+    if (!this.hasSecond && this.leakG <= 0) {
       const v0 = this.v;
       const dV = q * dt;
       this.v += dV;
@@ -509,6 +559,6 @@ export class PatientModel {
       this.v2 += (h / 2) * (k1b + k2b);
       this.relax((this.v - before) / h, h, before);
     }
-    return { dV: q * dt }; // el volumen que entra o sale del pulmón lo fija el flujo impuesto; el reparto entre unidades es interno
+    return { dV: q * dt }; // lo que entrega el ventilador lo fija el flujo impuesto; el reparto entre unidades (y la fuga) es interno
   }
 }

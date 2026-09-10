@@ -624,6 +624,86 @@ SCENARIOS.push({
     'Porque la potencia es presión por volumen por frecuencia: al bajar el VT cae el volumen y, con él, la presión elástica que ese volumen cuesta; el producto cae más que cada factor. Si después se sube la frecuencia para mantener el volumen minuto, la potencia vuelve a subir aunque la ΔP se quede baja.',
 });
 
+SCENARIOS.push({
+  id: 'SC-22',
+  name: 'Fuga en el circuito: lo que entra no es lo que vuelve',
+  synthetic: true,
+  category: 'Circuito',
+  level: 2,
+  description:
+    'A/C VC con una fuga de 6 L/min a 10 cmH2O en la pieza en Y, paciente pasivo, flujo de base 4 y disparo 2 L/min. El VT espirado queda por debajo del inspirado y la fuga dispara respiraciones que nadie pidió.',
+  patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, leakLpmAt10: 6 },
+  effort: passive,
+  sensors: idealSensors,
+  settings: {
+    vt: 0.5,
+    rr: 12,
+    ie: 1 / 3,
+    peep: 5,
+    pmax: 40,
+    plimit: 100,
+    pausePct: 0,
+    assistControl: true,
+    flowTrigger: 2 / 60,
+    biasFlow: 4 / 60,
+  },
+  initialV: 'equilibrium',
+  perturbations: [],
+  observe: 'VTi y VTe en la tabla, la fuga volumétrica, y respiraciones «asistidas» con el esfuerzo apagado.',
+  caution: 'Fuga lineal con la presión y sin compensación de fuga: la del equipo real es otra (U-10).',
+  lesson: {
+    title: 'La fuga se ve tres veces',
+    text: 'Con el circuito perdiendo gas, el ventilador entrega más de lo que vuelve, la PEEP depende de que el flujo de base cubra la fuga, y el sensor de flujo ve salir gas de forma continua. Antes de mirar el registro, predice de qué tipo serán las respiraciones con el esfuerzo apagado.',
+    tasks: [
+      { id: 'leak', text: 'Compara VTi y VTe en la tabla de mediciones: la fuga volumétrica supera el 15 %.', test: 'leakSeen' },
+      {
+        id: 'auto',
+        text: 'Comprueba en el registro que hay respiraciones asistidas aunque el esfuerzo está apagado: autodisparo.',
+        test: 'assisted',
+      },
+      {
+        id: 'trig',
+        text: 'Sube el disparo por flujo a 4 L/min, por encima de la fuga a esta PEEP, y comprueba que el autodisparo cesa.',
+        test: 'trigger4',
+      },
+    ],
+  },
+  question: '¿Por qué la fuga dispara respiraciones si el paciente no hace nada?',
+  answer:
+    'Porque el disparo por flujo compara el flujo que el sensor ve salir hacia el paciente con el umbral, y el gas que escapa por la fuga sale por el mismo camino: para el ventilador es indistinguible de un esfuerzo. Subir el umbral por encima de la fuga —o compensarla, como hace el equipo real— lo corrige.',
+});
+
+SCENARIOS.push({
+  id: 'SC-23',
+  name: 'Desconexión: sin presión y sin volumen',
+  synthetic: true,
+  category: 'Circuito',
+  level: 1,
+  description:
+    'Banco pasivo en A/C VC. En «Eventos», abre el circuito en la Y: la presión no sube de 0, no vuelve volumen y suena la alarma de desconexión; al reconectar se resuelve y hay que reconocerla.',
+  patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
+  effort: passive,
+  sensors: idealSensors,
+  settings: { vt: 0.5, rr: 15, ie: 1 / 3, peep: 5, pmax: 40, plimit: 100, pausePct: 0 },
+  initialV: 'equilibrium',
+  perturbations: [],
+  observe:
+    'Curva de presión plana en cero, VTe 0, alarmas de desconexión, Ppico baja, VTesp bajo y VMesp bajo; al reconectar, banda gris hasta reconocer.',
+  caution: 'El equipo real detecta la desconexión con sus propios criterios y puede reaccionar de otra forma (U-10).',
+  lesson: {
+    title: 'Una alarma que no se arregla reconociéndola',
+    text: 'Predice qué verás en las curvas al abrir el circuito y qué alarmas saltarán, y después provócalo.',
+    tasks: [
+      { id: 'disc', text: 'Provoca una desconexión en «Eventos» y observa la alarma de prioridad alta.', test: 'disconnectSeen' },
+      { id: 'back', text: 'Deshaz el evento: la condición se resuelve con la primera respiración que vuelve.', test: 'reconnected' },
+      { id: 'ack', text: 'Abre la lista de alarmas y reconoce las resueltas: la banda vuelve al azul.', test: 'alarmCleared' },
+    ],
+  },
+  question: '¿Qué distingue una alarma resuelta de una reconocida?',
+  answer:
+    'Resolverse es del paciente y del circuito: la condición física dejó de cumplirse. Reconocer es del usuario: registra que la vio. La banda gris es la resuelta sin reconocer; sólo el reconocimiento la devuelve al azul.',
+});
+
 /** Referencia visual de las fotografías P1/P3 (O): sólo los AJUSTES visibles; C y R son artificiales; las lecturas se calculan. */
 SCENARIOS.push({
   id: 'SC-P',

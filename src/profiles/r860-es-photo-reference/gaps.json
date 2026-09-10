@@ -88,8 +88,8 @@
     {
       "id": "U-10",
       "question": "Trigger, sincronización y compensaciones precisas.",
-      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s (P); sin compensación de fuga/trigger.",
-      "status": "abierta",
+      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s y retardo 80 ms (P); fuga lineal en la Y y desconexión modeladas desde v0.4.2 (E-088), sin compensación de fuga ni de disparo; sin compensación de tubo.",
+      "status": "parcialmente cerrada (v0.4.2): fuga y desconexión modeladas; compensaciones no",
       "blocks": [
         "Leak Comp",
         "Trigger Comp",
@@ -439,7 +439,7 @@
     },
     {
       "feature": "Aspiración, nebulizador, compensaciones de fuga/trigger/tubo",
-      "reason": "Sin submodelos de circuito/fuga en P0 (U-10)."
+      "reason": "Sin compensaciones en P0 (U-10); la fuga sí se modela, sin compensar."
     },
     {
       "feature": "Auto Limits, tiempo de apnea, High Alert Audio, alarmas técnicas y de suministro",
@@ -450,16 +450,12 @@
       "reason": "U-16; la aplicación permanece recuperable."
     },
     {
-      "feature": "Fuga, circuito, espacio muerto, sensores con ruido/retraso de presión y flujo",
-      "reason": "Modelo mínimo P0; SC-07/SC-08 pendientes."
+      "feature": "Distensibilidad del circuito, espacio muerto, sensores con ruido/retraso de presión y flujo",
+      "reason": "Modelo mínimo P0; la fuga en la Y y la desconexión sí se modelan (E-088)."
     },
     {
       "feature": "Espacio Futuro (SBT, FRC, SpiroDynamics, metabolismo, cálculos)",
       "reason": "Etapas 5–6; U-14."
-    },
-    {
-      "feature": "Fuga y desconexión en Eventos del panel docente",
-      "reason": "Sin submodelo de circuito/fuga en P0 (U-10); botones visibles pero desactivados con motivo."
     }
   ]
 }
