@@ -35,6 +35,8 @@ export interface LessonTracker {
   evaluate(): void;
   noteSettingsChange(): void;
   notePatientChange(simTimeMs: number): void;
+  /** Una sesión importada no dice de qué escenario es: mientras dure, los objetivos no se evalúan. */
+  setSessionImported(value: boolean): void;
 }
 
 export interface AppContext {

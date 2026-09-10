@@ -56,7 +56,6 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   alarmSeen: (c) => !!c.flags.alarmSeen,
   acknowledged: (c) => c.frame.alarms.some((a) => a.acknowledgedAtMs !== null),
   alarmCleared: (c) => !!c.flags.alarmSeen && c.frame.alarmBar.color === 'green',
-  doubleTrigger: (c) => !!c.flags.doubleTrigger,
   truthOpen: (c) => !!c.flags.truthOpen,
   /** Ha medido una meseta corta y otra larga, y la larga resultó más baja: es el efecto del pendelluft. */
   plateauDropSeen: (c) => {
@@ -136,4 +135,24 @@ export function nextCompletedTask(tasks: LessonTask[], done: Set<string>, ctx: L
     if (LESSON_TESTS[task.test]?.(ctx)) return task;
   }
   return null;
+}
+
+/**
+ * Objetivos que ya se cumplen con el primer cuadro de la lección: se marcan, pero no se anuncian.
+ *
+ * Varios escenarios traen un objetivo que es una observación sobre el estado inicial —«observa VTesp ≈ 430 mL»— y
+ * felicitar por él al abrir sería felicitar por no haber hecho nada. Antes se resolvía callando los primeros 5 s de
+ * tiempo simulado, y eso también callaba al alumno que hacía su primer bloqueo nada más abrir. La regla correcta no
+ * depende del reloj: se calla exactamente lo que ya estaba cumplido antes de que el alumno tocara nada.
+ */
+export function tareasCumplidasAlAbrir(tasks: LessonTask[], ctx: LessonContext): Set<string> {
+  updateLessonFlags(ctx.frame, ctx.flags);
+  return new Set(tasks.filter((task) => LESSON_TESTS[task.test]?.(ctx)).map((task) => task.id));
+}
+
+/** Qué decirle al alumno cuando cumple un objetivo por sí mismo. */
+export function avisoDeObjetivo(p: { numero: number; total: number; cumplidos: number; texto: string }): string {
+  if (p.total > 0 && p.cumplidos >= p.total) return 'Secuencia completada: repásala en Sesión › Resumen de práctica.';
+  const texto = p.texto.length > 90 ? `${p.texto.slice(0, 89).trimEnd()}…` : p.texto;
+  return `Objetivo ${p.numero} de ${p.total} cumplido: ${texto}`;
 }
