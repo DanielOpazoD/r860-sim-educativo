@@ -246,6 +246,8 @@ export interface WaveOptions {
   bounds?: Bounds;
   /** Techo de presión Pmáx del ajuste vigente: se dibuja como línea de referencia en el panel de Pva. */
   pmax?: number;
+  /** Instantes de disparo del paciente (s): se marcan con un triángulo en el borde inferior del panel de Pva. */
+  triggersS?: number[];
 }
 
 /** Tres curvas apiladas (o sólo Pva con `single`) con relleno degradado y barrido con hueco por delante del cursor. */
@@ -374,6 +376,19 @@ export function drawWave(
         text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, 9, '#ff7b7bb0', 'right');
       }
       ctx.restore();
+      // Cada disparo del paciente queda marcado en el borde inferior: es la prueba de quién mandó la respiración.
+      for (const t of options.triggersS ?? []) {
+        if (t < end - win || t > end) continue;
+        const x = xfn(t);
+        if (x < left || x > w - right) continue;
+        ctx.fillStyle = '#ffd66e';
+        ctx.beginPath();
+        ctx.moveTo(x, ybottom - 1);
+        ctx.lineTo(x - 3.5, ybottom - 7);
+        ctx.lineTo(x + 3.5, ybottom - 7);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
     const gradient = ctx.createLinearGradient(0, ytop, 0, ybottom);
     if (sp.fill === 'pressure') {
@@ -432,6 +447,11 @@ export function drawWave(
       );
   });
   return { left, right, plotW, win };
+}
+
+/** Índices de las tres flechas de sentido del bucle (20 %, 50 % y 80 % del ciclo); vacío con menos de 8 muestras. */
+export function arrowIndices(n: number): number[] {
+  return n >= 8 ? [Math.floor(n * 0.2), Math.floor(n * 0.5), Math.floor(n * 0.8)] : [];
 }
 
 /** Puntos del último ciclo completo ('last') o del ciclo en curso ('current'). */
@@ -506,14 +526,66 @@ export function drawLoop(
       ctx.beginPath();
       ctx.arc(xf(type === 'pv' ? p[1] : p[3]), yf(type === 'pv' ? p[3] : p[2]), 3, 0, Math.PI * 2);
       ctx.fill();
+      // Marcas pedagógicas: inicio de inspiración (círculo hueco) y flechas del sentido del ciclo.
+      const p0 = data[0]!;
+      ctx.strokeStyle = '#9bf4de';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(xf(type === 'pv' ? p0[1] : p0[3]), yf(type === 'pv' ? p0[3] : p0[2]), 3.5, 0, Math.PI * 2);
+      ctx.stroke();
+      const px = (i: number): { x: number; y: number } => {
+        const m = data[Math.max(0, Math.min(data.length - 1, i))]!;
+        return { x: xf(type === 'pv' ? m[1] : m[3]), y: yf(type === 'pv' ? m[3] : m[2]) };
+      };
+      ctx.fillStyle = '#9bf4de';
+      for (const i of arrowIndices(data.length)) {
+        const a = px(i - 2),
+          b = px(i + 2),
+          c = px(i);
+        const dx = b.x - a.x,
+          dy = b.y - a.y,
+          len = Math.hypot(dx, dy);
+        if (len < 1) continue;
+        const ux = dx / len,
+          uy = dy / len;
+        ctx.beginPath();
+        ctx.moveTo(c.x + ux * 3.5, c.y + uy * 3.5);
+        ctx.lineTo(c.x - ux * 3.5 - uy * 2.5, c.y - uy * 3.5 + ux * 2.5);
+        ctx.lineTo(c.x - ux * 3.5 + uy * 2.5, c.y - uy * 3.5 - ux * 2.5);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
     ctx.restore();
   };
-  path(ref, reference ? '#edc87ecc' : '#9fbade77', true);
+  // Referencias del bucle P-V: líneas de PEEP y de VT programado, como las marcas de la pantalla del equipo.
+  if (type === 'pv' && peep > 0 && peep > xrange[0]! && peep < xrange[1]!) {
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    line(ctx, xf(peep), top, xf(peep), bottom, '#ffd66e99', 0.9);
+    ctx.restore();
+    line(ctx, xf(peep), bottom, xf(peep), bottom + 5, '#ffd66e', 1);
+    text(ctx, 'PEEP', xf(peep) + 3, top + 10, 9, '#ffd66e', 'left');
+  }
+  if (vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    line(ctx, left, yf(vtMl), w - right, yf(vtMl), '#9fd7ff99', 0.9);
+    ctx.restore();
+    text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, 9, '#9fd7ff', 'right');
+  }
+  if (vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    line(ctx, xf(vtMl), top, xf(vtMl), bottom, '#9fd7ff99', 0.9);
+    ctx.restore();
+    text(ctx, 'VT', xf(vtMl) + 3, top + 10, 9, '#9fd7ff', 'left');
+  }
+  path(ref, reference ? '#edc87ecc' : '#b7c4d466', true);
   path(current, '#9bf4de', false);
   line(ctx, w - 140, 20, w - 122, 20, '#9bf4de', 2);
   text(ctx, 'Actual', w - 116, 24, 10, '#a2e6df');
-  line(ctx, w - 140, 34, w - 122, 34, reference ? '#edc87ecc' : '#9fbade77', 1.5);
+  line(ctx, w - 140, 34, w - 122, 34, reference ? '#edc87ecc' : '#b7c4d466', 1.5);
   text(ctx, reference ? 'Referencia' : 'Previo', w - 116, 38, 10, reference ? '#eed49d' : '#adc6e0');
 }
 

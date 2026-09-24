@@ -56,6 +56,10 @@ export interface PlotsView {
 
 export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => boolean }): PlotsView {
   let points: Point[] = [];
+  // Instantes de disparo del paciente (s de simulación): el marcador ámbar de la curva de presión.
+  let triggersS: number[] = [],
+    frozenTriggers: number[] = [],
+    lastTriggerSeq = 0;
   let waveWindow = 12,
     waveStyle: 'sweep' | 'scroll' = 'sweep';
   let frozen = false,
@@ -132,6 +136,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         cursorTime,
         bounds: waveBounds('waves', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
+        triggersS: frozen ? frozenTriggers : triggersS,
       });
     else if (view === 'basic')
       drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
@@ -140,6 +145,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         frozen,
         bounds: waveBounds('basic', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
+        triggersS: frozen ? frozenTriggers : triggersS,
       });
     else if (view === 'loops') {
       drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv');
@@ -193,6 +199,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     slider.removeAttribute('aria-valuetext');
     if (frozen) {
       frozenPoints = points.map((x) => [...x] as Point);
+      frozenTriggers = [...triggersS];
       freezeEnd = ctx.simS();
       reviewEnd = freezeEnd;
       ($('#history-slider') as HTMLInputElement).value = '1000';
@@ -229,8 +236,19 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       if (prev && prev.simTimeMs > fr.simTimeMs) {
         // sesión nueva (escenario o importación): el historial anterior no debe filtrar las muestras nuevas
         points = [];
+        triggersS = [];
+        lastTriggerSeq = 0;
         loopReference = null;
         resetScales();
+      }
+      for (const e of fr.eventsTail) {
+        if (e.kind !== 'breath' || e.sequence <= lastTriggerSeq) continue;
+        const p = e.payload as { trigger?: unknown };
+        if (typeof p.trigger === 'number') {
+          triggersS.push(e.simTimeMs / 1000);
+          if (triggersS.length > 200) triggersS = triggersS.slice(-200);
+        }
+        lastTriggerSeq = Math.max(lastTriggerSeq, e.sequence);
       }
       appendSamples(points, fr.samples);
       dirty = true;
@@ -238,11 +256,15 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     reset() {
       gaugePaw = null;
       points = [];
+      triggersS = [];
+      lastTriggerSeq = 0;
       loopReference = null;
       resetScales();
     },
     clearPoints() {
       points = [];
+      triggersS = [];
+      lastTriggerSeq = 0;
       resetScales();
       dirty = true;
     },

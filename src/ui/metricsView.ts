@@ -6,7 +6,7 @@ import { CLOSE_BTN } from './dialogHost';
 import { $, $$, btn, esc, icon, put } from './dom';
 import { clock } from './format';
 import { helpContent, helpEntry, infoButton, infoPanel } from './helpPanels';
-import { eventSentence, learnerText } from './humanize';
+import { eventSentence, humanReason, learnerText } from './humanize';
 import {
   ALL_METRICS,
   BIG_METRICS,
@@ -15,6 +15,7 @@ import {
   METRICS,
   metricInAlarm,
   metricQuality,
+  metricSample,
   metricValue,
   type MetricSpec,
 } from './metricsTable';
@@ -61,11 +62,11 @@ export function createMetricsView(ctx: AppContext): MetricsView {
     init() {
       $('#numeric-grid').innerHTML = METRICS.map(
         (m, i) =>
-          `<button class="numeric" data-metric="${m.key}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits"></span><span class="numeric-age"></span></button>`,
+          `<button class="numeric" data-metric="${m.key}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span><span class="numeric-age"></span></button>`,
       ).join('');
       $('#big-metrics').innerHTML = BIG_METRICS.map(
         ([k, l, u], i) =>
-          `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><b>—</b><em>${u}</em><span class="numeric-limits"></span></button>`,
+          `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><b>—</b><em>${u}</em><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span></button>`,
       ).join('');
     },
     updateMetrics() {
@@ -77,10 +78,20 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
         const h = fr.procedure.last.inspHold;
-        put(
-          el.querySelector('.numeric-age'),
-          m.source === 'hold' && h && h.quality === 'valid' ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}` : '',
-        );
+        const edad = el.querySelector('.numeric-age') as HTMLElement;
+        let motivo = '';
+        // El guión sin explicación enseñaba que el dato faltaba, no por qué: la casilla dice el motivo en una línea.
+        if (m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null) {
+          motivo = `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`;
+        } else if (metricValue(fr, m) === null && fr.ventilation !== 'standby') {
+          if (m.source === 'hold') motivo = h ? 'bloqueo no válido' : 'sin bloqueo';
+          else {
+            const s = metricSample(fr, m.key);
+            motivo = s?.reason ? humanReason(s.reason).slice(0, 16) + '…' : 'sin dato';
+          }
+        }
+        edad.classList.toggle('motivo', !!motivo && !motivo.startsWith('Med.'));
+        put(edad, motivo);
       }
       for (const e of $$('#big-metrics [data-metric]')) {
         const spec = METRICS.find((m) => m.key === e.dataset.metric) as MetricSpec;

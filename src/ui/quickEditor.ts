@@ -82,6 +82,13 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     }
     $('#standby-overlay').hidden = fr.ventilation !== 'standby';
     $('.standby-key').classList.toggle('active-standby', fr.ventilation === 'standby');
+    // La tecla se explica sola: qué hace al pulsarla según el estado en que está.
+    const esperaTexto =
+      fr.ventilation === 'standby'
+        ? 'En espera: pulsa para iniciar la ventilación'
+        : 'Pasar a espera: detiene la ventilación virtual, el reloj sigue';
+    $('.standby-key').setAttribute('title', esperaTexto);
+    $('.standby-key').setAttribute('aria-label', esperaTexto);
   }
   function placeQuickEditor(): void {
     const editor = $('#quick-editor'),

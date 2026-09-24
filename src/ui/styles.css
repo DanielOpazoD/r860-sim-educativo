@@ -682,16 +682,20 @@ a {
   position: absolute;
   right: 0;
   top: 24px;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.25;
-  color: #9ddaff;
-  max-width: 26px;
+  color: #b9e6ff;
+  max-width: 30px;
   text-align: right;
 }
 .numeric .numeric-age {
   font-size: 8px;
   color: #b5e0ff;
   margin-top: 2px;
+}
+.numeric-age.motivo {
+  color: #b9e6ff;
+  font-style: italic;
 }
 /*
  * El valor que alarma se marca como en un equipo real: bloque ámbar sólido con el número en negro. El relleno anterior
@@ -2683,8 +2687,10 @@ a {
 }
 .toast-stack {
   position: fixed;
-  bottom: 22px;
-  left: 25px;
+  top: 64px;
+  right: 25px;
+  bottom: auto;
+  left: auto;
   z-index: 500;
   display: flex;
   flex-direction: column;
@@ -3481,6 +3487,8 @@ a {
     font-size: 11px;
   }
   .toast-stack {
+    top: auto;
+    right: auto;
     left: 14px;
     bottom: 15px;
     max-width: calc(100vw - 28px);
