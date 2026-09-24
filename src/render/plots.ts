@@ -474,6 +474,7 @@ export function drawLoop(
   peep: number,
   vtMl: number,
   type: 'pv' | 'fv' = 'pv',
+  options: { vtMark?: boolean } = {},
 ): void {
   const { ctx, w, h } = context(canvas),
     current = cyclePoints(points, 'current'),
@@ -549,9 +550,9 @@ export function drawLoop(
         const ux = dx / len,
           uy = dy / len;
         ctx.beginPath();
-        ctx.moveTo(c.x + ux * 3.5, c.y + uy * 3.5);
-        ctx.lineTo(c.x - ux * 3.5 - uy * 2.5, c.y - uy * 3.5 + ux * 2.5);
-        ctx.lineTo(c.x - ux * 3.5 + uy * 2.5, c.y - uy * 3.5 - ux * 2.5);
+        ctx.moveTo(c.x + ux * 5, c.y + uy * 5);
+        ctx.lineTo(c.x - ux * 5 - uy * 3.5, c.y - uy * 5 + ux * 3.5);
+        ctx.lineTo(c.x - ux * 5 + uy * 3.5, c.y - uy * 5 - ux * 3.5);
         ctx.closePath();
         ctx.fill();
       }
@@ -567,14 +568,15 @@ export function drawLoop(
     line(ctx, xf(peep), bottom, xf(peep), bottom + 5, '#ffd66e', 1);
     text(ctx, 'PEEP', xf(peep) + 3, top + 10, 9, '#ffd66e', 'left');
   }
-  if (vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
+  // La VT sólo es consigna en VC; en PC/PS es resultado, no ajuste.
+  if (options.vtMark && vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
     line(ctx, left, yf(vtMl), w - right, yf(vtMl), '#9fd7ff99', 0.9);
     ctx.restore();
     text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, 9, '#9fd7ff', 'right');
   }
-  if (vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
+  if (options.vtMark && vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
     line(ctx, xf(vtMl), top, xf(vtMl), bottom, '#9fd7ff99', 0.9);

@@ -693,9 +693,12 @@ a {
   color: #b5e0ff;
   margin-top: 2px;
 }
-.numeric-age.motivo {
-  color: #b9e6ff;
+.numeric .numeric-value .sin-dato {
+  font-size: 10px;
+  font-weight: 400;
   font-style: italic;
+  color: #b9e6ff;
+  letter-spacing: 0;
 }
 /*
  * El valor que alarma se marca como en un equipo real: bloque ámbar sólido con el número en negro. El relleno anterior

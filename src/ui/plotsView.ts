@@ -148,8 +148,12 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         triggersS: frozen ? frozenTriggers : triggersS,
       });
     else if (view === 'loops') {
-      drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv');
-      drawLoop($<HTMLCanvasElement>('#fv-canvas'), pts, loopReference, peep, vtMl, 'fv');
+      drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv', {
+        vtMark: fr.settings.mode === 'AC_VC',
+      });
+      drawLoop($<HTMLCanvasElement>('#fv-canvas'), pts, loopReference, peep, vtMl, 'fv', {
+        vtMark: fr.settings.mode === 'AC_VC',
+      });
     } else if (view === 'trends')
       drawTrends(
         $<HTMLCanvasElement>('#trends-canvas'),

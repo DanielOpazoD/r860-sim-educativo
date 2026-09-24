@@ -73,25 +73,31 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       const fr = ctx.frame as EngineFrame;
       for (const m of METRICS) {
         const el = $(`#numeric-grid [data-metric="${m.key}"]`);
-        put(el.querySelector('.numeric-value'), f(value(m), m.decimals));
-        put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
-        el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
-        if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
+        const valor = el.querySelector('.numeric-value') as HTMLElement;
         const h = fr.procedure.last.inspHold;
-        const edad = el.querySelector('.numeric-age') as HTMLElement;
+        // El guión sin explicación enseñaba que el dato faltaba, no por qué: el motivo ocupa el sitio de la cifra.
         let motivo = '';
-        // El guión sin explicación enseñaba que el dato faltaba, no por qué: la casilla dice el motivo en una línea.
-        if (m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null) {
-          motivo = `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`;
-        } else if (metricValue(fr, m) === null && fr.ventilation !== 'standby') {
+        if (metricValue(fr, m) === null && fr.ventilation !== 'standby') {
           if (m.source === 'hold') motivo = h ? 'bloqueo no válido' : 'sin bloqueo';
           else {
             const s = metricSample(fr, m.key);
-            motivo = s?.reason ? humanReason(s.reason).slice(0, 16) + '…' : 'sin dato';
+            if (s?.reason) {
+              const r = humanReason(s.reason);
+              motivo = r.length > 16 ? r.slice(0, 16) + '…' : r;
+            } else motivo = 'sin dato';
           }
         }
-        edad.classList.toggle('motivo', !!motivo && !motivo.startsWith('Med.'));
-        put(edad, motivo);
+        if (motivo) valor.innerHTML = `<span class="sin-dato">${esc(motivo)}</span>`;
+        else put(valor, f(value(m), m.decimals));
+        put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
+        el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
+        if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
+        put(
+          el.querySelector('.numeric-age'),
+          m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
+            ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
+            : '',
+        );
       }
       for (const e of $$('#big-metrics [data-metric]')) {
         const spec = METRICS.find((m) => m.key === e.dataset.metric) as MetricSpec;
