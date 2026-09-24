@@ -6,7 +6,7 @@ import { CLOSE_BTN } from './dialogHost';
 import { $, $$, btn, esc, icon, put } from './dom';
 import { clock } from './format';
 import { helpContent, helpEntry, infoButton, infoPanel } from './helpPanels';
-import { eventSentence, learnerText } from './humanize';
+import { eventSentence, humanReason, learnerText } from './humanize';
 import {
   ALL_METRICS,
   BIG_METRICS,
@@ -15,6 +15,7 @@ import {
   METRICS,
   metricInAlarm,
   metricQuality,
+  metricSample,
   metricValue,
   type MetricSpec,
 } from './metricsTable';
@@ -61,25 +62,39 @@ export function createMetricsView(ctx: AppContext): MetricsView {
     init() {
       $('#numeric-grid').innerHTML = METRICS.map(
         (m, i) =>
-          `<button class="numeric" data-metric="${m.key}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits"></span><span class="numeric-age"></span></button>`,
+          `<button class="numeric" data-metric="${m.key}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span><span class="numeric-age"></span></button>`,
       ).join('');
       $('#big-metrics').innerHTML = BIG_METRICS.map(
         ([k, l, u], i) =>
-          `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><b>—</b><em>${u}</em><span class="numeric-limits"></span></button>`,
+          `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><b>—</b><em>${u}</em><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span></button>`,
       ).join('');
     },
     updateMetrics() {
       const fr = ctx.frame as EngineFrame;
       for (const m of METRICS) {
         const el = $(`#numeric-grid [data-metric="${m.key}"]`);
-        put(el.querySelector('.numeric-value'), f(value(m), m.decimals));
+        const valor = el.querySelector('.numeric-value') as HTMLElement;
+        const h = fr.procedure.last.inspHold;
+        // El guión sin explicación enseñaba que el dato faltaba, no por qué: el motivo ocupa el sitio de la cifra.
+        let motivo = '';
+        if (metricValue(fr, m) === null && fr.ventilation !== 'standby') {
+          const s = metricSample(fr, m.key);
+          const razon = humanReason(s?.reason);
+          if (m.source === 'hold' && !h) motivo = 'sin bloqueo';
+          else if (m.source === 'hold' && h && h.quality !== 'valid') motivo = 'bloqueo no válido';
+          else if (!razon) motivo = 'sin dato';
+          else motivo = razon.length > 16 ? razon.slice(0, 16) + '…' : razon;
+        }
+        if (motivo) valor.innerHTML = `<span class="sin-dato">${esc(motivo)}</span>`;
+        else put(valor, f(value(m), m.decimals));
         put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
-        const h = fr.procedure.last.inspHold;
         put(
           el.querySelector('.numeric-age'),
-          m.source === 'hold' && h && h.quality === 'valid' ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}` : '',
+          m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
+            ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
+            : '',
         );
       }
       for (const e of $$('#big-metrics [data-metric]')) {

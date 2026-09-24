@@ -106,23 +106,25 @@ export function metricQuality(frame: EngineFrame | null, spec: MetricSpec): stri
   }
   return `${QUALITY[s.quality]}${s.reason ? ' · ' + humanReason(s.reason) : ''} · ${SOURCE[s.source]}${s.breathId ? ' · respiración ' + s.breathId.replace('b', '') : ''}${s.windowMs ? ' · ventana ' + (s.windowMs / 1000).toFixed(1) + ' s' : ''}`;
 }
-/** Pareja «alto\nbajo» de límites de alarma para la casilla de una medición. */
+/** Pareja «alto\nbajo» de límites de alarma para la casilla de una medición; un límite apagado deja su renglón vacío. */
 export function limitPair(fr: EngineFrame, key: string): string {
   const L = fr.alarmLimits;
-  const fmt = (v: OffOr<number>, factor: number, d: number): string => (v === 'off' ? 'Off' : (v * factor).toFixed(d));
+  const fmt = (v: OffOr<number>, factor: number, d: number): string => (v === 'off' ? '' : (v * factor).toFixed(d));
+  const par = (hi: OffOr<number>, lo: OffOr<number>, factor: number, d: number): string =>
+    hi === 'off' && lo === 'off' ? '' : `${fmt(hi, factor, d)}\n${fmt(lo, factor, d)}`;
   switch (key) {
     case 'vte':
-      return `${fmt(L.vteHigh, 1000, 0)}\n${fmt(L.vteLow, 1000, 0)}`;
+      return par(L.vteHigh, L.vteLow, 1000, 0);
     case 'mve':
-      return `${fmt(L.mveHigh, 1, 1)}\n${fmt(L.mveLow, 1, 1)}`;
+      return par(L.mveHigh, L.mveLow, 1, 1);
     case 'rr':
-      return `${fmt(L.rrHigh, 1, 0)}\n${fmt(L.rrLow, 1, 0)}`;
+      return par(L.rrHigh, L.rrLow, 1, 0);
     case 'peepe':
-      return L.peepeHigh === 'off' && L.peepeLow === 'off' ? 'Off' : `${fmt(L.peepeHigh, 1, 0)}\n${fmt(L.peepeLow, 1, 0)}`;
+      return par(L.peepeHigh, L.peepeLow, 1, 0);
     case 'ppeak':
       return `${fr.settings.pmax}\n${fmt(L.ppeakLow, 1, 0)}`;
     case 'fio2':
-      return `${fmt(L.fio2High, 100, 0)}\n${fmt(L.fio2Low, 100, 0)}`;
+      return par(L.fio2High, L.fio2Low, 100, 0);
     default:
       return '';
   }

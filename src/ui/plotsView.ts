@@ -56,6 +56,10 @@ export interface PlotsView {
 
 export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => boolean }): PlotsView {
   let points: Point[] = [];
+  // Instantes de disparo detectado por el sensor (s de simulación): el marcador ámbar de la curva de presión.
+  let triggerDetectionsS: number[] = [],
+    frozenTriggerDetections: number[] = [],
+    lastTriggerSeq = 0;
   let waveWindow = 12,
     waveStyle: 'sweep' | 'scroll' = 'sweep';
   let frozen = false,
@@ -132,6 +136,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         cursorTime,
         bounds: waveBounds('waves', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
+        triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
       });
     else if (view === 'basic')
       drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
@@ -140,10 +145,15 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         frozen,
         bounds: waveBounds('basic', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
+        triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
       });
     else if (view === 'loops') {
-      drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv');
-      drawLoop($<HTMLCanvasElement>('#fv-canvas'), pts, loopReference, peep, vtMl, 'fv');
+      drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv', {
+        vtMark: fr.settings.mode === 'AC_VC',
+      });
+      drawLoop($<HTMLCanvasElement>('#fv-canvas'), pts, loopReference, peep, vtMl, 'fv', {
+        vtMark: fr.settings.mode === 'AC_VC',
+      });
     } else if (view === 'trends')
       drawTrends(
         $<HTMLCanvasElement>('#trends-canvas'),
@@ -193,6 +203,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     slider.removeAttribute('aria-valuetext');
     if (frozen) {
       frozenPoints = points.map((x) => [...x] as Point);
+      frozenTriggerDetections = [...triggerDetectionsS];
       freezeEnd = ctx.simS();
       reviewEnd = freezeEnd;
       ($('#history-slider') as HTMLInputElement).value = '1000';
@@ -229,8 +240,19 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       if (prev && prev.simTimeMs > fr.simTimeMs) {
         // sesión nueva (escenario o importación): el historial anterior no debe filtrar las muestras nuevas
         points = [];
+        triggerDetectionsS = [];
+        lastTriggerSeq = 0;
         loopReference = null;
         resetScales();
+      }
+      for (const e of fr.eventsTail) {
+        if (e.kind !== 'breath' || e.sequence <= lastTriggerSeq) continue;
+        const p = e.payload as { trigger?: unknown };
+        if (typeof p.trigger === 'number') {
+          triggerDetectionsS.push(e.simTimeMs / 1000);
+          if (triggerDetectionsS.length > 200) triggerDetectionsS = triggerDetectionsS.slice(-200);
+        }
+        lastTriggerSeq = Math.max(lastTriggerSeq, e.sequence);
       }
       appendSamples(points, fr.samples);
       dirty = true;
@@ -238,11 +260,15 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     reset() {
       gaugePaw = null;
       points = [];
+      triggerDetectionsS = [];
+      lastTriggerSeq = 0;
       loopReference = null;
       resetScales();
     },
     clearPoints() {
       points = [];
+      triggerDetectionsS = [];
+      lastTriggerSeq = 0;
       resetScales();
       dirty = true;
     },

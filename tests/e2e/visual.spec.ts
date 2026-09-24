@@ -47,7 +47,8 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     const vteMostrado = Number(await page.locator('#numeric-grid [data-metric="vte"] .numeric-value').textContent());
     expect(Math.abs(vteMostrado - 500)).toBeLessThanOrEqual(15);
     await expect(page.locator('#numeric-grid [data-metric="rr"] .numeric-value')).toHaveText('15');
-    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('—');
+    // Sin bloqueo inspiratorio la Pplat no existe: la casilla nombra el motivo en el sitio de la cifra.
+    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('sin bloqueo');
     await expect(page.locator('#phase-status')).toContainText('PAUSADA');
     const drawn = await page.evaluate(() => {
       const c = document.getElementById('waves-canvas') as HTMLCanvasElement;
