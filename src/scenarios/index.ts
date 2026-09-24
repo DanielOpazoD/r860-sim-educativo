@@ -45,7 +45,7 @@ export interface Scenario {
   caution: string;
 }
 
-const passive: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0 };
+const passive: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0, shape: 'riseRelax' };
 const idealSensors: SensorParams = { fio2TauS: 6, fio2Bias: 0 };
 
 export const SCENARIOS: Scenario[] = [
@@ -183,7 +183,7 @@ export const SCENARIOS: Scenario[] = [
     answer: 'No. El esfuerzo existe en el modelo (curva de Pmus del panel docente) aunque no supere el umbral del trigger.',
     description: 'Pmus 0.4 cmH2O a 18/min: los esfuerzos no disparan con 3 L/min.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-    effort: { enabled: true, amplitude: 0.4, ratePerMin: 18, tiS: 0.7, phaseS: 0.3 },
+    effort: { enabled: true, amplitude: 0.4, ratePerMin: 18, tiS: 0.7, phaseS: 0.3, shape: 'riseRelax' },
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 12, ie: 1 / 3, peep: 5, pmax: 40, plimit: 100, pausePct: 0, flowTrigger: 3 / 60, biasFlow: 4 / 60 },
     initialV: 'equilibrium',
@@ -243,7 +243,7 @@ export const SCENARIOS: Scenario[] = [
     description:
       'Ti neural 2 s frente a Ti mecánico 1 s: doble disparo. A los 40 s la resistencia espiratoria pasa a 60 y los esfuerzos se vuelven inefectivos.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-    effort: { enabled: true, amplitude: 12, ratePerMin: 12, tiS: 2, phaseS: 0 },
+    effort: { enabled: true, amplitude: 12, ratePerMin: 12, tiS: 2, phaseS: 0, shape: 'riseRelax' },
     sensors: idealSensors,
     settings: {
       vt: 0.5,
@@ -415,7 +415,7 @@ export const SCENARIOS: Scenario[] = [
       'Porque la presión ocluida varía con Pmus; el estimador exige una meseta estable y declara el motivo en vez de mostrar un número engañoso.',
     description: 'Esfuerzo fuerte continuo (Pmus 8 cmH2O a 30/min): el bloqueo inspiratorio resulta inestable e inválido.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-    effort: { enabled: true, amplitude: 8, ratePerMin: 30, tiS: 0.8, phaseS: 0.2 },
+    effort: { enabled: true, amplitude: 8, ratePerMin: 30, tiS: 0.8, phaseS: 0.2, shape: 'riseRelax' },
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 15, ie: 1 / 3, peep: 5, pmax: 40, plimit: 100, pausePct: 0, assistControl: false },
     initialV: 'equilibrium',
@@ -468,7 +468,7 @@ SCENARIOS.push({
   initialV: 'equilibrium',
   perturbations: [{ atSimTimeMs: 30_000, patient: { rInsp: 20 }, note: 'Rinsp 10 → 20' }],
   observe: 'El flujo pico baja a la mitad y el VT cae; la presión no cambia.',
-  caution: 'La rampa lineal y el tope de flujo son aproximaciones del simulador.',
+  caution: 'La rampa de primer orden y el tope de flujo son aproximaciones del simulador.',
   lesson: {
     title: 'En PC la presión es la consigna y el volumen la consecuencia',
     text: 'A los 30 s la resistencia se duplica: el flujo pico (ΔP/R) cae a la mitad y el VT baja aunque Pinsp no cambie. Compara con VC, donde ocurre lo contrario.',
@@ -495,7 +495,7 @@ SCENARIOS.push({
   description:
     'CPAP/PS con PS 10 sobre PEEP 5, ciclaje al 25 % del flujo pico. Esfuerzo de 8 cmH2O a 15/min: cada respiración la dispara y la termina el paciente; sin esfuerzo, apnea y respaldo.',
   patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.8, phaseS: 0.5 },
+  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.8, phaseS: 0.5, shape: 'riseRelax' },
   sensors: idealSensors,
   settings: {
     mode: 'CPAP_PS',
@@ -546,7 +546,7 @@ SCENARIOS.push({
   description:
     'CPAP/PS con PS 12 y ciclaje al 25 % en un pulmón obstructivo (R 30, τ = 1,5 s). El esfuerzo dura 0,6 s pero el flujo tarda ~1 s en caer al umbral: el soporte sigue cuando el paciente ya espira.',
   patient: { crs: 0.05, rInsp: 30, rExp: 30, r2: 0, p0: 0 },
-  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.6, phaseS: 0.5 },
+  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.6, phaseS: 0.5, shape: 'riseRelax' },
   sensors: idealSensors,
   settings: {
     mode: 'CPAP_PS',

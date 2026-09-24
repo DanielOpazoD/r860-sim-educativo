@@ -45,7 +45,7 @@ export function profileFor(init: Pick<SimulatorInit, 'profileId'>): ProfileSpec 
 }
 
 export const DEFAULT_PATIENT: PatientParams = { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 };
-export const DEFAULT_EFFORT: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0 };
+export const DEFAULT_EFFORT: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0, shape: 'riseRelax' };
 export const DEFAULT_SENSORS: SensorParams = { fio2TauS: 6, fio2Bias: 0 };
 
 /** Inicialización de referencia (banco SC-01) sobre el perfil R860. */

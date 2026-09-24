@@ -131,6 +131,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         frozen,
         cursorTime,
         bounds: waveBounds('waves', pts, end, peep, vtMl),
+        pmax: fr.settings.pmax,
       });
     else if (view === 'basic')
       drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
@@ -138,6 +139,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         style,
         frozen,
         bounds: waveBounds('basic', pts, end, peep, vtMl),
+        pmax: fr.settings.pmax,
       });
     else if (view === 'loops') {
       drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv');
