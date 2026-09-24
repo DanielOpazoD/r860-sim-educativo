@@ -71,7 +71,7 @@ Descripción cualitativa D (Mellema 2013): con flujo constante la presión tiene
 
 ## 3. A/C PC: fuente de presión
 
-En PC el controlador (`inspPressure`) impone Pva objetivo = PEEP + Pinsp con una rampa lineal de duración `riseMs` (D JB72469XX para el objetivo; forma lineal de la rampa P; ficha 2014 D para la existencia de la rampa). Flujo y volumen son las variables dependientes (D: Messina y Olarewaju 2023; Mireles-Cabodevila y Chatburn 2025).
+En PC el controlador (`inspPressure`) impone Pva objetivo = PEEP + Pinsp con una rampa de primer orden hasta ≈95 % en `riseMs` (D JB72469XX para el objetivo; forma exponencial de la rampa P, τ = riseMs/3; ficha 2014 D para la existencia de la rampa). Flujo y volumen son las variables dependientes (D: Messina y Olarewaju 2023; Mireles-Cabodevila y Chatburn 2025).
 
 ### 3.1 Forma esperada (paciente pasivo, rampa 0)
 
@@ -92,7 +92,7 @@ Cifras del banco PC (BM-03 PC, SC-13): Pinsp 10 sobre PEEP 5, R 10, C 0,05, Tins
 Consecuencias didácticas:
 
 - **Flujo que vuelve a cero antes de ciclar** significa Tinsp ≥ ~3–4 τ: alargar más el Tinsp no añade volumen (sólo acorta Tesp). **Flujo que termina por encima de cero** significa Tinsp < 3 τ: el VT está por debajo de C·ΔP y alargar Tinsp lo aumentará (D: Messina y Olarewaju 2023 describen el flujo que «termina prematuramente sin volver a cero» como signo de Tinsp insuficiente).
-- **Rampa** (`riseMs`): el objetivo sube linealmente PEEP + Pinsp·t/rampa; el flujo pico se reduce y se retrasa, y el VT baja ligeramente para el mismo Tinsp (BM-03 PC con rampa 200 ms: VT < 432 mL). La validación rechaza rampa > Tinsp.
+- **Rampa** (`riseMs`): el objetivo se acerca a PEEP + Pinsp como una exponencial de primer orden (≈95 % en `riseMs`, τ = `riseMs`/3); el flujo pico se reduce y se retrasa, y el VT baja ligeramente para el mismo Tinsp (BM-03 PC con rampa 200 ms: VT < 432 mL). La validación rechaza rampa > Tinsp.
 - **Tope del actuador**: el flujo del ventilador virtual no supera 160 L/min (D ficha 2014, flujo inspiratorio adulto 2–160 L/min). Con R muy baja el flujo libre ΔP/R excedería el tope; entonces el motor entrega 160 L/min como fuente de flujo y **la presión queda por debajo del objetivo** hasta que la presión elástica sube lo suficiente (BM-03 PC, tercer caso).
 
 ### 3.2 Efecto de cada parámetro en PC (paciente pasivo)
@@ -112,9 +112,9 @@ Consecuencias didácticas:
 
 ## 4. CPAP/PS: fuente de presión ciclada por el flujo del paciente
 
-En CPAP/PS no hay frecuencia ni tiempo inspiratorio programados: el paciente dispara cada respiración (disparo por flujo o por presión, como en A/C) y el controlador (`inspSupport`) impone Pva objetivo = PEEP + PS con la misma rampa lineal de PC (D ficha 2014: «Presión Soporte sobre nivel PEEP 0 a 60 cm H2O», «Tiempo de Rampa en PS … sólo para respiración soportada»). La diferencia está en el final: la inspiración termina cuando el flujo inspiratorio cae al porcentaje programado de su pico (D ficha 2014: «Trigger Espiratorio: 5 a 80 % de flujo pico»), o, si no llega, a los 3 s (P, U-52). Sin esfuerzo no hay respiración: la frecuencia mínima entrega una respiración por presión (Pinsp y Tinsp de respaldo) cuando pasan 60/FRmín s sin ninguna, y el tiempo de apnea (D 5–60 s) dispara la alarma y un respaldo a 12/min (P) hasta que el paciente vuelve a disparar. E-084 (D) y E-085 (P).
+En CPAP/PS no hay frecuencia ni tiempo inspiratorio programados: el paciente dispara cada respiración (disparo por flujo o por presión, como en A/C) y el controlador (`inspSupport`) impone Pva objetivo = PEEP + PS con la misma rampa de primer orden de PC (D ficha 2014: «Presión Soporte sobre nivel PEEP 0 a 60 cm H2O», «Tiempo de Rampa en PS … sólo para respiración soportada»). La diferencia está en el final: la inspiración termina cuando el flujo inspiratorio cae al porcentaje programado de su pico (D ficha 2014: «Trigger Espiratorio: 5 a 80 % de flujo pico»), o, si no llega, a los 3 s (P, U-52). Sin esfuerzo no hay respiración: la frecuencia mínima entrega una respiración por presión (Pinsp y Tinsp de respaldo) cuando pasan 60/FRmín s sin ninguna, y el tiempo de apnea (D 5–60 s) dispara la alarma y un respaldo a 12/min (P) hasta que el paciente vuelve a disparar. E-084 (D) y E-085 (P).
 
-### 4.1 Forma esperada (paciente activo, Pmus de medio seno)
+### 4.1 Forma esperada (paciente activo, Pmus con subida y relajación exponencial)
 
     Q(t) = (PS + Pmus(t) − Pel(t))/R        cicla cuando Q ≤ ETS · Qpico        VT no es una consigna: sale de PS, Pmus, R y C
 
@@ -235,11 +235,11 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Resistencia de Rohrer R(Q) = K1 + K2·\|Q\| disponible como parámetro | Con K2 > 0 la caída resistiva crece más que proporcionalmente con el flujo; con K2 = 0 (por omisión) el modelo es lineal | D el modelo; P los valores (E-046, U-37) |
 | Sin compresibilidad del gas ni distensibilidad del circuito | VT entregado = VT alveolar; no hay volumen comprimido perdido en el circuito ni corrección por compliance de tubuladura | P |
 | Fuga lineal en la pieza en Y (Qfuga = G·Py), sin compensación; desconexión como fuga muy grande | VTi (lo entregado) supera a VTe (lo que vuelve por la válvula) y la tabla lo publica como fuga volumétrica; la PEEP sólo se sostiene mientras el flujo de base cubra la fuga; el sensor de flujo ve salir gas de forma continua y dispara solo si supera el umbral (autodisparo); con el circuito abierto el nodo queda en ≈ 0 cmH₂O, no vuelve volumen y se declara «Paciente desconectado» (Ppico < 3 y VTe < 20 mL). Sin PEEP en el circuito (Pva 3 bajo la programada) no se evalúa el disparo. El equipo real compensa la fuga y detecta la desconexión con criterios propios | P (E-088, U-10) |
-| Rampa de PC lineal y tope de 160 L/min dentro del integrador | Forma de la subida y comportamiento con R muy baja son aproximaciones del simulador, no del equipo; el tope se aplica en cada etapa del RK2, sin sobreimpulso dependiente de dt (R3-01) | P (tope D ficha 2014; forma U) |
+| Rampa de PC de primer orden (≈95 % en `riseMs`) y tope de 160 L/min dentro del integrador | Forma de la subida y comportamiento con R muy baja son aproximaciones del simulador, no del equipo; el tope se aplica en cada etapa del RK2, sin sobreimpulso dependiente de dt (R3-01) | P (tope D ficha 2014; forma U) |
 | Apertura de la válvula espiratoria en 40 ms (0 en el banco) | La Pva no salta de Ppico a PEEP: pierde primero lo resistivo y luego baja mientras la válvula abre; el flujo espiratorio alcanza su pico tras la apertura | P (E-052, U-42) |
 | Válvula espiratoria con flujo de base programable (2–10 L/min) y resistencia de rama opcional (0–6 cmH₂O·s/L, 0 por omisión) | Con 0 el flujo espiratorio pico no está acotado (picos irreales con Rexp muy baja); con resistencia de rama queda acotado y la Pva sube sobre PEEP al espirar | D rangos; P valores por omisión (E-038, E-041) |
 | Disparo por flujo o por presión, referido a la PEEP programada | Sin compensación de fugas ni ventana de disparo del 80 % de Tesp | D existencia; P detalle (E-039) |
-| Esfuerzo como pulso semisinusoidal de Pmus independiente del reloj del ventilador | Reproduce disparo, asincronía por fase y mesetas inestables, no la modulación neural real ni la respuesta al CO₂ | P |
+| Esfuerzo como pulso de Pmus independiente del reloj del ventilador, con dos formas ('halfSine' y 'riseRelax') | Reproduce disparo, asincronía por fase y mesetas inestables, no la modulación neural real ni la respuesta al CO₂ | P |
 | Sin adaptación de flujo tras Plimit en respiraciones sucesivas | El equipo real ajusta el flujo en las respiraciones siguientes (JB72469XX); aquí cada respiración se limita igual | U-19 |
 | Canal de volumen con dispersión de lectura (±2,5 % por ciclo) separado del volumen verdadero | VTesp y VMesp mostrados cambian entre ciclos aunque el modelo entregue exactamente el VT programado; las referencias analíticas del banco se leen del volumen verdadero, con el ruido apagado | D envolvente ±10 % (ficha 2014); P dispersión típica (E-042, U-36) |
 | Sigmoide unívoca: sin histéresis ni reclutamiento | La curva de inflación y la de deflación son la misma, así que **la PEEP decremental no se puede enseñar**: una escalera 5→24→5 cmH₂O devuelve Cstat idénticos bit a bit en los dos sentidos (39,1 · 59,6 · 76,7 · 65,0 mL/cmH₂O). En un pulmón real la rama de deflación va por encima y ahí está el fundamento de la maniobra | P (limitación conocida; U-47) |
@@ -250,6 +250,8 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Con dos unidades, lo que el equipo mide no es lo que el pulmón tiene | Es una propiedad del sistema real, no un defecto del modelo, y por eso importa enseñarla: en SC-17 una oclusión de 2 s da Cstat 45,6 frente a 60 verdadera (−24 %) y una resistencia aparente (Ppico−Pplat)/Q de 9,66 frente a 4,88 del paralelo (+98 %); a 15 s la resistencia aparente llega a 14,61. **La fórmula que enseña SC-01 no vale en SC-17**, y hoy la aplicación no lo advierte | D el fenómeno; U la advertencia al alumno (U-49) |
 | Sin intercambio gaseoso | No hay SpO₂, PaO₂, PaCO₂, EtCO₂ ni espacio muerto: cambiar la FiO₂ o la ventilación minuto no tiene consecuencia alguna más allá de la mecánica. El simulador enseña mecánica ventilatoria, no oxigenación ni ventilación alveolar | — |
 | Sin datos de pacientes reales | Todas las cifras son analíticas o sintéticas; el simulador no valida ajustes clínicos ni pretende fidelidad numérica con el equipo (U-18) | — |
+
+Por omisión los escenarios usan la forma 'riseRelax': Pmus sube como cuarto de seno hasta el pico en `tiS` y relaja exponencialmente con τ = 0,15 s (P); la forma 'halfSine' sigue disponible.
 
 ## Fuentes verificadas
 

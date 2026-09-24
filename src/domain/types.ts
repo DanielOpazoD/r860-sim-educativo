@@ -178,6 +178,10 @@ export interface EffortParams {
   tiS: number;
   /** Desfase inicial (s), independiente del reloj del ventilador. */
   phaseS: number;
+  /** Forma del pulso: 'halfSine' (seno de media onda, tiS = duración total) o 'riseRelax' (subida hasta el pico en tiS y relajación exponencial). */
+  shape?: 'halfSine' | 'riseRelax';
+  /** Constante de tiempo de la relajación (s); sólo con 'riseRelax'. */
+  relaxTauS?: number;
 }
 
 export interface SensorParams {

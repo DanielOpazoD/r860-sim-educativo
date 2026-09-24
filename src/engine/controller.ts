@@ -108,6 +108,12 @@ export const EXP_BIAS_FLOW_LPS = 2 / 60;
 export const DEFAULT_EXP_VALVE_OPEN_MS = 40;
 /** Resistencia equivalente de la válvula cerrada (cmH2O·s/L): el flujo arranca casi en cero al abrirse. */
 const VALVE_CLOSED_R = 200;
+/** La PEEPe se lee este tiempo antes del disparo detectado (s), P: la muestra aún no lleva la caída del esfuerzo. */
+export const PEEPE_PRE_TRIGGER_S = 0.15;
+/** Ventana de Paw espiratoria conservada para buscar la PEEPe pre-disparo (s). */
+export const PEEPE_TRACE_S = 0.6;
+/** Constante de tiempo de la rampa de primer orden como fracción de riseMs: ~95 % del escalón en 3τ (P). */
+export const RISE_TIME_TAU_FRACTION = 3;
 
 export type HoldKind = 'inspHold' | 'expHold';
 export interface HoldRequest {
@@ -247,6 +253,10 @@ export class VcController {
   private manualRequested = false;
   /** Disparo detectado y pendiente de servir cuando pase el retardo de respuesta. */
   private triggerPending: { atS: number; next: BreathType } | null = null;
+  /** Muestras (t, Paw) de la espiración en curso: de ahí sale la PEEPe anterior a la caída del esfuerzo. */
+  private expPawTrace: { t: number; paw: number }[] = [];
+  /** Instante en que se detectó el disparo que terminó la espiración (null si no lo hubo). */
+  private lastTriggerDetectedS: number | null = null;
   /** CPAP/PS: se declaró apnea y el ventilador está entregando respaldo hasta que el paciente vuelva a disparar. */
   private apnea = false;
   private events: ControllerEvent[] = [];
@@ -345,6 +355,8 @@ export class VcController {
   /** CPAP/PS: espiración sin respiración en curso, a la espera del paciente; los temporizadores de respaldo corren desde aquí. */
   private esperarDisparo(): void {
     this.triggerPending = null;
+    this.expPawTrace = [];
+    this.lastTriggerDetectedS = null;
     this.breath = null;
     this.phase = 'exp';
     this.tPhase = 0;
@@ -359,6 +371,8 @@ export class VcController {
     this.breath = null; // la respiración en curso se descarta (causa standby); no se registra como completa
     this.apnea = false;
     this.triggerPending = null;
+    this.expPawTrace = [];
+    this.lastTriggerDetectedS = null;
     this.phase = 'standby';
     this.tPhase = 0;
     this.paw = 0;
@@ -529,11 +543,13 @@ export class VcController {
       }
       case 'inspPressure':
       case 'inspSupport': {
-        // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma lineal P).
+        // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma exponencial P).
         // CPAP/PS: la misma fuente de presión con PEEP + PS (D ficha 2014), ciclada por la caída del flujo (más abajo).
         const rise = s.riseMs / 1000;
         const pAbove = this.breath?.pAbove ?? s.pinsp;
-        const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? Math.min(1, tb / rise) : 1);
+        // Rampa de primer orden: riseMs es el tiempo hasta ~95 % del escalón (3τ), forma P; el equipo real no publica la curva.
+        const tauRise = rise / RISE_TIME_TAU_FRACTION; // 0 → escalón
+        const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? 1 - Math.exp(-tb / tauRise) : 1);
         const tb0 = this.tBreath;
         const nSub = rise > 0 && tb0 < rise ? Math.max(1, Math.ceil(h / 0.001)) : 1;
         let dVtot = 0;
@@ -648,6 +664,9 @@ export class VcController {
         // La presión mostrada es la del nodo (pieza en Y): con resistencia de rama queda sobre la PEEP mientras sale gas.
         this.paw = pyEnd;
         this.lastExpPaw = this.paw;
+        this.expPawTrace.push({ t: this.simT + h, paw: this.paw });
+        while (this.expPawTrace.length && (this.expPawTrace[0] as { t: number }).t < this.simT + h - PEEPE_TRACE_S)
+          this.expPawTrace.shift();
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
           this.manualRequested = false;
@@ -663,6 +682,7 @@ export class VcController {
           // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
           // paciente tira del flujo de base. En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida.
           this.triggerPending = { atS: this.simT + h, next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted' };
+          this.lastTriggerDetectedS = this.simT + h;
           this.events.push({ type: 'trigger', breathId: this.breath?.breathId ?? '', simTimeS: this.simT + h, qLps: qEnd });
         }
         return h;
@@ -778,9 +798,28 @@ export class VcController {
     this.tPhase = 0;
   }
 
+  /**
+   * PEEPe al final de la espiración (cmH2O): la PEEPe se toma antes de que el esfuerzo hunda la Pva,
+   * como hace el ventilador real (P).
+   */
+  private peepeAtExpEnd(next: BreathType): number {
+    if ((next !== 'spontaneous' && next !== 'assisted') || this.lastTriggerDetectedS === null) return this.paw;
+    const tRef = this.lastTriggerDetectedS - PEEPE_PRE_TRIGGER_S;
+    let previa: { t: number; paw: number } | null = null;
+    for (const m of this.expPawTrace) {
+      if (m.t <= tRef) previa = m;
+      else break;
+    }
+    return (previa ?? this.expPawTrace[0] ?? { paw: this.paw }).paw;
+  }
+
   /** Fin de la espiración: registra PEEPe y encadena bloqueo espiratorio o nueva respiración. */
   private endExpiration(next: BreathType): void {
-    if (this.breath) this.breath.peepeEnd = this.paw;
+    const peepe = this.peepeAtExpEnd(next);
+    if (this.breath) this.breath.peepeEnd = peepe;
+    this.lastExpPaw = peepe;
+    this.expPawTrace = [];
+    this.lastTriggerDetectedS = null;
     if (this.apnea && (next === 'spontaneous' || next === 'assisted')) {
       this.apnea = false;
       this.events.push({ type: 'apneaEnded', simTimeS: this.simT, breathId: `b${this.breathSeq + 1}` });

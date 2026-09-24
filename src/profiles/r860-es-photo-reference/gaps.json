@@ -257,7 +257,7 @@
     {
       "id": "U-30",
       "question": "Forma real de la rampa de presión en A/C PC (lineal, exponencial o servocontrolada) y su relación exacta con el ajuste de tiempo de subida.",
-      "policy": "P: rampa lineal de PEEP a PEEP + Pinsp en riseMs; con riseMs = 0 el escalón es inmediato. Sin ensayo de banco frente al equipo.",
+      "policy": "P: rampa de primer orden de PEEP a PEEP + Pinsp, ≈95 % en riseMs (τ = riseMs/3); con riseMs = 0 el escalón es inmediato. Sin ensayo de banco frente al equipo.",
       "status": "nueva (v0.3)",
       "blocks": []
     },

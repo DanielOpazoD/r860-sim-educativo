@@ -144,6 +144,9 @@ export function validateEffort(e: EffortParams): string[] {
   if (e.amplitude < 0 || e.amplitude > 50) r.push('esfuerzo: amplitud fuera de 0–50 cmH2O');
   if (e.ratePerMin <= 0 || e.ratePerMin > 120) r.push('esfuerzo: frecuencia fuera de 0–120/min');
   if (e.tiS <= 0 || e.tiS > 5) r.push('esfuerzo: Ti fuera de 0–5 s');
+  if (e.shape !== undefined && e.shape !== 'halfSine' && e.shape !== 'riseRelax') r.push('esfuerzo: forma debe ser halfSine o riseRelax');
+  if (e.relaxTauS !== undefined && (!Number.isFinite(e.relaxTauS) || e.relaxTauS <= 0 || e.relaxTauS > 2))
+    r.push('esfuerzo: tau de relajación fuera de 0–2 s');
   return r;
 }
 

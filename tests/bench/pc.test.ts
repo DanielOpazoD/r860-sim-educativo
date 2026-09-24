@@ -9,7 +9,7 @@ import type { VcSettings } from '../../src/domain/types';
 
 const PC: VcSettings = { ...BENCH_SETTINGS, mode: 'AC_PC', pinsp: 10, riseMs: 0, rr: 15, ie: 1 / 3, peep: 5, pmax: 40 };
 
-/** Referencia numérica independiente (Euler 10 µs) para presión objetivo con rampa lineal y flujo acotado. */
+/** Referencia numérica independiente (Euler 10 µs) para presión objetivo con rampa de primer orden (≈95 % en riseS, τ = riseS/3) y flujo acotado. */
 function referencePc(
   crs: number,
   r: number,
@@ -27,7 +27,7 @@ function referencePc(
   let q = 0;
   let paw = peep;
   while (t < tInsp - 1e-12) {
-    const target = peep + pinsp * (riseS > 0 ? Math.min(1, t / riseS) : 1);
+    const target = peep + pinsp * (riseS > 0 ? 1 - Math.exp((-3 * t) / riseS) : 1);
     q = (target - v / crs) / r;
     if (q > qMax) {
       q = qMax;

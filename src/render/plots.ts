@@ -86,7 +86,7 @@ export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
   // escenario de doble disparo la traza llega a −516 mL contra un suelo de −60.
   const holgura = -volume * 0.1;
   return {
-    pressure: nice(maxP * 1.12, [40, 60, 80, 100, 120]),
+    pressure: nice(maxP * 1.12, [30, 40, 60, 80, 100, 120]),
     flow: nice(maxF * 1.15, [40, 60, 80, 120, 160, 240, 320]),
     volume,
     minPressure: Math.min(-10, Math.floor(minP / 10) * 10),
@@ -204,8 +204,10 @@ export function stableBounds(prev: ScaleState | null, measured: Bounds, endS: nu
 }
 
 /** Rótulos del eje de tiempo: en barrido, la fase dentro de la ventana; en continuo, el tiempo de simulación. */
-export function timeAxisLabels(style: 'sweep' | 'scroll', end: number, win: number): number[] {
-  return [0, 1, 2, 3].map((k) => (style === 'sweep' ? (k * win) / 3 : Math.max(0, end - win + (k * win) / 3)));
+export function timeAxisLabels(style: 'sweep' | 'scroll', end: number, win: number, divisions = 3): number[] {
+  return Array.from({ length: divisions + 1 }, (_, k) =>
+    style === 'sweep' ? (k * win) / divisions : Math.max(0, end - win + (k * win) / divisions),
+  );
 }
 
 /**
@@ -242,6 +244,8 @@ export interface WaveOptions {
   cursorTime?: number | null;
   /** Escala ya decidida por quien llama (con histéresis, `stableBounds`); sin ella, la de lo visible en este cuadro. */
   bounds?: Bounds;
+  /** Techo de presión Pmáx del ajuste vigente: se dibuja como línea de referencia en el panel de Pva. */
+  pmax?: number;
 }
 
 /** Tres curvas apiladas (o sólo Pva con `single`) con relleno degradado y barrido con hueco por delante del cursor. */
@@ -332,7 +336,7 @@ export function drawWave(
     for (const val of sp.ticks) {
       const y = yf(val);
       line(ctx, left, y, w - right, y, val === 0 ? '#b0e8f78c' : '#77c0e44a', val === 0 ? 1 : 0.6);
-      text(ctx, String(Math.round(val)), left - 7, y + 3, 10, '#8dd4f1', 'right');
+      text(ctx, String(Math.round(val)), left - 7, y + 3, 11, '#8dd4f1', 'right');
     }
     line(ctx, left, ytop, left, ybottom, '#77bfea7a');
     line(ctx, w - right, ytop, w - right, ybottom, '#77bfea7a');
@@ -357,21 +361,35 @@ export function drawWave(
     ctx.beginPath();
     ctx.rect(left, ytop, plotW, ph);
     ctx.clip();
+    if (sp.index === 1) {
+      // Referencias del panel de presión: PEEP programada y techo Pmáx (P: legibilidad de la curva).
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      if (peep > 0) {
+        line(ctx, left, yf(peep), w - right, yf(peep), '#ffd66e99', 0.9);
+        text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, 9, '#ffd66e99', 'right');
+      }
+      if (typeof options.pmax === 'number' && Number.isFinite(options.pmax) && options.pmax > sp.min && options.pmax < sp.max) {
+        line(ctx, left, yf(options.pmax), w - right, yf(options.pmax), '#ff7b7bb0', 0.9);
+        text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, 9, '#ff7b7bb0', 'right');
+      }
+      ctx.restore();
+    }
     const gradient = ctx.createLinearGradient(0, ytop, 0, ybottom);
     if (sp.fill === 'pressure') {
       gradient.addColorStop(0, '#90d27508');
       gradient.addColorStop(0.52, '#b5d04c77');
-      gradient.addColorStop(0.87, '#ddda68db');
-      gradient.addColorStop(1, '#a8ce6c99');
+      gradient.addColorStop(0.87, '#ddda68b0');
+      gradient.addColorStop(1, '#a8ce6c80');
     } else if (sp.fill === 'flow') {
       gradient.addColorStop(0, '#84e6bd55');
       gradient.addColorStop(0.45, '#6ae0c68c');
       gradient.addColorStop(0.5, '#6fd5d747');
-      gradient.addColorStop(0.7, '#46c4dd88');
-      gradient.addColorStop(1, '#409de8aa');
+      gradient.addColorStop(0.7, '#46c4dd70');
+      gradient.addColorStop(1, '#409de888');
     } else {
       gradient.addColorStop(0, '#97d9ff36');
-      gradient.addColorStop(1, '#77cfeeab');
+      gradient.addColorStop(1, '#77cfee90');
     }
     for (const seg of segments) {
       if (seg.length < 2) continue;
@@ -383,7 +401,7 @@ export function drawWave(
       ctx.fillStyle = gradient;
       ctx.fill();
       ctx.strokeStyle = sp.color;
-      ctx.lineWidth = 1.55;
+      ctx.lineWidth = 1.8;
       ctx.lineJoin = 'round';
       ctx.beginPath();
       seg.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -409,8 +427,8 @@ export function drawWave(
     }
     ctx.restore();
     if (i === specs.length - 1)
-      timeAxisLabels(style, end, win).forEach((val, k) =>
-        text(ctx, format(val, 0) + ' s', left + (k * plotW) / 3, h - 1, 8, '#77b5d4', k === 3 ? 'right' : k === 0 ? 'left' : 'center'),
+      timeAxisLabels(style, end, win, 6).forEach((val, k) =>
+        text(ctx, format(val, 0) + ' s', left + (k * plotW) / 6, h - 1, 10, '#8fc6e6', k === 6 ? 'right' : k === 0 ? 'left' : 'center'),
       );
   });
   return { left, right, plotW, win };
