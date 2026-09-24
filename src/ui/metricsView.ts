@@ -78,14 +78,12 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         // El guión sin explicación enseñaba que el dato faltaba, no por qué: el motivo ocupa el sitio de la cifra.
         let motivo = '';
         if (metricValue(fr, m) === null && fr.ventilation !== 'standby') {
-          if (m.source === 'hold') motivo = h ? 'bloqueo no válido' : 'sin bloqueo';
-          else {
-            const s = metricSample(fr, m.key);
-            if (s?.reason) {
-              const r = humanReason(s.reason);
-              motivo = r.length > 16 ? r.slice(0, 16) + '…' : r;
-            } else motivo = 'sin dato';
-          }
+          const s = metricSample(fr, m.key);
+          const razon = humanReason(s?.reason);
+          if (m.source === 'hold' && !h) motivo = 'sin bloqueo';
+          else if (m.source === 'hold' && h && h.quality !== 'valid') motivo = 'bloqueo no válido';
+          else if (!razon) motivo = 'sin dato';
+          else motivo = razon.length > 16 ? razon.slice(0, 16) + '…' : razon;
         }
         if (motivo) valor.innerHTML = `<span class="sin-dato">${esc(motivo)}</span>`;
         else put(valor, f(value(m), m.decimals));

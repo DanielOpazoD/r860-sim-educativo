@@ -246,8 +246,8 @@ export interface WaveOptions {
   bounds?: Bounds;
   /** Techo de presión Pmáx del ajuste vigente: se dibuja como línea de referencia en el panel de Pva. */
   pmax?: number;
-  /** Instantes de disparo del paciente (s): se marcan con un triángulo en el borde inferior del panel de Pva. */
-  triggersS?: number[];
+  /** Instantes en que el sensor detectó un disparo (s). Es la detección del equipo, no prueba de esfuerzo del paciente: una fuga que cruce el umbral también cuenta (autodisparo). */
+  triggerDetectionsS?: number[];
 }
 
 /** Tres curvas apiladas (o sólo Pva con `single`) con relleno degradado y barrido con hueco por delante del cursor. */
@@ -376,8 +376,8 @@ export function drawWave(
         text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, 9, '#ff7b7bb0', 'right');
       }
       ctx.restore();
-      // Cada disparo del paciente queda marcado en el borde inferior: es la prueba de quién mandó la respiración.
-      for (const t of options.triggersS ?? []) {
+      // Cada disparo detectado por el sensor queda marcado en el borde inferior; no distingue esfuerzo de autodisparo por fuga.
+      for (const t of options.triggerDetectionsS ?? []) {
         if (t < end - win || t > end) continue;
         const x = xfn(t);
         if (x < left || x > w - right) continue;
