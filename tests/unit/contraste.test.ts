@@ -1,12 +1,17 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { alarmBandLabel } from '../../src/ui/humanize';
 
 // Los tonos de la banda de alarmas y de las cifras pequeñas de la columna numérica están calculados, no elegidos a ojo.
-// Estas pruebas leen los literales de styles.css y miden el contraste WCAG 2.1 en los DOS extremos de cada degradado:
-// si alguien retoca un color y baja de 4,5:1 (texto normal, AA), la integración lo dice.
+// Estas pruebas leen los literales de las parciales de styles.css y miden el contraste WCAG 2.1 en los DOS extremos de
+// cada degradado: si alguien retoca un color y baja de 4,5:1 (texto normal, AA), la integración lo dice.
 
-const css = readFileSync(new URL('../../src/ui/styles.css', import.meta.url), 'utf8');
+const dirStyles = new URL('../../src/ui/styles/', import.meta.url);
+const css = readdirSync(dirStyles)
+  .filter((f) => f.endsWith('.css'))
+  .sort()
+  .map((f) => readFileSync(new URL(f, dirStyles), 'utf8'))
+  .join('\n');
 
 function luminancia(hex: string): number {
   const h = hex.replace('#', '');

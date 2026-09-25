@@ -636,7 +636,7 @@
       "status": "P (criterio del simulador; el algoritmo del equipo no está publicado)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (plateauQuality); src/engine/procedures.ts",
+      "implemented": "src/engine/breathAnalysis.ts (plateauQuality); src/engine/procedures.ts",
       "tests": [
         "tests/unit/viscoelastic.test.ts (VIS-02)",
         "tests/unit/procedures.test.ts (PRC-02)"
@@ -792,7 +792,7 @@
       "status": "P (la forma del criterio es deducida; el valor está calibrado, no documentado por el fabricante)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (plateauQuality, PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S); src/engine/procedures.ts (driftLimit)",
+      "implemented": "src/engine/breathAnalysis.ts (plateauQuality, PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S); src/engine/procedures.ts (driftLimit)",
       "tests": [
         "tests/unit/review5.test.ts (R5-01)",
         "tests/unit/review7.test.ts (R7-01)"
@@ -938,7 +938,7 @@
       "status": "D (aritmética; la preferencia por Pmáx en el empate es P)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (thresholdCrossing)",
+      "implemented": "src/engine/trigger.ts (thresholdCrossing)",
       "tests": [
         "tests/unit/review5.test.ts (R5-07)"
       ]
@@ -961,7 +961,7 @@
       "status": "D el método (Grasso, Ranieri) y las bandas; D la aritmética, verificada recuperando exponentes conocidos a tres decimales",
       "source": "C01",
       "locator": "índice de estrés en ventilación a flujo constante",
-      "implemented": "src/engine/controller.ts (stressIndex, indiceDeEstres, flowSamples); src/engine/metrics.ts; src/ui/teaching.ts (estres)",
+      "implemented": "src/engine/breathAnalysis.ts (stressIndex); src/engine/controller.ts (indiceDeEstres, flowSamples); src/engine/metrics.ts; src/ui/teaching.ts (estres)",
       "tests": [
         "tests/unit/proteccion.test.ts"
       ]
@@ -1018,7 +1018,7 @@
       "status": "D-secundario (RCexp, método de cabecera; los umbrales son P calibrados sobre los escenarios)",
       "source": "—",
       "locator": "Brunner et al., «Simple method to measure total expiratory time constant»",
-      "implemented": "src/engine/controller.ts (expiratoryTimeConstant, TAU_EXP_MIN_R2, TAU_EXP_FIT_FROM/TO); src/engine/metrics.ts (out.tauExp)",
+      "implemented": "src/engine/breathAnalysis.ts (expiratoryTimeConstant, TAU_EXP_MIN_R2, TAU_EXP_FIT_FROM/TO); src/engine/metrics.ts (out.tauExp)",
       "tests": [
         "tests/unit/mecanica.test.ts (MEC-03)"
       ]

@@ -35,7 +35,7 @@ export function createViews(ctx: AppContext): Views {
       const resize = (): void => {
         const e = $('#screen-window'),
           m = $('#monitor');
-        // El monitor mide 1120 px lógicos en escritorio; en teléfono es vertical y más estrecho (styles.css, bloque final),
+        // El monitor mide 1120 px lógicos en escritorio; en teléfono es vertical y más estrecho (styles/07-movil-vertical.css),
         // así que la escala sale de su anchura real y no de un literal.
         const k = e.clientWidth / (m.offsetWidth || 1120);
         m.style.transform = `scale(${k})`;

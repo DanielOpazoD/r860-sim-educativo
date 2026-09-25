@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S } from '../../src/engine/controller';
+import { PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S } from '../../src/engine/breathAnalysis';
 import { Simulator } from '../../src/engine/simulator';
 import { defaultInit, R860_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';

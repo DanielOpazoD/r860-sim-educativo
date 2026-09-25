@@ -1,0 +1,1084 @@
+/* Cabecera, adaptaciones a ancho y reglas añadidas v1.x (era styles.css 3083–4166). */
+/* Entre 701 y ~800 px la cabecera desbordaba (617 px de acciones tras 173 px de marca): los botones con texto pasan a icono. */
+@media (max-width: 820px) {
+  .top-actions .button.subtle > span {
+    display: none;
+  }
+  .top-actions .button.subtle {
+    padding: 8px;
+  }
+}
+@media (max-width: 700px) {
+  .app-top {
+    height: 64px;
+    padding: 0 15px;
+    gap: 12px;
+  }
+  .wordmark {
+    gap: 6px;
+  }
+  .wordmark > .icon {
+    width: 24px;
+    height: 24px;
+  }
+  .wordmark strong {
+    font-size: 21px;
+    letter-spacing: -1px;
+  }
+  .wordmark strong span {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    margin-left: 6px;
+  }
+  .top-actions {
+    gap: 2px;
+  }
+  .top-actions .button {
+    padding: 7px;
+    min-width: 31px;
+    min-height: 32px;
+    font-size: 11px;
+  }
+  .top-actions .button > span {
+    display: none;
+  }
+  .top-actions .button .icon {
+    width: 17px;
+    height: 17px;
+  }
+  .top-actions .toolbar-divider {
+    margin: 0 3px;
+    height: 20px;
+  }
+  .top-actions [data-action='fullscreen'] {
+    display: none;
+  }
+  .speed-control select {
+    width: 49px;
+    font-size: 11px;
+    height: 32px;
+    padding: 4px;
+  }
+  .workspace {
+    padding: 18px 13px;
+    gap: 22px;
+  }
+  .stage-heading {
+    align-items: flex-start;
+    margin: 0 2px 9px;
+    gap: 10px;
+  }
+  .stage-heading > div {
+    gap: 7px;
+  }
+  .stage-heading h1 {
+    font-size: 13px;
+  }
+  .stage-sub {
+    display: block;
+    font-size: 9px;
+    flex-basis: 100%;
+    margin-left: 13px;
+    margin-top: -3px;
+  }
+  .text-button {
+    font-size: 9px;
+  }
+  .text-button .icon {
+    width: 13px;
+    height: 13px;
+  }
+  .mobile-hint {
+    display: block;
+    font-size: 9px;
+    color: #6386a0;
+    margin: 7px 2px 10px;
+    line-height: 1.5;
+  }
+  .device-scroll {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #435e75 #152334;
+    padding-bottom: 12px;
+    border-radius: 15px;
+    overscroll-behavior-x: contain;
+  }
+  .device-shell {
+    min-width: 710px;
+    border-radius: 16px 16px 27px 27px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .bezel-model {
+    font-size: 11px;
+  }
+  .bezel-model > span {
+    font-size: 6px;
+  }
+  .bezel-top {
+    height: 32px;
+  }
+  .bezel-bottom {
+    height: 73px;
+  }
+  .hard-keys {
+    gap: 14px;
+  }
+  .hard-key {
+    width: 35px;
+    height: 34px;
+    padding: 7px;
+  }
+  .bezel-signature {
+    font-size: 20px;
+  }
+  .trim-knob {
+    width: 53px;
+    height: 53px;
+  }
+  .signal-toolbar {
+    margin-top: 12px;
+    flex-wrap: wrap;
+    gap: 11px;
+  }
+  .signal-actions {
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .signal-toolbar .button {
+    font-size: 10px;
+    padding: 8px;
+  }
+  .inline-select {
+    font-size: 9px;
+  }
+  .inline-select select {
+    font-size: 9px;
+    padding: 4px 5px;
+  }
+  .simulation-clock {
+    font-size: 10px;
+  }
+  .stage-footnote {
+    font-size: 9px;
+    align-items: flex-start;
+    line-height: 1.8;
+    margin-top: 14px;
+  }
+  .stage-footnote button {
+    font-size: 9px;
+  }
+  .instructor {
+    border-radius: 9px;
+  }
+  .instructor-pane#instructor-patient.active {
+    display: block;
+  }
+  .instructor-pane {
+    padding: 20px;
+  }
+  .instructor-header {
+    padding: 18px 20px;
+  }
+  .instructor-header h2 {
+    font-size: 17px;
+  }
+  .instructor-tabs button {
+    font-size: 12px;
+  }
+  .model-note {
+    font-size: 11px;
+  }
+  .phys-field {
+    margin-bottom: 26px;
+  }
+  .phys-field-header label {
+    font-size: 12px;
+  }
+  .phys-value input {
+    font-size: 18px;
+    width: 56px;
+  }
+  .phys-value small {
+    font-size: 9px;
+  }
+  .phys-range-labels {
+    font-size: 9px;
+  }
+  .phys-field input[type='range'] {
+    height: 5px;
+  }
+  .phys-field input[type='range']::-webkit-slider-thumb {
+    width: 17px;
+    height: 17px;
+  }
+  .truth-grid {
+    gap: 21px 20px;
+  }
+  .truth-grid span {
+    font-size: 10px;
+  }
+  .truth-grid b {
+    font-size: 26px;
+  }
+  .truth-grid b small {
+    font-size: 10px;
+  }
+  .advanced-patient summary {
+    font-size: 11px;
+    padding: 15px 0;
+  }
+  .mini-muscle > div {
+    font-size: 11px;
+  }
+  .mini-muscle b {
+    font-size: 11px;
+  }
+  .instructor-pane#instructor-learn .lesson-text,
+  .task,
+  .reflection {
+    font-size: 12px;
+  }
+  .fault-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .safety-strip {
+    padding: 18px 17px 22px;
+    gap: 10px;
+    text-align: center;
+    line-height: 1.7;
+    margin-top: 0;
+  }
+  .safety-strip strong {
+    font-size: 9px;
+  }
+  .app-dialog {
+    width: calc(100vw - 22px);
+    border-radius: 9px;
+    max-height: 94vh;
+  }
+  .dialog-header {
+    padding: 18px;
+  }
+  .dialog-header small {
+    font-size: 8px;
+  }
+  .dialog-header h2 {
+    font-size: 19px;
+    line-height: 1.3;
+  }
+  .dialog-content {
+    padding: 18px;
+    max-height: calc(94vh - 165px);
+  }
+  .dialog-footer {
+    padding: 13px 18px;
+    gap: 9px;
+  }
+  .dialog-footer .footer-info {
+    font-size: 9px;
+  }
+  .primary-button,
+  .secondary-button {
+    font-size: 11px;
+    padding: 10px 13px;
+  }
+  .dialog-content p {
+    font-size: 12px;
+  }
+  .dialog-content .notice-box,
+  .dialog-content .info-box {
+    font-size: 11px;
+    padding: 13px;
+  }
+  .menu-grid,
+  .session-actions,
+  .scenario-grid {
+    grid-template-columns: 1fr;
+  }
+  .scenario-card {
+    min-height: 0;
+    padding: 16px;
+  }
+  .scenario-card h3 {
+    font-size: 17px;
+  }
+  .scenario-card > small {
+    font-size: 9px;
+  }
+  .scenario-card p {
+    font-size: 12px;
+  }
+  .scenario-card .scenario-details {
+    font-size: 10px;
+  }
+  .mode-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .mode-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .mode-option {
+    text-align: center;
+    font-size: 10px;
+    padding: 9px 5px;
+    min-height: 40px;
+  }
+  .mode-extra-note {
+    grid-column: 1/-1;
+    margin-top: 5px;
+    font-size: 9px;
+  }
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .mode-description {
+    font-size: 11px;
+  }
+  .setting-field > span {
+    font-size: 10px;
+  }
+  .setting-field input {
+    font-size: 20px;
+    padding: 10px 30px 10px 10px;
+  }
+  .setting-field small {
+    font-size: 9px;
+  }
+  .settings-annotation {
+    font-size: 10px;
+  }
+  .mode-timing {
+    font-size: 10px;
+    gap: 10px;
+  }
+  .info-table {
+    font-size: 11px;
+  }
+  .info-table th,
+  .info-table td {
+    padding: 9px 6px;
+  }
+  .help-tabs button {
+    font-size: 10px;
+    padding: 9px 11px;
+  }
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+  .source-entry a {
+    font-size: 12px;
+  }
+  .source-entry p {
+    font-size: 11px;
+  }
+  .alarm-edit-grid {
+    gap: 11px;
+    font-size: 11px;
+    grid-template-columns: 1.15fr 1fr 1fr;
+  }
+  .alarm-edit-grid > label {
+    font-size: 11px;
+  }
+  .alarm-row {
+    padding: 12px;
+    gap: 9px;
+  }
+  .alarm-row b {
+    font-size: 12px;
+  }
+  .alarm-priority {
+    font-size: 8px;
+    min-width: 45px;
+  }
+  .debrief-stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+  }
+  .debrief-stat-grid > div {
+    padding: 12px;
+  }
+  .debrief-stat-grid strong {
+    font-size: 23px;
+  }
+  .form-row {
+    gap: 12px;
+  }
+  .menu-entry {
+    padding: 17px;
+  }
+  .menu-entry b {
+    font-size: 13px;
+  }
+  .menu-entry small {
+    font-size: 11px;
+  }
+  .toast-stack {
+    top: auto;
+    right: auto;
+    left: 14px;
+    bottom: 15px;
+    max-width: calc(100vw - 28px);
+  }
+  .toast {
+    font-size: 11px;
+    padding: 11px 14px;
+  }
+  .app-dialog.wide,
+  .app-dialog.compact {
+    width: calc(100vw - 22px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media print {
+  body {
+    background: white;
+    color: #111;
+  }
+  .app-top,
+  .instructor,
+  .signal-toolbar,
+  .stage-footnote,
+  .text-button,
+  .safety-strip,
+  .app-dialog,
+  .toast-stack {
+    display: none !important;
+  }
+  .workspace {
+    display: block;
+    padding: 0;
+  }
+  .stage-heading {
+    color: #111;
+  }
+  .stage-heading h1 {
+    color: #111;
+  }
+  .device-shell {
+    box-shadow: none;
+  }
+  .device-scroll {
+    overflow: visible;
+  }
+  .bezel-tag {
+    color: #111;
+  }
+  .monitor,
+  .device-shell {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+/* Native button reset for measured data: retain monitor, not browser chrome. */
+.numeric,
+.big-numeric {
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
+  border-radius: 3px;
+}
+.numeric-grid {
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  min-height: 0;
+}
+.numeric {
+  min-height: 0;
+  padding-top: 2px;
+  padding-bottom: 1px;
+}
+.numeric-limits {
+  white-space: pre-line;
+}
+.numeric-age:empty {
+  display: none;
+}
+.teacher-event {
+  padding: 9px 0;
+  border-bottom: 1px solid #2e455a;
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 9px;
+  line-height: 1.6;
+}
+.teacher-event time {
+  color: #7596ad;
+  font-variant-numeric: tabular-nums;
+}
+.teacher-event span {
+  color: #afc7d7;
+}
+.hold-status.invalid {
+  color: #ffdda5;
+}
+.fault-grid button.active {
+  border-color: #d1aa5f;
+  background: #443b29;
+}
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #385568;
+}
+.check-item.pass {
+  color: #b3ddcb;
+}
+.check-item.fail {
+  color: #f0b79f;
+}
+.check-item span {
+  margin-left: auto;
+  font-size: 12px;
+}
+.alarm-edit-grid input {
+  min-width: 0;
+}
+.source-entry a {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #9bd9ed;
+}
+.source-entry .icon {
+  width: 15px;
+  height: 15px;
+}
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.info-table td,
+.info-table th {
+  padding: 11px 9px;
+  border-bottom: 1px solid #3d5469;
+  vertical-align: top;
+  text-align: left;
+}
+.info-table th {
+  color: #adc9dc;
+}
+.help-list > div {
+  margin: 20px 0;
+}
+.help-list p {
+  margin: 8px 0;
+}
+.help-tabs button {
+  font: inherit;
+  cursor: pointer;
+}
+.mode-error:empty {
+  display: none;
+}
+.trim-knob span {
+  transform: rotate(var(--knob-angle, 0deg));
+  transform-origin: center 24px;
+}
+.alarm-silence small {
+  min-height: 11px;
+}
+.numeric:focus-visible,
+.big-numeric:focus-visible {
+  outline: 2px solid #d6f7ff;
+  outline-offset: -2px;
+}
+/* v1.1 — Información bajo demanda. La jerarquía del monitor se conserva. */
+.info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 5px;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: #90b7c9;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.info-button .icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.info-button:hover,
+.info-button[aria-expanded='true'] {
+  color: #d8f6ef;
+  background: #96dfd315;
+}
+.info-button:focus-visible {
+  outline: 2px solid #ace5d7;
+  outline-offset: 1px;
+}
+.parameter-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.parameter-label > label {
+  min-width: 0;
+}
+.parameter-label .info-button {
+  margin-left: 0;
+}
+.editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.editor-header-actions .info-button {
+  width: 30px;
+  height: 30px;
+  color: #b3d5e6;
+}
+.editor-header-actions .info-button .icon {
+  width: 20px;
+  height: 20px;
+}
+.parameter-help {
+  display: block;
+  margin: 10px 0 3px;
+  padding: 12px 13px;
+  background: #0b203139;
+  border: 1px solid #6894ac45;
+  border-radius: 5px;
+  color: #c3d9e6;
+  font:
+    12px/1.65 Arial,
+    sans-serif;
+  text-align: left;
+  min-width: 0;
+}
+.parameter-help h3,
+.dialog-content .parameter-help h3 {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
+  color: #d8eaf3;
+  margin: 0 0 7px;
+}
+.parameter-help p,
+.dialog-content .parameter-help p {
+  font-size: 12px;
+  line-height: 1.65;
+  color: #b5ccdc;
+  margin: 7px 0;
+}
+.parameter-help p:last-child {
+  margin-bottom: 0;
+}
+.help-equation {
+  padding: 9px 0 1px;
+  border-top: 1px solid #7aa6bf3b;
+  margin-top: 10px;
+  color: #bbe4dd;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.help-timing:empty {
+  display: none;
+}
+.quick-editor {
+  max-height: min(590px, calc(100% - 165px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #718fa5 transparent;
+}
+.quick-editor .parameter-help {
+  margin: 16px 0 6px;
+  max-height: 212px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.quick-editor .parameter-help h3 {
+  font-size: 12px;
+}
+.quick-editor .parameter-help p {
+  font-size: 11px;
+  line-height: 1.65;
+}
+.quick-editor .knob-hint {
+  margin-top: 14px;
+}
+.inline-validation:empty {
+  display: none;
+}
+.setting-field > .parameter-label {
+  justify-content: space-between;
+  gap: 3px;
+}
+.setting-field > .parameter-label > label {
+  font-size: 11px;
+  color: #a7c4d6;
+  line-height: 1.4;
+}
+.setting-field > .parameter-help {
+  display: block;
+  align-items: initial;
+  margin-top: 0;
+}
+.settings-grid > .full-span {
+  grid-column: 1/-1;
+}
+.mode-description > .parameter-label {
+  justify-content: space-between;
+}
+.mode-description > .parameter-label h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.mode-description > .parameter-help {
+  margin-top: 12px;
+}
+.phys-field-header > .parameter-label {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.phys-field-header > .parameter-label > label {
+  max-width: 155px;
+  line-height: 1.4;
+}
+.phys-field-header .info-button {
+  width: 25px;
+  height: 28px;
+  min-width: 25px;
+  padding: 5px;
+}
+.phys-field .parameter-help {
+  font-size: 11px;
+  margin-top: 12px;
+  padding: 11px 12px;
+}
+.phys-field .parameter-help p {
+  font-size: 11px;
+}
+.phys-field .parameter-help h3 {
+  font-size: 11px;
+}
+.truth-grid .truth-label {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+  min-height: 35px;
+}
+.truth-label .info-button {
+  width: 22px;
+  height: 25px;
+  min-width: 22px;
+  padding: 3px;
+  position: relative;
+  top: -4px;
+}
+.truth-label .info-button .icon {
+  width: 14px;
+  height: 14px;
+}
+.truth-help-panels:has(> .parameter-help:not([hidden])) {
+  margin-top: 12px;
+}
+.truth-help-panels .parameter-help {
+  font-size: 11px;
+}
+.truth-help-panels .parameter-help p {
+  font-size: 11px;
+}
+.numeric-label .numeric-info,
+.big-numeric .numeric-info {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 5px;
+  opacity: 0.45;
+}
+.numeric-info .icon {
+  width: 11px;
+  height: 11px;
+  stroke-width: 1.6;
+  fill: none;
+}
+.numeric:hover .numeric-info,
+.numeric:focus-visible .numeric-info,
+.big-numeric:hover .numeric-info {
+  opacity: 1;
+}
+.metric-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.metric-name .icon {
+  color: #86b6c4;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+.metric-name:hover {
+  color: #d4f5ed;
+}
+.measurement-summary {
+  padding: 2px 0 20px;
+  border-bottom: 1px solid #426078;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.measurement-summary strong {
+  font-size: 38px;
+  font-weight: 650;
+  color: #e5f7ff;
+  line-height: 1.2;
+}
+.measurement-summary strong small {
+  font-size: 12px;
+  color: #92b0c5;
+  font-weight: 400;
+}
+.measurement-summary > span {
+  font-size: 11px;
+  color: #8eabbf;
+  line-height: 1.6;
+}
+.measurement-explanation {
+  margin-top: 21px;
+}
+.measurement-explanation h3 {
+  display: none;
+}
+.measurement-explanation .help-equation {
+  font-size: 13px;
+}
+.context-help-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  color: #93b1c5;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.hold-title b {
+  margin-right: auto;
+}
+.hold-title #hold-help-button {
+  width: 25px;
+  height: 24px;
+  min-width: 25px;
+  padding: 4px;
+  margin: 0 7px 0 0;
+}
+.hold-title #hold-help-button .icon {
+  width: 15px;
+  height: 15px;
+}
+.hold-panel > .parameter-help {
+  margin: 0 8px 8px;
+  padding: 10px;
+  max-height: 230px;
+  overflow-y: auto;
+  background: #123961b0;
+}
+.hold-panel > .parameter-help h3,
+.hold-panel > .parameter-help p {
+  font-size: 11px;
+}
+.hold-panel.is-occluding {
+  border-color: #abf1df;
+}
+.hold-panel.is-occluding .hold-status {
+  color: #c6f5e7;
+  background: #185273;
+}
+.hold-play:disabled {
+  opacity: 0.5;
+}
+@media (max-width: 1020px) and (min-width: 701px) {
+  .instructor-pane#instructor-patient > .truth-help-panels {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .phys-field-header > .parameter-label > label {
+    max-width: none;
+  }
+}
+@media (max-width: 700px) {
+  .phys-field-header > .parameter-label > label {
+    max-width: none;
+  }
+  .phys-field-header .info-button {
+    width: 28px;
+    min-width: 28px;
+    height: 30px;
+  }
+  .parameter-help p,
+  .dialog-content .parameter-help p {
+    font-size: 12px;
+  }
+  .setting-field > .parameter-label > label {
+    font-size: 10px;
+  }
+  .setting-field > .parameter-label > .info-button {
+    width: 24px;
+    min-width: 24px;
+    height: 28px;
+  }
+  .truth-label .info-button {
+    width: 27px;
+    min-width: 27px;
+    height: 28px;
+  }
+  .truth-help-panels .parameter-help p {
+    font-size: 12px;
+  }
+}
+/* Edición legible fuera del monitor escalado en pantallas estrechas. */
+.hold-play[aria-label='Cancelar bloqueo'] .icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+#quick-editor.mobile-editor {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: min(405px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  z-index: 100;
+  padding: 20px;
+  box-shadow: 0 8px 65px #000b;
+}
+#quick-editor.mobile-editor .parameter-help {
+  max-height: min(250px, 36dvh);
+}
+#quick-editor.mobile-editor .parameter-help p {
+  font-size: 13px;
+  line-height: 1.65;
+}
+#quick-editor.mobile-editor .parameter-help h3 {
+  font-size: 14px;
+}
+#quick-editor.mobile-editor .primary-button,
+#quick-editor.mobile-editor .secondary-button {
+  font-size: 13px;
+  min-height: 40px;
+}
+#quick-editor.mobile-editor .info-button {
+  width: 32px;
+  height: 32px;
+}
+
+/* [adaptado] Vista básica como en la foto P3: curvas estrechas a la izquierda y seis valores grandes en 2×3 con límites. */
+.monitor .view-basic {
+  flex-direction: row;
+  gap: 8px;
+}
+.monitor .view-basic > canvas {
+  width: 330px;
+  height: 491px;
+  flex: 0 0 330px;
+}
+.monitor .big-metrics {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 6px 14px;
+  padding: 12px 10px 4px 14px;
+}
+.monitor .big-numeric {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: end;
+  justify-content: start;
+  padding: 2px 8px;
+}
+.monitor .big-numeric > span:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  margin-bottom: 2px;
+  font-size: 16px;
+}
+.monitor .big-numeric b {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 54px;
+  font-weight: 500;
+}
+.monitor .big-numeric em {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: end;
+  margin: 0;
+  font-size: 12px;
+}
+.monitor .big-numeric .numeric-limits {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #98dcff;
+  white-space: pre-line;
+  line-height: 1.15;
+}
+/* [adaptado] Dígitos algo más ligeros, como los del equipo. */
+.monitor .numeric-value,
+.monitor .quick-key b {
+  font-weight: 500;
+}
+/* [adaptado] Ventana de bloqueo fuera del monitor escalado en móvil. */
+.hold-panel.mobile-hold {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  top: auto;
+  width: auto;
+  max-width: none;
+  z-index: 60;
+  font-size: 15px;
+  transform: none;
+}
+.hold-panel.mobile-hold .hold-panel-body {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hold-panel.mobile-hold select,
+.hold-panel.mobile-hold .hold-play {
+  min-height: 44px;
+  min-width: 64px;
+  font-size: 16px;
+}
