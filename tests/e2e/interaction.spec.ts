@@ -603,3 +603,13 @@ test.describe('DEN · densidad de la columna numérica', () => {
     await expect(page.locator('#data-table-body-2 tr')).toHaveCount(10);
   });
 });
+
+test.describe('RT · disparo reverso (SC-24)', () => {
+  test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
+    await open(page, { scenario: 'SC-24' });
+    await page.click('[data-instructor="patient"]');
+    await page.locator('.advanced-patient summary').click();
+    await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
+    await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
+  });
+});

@@ -1146,6 +1146,19 @@
         "tests/unit/objetivos.test.ts (SC-22, SC-23)",
         "tests/e2e/interaction.spec.ts (DESC · desconexión)"
       ]
+    },
+    {
+      "id": "E-092",
+      "claim": "Disparo reverso (entrainment): la insuflación pasiva de una respiración de máquina evoca una contracción diafragmática fase-bloqueada, modelada como pulso 'riseRelax' que arranca `delayS` después del inicio de la insuflación con amplitud y acoplamiento propios (`effort.reverse`; ratio máquina:paciente 1:1–1:3). Sólo las respiraciones 'mandatory'/'backup' la evocan — una asistida disparada por la evocada no re-evoca—; si la contracción sobrevive al ciclado, su demanda dispara la siguiente respiración por el mecanismo normal y emerge el doble disparo. Verificado en banco: con SC-24 (VC 450 mL, C 0,045, R 10, amplitud 8, latencia 0,5) el pico de Pmus cae a inicio+0,5+0,8 s en todos los ciclos y el registro es todo 'mandatory'; con latencia 1,4 aparecen respiraciones 'assisted' apiladas a ~0,6 s del fin de la inspiración previa (demanda > Pel−PEEP mientras aún queda volumen; con 0,9 físicamente no dispara: el pico 8 no supera Pel−PEEP ≈ 9,5). Fenómeno descrito por Akoumianaki 2013 (Chest 143:927); latencia, amplitud y ratio son valores propuestos (U-54).",
+      "status": "P (fenómeno descrito; valores propuestos del simulador)",
+      "source": "literatura",
+      "locator": "Akoumianaki et al., Chest 2013;143(4):927 (reverse triggering / entrainment)",
+      "implemented": "src/domain/types.ts (EffortParams.reverse); src/engine/effort.ts (notifyMachineBreath, riseRelaxPulse evocado); src/engine/controller.ts (aviso en startBreath mandatory/backup); src/ui/patientControls.ts (reverseAmp, reverseDelay); src/ui/help.ts (patient.reverse, patient.reverseDelay); src/scenarios/index.ts (SC-24)",
+      "tests": [
+        "tests/unit/effort.test.ts (entrainment: identidad sin reverse, onset/pico, ratio, sobrescritura)",
+        "tests/bench/disparoReverso.test.ts (BM-RT)",
+        "tests/e2e/interaction.spec.ts (RT · disparo reverso)"
+      ]
     }
   ]
 }

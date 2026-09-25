@@ -199,6 +199,8 @@ export interface EffortParams {
   expTiS?: number;
   /** Variabilidad determinista respiración a respiración (fracciones 0–0,5): la amplitud y el período de cada esfuerzo se escalan por 1 + frac·(2u − 1), con u de un generador con semilla (la de la sesión). Ausente o 0 = esfuerzo perfectamente periódico. P. */
   variability?: { amplitudeFrac: number; periodFrac: number };
+  /** Disparo reverso (P): contracción evocada por cada respiración iniciada por la máquina (mandatory/backup), no por el paciente. Pulso 'riseRelax' de amplitud `amplitude` que arranca `delayS` tras el inicio de la insuflación, pico en `tiS` y relajación `relaxTauS` (los del esfuerzo). `ratio` = 1 evoca en todas, 2 en una de cada dos, 3 en una de cada tres. Ausente = sin entrainment. */
+  reverse?: { amplitude: CmH2O; delayS: number; ratio?: 1 | 2 | 3 };
 }
 
 export interface SensorParams {
