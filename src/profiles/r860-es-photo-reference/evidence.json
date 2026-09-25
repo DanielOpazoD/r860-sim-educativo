@@ -1146,6 +1146,19 @@
         "tests/unit/objetivos.test.ts (SC-22, SC-23)",
         "tests/e2e/interaction.spec.ts (DESC · desconexión)"
       ]
+    },
+    {
+      "id": "E-089",
+      "claim": "Presets de referencia fisiológica para la mecánica del paciente (panel docente, sin cambiar valores por omisión ni escenarios): viscoelasticidad «Adulto sano» E2 3 cmH2O/L y τ2 1,1 s para el sistema respiratorio total anestesiado-paralizado (oclusión rápida a flujo constante) y «Restrictivo / SDRA» E2 9, τ2 1,0 s (2–3× la sana); K2 inspiratorio del TET adulto por diámetro interno 2,4/3,1/4,7/6,0/9,2/12,8 cmH2O/(L/s)² para 9,0/8,5/8,0/7,5/7,0/6,5 mm (método de oclusión), con el término lineal K1 del tubo incluido en la resistencia del paciente. Verificado en banco: con el preset sano y VC 500 mL a 0,5 L/s una oclusión de 3 s mide P1−P2 = 0,87 cmH2O (2,57 con SDRA, > 2×), y el TET 7,0 mm sube la Ppico 2,33 cmH2O a 0,5 L/s ≈ K2·Q².",
+      "status": "P (E2/τ2, valores aproximados de literatura) / D (K2 por diámetro, Anaesth Intensive Care 2011)",
+      "source": "literatura",
+      "locator": "D'Angelo et al., oclusión rápida a flujo constante (1989/1991); Anaesth Intensive Care 2011;39:410 (K2 del TET por diámetro)",
+      "implemented": "src/ui/mechanicsPresets.ts (TISSUE_PRESETS, TUBE_PRESETS); src/ui/patientControls.ts (presetsHtml); src/ui/instructorPanel.ts (presetChange, syncPreset); src/ui/help.ts (patient.presetTissue, patient.presetTube)",
+      "tests": [
+        "tests/unit/mechanicsPresets.test.ts (PRE)",
+        "tests/bench/viscoelasticoReferencia.test.ts (BM-VE)",
+        "tests/e2e/interaction.spec.ts (PRE · presets de mecánica del paciente)"
+      ]
     }
   ]
 }

@@ -603,3 +603,24 @@ test.describe('DEN · densidad de la columna numérica', () => {
     await expect(page.locator('#data-table-body-2 tr')).toHaveCount(10);
   });
 });
+
+test.describe('PRE · presets de mecánica del paciente', () => {
+  test('«TET 7,0 mm» fija el deslizador K₂ a 9,2 y moverlo a mano deja «Personalizado»', async ({ page }) => {
+    await open(page);
+    await page.click('[data-instructor="patient"]');
+    await page.locator('.advanced-patient summary').click();
+    const tubo = page.locator('#preset-tube');
+    await expect(tubo).toHaveValue('none');
+    await tubo.selectOption('id70');
+    await expect(page.locator('[data-phys-number="rohrer"]')).toHaveValue('9.2');
+    await expect(tubo).toHaveValue('id70');
+    // Mover el deslizador a mano deja el preset en «Personalizado» (opción oculta, seleccionada).
+    await page.locator('[data-phys-range="rohrer"]').fill('5');
+    await expect(page.locator('[data-phys-range="rohrer"]')).toHaveValue('5');
+    await expect(tubo).toHaveValue('custom');
+    const tejido = page.locator('#preset-tissue');
+    await tejido.selectOption('healthy');
+    await expect(page.locator('[data-phys-number="viscoelastic"]')).toHaveValue('3');
+    await expect(page.locator('#preset-tissue-note')).toContainText('D’Angelo');
+  });
+});
