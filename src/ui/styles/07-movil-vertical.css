@@ -1,0 +1,105 @@
+/* Monitor vertical en teléfono (era styles.css 4986–fin). */
+/* ---- Monitor vertical en teléfono (≤ 700 px). La pantalla ya no se desplaza de lado: el monitor mide 626 px lógicos
+   (las curvas conservan sus 608 px) y crece a lo alto —curvas arriba, cifras debajo en tres columnas—; el manómetro se
+   retira porque la curva de Pva y la Ppico ya dicen lo mismo. La escala la calcula views.ts a partir de la anchura real.
+   Va al final de la hoja para ganar a toda regla anterior de igual especificidad. ---- */
+@media (max-width: 700px) {
+  .device-scroll {
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .device-shell {
+    min-width: 0;
+  }
+  .screen-window {
+    aspect-ratio: auto;
+  }
+  .monitor {
+    width: 626px;
+    height: auto;
+    grid-template-rows: auto auto auto auto;
+  }
+  .monitor-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .monitor-top .alarm-band {
+    flex: 1 1 100%;
+    order: -1;
+  }
+  .monitor-top .top-key {
+    flex: 1 1 0;
+    min-width: 84px;
+  }
+  .monitor-body {
+    display: block;
+  }
+  .data-workspaces {
+    height: auto;
+  }
+  .device-view {
+    position: static;
+    height: auto;
+    min-height: 420px;
+  }
+  .view-waves {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .numeric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto;
+    padding: 4px 6px 8px;
+    gap: 2px 10px;
+  }
+  .pressure-column {
+    display: none;
+  }
+  .view-basic > canvas {
+    display: none;
+  }
+  .big-metrics {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, auto);
+    gap: 14px 16px;
+    padding: 14px 12px 10px;
+  }
+  .loops-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+  .quick-controls {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .quick-controls .quick-key {
+    flex: 1 1 96px;
+    min-width: 96px;
+  }
+  /* La barra de vistas: estado y reloj en su fila, las teclas debajo (centradas sobre el estado pisaban el texto). */
+  .monitor-nav {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 5px 10px 7px;
+  }
+  .monitor-nav .phase-status,
+  .monitor-nav .monitor-clock {
+    position: static;
+    width: auto;
+  }
+  .monitor-nav .phase-status {
+    order: -2;
+    flex: 1 1 calc(100% - 120px);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .monitor-nav .monitor-clock {
+    order: -1;
+    flex: 0 0 auto;
+  }
+  .mobile-toolbar button {
+    flex: 1 1 0;
+    min-width: 44px;
+  }
+}

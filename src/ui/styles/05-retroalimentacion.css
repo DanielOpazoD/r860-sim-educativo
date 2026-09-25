@@ -1,0 +1,309 @@
+/* Retroalimentación, accesibilidad, tema y diálogos (era styles.css 4167–4475). */
+/* ---- v0.3.1: retroalimentación y accesibilidad ---- */
+.engine-banner {
+  position: sticky;
+  top: 0;
+  z-index: 600;
+  background: #5b2b2b;
+  color: #ffe1e1;
+  border-bottom: 1px solid #a05050;
+  padding: 10px 24px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hold-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hold-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #7a3434;
+  color: #ffe6e6;
+  border: 1px solid #b85c5c;
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 34px;
+}
+.hold-cancel .icon {
+  width: 14px;
+  height: 14px;
+}
+.edit-countdown {
+  font-size: 11px;
+  color: #ffd98a;
+  margin-right: auto;
+}
+.edit-countdown:empty {
+  display: none;
+}
+.inline-validation.warn {
+  color: #ffd98a;
+}
+.mode-error.warn {
+  color: #ffd98a;
+}
+/* Barra táctil fija en móvil: accesos de 44 px fuera del monitor escalado (las teclas del monitor quedan pequeñas al escalar). */
+.mobile-toolbar {
+  display: none;
+}
+@media (max-width: 700px), (pointer: coarse) and (max-width: 900px) {
+  .mobile-toolbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 55;
+    gap: 4px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: #0f1a27f2;
+    border-top: 1px solid #33465b;
+    overflow-x: auto;
+  }
+  .mobile-toolbar button {
+    flex: 1 0 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 8px;
+    border: 1px solid #3475ad;
+    background: linear-gradient(#377db7, #123c78);
+    color: #d6ecfb;
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px 4px;
+  }
+  .mobile-toolbar button[aria-pressed='true'] {
+    background: linear-gradient(#6dd8cb, #3aa596);
+    color: #06202a;
+  }
+  .mobile-toolbar button .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .hold-panel.mobile-hold {
+    bottom: 68px;
+  }
+  .toast-stack {
+    top: 12px;
+    bottom: auto;
+    left: 12px;
+  }
+  body {
+    padding-bottom: 72px;
+  }
+  .info-button,
+  .numeric-info {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .monitor .numeric-info {
+    min-width: 0;
+    min-height: 0;
+  }
+}
+/* Tema de página: negro fijo por decisión del usuario (06-09-2026); el tema claro se retiró. */
+/* ---- Ajuste a pantallas bajas (MacBook Air 13): el equipo se encoge para que quepa entero sin desplazar. ---- */
+.device-shell {
+  margin: 0 auto;
+  max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
+}
+/* ---- Tema de página negro: el cromo de la app en negro puro; el monitor del equipo conserva su azul. ---- */
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface2: #121212;
+  --line: #262626;
+}
+body {
+  background: #000000;
+}
+.app-top {
+  background: #000000e6;
+  border-bottom-color: #262626;
+}
+.instructor {
+  background: #0a0a0a;
+  border-color: #262626;
+}
+.instructor-header {
+  background: linear-gradient(120deg, #141414, #0d0d0d);
+}
+.app-dialog {
+  background: #0d0d0d;
+  border-color: #333333;
+}
+.toast {
+  background: #141414;
+  border-color: #4a4a4a;
+}
+.safety-strip {
+  background: #000000;
+}
+.mobile-toolbar {
+  background: #000000f2;
+  border-top-color: #262626;
+}
+
+/* ---- Diálogos compactos (06-09-2026): menos padding, tipografía más pequeña, ancho contenido. ---- */
+.app-dialog {
+  width: min(820px, calc(100vw - 38px));
+}
+.app-dialog.wide {
+  width: min(900px, calc(100vw - 38px));
+}
+.dialog-header {
+  padding: 12px 18px 10px;
+}
+.dialog-header h2 {
+  font-size: 15px;
+}
+.dialog-content {
+  padding: 12px 18px;
+  max-height: calc(92vh - 120px);
+}
+.dialog-content p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dialog-content h3 {
+  font-size: 13px;
+}
+.dialog-footer {
+  padding: 8px 18px;
+}
+.primary-button,
+.secondary-button {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.scenario-card {
+  padding: 10px 12px;
+}
+.scenario-card h3 {
+  font-size: 13px;
+  margin: 6px 0 8px;
+}
+.scenario-card .scenario-details,
+.scenario-card footer {
+  padding-top: 6px;
+  font-size: 10px;
+}
+.scenario-grid,
+.scenarios-grid {
+  gap: 8px;
+}
+.mode-layout {
+  grid-template-columns: 150px 1fr;
+  gap: 14px;
+}
+.mode-option {
+  padding: 8px 10px;
+}
+.settings-grid {
+  gap: 10px;
+  margin-top: 10px;
+}
+.settings-annotation,
+.mode-description p {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.parameter-help p,
+.dialog-content .parameter-help p,
+.help-equation {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dialog-content table,
+.dialog-content .data-table {
+  font-size: 11px;
+}
+.dialog-content .alarm-row b {
+  font-size: 12px;
+}
+.dialog-content .alarm-row p,
+.dialog-content .alarm-row small {
+  font-size: 10px;
+}
+.safety-strip {
+  padding: 4px 16px;
+  font-size: 10px;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.scenario-card {
+  min-height: 0;
+}
+.scenario-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.settings-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.setting-field input,
+.setting-field select {
+  font-size: 15px;
+  height: 36px;
+  padding: 4px 8px;
+}
+.setting-field > .parameter-label > label {
+  font-size: 11px;
+}
+.mode-option b {
+  font-size: 12px;
+}
+.mode-option small {
+  display: none;
+}
+
+/* Tarjetas de escenario: categoría a la izquierda, nivel a la derecha. */
+.scenario-card > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  color: #8fb0c9;
+}
+.scenario-card > div small {
+  font-size: 10px;
+  opacity: 0.8;
+}
+/* Datos del modelo (panel docente) plegados por omisión. */
+.truth-details {
+  margin: 8px 0 10px;
+  border-top: 1px solid var(--line);
+}
+.truth-details > summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 8px 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.truth-details > summary::before {
+  content: '▸';
+  font-size: 10px;
+}
+.truth-details[open] > summary::before {
+  content: '▾';
+}
+.truth-details > summary::-webkit-details-marker {
+  display: none;
+}
+#teacher-toggle[aria-pressed='true'] {
+  color: var(--accent);
+}

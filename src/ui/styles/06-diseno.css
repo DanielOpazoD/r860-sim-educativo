@@ -1,0 +1,510 @@
+/* Pasada de diseño y correcciones posteriores (era styles.css 4476–4985). */
+/* ---- Pasada de diseño (06-09-2026): escala tipográfica 10/11/12/13/15, espaciado de 8 px, radios de 8 px. ---- */
+.stage-heading {
+  margin: 0 4px 12px;
+}
+.stage-heading h1 {
+  font-size: 13px;
+  font-weight: 600;
+}
+.stage-sub {
+  font-size: 11px;
+  color: #8ca3b9;
+}
+.instructor {
+  margin-top: 0;
+  border-radius: 10px;
+}
+.instructor-header {
+  padding: 12px 16px 10px;
+}
+.instructor-header h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.instructor-header .icon {
+  width: 18px;
+  height: 18px;
+}
+.instructor-tabs button {
+  padding: 9px 4px 8px;
+  font-size: 12px;
+}
+.instructor-pane {
+  padding: 12px 16px 14px;
+}
+.phys-field {
+  margin: 0 0 12px;
+}
+.phys-field-header .parameter-label > label {
+  font-size: 12px;
+}
+.phys-value input {
+  font-size: 15px;
+}
+.phys-value small {
+  font-size: 10px;
+}
+.phys-range-labels {
+  font-size: 9px;
+}
+.advanced-patient > summary,
+.truth-details > summary {
+  font-size: 11px;
+  padding: 6px 0;
+}
+.button.full {
+  margin-top: 8px;
+  min-height: 34px;
+  font-size: 12px;
+}
+.lesson-title {
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+.lesson-text {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+.lesson-tasks {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.lesson-count {
+  font-size: 10px;
+}
+.truth-disclaimer {
+  display: none;
+}
+.signal-toolbar {
+  margin: 10px 2px 0;
+  gap: 10px;
+}
+.signal-toolbar .button.small {
+  min-height: 30px;
+  font-size: 11px;
+  padding: 5px 10px;
+}
+.inline-select {
+  font-size: 11px;
+}
+.top-actions .button {
+  min-height: 34px;
+  padding: 7px 11px;
+  font-size: 12px;
+}
+.app-top {
+  height: 60px;
+  padding: 0 20px;
+}
+.wordmark strong {
+  font-size: 20px;
+}
+.workspace {
+  padding: 16px 20px 12px;
+  gap: 16px;
+}
+/* Indicador Plimit junto a Ppico: no es alarma. */
+.numeric.plimit-limited .numeric-value::after {
+  content: 'Plimit';
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #ffd98a;
+  vertical-align: middle;
+}
+/* Carga de escenario: velo breve sobre el monitor mientras llega el primer cuadro de la sesión nueva. */
+.monitor.loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: #04275fb3;
+}
+.monitor.loading::after {
+  content: '';
+  position: absolute;
+  z-index: 41;
+  left: calc(50% - 16px);
+  top: calc(50% - 16px);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid #9fd6ff55;
+  border-top-color: #e6f6ff;
+  animation: monitor-spin 0.7s linear infinite;
+}
+@keyframes monitor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Capas fijas de móvil por encima de cualquier contenido del escenario. */
+.mobile-toolbar {
+  z-index: 200;
+}
+.hold-panel.mobile-hold {
+  z-index: 210;
+}
+#quick-editor.mobile-editor {
+  z-index: 220;
+}
+/* En móvil el viewport de disposición puede ser más ancho que el visual cuando el equipo desborda: las capas fijas usan vw. */
+.hold-panel.mobile-hold {
+  left: 8px;
+  right: auto;
+  width: calc(100vw - 16px);
+}
+.mobile-toolbar {
+  right: auto;
+  width: 100vw;
+}
+.hold-title button {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hold-panel.mobile-hold .hold-title button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.hold-panel.mobile-hold .hold-title {
+  padding: 2px 6px;
+}
+/* La cabecera nunca ensancha el viewport de disposición en móvil (el desborde hacía inestables las capas fijas). */
+@media (max-width: 700px) {
+  .app-top {
+    overflow: hidden;
+  }
+  .top-actions {
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+  #teacher-toggle {
+    display: none; /* en móvil el panel docente va debajo del equipo */
+  }
+  .top-actions .button {
+    padding: 6px;
+    min-width: 30px;
+  }
+}
+.mobile-toolbar {
+  left: 0;
+  right: 0;
+  width: auto;
+}
+/* Geometría estable de la ventana de bloqueo en móvil: el título ocupa el ancho sobrante y la altura no oscila con el estado. */
+.hold-title b {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hold-panel.mobile-hold {
+  min-height: 180px;
+}
+.hold-panel.mobile-hold #hold-status {
+  min-height: 20px;
+}
+
+/* Teclas de ajuste: seis en PC, siete en VC (Plimit visible junto a Pmáx). */
+.quick-controls {
+  grid-template-columns: 150px repeat(var(--nkeys, 6), 1fr) 100px 46px;
+}
+.quick-controls .quick-key b {
+  font-size: 28px;
+}
+
+/* ---- Ajuste fino (07-09-2026): la barra de señal se alinea con el equipo y el bisel inferior cede alto al monitor. ---- */
+.signal-toolbar {
+  max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
+  margin-left: auto;
+  margin-right: auto;
+}
+.bezel-bottom {
+  height: 68px;
+  padding: 0 16px 0 20px;
+  gap: 14px;
+}
+.bezel-bottom .hard-key {
+  width: 34px;
+}
+.bezel-bottom .hard-key .icon {
+  width: 20px;
+  height: 20px;
+}
+.trim-knob {
+  width: 54px;
+  height: 54px;
+}
+.bezel-signature {
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.signal-toolbar .inline-select select {
+  height: 28px;
+  padding: 2px 22px 2px 7px;
+}
+#simulation-clock,
+.session-meta {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+}
+
+/* ---------- Pestaña «Resumen»: el esquema de una respiración y las cuatro fórmulas ---------- */
+.view-teaching {
+  flex-direction: column;
+}
+.edu-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 9px 14px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.edu-diagram {
+  background: #0c4a8c33;
+  border: 1px solid #3d7bb0;
+  border-radius: 6px;
+  padding: 6px 10px 2px;
+}
+.edu-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.edu-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.edu-card {
+  background: #0c4a8c33;
+  border: 1px solid #3d7bb0;
+  border-left-width: 3px;
+  border-radius: 6px;
+  padding: 8px 11px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* El borde izquierdo dice de un vistazo si el valor cae dentro de su referencia; el estado nunca va sólo por color:
+   la tarjeta lleva además el rango escrito y, cuando falta el dato, qué hacer para medirlo. */
+.edu-card.edu-dentro {
+  border-left-color: #58c79a;
+}
+.edu-card.edu-fuera {
+  border-left-color: #e0a030;
+}
+.edu-card.edu-sinDato,
+.edu-card.edu-sinRango {
+  border-left-color: #6c93b5;
+}
+.edu-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.edu-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #d1f6ff;
+}
+.edu-card header b {
+  font-size: 23px;
+  font-weight: 600;
+  color: #eaffff;
+  line-height: 1;
+  white-space: nowrap;
+}
+.edu-card header b small {
+  font-size: 11px;
+  font-weight: 400;
+  color: #a6d0ed;
+  margin-left: 5px;
+}
+.edu-formula {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: block;
+}
+.edu-formula {
+  background: #08325e66;
+  color: #bfe6ff;
+  line-height: 1.5;
+}
+.edu-formula b {
+  color: #eaffff;
+  font-weight: 600;
+}
+.edu-flecha {
+  color: #7ce0b8;
+  padding: 0 3px;
+}
+.edu-falta {
+  margin: 0;
+  font-size: 12px;
+  color: #ffd27a;
+}
+.edu-ref {
+  margin: 0;
+  font-size: 12px;
+  color: #d1f6ff;
+}
+.edu-ref b {
+  font-weight: 600;
+}
+.edu-ref small {
+  font-size: 11px;
+  color: #9dc4e2;
+}
+.edu-ref.edu-sinref {
+  color: #9dc4e2;
+}
+.edu-nota {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #b9d9ef;
+}
+.edu-pie {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #9dc4e2;
+  border-top: 1px solid #548db970;
+  padding-top: 7px;
+}
+.edu-pie code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #bfe6ff;
+}
+/* En pantallas estrechas la fila de cuatro se parte en dos y luego en una. */
+@media (max-width: 1000px) {
+  .edu-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .edu-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Dos pantallas breves dentro del Resumen: presiones y ventilación protectora. */
+.edu-tabs {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.edu-tabs .chosen {
+  background: #1f6fb2;
+  border-color: #7cc0ee;
+  color: #eaffff;
+}
+.edu-prot {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+.edu-bloque {
+  background: #0c4a8c33;
+  border: 1px solid #3d7bb0;
+  border-radius: 6px;
+  padding: 10px 13px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.edu-bloque header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.edu-bloque h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #d1f6ff;
+}
+.edu-bloque header b {
+  font-size: 26px;
+  font-weight: 600;
+  color: #eaffff;
+  line-height: 1;
+  white-space: nowrap;
+}
+.edu-bloque header b small {
+  font-size: 11px;
+  font-weight: 400;
+  color: #a6d0ed;
+  margin-left: 5px;
+}
+.edu-siluetas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.edu-silueta {
+  margin: 0;
+  padding: 5px 4px 4px;
+  border: 1px solid #3d7bb0;
+  border-radius: 5px;
+  background: #08325e55;
+}
+/* La forma activa no se distingue sólo por color: lleva borde propio y su rótulo en claro. */
+.edu-silueta.activa {
+  border-color: #7cc0ee;
+  background: #0a3d6e;
+}
+.edu-silueta svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.edu-silueta figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  margin-top: 3px;
+}
+.edu-silueta figcaption b {
+  font-size: 11.5px;
+  color: #7fa9c9;
+  font-weight: 600;
+}
+.edu-silueta figcaption span {
+  font-size: 10.5px;
+  color: #7fa9c9;
+}
+.edu-silueta.activa figcaption b {
+  color: #eaffff;
+}
+.edu-silueta.activa figcaption span {
+  color: #bfe6ff;
+}
+.edu-titulacion {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 1000px) {
+  .edu-prot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
