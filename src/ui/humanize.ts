@@ -30,11 +30,16 @@ const REASONS: Record<string, string> = {
   standby: 'en espera',
   enCola: 'en cola',
   enCurso: 'en curso',
+  twoCompartments: 'aprox.: dos unidades en paralelo, no equivale a un solo compartimento',
   fixture: 'transcripción de fotografía',
 };
 export function humanReason(reason: string | null | undefined): string {
   if (!reason) return '';
   if (REASONS[reason]) return REASONS[reason] as string;
+  if (reason.startsWith('twoCompartments;'))
+    return (
+      'aprox.: dos unidades en paralelo, no equivale a un solo compartimento · ' + humanReason(reason.slice('twoCompartments;'.length))
+    );
   if (reason.startsWith('denominador=')) return 'Cstat = VT / (Pplat − PEEP) sin PEEP total medida';
   if (reason.startsWith('Pplat − PEEPe')) return 'Pplat − PEEP de esa respiración';
   if (reason.startsWith('Inspiración terminada por Pmáx')) return 'no elegible: la inspiración terminó por Pmáx';
