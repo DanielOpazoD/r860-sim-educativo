@@ -214,7 +214,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     } else frozenPoints = [];
     $('#signal-inspector').hidden = !frozen;
     $('#frozen-ribbon').hidden = !frozen;
-    $('#freeze-button').innerHTML = icon(frozen ? 'play' : 'pause') + `<span>${frozen ? 'Reanudar curvas' : 'Congelar curvas'}</span>`;
+    $('#freeze-button').innerHTML = icon(frozen ? 'play' : 'freeze') + `<span>${frozen ? 'Reanudar curvas' : 'Congelar curvas'}</span>`;
     $('#freeze-button').classList.toggle('active', frozen);
     dirty = true;
   }
