@@ -217,6 +217,19 @@ export const PHYS: Record<string, PhysSpec> = {
     get: (fr) => fr.truth.effort.tiS,
     cmd: (v) => ({ type: 'setEffort', params: { tiS: v } }),
   },
+  effortVariability: {
+    label: 'Variabilidad del esfuerzo',
+    unit: '±%',
+    min: 0,
+    max: 50,
+    step: 5,
+    help: 'patient.effort',
+    get: (fr) => (fr.truth.effort.variability?.amplitudeFrac ?? 0) * 100,
+    cmd: (v) => ({
+      type: 'setEffort',
+      params: { variability: v > 0 ? { amplitudeFrac: v / 100, periodFrac: v / 100 } : undefined },
+    }),
+  },
   o2Tau: {
     label: 'Sensor O₂: constante',
     unit: 's',
@@ -254,6 +267,7 @@ export const PATIENT_EXTRA = [
   'leak',
   'patientRR',
   'muscleTi',
+  'effortVariability',
   'o2Tau',
   'o2Bias',
 ];

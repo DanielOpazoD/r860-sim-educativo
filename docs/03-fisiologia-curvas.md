@@ -251,7 +251,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Sin intercambio gaseoso | No hay SpO₂, PaO₂, PaCO₂, EtCO₂ ni espacio muerto: cambiar la FiO₂ o la ventilación minuto no tiene consecuencia alguna más allá de la mecánica. El simulador enseña mecánica ventilatoria, no oxigenación ni ventilación alveolar | — |
 | Sin datos de pacientes reales | Todas las cifras son analíticas o sintéticas; el simulador no valida ajustes clínicos ni pretende fidelidad numérica con el equipo (U-18) | — |
 
-Por omisión los escenarios usan la forma 'riseRelax': Pmus sube como cuarto de seno hasta el pico en `tiS` y relaja exponencialmente con τ = 0,15 s (P); la forma 'halfSine' sigue disponible.
+Por omisión los escenarios usan la forma 'riseRelax': Pmus sube como cuarto de seno hasta el pico en `tiS` y relaja exponencialmente con τ = 0,15 s (P); la forma 'halfSine' sigue disponible. La variabilidad respiración a respiración es opcional y determinista (`variability`): la amplitud y el período de cada esfuerzo se escalan ±frac con un generador de semilla de sesión, así que reproducir una sesión repite exactamente la misma secuencia de esfuerzos (P); sin `variability` el esfuerzo queda perfectamente periódico, como antes.
 
 ## Fuentes verificadas
 

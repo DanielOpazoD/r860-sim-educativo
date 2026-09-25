@@ -546,7 +546,15 @@ SCENARIOS.push({
   description:
     'CPAP/PS con PS 12 y ciclaje al 25 % en un pulmón obstructivo (R 30, τ = 1,5 s). El esfuerzo dura 0,6 s pero el flujo tarda ~1 s en caer al umbral: el soporte sigue cuando el paciente ya espira.',
   patient: { crs: 0.05, rInsp: 30, rExp: 30, r2: 0, p0: 0 },
-  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.6, phaseS: 0.5, shape: 'riseRelax' },
+  effort: {
+    enabled: true,
+    amplitude: 8,
+    ratePerMin: 15,
+    tiS: 0.6,
+    phaseS: 0.5,
+    shape: 'riseRelax',
+    variability: { amplitudeFrac: 0.1, periodFrac: 0.1 },
+  },
   sensors: idealSensors,
   settings: {
     mode: 'CPAP_PS',

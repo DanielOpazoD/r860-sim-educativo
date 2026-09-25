@@ -63,6 +63,7 @@ export function createInstructorPanel(
       r.style.setProperty('--fill', `${(100 * (Number(r.value) - sp.min)) / (sp.max - sp.min)}%`);
     }
     const p = fr.truth.patient;
+    put('#truth-tauin', `${f(p.rInsp * p.crs, 2)} s`);
     put('#truth-tau', `${f(p.rExp * p.crs, 2)} s`);
     put('#truth-auto', `${f(fr.truth.peepiEndExp, 1)} cmH₂O`);
     put('#truth-vabs', `${f(fr.truth.vAbsL * 1000, 0)} mL`);
@@ -72,6 +73,18 @@ export function createInstructorPanel(
     const sg = fr.truth.patient.sigmoid;
     put('#truth-knees', sg ? `${f(sg.c - 1.317 * sg.d, 0)} / ${f(sg.c + 1.317 * sg.d, 0)} cmH₂O` : 'curva lineal');
     put('#muscle-value', `${f(fr.truth.pmus, 1)} cmH₂O`);
+    // Inventario honesto del modelo activo: qué piezas opcionales están encendidas en este paciente.
+    const opciones: string[] = [];
+    if ((p.eVisc ?? 0) > 0) opciones.push('viscoelástica');
+    if ((p.sigmoid?.b ?? 0) > 0) opciones.push('P-V sigmoidea');
+    if (p.r2 > 0) opciones.push('Rohrer');
+    if (p.efl) opciones.push('limitación flujo esp.');
+    if ((p.rExpVolumeDep?.gain ?? 0) > 0) opciones.push('Rexp(V)');
+    if (p.second) opciones.push('2.ª unidad');
+    if ((p.leakLpmAt10 ?? 0) > 0) opciones.push('fuga');
+    if ((p.rExpValve ?? 0) > 0) opciones.push('rama esp.');
+    if (fr.truth.effort.variability) opciones.push('esfuerzo variable');
+    put('#truth-opciones', opciones.length ? opciones.join(', ') : 'lineal, un compartimento');
     for (const [id, on] of [
       ['apnea', apneaApplied && (!fr.truth.effort.enabled || fr.truth.effort.amplitude === 0)],
       ['obstruction', fr.truth.patient.rInsp >= 300],
