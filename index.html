@@ -84,7 +84,10 @@
             <div class="data-workspaces">
               <div class="device-view view-waves active" id="view-waves" data-view-panel="waves">
                 <canvas id="waves-canvas" width="608" height="491" role="img" aria-label="Curvas dinámicas de presión, flujo y volumen"></canvas>
-                <div class="numeric-grid" id="numeric-grid"></div>
+                <div class="numeric-column">
+                  <button class="device-small numeric-density" id="numeric-density" data-action="density" title="Alternar 6 casillas grandes / 13 casillas" aria-pressed="false">6 datos</button>
+                  <div class="numeric-grid" id="numeric-grid"></div>
+                </div>
               </div>
               <div class="device-view view-basic" id="view-basic" data-view-panel="basic"><canvas id="basic-wave-canvas" width="330" height="491" aria-label="Curvas de presión, flujo y volumen en vista de datos grandes" role="img"></canvas><div class="big-metrics" id="big-metrics"></div></div>
               <div class="device-view view-loops" id="view-loops" data-view-panel="loops">

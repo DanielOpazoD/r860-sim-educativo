@@ -39,6 +39,8 @@ export const EXTRA_METRICS: MetricSpec[] = [
   { key: 'vteSpont', label: 'VTesp espontáneo', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
 ];
 export const ALL_METRICS: MetricSpec[] = [...METRICS, ...EXTRA_METRICS];
+/** Las seis casillas de la vista reducida, como en la pantalla del equipo real. */
+export const CORE_METRICS: readonly string[] = ['ppeak', 'peepe', 'pplat', 'vte', 'rr', 'fio2'];
 /** Seis valores grandes de la vista básica (foto P3). */
 export const BIG_METRICS: [string, string, string][] = [
   ['fio2', 'FiO₂', '%'],
