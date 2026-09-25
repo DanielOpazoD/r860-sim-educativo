@@ -147,6 +147,10 @@ export function validateEffort(e: EffortParams): string[] {
   if (e.shape !== undefined && e.shape !== 'halfSine' && e.shape !== 'riseRelax') r.push('esfuerzo: forma debe ser halfSine o riseRelax');
   if (e.relaxTauS !== undefined && (!Number.isFinite(e.relaxTauS) || e.relaxTauS <= 0 || e.relaxTauS > 2))
     r.push('esfuerzo: tau de relajación fuera de 0–2 s');
+  if (e.expAmplitude !== undefined && (!Number.isFinite(e.expAmplitude) || e.expAmplitude < 0 || e.expAmplitude > 15))
+    r.push('esfuerzo: amplitud espiratoria fuera de 0–15 cmH2O');
+  if (e.expTiS !== undefined && (!Number.isFinite(e.expTiS) || e.expTiS <= 0 || e.expTiS > 3))
+    r.push('esfuerzo: duración espiratoria fuera de 0–3 s');
   if (e.variability !== undefined) {
     const { amplitudeFrac, periodFrac } = e.variability;
     if (![amplitudeFrac, periodFrac].every((x) => Number.isFinite(x) && x >= 0 && x <= 0.5))

@@ -388,8 +388,8 @@
     {
       "id": "U-48",
       "question": "Si el esfuerzo debe poder ser espiratorio. Hoy Pmus ≥ 0 siempre, de modo que no hay espiración activa, frenado espiratorio ni meseta contaminada por contracción espiratoria.",
-      "policy": "U: no resuelto. Requiere una amplitud espiratoria independiente en el generador de esfuerzo y decidir qué se enseña con ella.",
-      "status": "nueva (v0.4.7)",
+      "policy": "Parcialmente cerrada: el generador de esfuerzo admite una amplitud espiratoria independiente (`expAmplitude`, Pmus negativa en medio seno que arranca al final de la inspiración neural), opcional y 0 por omisión, con banco BM-EA (pico de flujo +98 %, vaciamiento bajo la FRC, tope iso-volumen de Starling). Quedan U el frenado espiratorio fino y el disparo reverso como lecciones propias.",
+      "status": "parcialmente cerrada",
       "blocks": []
     },
     {

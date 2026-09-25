@@ -84,6 +84,7 @@ export function createInstructorPanel(
     if ((p.leakLpmAt10 ?? 0) > 0) opciones.push('fuga');
     if ((p.rExpValve ?? 0) > 0) opciones.push('rama esp.');
     if ((p.circuitComplianceLPerCmH2O ?? 0) > 0) opciones.push('circuito compresible');
+    if ((fr.truth.effort.expAmplitude ?? 0) > 0) opciones.push('espiración activa');
     if (fr.truth.effort.variability) opciones.push('esfuerzo variable');
     put('#truth-opciones', opciones.length ? opciones.join(', ') : 'lineal, un compartimento');
     const vcircCell = document.getElementById('truth-vcirc-cell');
