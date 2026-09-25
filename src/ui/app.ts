@@ -71,6 +71,8 @@ export function startApp(opts: AppOptions): void {
     discontinuities: Discontinuity[] = [],
     generation = -1;
   let locked = false;
+  const guardada = localStorage.getItem('r860.tileDensity');
+  let tileDensity: 6 | 13 = guardada === '6' ? 6 : 13;
   let scenario: Scenario = findScenario(params.get('scenario') ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
   let fixtureId: FixtureId | null = null;
 
@@ -159,6 +161,24 @@ export function startApp(opts: AppOptions): void {
       return plots.frozen;
     },
     toggleFreeze: () => plots.toggleFreeze(),
+    get tileDensity() {
+      return tileDensity;
+    },
+    setTileDensity(d) {
+      tileDensity = d;
+      localStorage.setItem('r860.tileDensity', String(d));
+      const grid = $('#numeric-grid');
+      grid.classList.toggle('six', d === 6);
+      const boton = $('#numeric-density');
+      boton.textContent = d === 6 ? '13 datos' : '6 datos';
+      boton.setAttribute('aria-pressed', String(d === 6));
+      // La casilla con tabindex 0 puede quedar oculta: la entrada de Tab pasa a la primera visible.
+      const visibles = [...grid.querySelectorAll<HTMLElement>('[data-metric]')].filter((x) => x.offsetParent !== null);
+      if (visibles.length && !visibles.some((x) => x.tabIndex === 0)) {
+        for (const x of grid.querySelectorAll<HTMLElement>('[data-metric]')) x.tabIndex = -1;
+        (visibles[0] as HTMLElement).tabIndex = 0;
+      }
+    },
     get locked() {
       return locked;
     },
@@ -344,6 +364,7 @@ export function startApp(opts: AppOptions): void {
   }
 
   metrics.init();
+  ctx.setTileDensity(tileDensity);
   instructor.init();
   fillStaticHelp();
   // En teléfono el monitor vertical dibuja mejor ventanas cortas: 6 s por omisión (en escritorio quedan 12 s).

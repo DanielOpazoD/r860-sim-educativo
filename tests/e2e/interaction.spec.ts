@@ -576,3 +576,30 @@ test.describe('BLD · bucle docente con presión muscular', () => {
     expect(box && box.width > 0 && box.height > 0).toBe(true);
   });
 });
+
+test.describe('DEN · densidad de la columna numérica', () => {
+  test('el alternador muestra 6 casillas grandes, persiste y vuelve a 13 sin romper la tabla', async ({ page }) => {
+    await open(page);
+    const visibles = () => page.locator('#numeric-grid .numeric:visible');
+    await expect(visibles()).toHaveCount(13);
+    await page.click('#numeric-density');
+    await expect(visibles()).toHaveCount(6);
+    await expect(page.locator('#numeric-density')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#numeric-density')).toHaveText('13 datos');
+    const rotulos = await visibles().locator('.numeric-label').allTextContents();
+    // El orden es el de la rejilla completa (METRICS), con VTesp en su lugar habitual tras FR.
+    expect(rotulos).toEqual(['Ppico', 'PEEPe', 'Pplat', 'FR', 'VTesp', 'FiO₂']);
+    const vista = await page.locator('#view-waves').evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+    expect(vista.scroll).toBeLessThanOrEqual(vista.client + 1);
+    // La preferencia persiste entre recargas.
+    await page.reload();
+    await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(6);
+    await page.click('#numeric-density');
+    await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(13);
+    await expect(page.locator('#numeric-density')).toHaveAttribute('aria-pressed', 'false');
+    // La tabla «Datos» completa no cambia: sigue con las veinte filas repartidas en dos tablas.
+    await page.click('[data-view="data"]');
+    await expect(page.locator('#data-table-body tr')).toHaveCount(10);
+    await expect(page.locator('#data-table-body-2 tr')).toHaveCount(10);
+  });
+});

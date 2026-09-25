@@ -50,8 +50,16 @@
   .numeric-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: auto;
-    padding: 4px 6px 8px;
+    padding: 26px 6px 8px; /* espacio para el alternador de densidad, igual que en escritorio */
     gap: 2px 10px;
+  }
+  /* En móvil la vista de seis casillas conserva tres columnas: dos filas en vez de una columna. */
+  .numeric-grid.six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto);
+  }
+  .numeric-grid.six .numeric-value {
+    font-size: 38px;
   }
   .pressure-column {
     display: none;

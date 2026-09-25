@@ -637,13 +637,52 @@ a {
   flex: none;
   display: block;
 }
+.numeric-column {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+.numeric-density {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+}
 .numeric-grid {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(6, 1fr);
-  padding: 12px 2px 2px 0;
+  padding: 26px 2px 2px 0; /* el alternador de densidad ocupa la esquina superior derecha de la columna */
   gap: 2px 5px;
+}
+/* Vista reducida a las seis casillas que muestra el equipo (Ppico, PEEPe, Pplat, VTesp, FR, FiO₂). */
+.numeric-grid.six {
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(6, 1fr);
+}
+.numeric-grid.six [data-core='false'] {
+  display: none;
+}
+.numeric-grid.six .numeric-value {
+  font-size: 42px;
+}
+.numeric-grid.six .numeric-label {
+  font-size: 14px;
+}
+.numeric-grid.six .numeric-unit {
+  font-size: 11px;
+}
+.numeric-grid.six .numeric-limits {
+  font-size: 12px;
+  top: 34px;
+}
+.numeric-grid.six .numeric .numeric-age {
+  font-size: 10px;
+}
+.numeric-grid.six .numeric .numeric-value .sin-dato {
+  font-size: 13px;
 }
 .numeric {
   position: relative;

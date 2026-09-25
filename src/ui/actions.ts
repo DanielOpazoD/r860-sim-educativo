@@ -173,6 +173,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       case 'freeze':
         ctx.toggleFreeze();
         break;
+      case 'density':
+        ctx.setTileDensity(ctx.tileDensity === 6 ? 13 : 6);
+        break;
       case 'sound':
         await alarms.toggleAudio();
         break;

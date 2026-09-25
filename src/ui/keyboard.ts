@@ -8,10 +8,11 @@ import type { QuickEditor } from './quickEditor';
 export function roveGrid(e: KeyboardEvent, t: HTMLElement): boolean {
   const grid = t.closest<HTMLElement>('#numeric-grid,#big-metrics');
   if (!grid || !['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return false;
-  const tiles = [...grid.querySelectorAll<HTMLElement>('[data-metric]')];
+  // Sólo las casillas visibles navegan: en densidad de seis el resto está oculto con display:none.
+  const tiles = [...grid.querySelectorAll<HTMLElement>('[data-metric]')].filter((x) => x.offsetParent !== null);
   const i = tiles.indexOf(t);
   if (i < 0) return false;
-  const cols = 2;
+  const cols = grid.classList.contains('six') ? 1 : 2;
   const step: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols };
   let j = e.key === 'Home' ? 0 : e.key === 'End' ? tiles.length - 1 : i + (step[e.key] ?? 0);
   j = Math.max(0, Math.min(tiles.length - 1, j));
