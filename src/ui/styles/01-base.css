@@ -678,6 +678,8 @@ a {
   font-size: 9px;
   color: #a3d6ff;
   line-height: 1.15;
+  /* lleva «· aprox.» cuando el dato es aproximado: una línea sola, como el resto de unidades */
+  white-space: nowrap;
 }
 .numeric-limits {
   position: absolute;
@@ -693,6 +695,9 @@ a {
   font-size: 8px;
   color: #b5e0ff;
   margin-top: 2px;
+  /* La celda de la rejilla tiene alto fijo: una sola línea; si se deja envolver, la segunda línea se pinta sobre el rótulo de la fila siguiente. */
+  white-space: nowrap;
+  flex-shrink: 0; /* en celdas justas el flex la colapsaba a 0 px y la línea quedaba invisible */
 }
 .numeric .numeric-value .sin-dato {
   font-size: 10px;
