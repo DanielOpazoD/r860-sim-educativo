@@ -989,10 +989,28 @@ a {
   gap: 12px;
   margin: 19px 2px 0;
 }
-.signal-actions {
+.time-controls {
   display: flex;
   align-items: center;
   gap: 17px;
+  flex-wrap: wrap;
+}
+.time-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.time-group + .time-group {
+  border-left: 1px solid #354b62;
+  padding-left: 15px;
+}
+.group-label {
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #7d94a9;
+  white-space: nowrap;
 }
 .inline-select {
   display: flex;

@@ -848,7 +848,7 @@
   .stage-footnote > span:last-child {
     display: none;
   }
-  .signal-actions {
+  .time-controls {
     gap: 9px;
   }
   .signal-toolbar {
@@ -997,7 +997,7 @@
   .stage-heading h1 {
     font-size: 14px;
   }
-  .signal-actions {
+  .time-controls {
     gap: 15px;
   }
   .inline-select {
