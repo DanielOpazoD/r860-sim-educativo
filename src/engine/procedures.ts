@@ -1,13 +1,7 @@
 import type { MetricSample, ProcedureKind, ProcedureResult, Quality } from '../domain/types';
-import {
-  PLATEAU_REVERSAL_CMH2O,
-  PLATEAU_DRIFT_RATE_CMH2O_S,
-  PLATEAU_DRIFT_RATE_EXP_CMH2O_S,
-  type ControllerEvent,
-  type HoldKind,
-  type HoldOutcome,
-  type VcController,
-} from './controller';
+import { PLATEAU_REVERSAL_CMH2O, PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S } from './breathAnalysis';
+import type { ControllerEvent, HoldKind, HoldOutcome } from './controllerTypes';
+import type { VcController } from './controller';
 import { msToS, sToMs } from '../domain/units';
 import { guardFiniteness } from './metrics';
 

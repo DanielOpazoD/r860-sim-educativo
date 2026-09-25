@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIGGER_DELAY_S, TRIGGER_REFRACTORY_S } from '../../src/engine/controller';
+import { TRIGGER_DELAY_S, TRIGGER_REFRACTORY_S } from '../../src/engine/trigger';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim } from '../helpers';
 
 // ASI-01 · asincronías EMERGENTES. No hay ninguna regla que las produzca: salen de la mecánica, del perfil de esfuerzo

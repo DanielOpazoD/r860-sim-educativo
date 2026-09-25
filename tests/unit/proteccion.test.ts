@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stressIndex } from '../../src/engine/controller';
+import { stressIndex } from '../../src/engine/breathAnalysis';
 import { estres, titulacion } from '../../src/ui/teaching';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 

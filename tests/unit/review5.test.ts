@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EXP_MAX_FLOW_LPS, plateauQuality, thresholdCrossing } from '../../src/engine/controller';
+import { EXP_MAX_FLOW_LPS } from '../../src/engine/controller';
+import { plateauQuality } from '../../src/engine/breathAnalysis';
+import { thresholdCrossing } from '../../src/engine/trigger';
 import { guardFiniteness } from '../../src/engine/metrics';
 import { sigmoidPressure, sigmoidVolume } from '../../src/engine/patient';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
