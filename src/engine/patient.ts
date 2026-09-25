@@ -267,6 +267,24 @@ export class PatientModel {
   leakFlow(py: number): number {
     return this.leakG * py;
   }
+  /** Compliance del circuito (L/cmH2O); 0 o ausente = tubuladura incompresible. */
+  get circuitComplianceL(): number {
+    const c = this.params.circuitComplianceLPerCmH2O ?? 0;
+    return Number.isFinite(c) && c > 0 ? c : 0;
+  }
+  /**
+   * Recibe (o cede si dV < 0) el gas que el circuito compresible suelta o traga, conservando el estado interno. Con
+   * una unidad se suma a su volumen; con dos se reparte igualando presiones estáticas (el viscoelástico relaja al
+   * instante en esa combinación, simplificación declarada vía `setAbsoluteVolume`).
+   */
+  absorbCompressed(dV: number): void {
+    if (!Number.isFinite(dV) || Math.abs(dV) < 1e-12) return;
+    if (!this.hasSecond) {
+      this.v += dV;
+      return;
+    }
+    this.setAbsoluteVolume(this.vTotal + dV);
+  }
   /** Presión elástica de la segunda unidad (lineal: sin sigmoide ni viscoelástico, simplificación declarada). */
   pel2(v2: number = this.v2): number {
     return this.params.p0 + v2 / Math.max(1e-6, this.params.second?.crs ?? 1);

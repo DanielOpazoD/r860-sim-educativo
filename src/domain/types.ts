@@ -159,6 +159,14 @@ export interface PatientParams {
    * flujo de base cubra la fuga y el disparo por flujo ve la fuga como si fuera el paciente. Ausente o 0 = sin fuga.
    */
   leakLpmAt10?: number;
+  /**
+   * Compliance del circuito (L/cmH2O): volumen de gas comprimible Cc·Py que retiene la tubuladura. El sensor de flujo
+   * está del lado de la máquina, así que ve también el gas que comprime el circuito: en inspiración el pulmón recibe
+   * menos de lo entregado (la Cstat medida por bloqueo sale ≈ C + Cc) y en espiración ese gas vuelve por la válvula.
+   * Ausente o 0 = circuito incompresible, como hasta ahora. Simplificación declarada: sin inertancia ni acople con la
+   * resistencia espiratoria.
+   */
+  circuitComplianceLPerCmH2O?: number;
   /** Circuito abierto en la Y: el nodo queda a presión ambiente. */
   disconnected?: boolean;
   /**
