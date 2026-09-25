@@ -183,7 +183,11 @@ export class Simulator {
     this.o2 = new O2Sensor(init.sensors, init.settings.fio2);
     this.flowSensor = new FlowSensor(init.seed);
     this.alarms = new AlarmEngine(init.alarmLimits);
-    this.procedures = new ProcedureManager(this.controller, (ms) => init.startWallTimeMs + ms);
+    this.procedures = new ProcedureManager(
+      this.controller,
+      (ms) => init.startWallTimeMs + ms,
+      () => this.patient.hasSecond,
+    );
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
     this.breathV2Start = this.patient.v2;

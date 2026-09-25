@@ -1,4 +1,5 @@
 import { formatNumber as format } from '../domain/units';
+import { PLOT_TEXT_COLORS } from './plotColors';
 /**
  * Renderizado exclusivamente visual (canvas). Nunca modifica el estado de la simulación.
  * Estilo de curvas, bucles, manómetro, tendencias y esfuerzo derivado de «R860 Lab» v1.1 (src/plots.js, MIT 2026),
@@ -338,7 +339,7 @@ export function drawWave(
     for (const val of sp.ticks) {
       const y = yf(val);
       line(ctx, left, y, w - right, y, val === 0 ? '#b0e8f78c' : '#77c0e44a', val === 0 ? 1 : 0.6);
-      text(ctx, String(Math.round(val)), left - 7, y + 3, 11, '#8dd4f1', 'right');
+      text(ctx, String(Math.round(val)), left - 7, y + 3, 11, PLOT_TEXT_COLORS.tickCurvas, 'right');
     }
     line(ctx, left, ytop, left, ybottom, '#77bfea7a');
     line(ctx, w - right, ytop, w - right, ybottom, '#77bfea7a');
@@ -443,7 +444,15 @@ export function drawWave(
     ctx.restore();
     if (i === specs.length - 1)
       timeAxisLabels(style, end, win, 6).forEach((val, k) =>
-        text(ctx, format(val, 0) + ' s', left + (k * plotW) / 6, h - 1, 10, '#8fc6e6', k === 6 ? 'right' : k === 0 ? 'left' : 'center'),
+        text(
+          ctx,
+          format(val, 0) + ' s',
+          left + (k * plotW) / 6,
+          h - 1,
+          10,
+          PLOT_TEXT_COLORS.ejeTiempo,
+          k === 6 ? 'right' : k === 0 ? 'left' : 'center',
+        ),
       );
   });
   return { left, right, plotW, win };
@@ -499,8 +508,8 @@ export function drawLoop(
       y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 4;
     line(ctx, xf(x), top, xf(x), bottom, '#66add957');
     line(ctx, left, yf(y), w - right, yf(y), '#66add957');
-    text(ctx, format(x), xf(x), bottom + 17, 10, '#90cae6', 'center');
-    text(ctx, format(y), left - 8, yf(y) + 4, 10, '#90cae6', 'right');
+    text(ctx, format(x), xf(x), bottom + 17, 10, PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, format(y), left - 8, yf(y) + 4, 10, PLOT_TEXT_COLORS.tickBucles, 'right');
   }
   line(ctx, left, yf(0), w - right, yf(0), '#a8e6f799', 1);
   line(ctx, left, top, left, bottom, '#a8e6f799', 1);
@@ -725,7 +734,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
     for (let k = 0; k <= 4; k++) {
       const y = yf((k * sp.max) / 4);
       line(ctx, left, y, w - right, y, '#78b8da3d');
-      text(ctx, format((k * sp.max) / 4), left - 8, y + 3, 9, '#8dc8e9', 'right');
+      text(ctx, format((k * sp.max) / 4), left - 8, y + 3, 10, PLOT_TEXT_COLORS.tickTendencias, 'right');
       const x = left + (k * pw) / 4;
       line(ctx, x, top, x, bottom, '#78b8da3d');
     }

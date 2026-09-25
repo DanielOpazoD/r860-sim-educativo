@@ -92,9 +92,11 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
         put(
           el.querySelector('.numeric-age'),
-          m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
-            ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
-            : '',
+          metricSample(fr, m.key)?.reason?.startsWith('twoCompartments')
+            ? 'aprox. · 2 unidades'
+            : m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
+              ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
+              : '',
         );
       }
       for (const e of $$('#big-metrics [data-metric]')) {
