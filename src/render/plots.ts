@@ -701,50 +701,54 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
  */
 export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void {
   const { ctx, w, h } = context(canvas);
-  let ciclo = cyclePoints(points, 'current');
-  if (ciclo.length < 5) ciclo = cyclePoints(points, 'last');
-  if (!ciclo.length) return;
-  const left = 40,
-    right = 10,
-    top = 26,
-    bottom = h - 26,
+  // Bucle principal: último ciclo COMPLETO; encima, el ciclo en curso con alfa para ver cómo se forma.
+  const completo = cyclePoints(points, 'last'),
+    actual = cyclePoints(points, 'current'),
+    base = completo.length ? completo : actual;
+  if (!base.length) return;
+  const left = 36,
+    right = 8,
+    top = 24,
+    bottom = h - 22,
     pw = w - left - right,
     ph = bottom - top;
   let pMin = 0,
     pMax = 0,
     vMax = 0,
     pmusMax = 0;
-  for (const p of ciclo) {
+  for (const p of [...base, ...actual]) {
     const total = p[1] + p[4];
     pMin = Math.min(pMin, total);
     pMax = Math.max(pMax, p[1], total);
     vMax = Math.max(vMax, p[3]);
-    pmusMax = Math.max(pmusMax, Math.abs(p[4]));
   }
+  for (const p of base) pmusMax = Math.max(pmusMax, Math.abs(p[4]));
   const xrange = [pMin < 0 ? pMin * 1.15 : 0, nice(Math.max(10, pMax * 1.15), [30, 40, 60, 80, 100, 120])],
     yrange = [0, nice(Math.max(100, vMax * 1.15), ESCALA_VOLUMEN)];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, 'Pva · V', left, top - 10, 10, '#c4f0ff', 'left');
-  text(ctx, '(Pva+Pmus) · V = presión total', left + 70, top - 10, 10, '#b2a5ee', 'left');
-  for (let k = 0; k <= 4; k++) {
-    const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 4,
-      y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 4;
+  text(ctx, 'Pva · V', left, top - 9, 10, '#c4f0ff', 'left');
+  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, 10, '#b2a5ee', 'left');
+  for (let k = 0; k <= 3; k++) {
+    const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 3,
+      y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 3;
     line(ctx, xf(x), top, xf(x), bottom, '#66add957');
     line(ctx, left, yf(y), w - right, yf(y), '#66add957');
-    text(ctx, format(x), xf(x), bottom + 13, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, format(x), xf(x), bottom + 12, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
     text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
   }
   if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#a8e6f799', 1);
-  const path = (xOf: (p: Point) => number, color: string): void => {
+  const path = (data: Point[], xOf: (p: Point) => number, color: string, alpha: number): void => {
+    if (!data.length) return;
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.beginPath();
     ctx.rect(left, top, pw, ph);
     ctx.clip();
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ciclo.forEach((p, i) => {
+    data.forEach((p, i) => {
       const x = xf(xOf(p)),
         y = yf(p[3]);
       if (i) ctx.lineTo(x, y);
@@ -753,9 +757,14 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     ctx.stroke();
     ctx.restore();
   };
-  path((p) => p[1], '#c4f0ff');
-  if (pmusMax >= 0.2) path((p) => p[1] + p[4], '#b2a5ee');
-  else text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 7, 9, '#85a3b9', 'center');
+  // El ciclo en curso se dibuja primero y el completo encima, para que el bucle cerrado mande.
+  if (completo.length) {
+    path(actual, (p) => p[1], '#c4f0ff', 0.45);
+    if (pmusMax >= 0.2) path(actual, (p) => p[1] + p[4], '#b2a5ee', 0.45);
+  }
+  path(base, (p) => p[1], '#c4f0ff', 1);
+  if (pmusMax >= 0.2) path(base, (p) => p[1] + p[4], '#b2a5ee', 1);
+  else text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, '#85a3b9', 'center');
 }
 
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {

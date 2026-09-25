@@ -21,7 +21,7 @@ function canvasFalsa() {
     },
   );
   const el = {
-    getAttribute: (a: string) => (a === 'width' ? '560' : '300'),
+    getAttribute: (a: string) => (a === 'width' ? '280' : '170'),
     setAttribute: () => undefined,
     getContext: () => ctx,
   } as unknown as HTMLCanvasElement;
