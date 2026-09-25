@@ -544,6 +544,27 @@ test.describe('DESC · desconexión del circuito', () => {
   });
 });
 
+test.describe('TIE · controles de tiempo en la barra de curvas', () => {
+  test('Pausar, velocidad y Congelar viven en .signal-toolbar y no se confunden', async ({ page }) => {
+    await open(page, { speed: 4 });
+    for (const id of ['#sim-pause', '#sim-speed', '#freeze-button']) await expect(page.locator(`.signal-toolbar ${id}`)).toBeVisible();
+    await page.click('#freeze-button');
+    await expect(page.locator('#freeze-button')).toHaveClass(/active/);
+    await expect(page.locator('#frozen-ribbon')).toBeVisible();
+    await expect(page.locator('#sim-pause')).toContainText('Pausar'); // congelar no detiene la simulación
+    await page.click('#sim-pause');
+    await expect(page.locator('#sim-pause')).toContainText('Reanudar');
+    await page.click('#sim-pause');
+    await expect(page.locator('#sim-pause')).toContainText('Pausar');
+  });
+  test('los controles de tiempo caben sin desbordar el ancho del viewport', async ({ page }) => {
+    await open(page);
+    for (const id of ['#sim-pause', '#sim-speed', '#freeze-button']) await expect(page.locator(id)).toBeVisible();
+    const d = await page.locator('.signal-toolbar').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+    expect(d.scroll).toBeLessThanOrEqual(d.client + 1);
+  });
+});
+
 test.describe('BLD · bucle docente con presión muscular', () => {
   test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
     await open(page, { scenario: 'SC-19' });

@@ -141,9 +141,14 @@
     flex-wrap: wrap;
     gap: 11px;
   }
-  .signal-actions {
+  .time-controls {
     gap: 9px;
     flex-wrap: wrap;
+  }
+  .signal-toolbar .time-group {
+    width: 100%;
+    border-left: none;
+    padding-left: 0;
   }
   .signal-toolbar .button {
     font-size: 10px;
