@@ -1099,14 +1099,27 @@
     },
     {
       "id": "E-086",
-      "claim": "Retardo de respuesta del disparo: entre el cruce del umbral (flujo o presión) y el inicio de la respiración pasan 80 ms fijos, durante los cuales la espiración continúa y el paciente tira del flujo de base; en cuanto su demanda supera ese flujo la Pva cae bajo la PEEP. Medido: 1,97 cmH2O con Pmus 8 y flujo de base 4 L/min; 0,87 con base 10; 0,73 con Pmus 4; 4,0 con disparo por presión a −2 (que ya está 2 por debajo al detectar). Con respuesta instantánea la caída era de 0,026 cmH2O y el trabajo de disparo no existía en la curva. Una oclusión en cola anula el disparo detectado; un temporizador del modo que venza antes sirve la respiración igualmente como del paciente. El doble disparo pasa de Ti + 0,25 s a Ti + 0,33 s.",
+      "claim": "Retardo de respuesta del disparo por tipo: 80 ms por flujo y 110 ms por presión (la caída de Pva debe propagarse y medirse en la rama; bancos ICU 60–100 vs 100–150 ms). El retardo se congela al detectar para que un cambio del ajuste a mitad no lo altere, y durante él la espiración continúa y el paciente tira del flujo de base con el regulador de PEEP de U-43: en cuanto su demanda supera ese flujo la Pva cae bajo la PEEP. Medido: ≈ 2 cmH2O con Pmus 8 y flujo de base 4 L/min; > 3 con disparo por presión a −2 (ya 2 por debajo al detectar, más el retardo mayor). Una oclusión en cola anula el disparo detectado; un temporizador del modo que venza antes sirve la respiración igualmente como del paciente. El doble disparo pasa de Ti + 0,25 s a Ti + 0,33 s por flujo.",
       "status": "P (U-53)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (TRIGGER_DELAY_S, triggerPending, fase exp y su temporizador)",
+      "implemented": "src/engine/trigger.ts (TRIGGER_DELAY_FLOW_S, TRIGGER_DELAY_PRESSURE_S, triggerDelayS); src/engine/controller.ts (triggerPending.delayS, fase exp y su temporizador)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-04)",
         "tests/unit/asynchrony.test.ts (ASI-01)"
+      ]
+    },
+    {
+      "id": "E-091",
+      "claim": "Regulador de PEEP con ancho de banda finito: ante una demanda inspiratoria del paciente (flujo hacia el pulmón durante la espiración) la fuente no sostiene la Pva de forma ideal sino que cae K·(demanda − demandaYaCompensada) con K = 3 cmH2O·s/L, y un filtro integral con τ = 0,1 s repone el flujo. En álgebra se implementa como fuente peep + K·qFilt con una resistencia en serie extra K: py = peep − rValve·q − K·(q − qFilt), válido con dos unidades, fuga y Rohrer al reutilizar el mecanismo rSeries del nodo. En régimen (fuga estable) no queda caída permanente; con el esfuerzo repentina sí la hay y el regulador recupera antes del siguiente ciclo. La caída sólo existe si la demanda supera la PEEP intrínseca (esfuerzo que tira gas de verdad): medido 0,74 cmH2O con Pmus 8 y base 8 L/min, 3,9 con Pmus 12, 1,6 con base 4. Un esfuerzo que no llega a tirar no mueve la Pva — esa parte sigue siendo límite.",
+      "status": "P (U-43, ancho de banda real no publicado)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/trigger.ts (PEEP_REGULATOR_DROOP_CMH2O_S_L, PEEP_REGULATOR_TAU_S); src/engine/controller.ts (qDemandFilt, fase exp)",
+      "tests": [
+        "tests/bench/reguladorPeep.test.ts (BM-RP)",
+        "tests/unit/asynchrony.test.ts (ASI-02)",
+        "tests/unit/sync.test.ts (SYN-04)"
       ]
     },
     {
