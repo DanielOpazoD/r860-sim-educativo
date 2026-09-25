@@ -177,7 +177,7 @@ export class Simulator {
     const peep = init.settings.peep === 'off' ? 0 : init.settings.peep;
     const v0 = init.initialV === 'equilibrium' ? equilibriumVolumeFor(init.patient, peep) : init.initialV;
     this.patient = new PatientModel(init.patient, v0);
-    this.effort = new EffortGenerator(init.effort);
+    this.effort = new EffortGenerator(init.effort, init.seed);
     this.controller = new VcController(this.patient, this.effort, init.settings);
     this.o2 = new O2Sensor(init.sensors, init.settings.fio2);
     this.flowSensor = new FlowSensor(init.seed);

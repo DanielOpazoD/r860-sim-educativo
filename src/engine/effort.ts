@@ -1,4 +1,5 @@
 import type { EffortParams } from '../domain/types';
+import { mulberry32 } from './sensors';
 
 /** Constante de tiempo por omisión de la relajación en la forma 'riseRelax' (s), P. */
 export const DEFAULT_RELAX_TAU_S = 0.15;
@@ -11,19 +12,52 @@ export const DEFAULT_RELAX_TAU_S = 0.15;
  */
 export class EffortGenerator {
   params: EffortParams;
-  constructor(params: EffortParams) {
+  private rng: () => number;
+  private onsetS: number | null = null;
+  private periodS = 0;
+  private ampFactor = 1;
+  constructor(params: EffortParams, seed = 1) {
     this.params = { ...params };
+    this.rng = mulberry32(seed);
+  }
+  /** Forma del pulso: `tau` dentro del esfuerzo, `amp` pico, `ti` instante del pico (riseRelax) o duración (halfSine). */
+  private pulse(tau: number, amp: number, ti: number): number {
+    const p = this.params;
+    if ((p.shape ?? 'halfSine') === 'halfSine') return tau < ti ? amp * Math.sin((Math.PI * tau) / ti) : 0;
+    if (tau < ti) return amp * Math.sin((Math.PI * tau) / (2 * ti));
+    const tauRel = Math.max(1e-3, p.relaxTauS ?? DEFAULT_RELAX_TAU_S);
+    const v = amp * Math.exp(-(tau - ti) / tauRel);
+    return v < 1e-3 * amp ? 0 : v;
+  }
+  /** Sortea período y amplitud del próximo esfuerzo; dos sorteos en orden fijo para que la serie sea reproducible. */
+  private draw(): void {
+    const p = this.params,
+      v = p.variability;
+    this.periodS = (60 / p.ratePerMin) * (1 + (v?.periodFrac ?? 0) * (2 * this.rng() - 1));
+    this.ampFactor = 1 + (v?.amplitudeFrac ?? 0) * (2 * this.rng() - 1);
   }
   pmusAt(tS: number): number {
     const p = this.params;
     if (!p.enabled || p.amplitude <= 0 || p.ratePerMin <= 0) return 0;
-    const period = 60 / p.ratePerMin;
-    const tau = (((tS - p.phaseS) % period) + period) % period;
-    if ((p.shape ?? 'halfSine') === 'halfSine') return tau < p.tiS ? p.amplitude * Math.sin((Math.PI * tau) / p.tiS) : 0;
-    const tp = p.tiS;
-    if (tau < tp) return p.amplitude * Math.sin((Math.PI * tau) / (2 * tp));
-    const tauRel = Math.max(1e-3, p.relaxTauS ?? DEFAULT_RELAX_TAU_S);
-    const v = p.amplitude * Math.exp(-(tau - tp) / tauRel);
-    return v < 1e-3 * p.amplitude ? 0 : v;
+    const v = p.variability;
+    // Sin variabilidad la fórmula periódica pura se conserva bit a bit: mismo resultado que siempre.
+    if (!v || (v.amplitudeFrac === 0 && v.periodFrac === 0)) {
+      const period = 60 / p.ratePerMin;
+      const tau = (((tS - p.phaseS) % period) + period) % period;
+      return this.pulse(tau, p.amplitude, p.tiS);
+    }
+    // Con variabilidad los esfuerzos se encadenan: cada uno sortea su período y su amplitud (monótono en t).
+    if (this.onsetS === null) {
+      this.onsetS = p.phaseS;
+      this.draw();
+    }
+    while (tS >= this.onsetS + this.periodS) {
+      this.onsetS += this.periodS;
+      this.draw();
+    }
+    if (tS < this.onsetS) return 0;
+    const tau = tS - this.onsetS,
+      ti = Math.min(p.tiS, 0.8 * this.periodS);
+    return this.pulse(tau, p.amplitude * this.ampFactor, ti);
   }
 }

@@ -147,6 +147,11 @@ export function validateEffort(e: EffortParams): string[] {
   if (e.shape !== undefined && e.shape !== 'halfSine' && e.shape !== 'riseRelax') r.push('esfuerzo: forma debe ser halfSine o riseRelax');
   if (e.relaxTauS !== undefined && (!Number.isFinite(e.relaxTauS) || e.relaxTauS <= 0 || e.relaxTauS > 2))
     r.push('esfuerzo: tau de relajación fuera de 0–2 s');
+  if (e.variability !== undefined) {
+    const { amplitudeFrac, periodFrac } = e.variability;
+    if (![amplitudeFrac, periodFrac].every((x) => Number.isFinite(x) && x >= 0 && x <= 0.5))
+      r.push('esfuerzo: variabilidad fuera de 0–0,5');
+  }
   return r;
 }
 
