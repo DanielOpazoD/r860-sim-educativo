@@ -694,6 +694,70 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
   ctx.fill();
 }
 
+/**
+ * Bucle docente (no va al monitor): Pva·V del ciclo y, superpuesta, la presión total (Pva+Pmus)·V — la presión que
+ * realmente distiende pulmón y vía aérea (Paw + Pmus = Pel + R·Q). El área entre ambos bucles es el trabajo que
+ * aporta el paciente. Sin esfuerzo sólo se dibuja Pva·V y se anota que ambas coinciden.
+ */
+export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void {
+  const { ctx, w, h } = context(canvas);
+  let ciclo = cyclePoints(points, 'current');
+  if (ciclo.length < 5) ciclo = cyclePoints(points, 'last');
+  if (!ciclo.length) return;
+  const left = 40,
+    right = 10,
+    top = 26,
+    bottom = h - 26,
+    pw = w - left - right,
+    ph = bottom - top;
+  let pMin = 0,
+    pMax = 0,
+    vMax = 0,
+    pmusMax = 0;
+  for (const p of ciclo) {
+    const total = p[1] + p[4];
+    pMin = Math.min(pMin, total);
+    pMax = Math.max(pMax, p[1], total);
+    vMax = Math.max(vMax, p[3]);
+    pmusMax = Math.max(pmusMax, Math.abs(p[4]));
+  }
+  const xrange = [pMin < 0 ? pMin * 1.15 : 0, nice(Math.max(10, pMax * 1.15), [30, 40, 60, 80, 100, 120])],
+    yrange = [0, nice(Math.max(100, vMax * 1.15), ESCALA_VOLUMEN)];
+  const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
+    yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
+  text(ctx, 'Pva · V', left, top - 10, 10, '#c4f0ff', 'left');
+  text(ctx, '(Pva+Pmus) · V = presión total', left + 70, top - 10, 10, '#b2a5ee', 'left');
+  for (let k = 0; k <= 4; k++) {
+    const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 4,
+      y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 4;
+    line(ctx, xf(x), top, xf(x), bottom, '#66add957');
+    line(ctx, left, yf(y), w - right, yf(y), '#66add957');
+    text(ctx, format(x), xf(x), bottom + 13, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
+  }
+  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#a8e6f799', 1);
+  const path = (xOf: (p: Point) => number, color: string): void => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, pw, ph);
+    ctx.clip();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ciclo.forEach((p, i) => {
+      const x = xf(xOf(p)),
+        y = yf(p[3]);
+      if (i) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+  };
+  path((p) => p[1], '#c4f0ff');
+  if (pmusMax >= 0.2) path((p) => p[1] + p[4], '#b2a5ee');
+  else text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 7, 9, '#85a3b9', 'center');
+}
+
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {
   const { ctx, w, h } = context(canvas),
     span = Math.min(600, Math.max(60, end)),

@@ -543,3 +543,15 @@ test.describe('DESC · desconexión del circuito', () => {
     await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 3/3', { timeout: 10_000 });
   });
 });
+
+test.describe('BLD · bucle docente con presión muscular', () => {
+  test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
+    await open(page, { scenario: 'SC-19' });
+    await page.click('[data-instructor="patient"]'); // el panel abre en «Entrenar»
+    await page.locator('#truth-details summary').click();
+    const canvas = page.locator('#muscle-loop-canvas');
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    expect(box && box.width > 0 && box.height > 0).toBe(true);
+  });
+});
