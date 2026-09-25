@@ -1,6 +1,7 @@
 /** Controles del panel docente: mecánica del paciente virtual, esfuerzo y sensor de O₂ (especificación + plantilla HTML). */
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
+import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 
 export interface PhysSpec {
   label: string;
@@ -302,6 +303,35 @@ export const FAULTS: [string, string, string, string, boolean][] = [
   ['disconnect', 'plug', 'Desconexión', 'Circuito abierto en la Y', false],
 ];
 
+/** Selects de presets fisiológicos (U-37) junto a los deslizadores de E₂/τ₂ y K₂: no cambian valores por omisión. */
+export function presetsHtml(infoButton: (key: string, id: string) => string, infoPanel: (key: string, id: string) => string): string {
+  const campo = (id: string, preset: 'tissue' | 'tube', label: string, help: string, opciones: string): string => {
+    const hid = `help-preset-${preset}`;
+    return (
+      `<div class="phys-field"><div class="phys-field-header"><div class="parameter-label"><label for="${id}">${label}</label>${infoButton(help, hid)}</div></div>` +
+      `<select id="${id}" data-phys-preset="${preset}" aria-label="${label}">` +
+      opciones +
+      `<option value="custom" disabled hidden>Personalizado</option></select>` +
+      `<small class="preset-note" id="${id}-note"></small>${infoPanel(help, hid)}</div>`
+    );
+  };
+  return (
+    campo(
+      'preset-tissue',
+      'tissue',
+      'Tejido (E₂/τ₂)',
+      'patient.presetTissue',
+      TISSUE_PRESETS.map((p) => `<option value="${p.id}">${p.label}</option>`).join(''),
+    ) +
+    campo(
+      'preset-tube',
+      'tube',
+      'Tubo endotraqueal (K₂)',
+      'patient.presetTube',
+      TUBE_PRESETS.map((p) => `<option value="${p.id}">${p.label}</option>`).join(''),
+    )
+  );
+}
 export function physHtml(
   keys: string[],
   infoButton: (key: string, id: string) => string,

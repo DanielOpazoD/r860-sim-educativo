@@ -311,8 +311,8 @@
     {
       "id": "U-37",
       "question": "Valores de E2 y τ2 (relajación de esfuerzo) y de K2 (Rohrer) del paciente adulto típico y del tubo endotraqueal por diámetro.",
-      "policy": "P: por omisión 0 (sistema puramente elástico y resistencia lineal, como hasta v0.3.8); ajustables por el instructor entre 0 y 20 cmH2O/L, 0,2 y 4 s, y 0 y 20 cmH2O/(L/s)². El escenario SC-14 usa E2 20 y τ2 1,5 s para hacer visible P1 frente a P2.",
-      "status": "nueva (v0.4.0)",
+      "policy": "Por omisión sigue 0 (sistema puramente elástico y resistencia lineal) y ningún escenario cambia, pero el panel docente ofrece presets de referencia: tejido «Adulto sano» E2 3 cmH2O/L y τ2 1,1 s (D'Angelo 1989/1991, oclusión rápida a flujo constante; P aproximado) y «Restrictivo / SDRA» E2 9, τ2 1,0 s (P); K2 inspiratorio del TET por diámetro interno —2,4 (9,0 mm), 3,1 (8,5), 4,7 (8,0), 6,0 (7,5), 9,2 (7,0), 12,8 (6,5) cmH2O/(L/s)²— según Anaesth Intensive Care 2011;39:410 (D), con el K1 lineal del tubo absorbido en la R del paciente (P). El escenario SC-14 usa E2 20 y τ2 1,5 s para hacer visible P1 frente a P2.",
+      "status": "revisada (v0.4.7)",
       "blocks": []
     },
     {
