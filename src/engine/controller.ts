@@ -70,6 +70,8 @@ export class VcController {
   timing: DerivedTiming;
   paw = 0;
   q = 0;
+  /** Gas comprimido en el circuito (L): con `circuitCompliance` 0 se queda siempre en 0 y todo es como antes. */
+  vCirc = 0;
   simT = 0;
   /** Último PEEPe medido al final de una espiración (cmH2O). */
   lastPeepe: number | null = null;
@@ -336,6 +338,52 @@ export class VcController {
 
   private pmusAt = (tS: number): number => this.effort.pmusAt(tS);
 
+  /**
+   * (De)compresión del circuito tras una fase de presión: la presión del nodo fija el objetivo `Cc·Py` y el cambio se
+   * reparte a razón del tope del actuador, para que la apertura espiratoria no sea un pico infinito. Devuelve el
+   * volumen transferido: el sensor de la máquina lo ve como flujo `delta/h`. No cambia Py (simplificación declarada).
+   */
+  private circuitTransfer(pyEnd: number, h: number, qOther = 0): number {
+    const cc = this.patient.circuitComplianceL;
+    if (cc <= 0 || !(h > 0)) return 0;
+    // El gas comprimido comparte la válvula con el flujo del pulmón: el flujo total del sensor no supera el tope del
+    // actuador, así que la transferencia se recorta al margen que deja qOther (y la descompresión tarda varios pasos).
+    const cap = ACTUATOR_MAX_FLOW_LPS * h;
+    const delta = Math.max(-cap - qOther * h, Math.min(cap - qOther * h, cc * pyEnd - this.vCirc));
+    this.vCirc += delta;
+    return delta;
+  }
+
+  /**
+   * Con el circuito ocluido (pausa o bloqueo), el gas comprimido pasa del circuito al pulmón hasta equilibrar
+   * presiones: py tal que `Pel(v + Cc·(py0 − py)) − Pmus = py`. El intercambio es casi instantáneo (tau = R_eq·Cc ≪ h),
+   * así que se resuelve por bisección en el primer paso de la oclusión y queda estable después (simplificación
+   * declarada: el flujo de transferencia no se dibuja en el sensor).
+   */
+  private occludeCircuit(h: number): void {
+    const cc = this.patient.circuitComplianceL;
+    if (cc <= 0 || !(h > 0)) return;
+    const p = this.patient;
+    const py0 = this.paw;
+    const pm = this.pmusAt(this.simT + h);
+    const f = (py: number): number => p.equilibratedPressure(p.v + cc * (py0 - py), p.v2) - pm - py;
+    let lo = py0 - cc * py0 - 20,
+      hi = py0 + 20;
+    for (let i = 0; i < 60 && f(lo) < 0; i++) lo -= Math.max(1, Math.abs(lo));
+    for (let i = 0; i < 60 && f(hi) > 0; i++) hi += Math.max(1, Math.abs(hi));
+    for (let i = 0; i < 48; i++) {
+      const mid = (lo + hi) / 2;
+      if (f(mid) > 0) lo = mid;
+      else hi = mid;
+    }
+    const py = (lo + hi) / 2;
+    const dV = cc * (py0 - py);
+    if (Math.abs(dV) > 1e-12) {
+      p.absorbCompressed(dV);
+      this.vCirc = cc * py;
+    }
+  }
+
   /** Integra hasta h segundos en la fase actual; devuelve el tiempo efectivamente integrado (menor si hubo cruce de umbral). */
   private integrate(h: number): number {
     const p = this.patient;
@@ -344,11 +392,54 @@ export class VcController {
       case 'standby': {
         const { qEnd } = p.integratePressureSource(0, this.pmusAt, this.simT, h);
         this.paw = 0;
-        this.q = qEnd;
+        this.q = qEnd + this.circuitTransfer(0, h) / h;
         return h;
       }
       case 'inspFlow': {
         const qCmd = this.timing.qTargetLps;
+        const cc = p.circuitComplianceL;
+        if (cc > 0) {
+          // Circuito compresible: el sensor es de la máquina, así que lo ordenado (qCmd) es flujo de pulmón más
+          // compresión. El nodo Py resuelve Paw(qPulmón) = Py con qPulmón = qCmd − Cc·(Py − PyPrev)/Δt: función
+          // decreciente en Py, raíz única por bisección (los límites se evalúan sobre esa misma Py).
+          const pyPrev = this.paw;
+          const nodo = (dt: number, vEst: number, pmus: number): number => {
+            const f = (py: number): number => p.pawForFlow(qCmd - (cc * (py - pyPrev)) / dt, pmus, vEst) - py;
+            let lo = Math.min(pyPrev, p.pel(vEst)) - 30,
+              hi = Math.max(pyPrev, p.pel(vEst)) + 80;
+            for (let i = 0; i < 60 && f(lo) < 0; i++) lo -= Math.max(1, Math.abs(lo));
+            for (let i = 0; i < 60 && f(hi) > 0; i++) hi += Math.max(1, Math.abs(hi));
+            for (let i = 0; i < 48; i++) {
+              const mid = (lo + hi) / 2;
+              if (f(mid) > 0) lo = mid;
+              else hi = mid;
+            }
+            return (lo + hi) / 2;
+          };
+          const paw0 = nodo(h * 1e-3, p.v, this.pmusAt(this.simT)); // la presión de nodo casi instantánea al entrar el flujo
+          const paw1 = nodo(h, p.v + qCmd * h, this.pmusAt(this.simT + h));
+          const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
+          const used = Math.max(0, Math.min(h, frac * h));
+          const py = nodo(Math.max(used, 1e-9), p.v, this.pmusAt(this.simT + used));
+          const qLung = qCmd - (cc * (py - pyPrev)) / Math.max(used, 1e-9);
+          p.integrateFlowSource(qLung, used, this.pmusAt(this.simT));
+          this.vCirc += cc * (py - pyPrev);
+          this.paw = py;
+          if (this.breath) this.breath.vtInsp += qCmd * used; // VTi de pantalla: lo que entregó la máquina
+          this.q = qCmd;
+          if (this.breath && used > 0) {
+            this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
+            if (Math.abs(this.pmusAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
+          }
+          if (hit === 'pmax') {
+            this.paw = s.pmax;
+            this.transition = () => this.onPmax();
+          } else if (hit === 'plimit') {
+            this.paw = s.plimit;
+            this.transition = () => this.onPlimit();
+          }
+          return used;
+        }
         const paw0 = p.pawForFlow(qCmd, this.pmusAt(this.simT), p.v);
         const paw1 = p.pawForFlow(qCmd, this.pmusAt(this.simT + h), p.v + qCmd * h);
         const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
@@ -400,11 +491,13 @@ export class VcController {
           qLast = r.qEnd + r.qLeakEnd; // lo que mide el ventilador: al pulmón y a la fuga
           pawLast = r.clamped ? r.pyEnd : tg;
         }
+        // El circuito compresible también entrega/recoge gas por el sensor de la máquina (la fuente de presión no lo mueve).
+        const delta = this.circuitTransfer(pawLast, h);
         if (this.breath) {
-          this.breath.vtInsp += dVtot + dVLeakTot; // VTi de pantalla: lo entregado, fuga incluida
-          this.breath.vtExp += dVexp;
+          this.breath.vtInsp += dVtot + dVLeakTot + Math.max(0, delta); // VTi de pantalla: lo entregado, fuga incluida
+          this.breath.vtExp += dVexp + Math.max(0, -delta);
         }
-        this.q = qLast;
+        this.q = qLast + delta / h;
         this.paw = pawLast;
         if (this.paw >= s.pmax) this.transition = () => this.onPmax();
         else if (this.phase === 'inspSupport' && this.breath) {
@@ -425,6 +518,7 @@ export class VcController {
           // el elemento viscoelástico relaja y el gas se redistribuye igual que allí.
           this.q = 0;
           p.integrateFlowSource(0, h, this.pmusAt(this.simT));
+          this.occludeCircuit(h);
           this.paw = p.hasSecond ? p.nodePressureForFlow(0, this.pmusAt(this.simT + h)) : p.pel() - this.pmusAt(this.simT + h);
           if (this.paw >= s.pmax) {
             this.transition = () => this.onPmax();
@@ -433,8 +527,12 @@ export class VcController {
           return h;
         }
         const { dV, qEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
-        if (this.breath) this.breath.vtInsp += dV;
-        this.q = qEnd;
+        const delta = this.circuitTransfer(s.plimit, h);
+        if (this.breath) {
+          this.breath.vtInsp += dV + Math.max(0, delta);
+          this.breath.vtExp += Math.max(0, -delta);
+        }
+        this.q = qEnd + delta / h;
         this.paw = s.plimit;
         return h;
       }
@@ -443,6 +541,7 @@ export class VcController {
       case 'holdExp': {
         this.q = 0;
         p.integrateFlowSource(0, h, this.pmusAt(this.simT)); // oclusión: el volumen total no cambia, pero el elemento viscoelástico relaja y el gas se redistribuye entre unidades
+        this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
         // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
         this.paw = p.hasSecond ? p.nodePressureForFlow(0, this.pmusAt(this.simT + h)) : p.pel() - this.pmusAt(this.simT + h);
         if (this.phase === 'inspPause' && this.breath) this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
@@ -488,10 +587,12 @@ export class VcController {
           qLeakEnd = r.qLeakEnd;
           pyEnd = r.pyEnd;
         }
+        // El gas comprimido en el circuito vuelve por la válvula como un flujo más: lo ve el sensor de la máquina.
+        const delta = this.circuitTransfer(pyEnd, h, qEnd + qLeakEnd);
         // VTe de pantalla: lo que vuelve por la válvula espiratoria, que es lo que sale del pulmón menos lo que se va por la fuga.
-        if (this.breath) this.breath.vtExp += Math.max(0, -dV - dVLeak);
+        if (this.breath) this.breath.vtExp += Math.max(0, -dV - dVLeak) + Math.max(0, -delta);
         // Flujo de pantalla: el del sensor del ventilador, que ve la fuga como si fuera el paciente.
-        this.q = qEnd + qLeakEnd;
+        this.q = qEnd + qLeakEnd + delta / h;
         // La presión mostrada es la del nodo (pieza en Y): con resistencia de rama queda sobre la PEEP mientras sale gas.
         this.paw = pyEnd;
         this.lastExpPaw = this.paw;

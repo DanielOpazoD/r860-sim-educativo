@@ -246,6 +246,7 @@ export function validatePatientParams(p: {
   rExpValve?: number;
   expValveOpenMs?: number;
   leakLpmAt10?: number;
+  circuitComplianceLPerCmH2O?: number;
   disconnected?: boolean;
   eVisc?: number;
   tauViscS?: number;
@@ -263,6 +264,11 @@ export function validatePatientParams(p: {
   if (p.rExpValve !== undefined && (p.rExpValve < 0 || p.rExpValve > 6))
     r.push('Resistencia de la rama espiratoria fuera de 0–6 cmH2O·s/L');
   if (p.leakLpmAt10 !== undefined && (p.leakLpmAt10 < 0 || p.leakLpmAt10 > 60)) r.push('Fuga fuera de 0–60 L/min a 10 cmH2O');
+  if (
+    p.circuitComplianceLPerCmH2O !== undefined &&
+    (!Number.isFinite(p.circuitComplianceLPerCmH2O) || p.circuitComplianceLPerCmH2O < 0 || p.circuitComplianceLPerCmH2O > 0.05)
+  )
+    r.push('Compliance del circuito fuera de 0–50 mL/cmH2O');
   if (p.expValveOpenMs !== undefined && (!Number.isFinite(p.expValveOpenMs) || p.expValveOpenMs < 0 || p.expValveOpenMs > 200))
     r.push('Apertura de la válvula espiratoria fuera de 0–200 ms');
   if (p.crs < 1e-4 || p.crs > 1) r.push('Crs fuera de 0.1–1000 mL/cmH2O');

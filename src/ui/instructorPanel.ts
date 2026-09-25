@@ -83,8 +83,15 @@ export function createInstructorPanel(
     if (p.second) opciones.push('2.ª unidad');
     if ((p.leakLpmAt10 ?? 0) > 0) opciones.push('fuga');
     if ((p.rExpValve ?? 0) > 0) opciones.push('rama esp.');
+    if ((p.circuitComplianceLPerCmH2O ?? 0) > 0) opciones.push('circuito compresible');
     if (fr.truth.effort.variability) opciones.push('esfuerzo variable');
     put('#truth-opciones', opciones.length ? opciones.join(', ') : 'lineal, un compartimento');
+    const vcircCell = document.getElementById('truth-vcirc-cell');
+    if (vcircCell) {
+      const cc = p.circuitComplianceLPerCmH2O ?? 0;
+      vcircCell.hidden = !(cc > 0);
+      put('#truth-vcirc', `${f(fr.truth.vCircL * 1000, 0)} mL`);
+    }
     for (const [id, on] of [
       ['apnea', apneaApplied && (!fr.truth.effort.enabled || fr.truth.effort.amplitude === 0)],
       ['obstruction', fr.truth.patient.rInsp >= 300],

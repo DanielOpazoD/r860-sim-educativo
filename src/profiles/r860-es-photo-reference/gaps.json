@@ -451,7 +451,7 @@
     },
     {
       "feature": "Distensibilidad del circuito, espacio muerto, sensores con ruido/retraso de presión y flujo",
-      "reason": "Modelo mínimo P0; la fuga en la Y y la desconexión sí se modelan (E-088)."
+      "reason": "Parcialmente cerrada: la compliance (distensibilidad) del circuito se modela como parámetro opcional del lado de la máquina, 0–50 mL/cmH₂O y 0 por omisión, con banco BM-CC (VTi mantenido, meseta y Cstat ≈ C+Cc; sin inertancia). Quedan U el espacio muerto y el ruido/retraso de los sensores de presión y flujo."
     },
     {
       "feature": "Espacio Futuro (SBT, FRC, SpiroDynamics, metabolismo, cálculos)",

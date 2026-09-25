@@ -296,6 +296,13 @@ export const HELP: Record<string, HelpEntry> = {
       'Puede disminuir el volumen que vuelve al sensor y hacer caer la presión durante una oclusión. El volumen trazado integra el sensor, no el volumen anatómico del pulmón.',
     ],
   },
+  'patient.circuitCompliance': {
+    title: 'Compliance del circuito',
+    text: [
+      'Volumen de gas que la tubuladura comprime a cada presión (mL por cmH₂O). En el equipo real parte del gas entregado se queda comprimido en el circuito y nunca llega al pulmón.',
+      'El flujo mostrado es el del sensor del ventilador, así que el VTi se mantiene, pero la meseta baja: la Cstat medida por bloqueo sale como C + compliance del circuito. En espiración el gas comprimido vuelve por la válvula.',
+    ],
+  },
   'metric.ppeak': {
     title: 'Presión pico · Ppico',
     text: [

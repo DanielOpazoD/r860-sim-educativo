@@ -70,6 +70,8 @@ export interface Truth {
   /** Compliance local del modelo (L/cmH2O): con sigmoide cambia con el volumen. */
   cLocal: number;
   pmus: number;
+  /** Gas comprimido en el circuito (L): Cc·Py del nodo; 0 sin compliance del circuito. */
+  vCircL: number;
   /** PEEP intrínseca verdadera al fin de la última espiración: Pel(V al inicio de la respiración en curso) − PEEP. */ peepiEndExp: number;
   patient: PatientParams;
   effort: EffortParams;
@@ -465,6 +467,7 @@ export class Simulator {
         pVisc: this.patient.pVisc,
         cLocal: this.patient.compliance(),
         pmus: this.effort.pmusAt(t / 1000),
+        vCircL: this.controller.vCirc,
         peepiEndExp: Math.max(0, this.patient.equilibratedPressure(this.breathVStart, this.breathV2Start) - this.controller.peepTarget),
         patient: { ...this.patient.params },
         effort: { ...this.effort.params },
