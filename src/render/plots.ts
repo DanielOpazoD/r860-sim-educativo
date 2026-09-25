@@ -724,7 +724,7 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
   }
   for (const p of base) pmusMax = Math.max(pmusMax, Math.abs(p[4]));
   const xrange = [pMin < 0 ? pMin * 1.15 : 0, nice(Math.max(10, pMax * 1.15), [30, 40, 60, 80, 100, 120])],
-    yrange = [0, nice(Math.max(100, vMax * 1.15), ESCALA_VOLUMEN)];
+    yrange = [0, nice(Math.max(100, vMax * 1.15), [300, 600, 900, 1200, 1500, 2100, 3000])];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
   text(ctx, 'Pva · V', left, top - 9, 10, '#c4f0ff', 'left');
