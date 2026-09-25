@@ -28,8 +28,6 @@ export const PEEP_REGULATOR_DROOP_CMH2O_S_L = 3;
  * integral. En régimen (demanda sostenida) la caída desaparece y la Pva vuelve a PEEP; sólo el transitorio queda.
  */
 export const PEEP_REGULATOR_TAU_S = 0.1;
-/** @deprecated Alias del retardo por flujo, para compatibilidad de imports. */
-export const TRIGGER_DELAY_S = TRIGGER_DELAY_FLOW_S;
 /**
  * Caída de la Pva espiratoria bajo la PEEP programada a partir de la cual el disparo no se evalúa (cmH2O), P. Con el
  * circuito abierto o una fuga que el flujo de base no cubre, el sensor de flujo ve salir gas de forma continua y
