@@ -712,19 +712,26 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     bottom = h - 22,
     pw = w - left - right,
     ph = bottom - top;
+  // El esfuerzo se decide por ciclo: un ciclo pasado pasivo junto a uno activo no debe heredar la traza total.
+  const hasEffort = (data: Point[]): boolean => data.some((p) => Math.abs(p[4]) >= 0.2),
+    esfBase = hasEffort(base),
+    esfActual = hasEffort(actual);
   let pMin = 0,
     pMax = 0,
-    vMax = 0,
-    pmusMax = 0;
+    vMin = 0,
+    vMax = 0;
   for (const p of [...base, ...actual]) {
     const total = p[1] + p[4];
-    pMin = Math.min(pMin, total);
+    pMin = Math.min(pMin, p[1], total);
     pMax = Math.max(pMax, p[1], total);
+    vMin = Math.min(vMin, p[3]);
     vMax = Math.max(vMax, p[3]);
   }
-  for (const p of base) pmusMax = Math.max(pmusMax, Math.abs(p[4]));
   const xrange = [pMin < 0 ? pMin * 1.15 : 0, nice(Math.max(10, pMax * 1.15), [30, 40, 60, 80, 100, 120])],
-    yrange = [0, nice(Math.max(100, vMax * 1.15), [300, 600, 900, 1200, 1500, 2100, 3000])];
+    yrange = [
+      vMin < 0 ? -nice(-vMin * 1.15, [100, 200, 300, 600, 900]) : 0,
+      nice(Math.max(100, vMax * 1.15), [300, 600, 900, 1200, 1500, 2100, 3000]),
+    ];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
   text(ctx, 'Pva · V', left, top - 9, 10, '#c4f0ff', 'left');
@@ -738,6 +745,7 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
   }
   if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#a8e6f799', 1);
+  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), '#a8e6f799', 1);
   const path = (data: Point[], xOf: (p: Point) => number, color: string, alpha: number): void => {
     if (!data.length) return;
     ctx.save();
@@ -760,11 +768,11 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
   // El ciclo en curso se dibuja primero y el completo encima, para que el bucle cerrado mande.
   if (completo.length) {
     path(actual, (p) => p[1], '#c4f0ff', 0.45);
-    if (pmusMax >= 0.2) path(actual, (p) => p[1] + p[4], '#b2a5ee', 0.45);
+    if (esfActual) path(actual, (p) => p[1] + p[4], '#b2a5ee', 0.45);
   }
   path(base, (p) => p[1], '#c4f0ff', 1);
-  if (pmusMax >= 0.2) path(base, (p) => p[1] + p[4], '#b2a5ee', 1);
-  else text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, '#85a3b9', 'center');
+  if (esfBase) path(base, (p) => p[1] + p[4], '#b2a5ee', 1);
+  if (!esfBase && !esfActual) text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, '#85a3b9', 'center');
 }
 
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {
