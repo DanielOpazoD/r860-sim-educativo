@@ -694,6 +694,87 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
   ctx.fill();
 }
 
+/**
+ * Bucle docente (no va al monitor): Pva·V del ciclo y, superpuesta, la presión total (Pva+Pmus)·V — la presión que
+ * realmente distiende pulmón y vía aérea (Paw + Pmus = Pel + R·Q). El área entre ambos bucles es el trabajo que
+ * aporta el paciente. Sin esfuerzo sólo se dibuja Pva·V y se anota que ambas coinciden.
+ */
+export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void {
+  const { ctx, w, h } = context(canvas);
+  // Bucle principal: último ciclo COMPLETO; encima, el ciclo en curso con alfa para ver cómo se forma.
+  const completo = cyclePoints(points, 'last'),
+    actual = cyclePoints(points, 'current'),
+    base = completo.length ? completo : actual;
+  if (!base.length) return;
+  const left = 36,
+    right = 8,
+    top = 24,
+    bottom = h - 22,
+    pw = w - left - right,
+    ph = bottom - top;
+  // El esfuerzo se decide por ciclo: un ciclo pasado pasivo junto a uno activo no debe heredar la traza total.
+  const hasEffort = (data: Point[]): boolean => data.some((p) => Math.abs(p[4]) >= 0.2),
+    esfBase = hasEffort(base),
+    esfActual = hasEffort(actual);
+  let pMin = 0,
+    pMax = 0,
+    vMin = 0,
+    vMax = 0;
+  for (const p of [...base, ...actual]) {
+    const total = p[1] + p[4];
+    pMin = Math.min(pMin, p[1], total);
+    pMax = Math.max(pMax, p[1], total);
+    vMin = Math.min(vMin, p[3]);
+    vMax = Math.max(vMax, p[3]);
+  }
+  const xrange = [pMin < 0 ? pMin * 1.15 : 0, nice(Math.max(10, pMax * 1.15), [30, 40, 60, 80, 100, 120])],
+    yrange = [
+      vMin < 0 ? -nice(-vMin * 1.15, [100, 200, 300, 600, 900]) : 0,
+      nice(Math.max(100, vMax * 1.15), [300, 600, 900, 1200, 1500, 2100, 3000]),
+    ];
+  const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
+    yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
+  text(ctx, 'Pva · V', left, top - 9, 10, '#c4f0ff', 'left');
+  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, 10, '#b2a5ee', 'left');
+  for (let k = 0; k <= 3; k++) {
+    const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 3,
+      y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 3;
+    line(ctx, xf(x), top, xf(x), bottom, '#66add957');
+    line(ctx, left, yf(y), w - right, yf(y), '#66add957');
+    text(ctx, format(x), xf(x), bottom + 12, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
+  }
+  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#a8e6f799', 1);
+  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), '#a8e6f799', 1);
+  const path = (data: Point[], xOf: (p: Point) => number, color: string, alpha: number): void => {
+    if (!data.length) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.rect(left, top, pw, ph);
+    ctx.clip();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    data.forEach((p, i) => {
+      const x = xf(xOf(p)),
+        y = yf(p[3]);
+      if (i) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+  };
+  // El ciclo en curso se dibuja primero y el completo encima, para que el bucle cerrado mande.
+  if (completo.length) {
+    path(actual, (p) => p[1], '#c4f0ff', 0.45);
+    if (esfActual) path(actual, (p) => p[1] + p[4], '#b2a5ee', 0.45);
+  }
+  path(base, (p) => p[1], '#c4f0ff', 1);
+  if (esfBase) path(base, (p) => p[1] + p[4], '#b2a5ee', 1);
+  if (!esfBase && !esfActual) text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, '#85a3b9', 'center');
+}
+
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {
   const { ctx, w, h } = context(canvas),
     span = Math.min(600, Math.max(60, end)),

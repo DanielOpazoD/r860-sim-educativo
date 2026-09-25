@@ -13,6 +13,7 @@ import {
   drawGauge,
   drawLoop,
   drawMuscle,
+  drawMuscleLoop,
   drawTrends,
   drawWave,
   getBounds,
@@ -169,7 +170,11 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       vteMl: fr.metrics.vte?.value === null || fr.metrics.vte?.value === undefined ? null : fr.metrics.vte.value * 1000,
       fio2Pct: fr.metrics.fio2?.value === null || fr.metrics.fio2?.value === undefined ? null : fr.metrics.fio2.value * 100,
     });
-    if (deps.teacherVisible()) drawMuscle($<HTMLCanvasElement>('#muscle-canvas'), points, ctx.simS());
+    const muscleLoop = $<HTMLCanvasElement>('#muscle-loop-canvas');
+    if (deps.teacherVisible() && muscleLoop.offsetParent !== null) {
+      drawMuscle($<HTMLCanvasElement>('#muscle-canvas'), points, ctx.simS());
+      drawMuscleLoop(muscleLoop, points);
+    }
   }
   function tick(now: number): void {
     if (ctx.frame && !document.hidden && now - lastPlot > 32 && (dirty || gaugeAnimating)) {
