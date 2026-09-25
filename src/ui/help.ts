@@ -268,6 +268,21 @@ export const HELP: Record<string, HelpEntry> = {
       'Valor propuesto del simulador (P): la literatura describe el fenómeno sin fijar latencias universales.',
     ],
   },
+  'patient.presetTissue': {
+    title: 'Preset de tejido (E₂/τ₂)',
+    text: [
+      'Valores de referencia de la relajación viscoelástica: «Adulto sano» usa E₂ ≈ 3 cmH₂O/L y τ₂ ≈ 1,1 s para el sistema respiratorio total anestesiado-paralizado (D’Angelo 1989/1991, método de oclusión rápida a flujo constante); «Restrictivo / SDRA» multiplica la viscoelasticidad por 2–3 (orden de magnitud de las series con oclusión en lesión pulmonar aguda).',
+      'Son valores aproximados de literatura (P), no medidas del equipo. Al elegir un preset se rellenan los deslizadores E₂ y τ₂; ajustarlos a mano deja el preset en «Personalizado».',
+    ],
+  },
+  'patient.presetTube': {
+    title: 'Preset de tubo endotraqueal (K₂)',
+    text: [
+      'K₂ inspiratorio del TET adulto por diámetro interno, medido con el método de oclusión (Anaesth Intensive Care 2011;39:410): de 2,4 cmH₂O/(L/s)² en 9,0 mm a 12,8 en 6,5 mm — a menor diámetro la componente turbulenta crece deprisa.',
+      'El término lineal K₁ del tubo se considera incluido en la resistencia del paciente (P). Al elegir un preset se rellena el deslizador K₂; ajustarlo a mano deja el preset en «Personalizado».',
+    ],
+    equation: 'R(Q) = K₁ + K₂·|Q|',
+  },
   'patient.expValve': {
     title: 'Resistencia de la rama espiratoria',
     text: [

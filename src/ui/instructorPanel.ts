@@ -11,7 +11,8 @@ import { $, $$, icon, put } from './dom';
 import type { HoldPanel } from './holdPanel';
 import { infoButton, infoPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
-import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, type PhysSpec } from './patientControls';
+import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type PhysSpec } from './patientControls';
+import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
 
@@ -33,6 +34,8 @@ export interface InstructorPanel {
   physRangeInput(el: HTMLInputElement): void;
   /** Cambio confirmado de un control fisiológico (deslizador o número). */
   physChange(el: HTMLInputElement | HTMLSelectElement): void;
+  /** Selects de presets fisiológicos (U-37): aplican los campos del preset elegido con setPatient. */
+  presetChange(el: HTMLSelectElement): void;
 }
 
 export function createInstructorPanel(
@@ -63,6 +66,18 @@ export function createInstructorPanel(
       r.style.setProperty('--fill', `${(100 * (Number(r.value) - sp.min)) / (sp.max - sp.min)}%`);
     }
     const p = fr.truth.patient;
+    syncPreset(
+      $<HTMLSelectElement>('#preset-tissue'),
+      TISSUE_PRESETS,
+      (pre) => Math.abs((p.eVisc ?? 0) - pre.eVisc) < 1e-6 && Math.abs((p.tauViscS ?? 1.2) - pre.tauViscS) < 1e-6,
+      (pre) => pre.note,
+    );
+    syncPreset(
+      $<HTMLSelectElement>('#preset-tube'),
+      TUBE_PRESETS,
+      (pre) => Math.abs(p.r2 - pre.r2) < 1e-6,
+      () => '',
+    );
     put('#truth-tauin', `${f(p.rInsp * p.crs, 2)} s`);
     put('#truth-tau', `${f(p.rExp * p.crs, 2)} s`);
     put('#truth-auto', `${f(fr.truth.peepiEndExp, 1)} cmH₂O`);
@@ -156,6 +171,17 @@ export function createInstructorPanel(
     }
     for (const id of ['patient', 'learn', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
   }
+  /** Select de preset reflejando el estado: preset coincidente (tolerancia 1e-6) o «Personalizado», con su nota. */
+  function syncPreset<T extends { id: string }>(
+    sel: HTMLSelectElement,
+    presets: readonly T[],
+    coincide: (p: T) => boolean,
+    nota: (p: T) => string,
+  ): void {
+    const activo = presets.find(coincide) ?? null;
+    if (document.activeElement !== sel) sel.value = activo?.id ?? 'custom';
+    put(`#${sel.id}-note`, activo ? nota(activo) : '');
+  }
   function loadScenario(id: string): void {
     const sc = findScenario(id);
     if (!sc) return;
@@ -183,7 +209,10 @@ export function createInstructorPanel(
     init() {
       $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
       $('#patient-extra-controls').innerHTML =
-        physHtml(PATIENT_EXTRA, infoButton, infoPanel) +
+        // Los presets de referencia (U-37) van pegados a los deslizadores que rellenan: tras 'rohrer'.
+        physHtml(PATIENT_EXTRA.slice(0, PATIENT_EXTRA.indexOf('rohrer') + 1), infoButton, infoPanel) +
+        presetsHtml(infoButton, infoPanel) +
+        physHtml(PATIENT_EXTRA.slice(PATIENT_EXTRA.indexOf('rohrer') + 1), infoButton, infoPanel) +
         `<p class="settings-annotation">La fuga se modela en la pieza en Y, lineal con la presión; sin compensación de fuga ni distensibilidad del circuito.</p>`;
       $('#fault-grid').innerHTML = FAULTS.map(
         ([id, i, l, d, off]) =>
@@ -233,6 +262,21 @@ export function createInstructorPanel(
           el.blur();
           if (ctx.frame) updateTeacher();
         });
+    },
+    presetChange(el) {
+      const frame = ctx.frame;
+      if (!frame) return;
+      const cmds =
+        el.dataset.physPreset === 'tissue'
+          ? (() => {
+              const pre = TISSUE_PRESETS.find((x) => x.id === el.value);
+              return pre ? [{ type: 'setPatient' as const, params: { eVisc: pre.eVisc, tauViscS: pre.tauViscS } }] : [];
+            })()
+          : (() => {
+              const pre = TUBE_PRESETS.find((x) => x.id === el.value);
+              return pre ? [{ type: 'setPatient' as const, params: { r2: pre.r2 } }] : [];
+            })();
+      if (cmds.length) void setPhys(cmds, null).then(() => ctx.frame && updateTeacher());
     },
   };
 }

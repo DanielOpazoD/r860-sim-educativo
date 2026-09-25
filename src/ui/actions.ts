@@ -381,6 +381,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     document.addEventListener('change', (e) => {
       const el = e.target as HTMLInputElement | HTMLSelectElement;
       if ((el as HTMLInputElement).dataset.physRange || (el as HTMLInputElement).dataset.physNumber) instructor.physChange(el);
+      if (el.dataset.physPreset) instructor.presetChange(el as HTMLSelectElement);
       if (el.id === 'sim-speed') ctx.setSpeed(Number(el.value));
       if (el.id === 'wave-window') plots.setWaveWindow(Number(el.value));
       if (el.id === 'wave-style') plots.setWaveStyle(el.value as 'sweep' | 'scroll');
