@@ -25,7 +25,7 @@ import { createHoldPanel } from './holdPanel';
 import { learnerText } from './humanize';
 import { createInstructorPanel } from './instructorPanel';
 import { bindKeyboard } from './keyboard';
-import { MODE_LABEL } from './labels';
+import { isMobile, MODE_LABEL } from './labels';
 import { createLessonTracker } from './lessonTracker';
 import { createMetricsView } from './metricsView';
 import { createTeachingView } from './teachingView';
@@ -346,6 +346,11 @@ export function startApp(opts: AppOptions): void {
   metrics.init();
   instructor.init();
   fillStaticHelp();
+  // En teléfono el monitor vertical dibuja mejor ventanas cortas: 6 s por omisión (en escritorio quedan 12 s).
+  if (isMobile()) {
+    ($('#wave-window') as HTMLSelectElement).value = '6';
+    plots.setWaveWindow(6);
+  }
   views.initMonitorScale();
   instructor.initChrome();
   versionTag();

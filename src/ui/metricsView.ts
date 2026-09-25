@@ -90,6 +90,12 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
+        // Con dos unidades en paralelo la Cstat/R son aproximadas: el aviso va pegado a la unidad porque la línea de
+        // edad (fija en una celda de alto limitado) no tiene sitio para otra fila sin pintarse sobre la de abajo.
+        put(
+          el.querySelector('.numeric-unit'),
+          metricSample(fr, m.key)?.reason?.startsWith('twoCompartments') ? `${m.unit} · aprox.` : m.unit,
+        );
         put(
           el.querySelector('.numeric-age'),
           m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null

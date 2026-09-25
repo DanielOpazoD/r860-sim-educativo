@@ -452,7 +452,8 @@ test.describe('CUR · medir sobre la curva congelada', () => {
       timeout: 40_000,
     });
     // En continuo el centro del área de trazado es «final − ventana/2». La conversión anterior usaba márgenes distintos
-    // de los del dibujo y el cursor caía unos 90 ms más allá. La ventana se fija a 12 s: en móvil por omisión es 6.
+    // de los del dibujo y el cursor caía unos 90 ms más allá. La ventana por omisión es 12 s en escritorio y 6 s en
+    // teléfono, así que se fija: la cuentas del centro dependen de ella.
     await page.selectOption('#wave-window', '12');
     await page.selectOption('#wave-style', 'scroll');
     await page.click('#freeze-button');

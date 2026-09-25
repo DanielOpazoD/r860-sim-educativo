@@ -72,6 +72,8 @@ export class ProcedureManager {
   constructor(
     private readonly controller: VcController,
     private readonly wallTimeOf: (simTimeMs: number) => number,
+    /** Pulmón con segunda unidad en paralelo: la Cstat y la resistencia medidas no equivalen a un solo compartimento. */
+    private readonly hasSecondUnit: () => boolean = () => false,
   ) {}
 
   private nextId(): string {
@@ -136,6 +138,11 @@ export class ProcedureManager {
     }
   }
 
+  /** Prefijo «aprox.» de los motivos cuando el pulmón activo son dos unidades en paralelo (el dato es del equipo). */
+  private aproximacion(): string {
+    return this.hasSecondUnit() ? 'twoCompartments;' : '';
+  }
+
   private finishHold(o: HoldOutcome): void {
     const cur = this.current && this.current.procedureId === o.procedureId ? this.current : null;
     const simTimeMs = sToMs(o.endSimTimeS); // hora exacta del fin de la maniobra, no la del paso del reloj
@@ -174,9 +181,10 @@ export class ProcedureManager {
           ...base,
           quality: 'valid',
           reason:
-            peepTotPrev === null
+            this.aproximacion() +
+            (peepTotPrev === null
               ? 'denominador=Pplat−PEEPe (sin PEEPtot medida)'
-              : 'denominador=Pplat−PEEPtot (bloqueo espiratorio previo)',
+              : 'denominador=Pplat−PEEPtot (bloqueo espiratorio previo)'),
         });
         values.driving = mkSample('drivingHold', denom, 'cmH2O', {
           ...base,
@@ -205,7 +213,7 @@ export class ProcedureManager {
         values.raw = mkSample('rawHold', raw, 'cmH2O/(L/s)', {
           ...base,
           quality: raw === null ? 'invalid' : 'valid',
-          reason: raw === null ? motivoRaw : '(Ppico − Pplat) / flujo inspiratorio al ocluir',
+          reason: raw === null ? motivoRaw : this.aproximacion() + '(Ppico − Pplat) / flujo inspiratorio al ocluir',
         });
       } else {
         values.cstat = mkSample('cstatHold', null, 'L/cmH2O', {

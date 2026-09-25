@@ -81,3 +81,16 @@ test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', ()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   });
 });
+
+test.describe('Ventana de curvas por omisión según el ancho del viewport', () => {
+  test('móvil (< 700 px): la ventana arranca en 6 s', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'sólo proyecto móvil');
+    await open(page, { instructor: 0 });
+    await expect(page.locator('#wave-window')).toHaveValue('6');
+  });
+  test('escritorio: la ventana arranca en 12 s', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'sólo proyectos de escritorio');
+    await open(page, { instructor: 0 });
+    await expect(page.locator('#wave-window')).toHaveValue('12');
+  });
+});

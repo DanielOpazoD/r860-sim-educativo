@@ -661,23 +661,27 @@ a {
 }
 .numeric-label {
   font-size: 12px;
+  line-height: 1; /* la caja de 1,2 línea robaba 2 px que necesitan la unidad y la edad para caber en la fila fija */
   color: #9ddaff;
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
 .numeric-value {
-  font-size: 33px;
+  font-size: 32px; /* un píxel menos: etiqueta+valor+unidad+edad superaban la altura fija de la celda */
   font-weight: 650;
   letter-spacing: 0.1px;
   color: #ebffff;
-  line-height: 1.25;
+  /* 1,25 dejaba la caja 5 px más alta que los dígitos y etiqueta+valor+unidad+edad no cabían en la fila fija. */
+  line-height: 1.1;
   white-space: nowrap;
   display: block;
 }
 .numeric-unit {
   font-size: 9px;
   color: #a3d6ff;
-  line-height: 1.15;
+  line-height: 1;
+  /* lleva «· aprox.» cuando el dato es aproximado: una línea sola, como el resto de unidades */
+  white-space: nowrap;
 }
 .numeric-limits {
   position: absolute;
@@ -692,7 +696,10 @@ a {
 .numeric .numeric-age {
   font-size: 8px;
   color: #b5e0ff;
-  margin-top: 2px;
+  /* La celda de la rejilla tiene alto fijo: una sola línea pegada a la unidad; si se deja envolver o se separa, se pinta sobre el rótulo de la fila siguiente. */
+  margin-top: 0;
+  white-space: nowrap;
+  flex-shrink: 0; /* en celdas justas el flex la colapsaba a 0 px y la línea quedaba invisible */
 }
 .numeric .numeric-value .sin-dato {
   font-size: 10px;
