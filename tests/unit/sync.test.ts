@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIGGER_DELAY_S } from '../../src/engine/trigger';
+import { TRIGGER_DELAY_FLOW_S, TRIGGER_DELAY_PRESSURE_S } from '../../src/engine/trigger';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 import { validateVcSettings } from '../../src/domain/validation';
 import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
@@ -126,11 +126,17 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
   it('la respiración empieza 80 ms después de cruzar el umbral, y en ese lapso la Pva cae ≈ 2 cmH₂O con Pmus 8 y flujo de base 4', () => {
     const d = disparos({});
     expect(d.length).toBeGreaterThanOrEqual(5);
-    for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_S * 1000)).toBeLessThanOrEqual(4);
+    for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_FLOW_S * 1000)).toBeLessThanOrEqual(4);
     for (const x of d.slice(2)) {
       expect(x.caida).toBeGreaterThan(1);
       expect(x.caida).toBeLessThan(3);
     }
+  });
+
+  it('el disparo por presión es más lento que el de flujo: la respiración empieza ≈ 110 ms tras cruzar el umbral', () => {
+    const d = disparos({ triggerByPressure: true, pressureTrigger: -2 });
+    expect(d.length).toBeGreaterThanOrEqual(5);
+    for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_PRESSURE_S * 1000)).toBeLessThanOrEqual(4);
   });
 
   it('más flujo de base o menos esfuerzo, menos trabajo de disparo; el disparo por presión lo duplica', () => {
@@ -141,7 +147,7 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
     expect(disparos({ triggerByPressure: true, pressureTrigger: -2 }).at(-1)!.caida).toBeGreaterThan(3);
   });
 
-  it('sin disparo asistido nada cambia: la espiración termina por el temporizador y la Pva no baja de PEEP', () => {
+  it('sin disparo asistido la espiración termina por el temporizador y la caída del esfuerzo queda contenida', () => {
     const sim = benchSim({
       effort: { enabled: true, amplitude: 2, ratePerMin: 15, tiS: 0.8, phaseS: 0.5 },
       settings: { ...BENCH_SETTINGS, assistControl: false, biasFlow: 10 / 60 },
@@ -152,6 +158,9 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
       if (sim.frame().live.phase === 'exp') pawMin = Math.min(pawMin, sim.frame().live.paw);
     }
     expect(sim.breaths.every((b) => b.type === 'mandatory')).toBe(true);
+    // Con Pmus 2 la demanda nunca supera la PEEP intrínseca (pel − peep ≈ 7–9 con este alineamiento de fase), así que
+    // el regulador no entra en juego y la vía es idéntica a la del regulador ideal: la Pva no baja de PEEP. La caída
+    // de U-43 aparece cuando el esfuerzo tira gas de verdad (véase BM-RP y ASI-02).
     expect(pawMin).toBeCloseTo(5, 6);
   });
 });

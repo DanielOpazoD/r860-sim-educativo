@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIGGER_DELAY_S, TRIGGER_REFRACTORY_S } from '../../src/engine/trigger';
+import { TRIGGER_DELAY_FLOW_S, TRIGGER_REFRACTORY_S } from '../../src/engine/trigger';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim } from '../helpers';
 
 // ASI-01 · asincronías EMERGENTES. No hay ninguna regla que las produzca: salen de la mecánica, del perfil de esfuerzo
@@ -30,7 +30,7 @@ describe('ASI-01 · doble disparo con Ti neural mayor que el mecánico', () => {
     // El segundo disparo llega lo antes que el motor lo permite: tiempo inspiratorio mecánico + refractario + retardo de
     // respuesta. Ninguno puede llegar antes, y el más temprano llega exactamente entonces; los demás dependen de la fase
     // del esfuerzo y del gas atrapado en ese momento, no del refractario.
-    const esperado = 1000 + (TRIGGER_REFRACTORY_S + TRIGGER_DELAY_S) * 1000;
+    const esperado = 1000 + (TRIGGER_REFRACTORY_S + TRIGGER_DELAY_FLOW_S) * 1000;
     for (const g of cortos) expect(g).toBeGreaterThanOrEqual(esperado - 8);
     // Hasta dos pasos de 4 ms de holgura: el refractario y el umbral se resuelven al final del paso en que se cumplen.
     expect(Math.abs(Math.min(...cortos) - esperado)).toBeLessThanOrEqual(12);
@@ -116,12 +116,36 @@ describe('ASI-02 · esfuerzos inefectivos cuando aparece auto-PEEP', () => {
     expect(desv * 60).toBeGreaterThan(5); // más de 5 L/min de diferencia: visible en la curva
   });
 
-  it('la Pva no se deforma durante un esfuerzo inefectivo: la válvula sostiene la PEEP mientras la demanda no supere el flujo de base', () => {
-    // Límite declarado del modelo: la deflexión de presión de un esfuerzo inefectivo depende del ancho de banda del
-    // regulador de PEEP, que aquí es ideal. La huella del esfuerzo está en el flujo, no en la presión (U-43).
+  it('la Pva se deforma durante un esfuerzo inefectivo y el regulador la recupera antes del siguiente ciclo', () => {
+    // U-43 cerrada: el regulador de PEEP tiene ancho de banda finito. Una demanda inspiratoria repentina hunde la Pva
+    // transitoriamente (caída proporcional a la demanda no compensada) y su acción integral la repone antes de que
+    // termine la espiración: el esfuerzo que no llega a disparar deja la muesca que se enseña en la curva de presión.
+    // La caída exige demanda: el esfuerzo tiene que superar la PEEP intrínseca y tirar gas. Con rExp 15 queda algo de
+    // auto-PEEP pero Pmus 8 basta para crear demanda en la parte tardía de la espiración (medido: pawMin ≈ 4,26).
+    const sim = benchSim({
+      patient: { ...BENCH_PATIENT, rExp: 15 },
+      effort: { enabled: true, amplitude: 8, ratePerMin: 20, tiS: 0.8, phaseS: 1.2 },
+      settings: { ...settings, flowTrigger: 3 / 60, biasFlow: 8 / 60, rr: 25, ie: 1 },
+    });
+    let pawMin = Infinity,
+      pawUltimo = 5;
+    let prev = false;
+    while (sim.breaths.length < 14) {
+      sim.step();
+      const exp = sim.frame().live.phase === 'exp';
+      if (exp && prev) pawMin = Math.min(pawMin, sim.frame().live.paw);
+      if (exp) pawUltimo = sim.frame().live.paw;
+      prev = exp;
+    }
+    expect(pawMin).toBeLessThan(5 - 0.3); // la caída transitoria es visible
+    expect(pawMin).toBeGreaterThan(5 - 3); // el regulador la contiene: no colapsa a 0
+    expect(pawUltimo).toBeCloseTo(5, 1); // y la acción integral repone la PEEP al final de la espiración
+  });
+
+  it('sin esfuerzo la vía es la de siempre: la Pva espiratoria se queda en PEEP', () => {
     const sim = benchSim({
       patient: { ...BENCH_PATIENT, rExp: 30 },
-      effort: { enabled: true, amplitude: 8, ratePerMin: 25, tiS: 0.8, phaseS: 1.2 },
+      effort: { enabled: true, amplitude: 0, ratePerMin: 25, tiS: 0.8, phaseS: 1.2 },
       settings: { ...settings, flowTrigger: 3 / 60, biasFlow: 8 / 60, rr: 25, ie: 1 },
     });
     let pawMin = Infinity;
