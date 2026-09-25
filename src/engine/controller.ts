@@ -12,7 +12,14 @@ import {
   TAU_EXP_MIN_R2,
 } from './breathAnalysis';
 import type { BreathAccum, ControllerEvent, HoldKind, HoldOutcome, HoldRequest, HoldRun } from './controllerTypes';
-import { thresholdCrossing, TRIGGER_DELAY_S, TRIGGER_MIN_PEEP_DROP_CMH2O, TRIGGER_REFRACTORY_S } from './trigger';
+import {
+  PEEP_REGULATOR_DROOP_CMH2O_S_L,
+  PEEP_REGULATOR_TAU_S,
+  thresholdCrossing,
+  TRIGGER_MIN_PEEP_DROP_CMH2O,
+  TRIGGER_REFRACTORY_S,
+  triggerDelayS,
+} from './trigger';
 
 /**
  * Tiempo inspiratorio máximo de una respiración soportada (s), P. El ciclado por flujo puede no llegar —esfuerzo
@@ -85,7 +92,9 @@ export class VcController {
   private hold: HoldRun | null = null;
   private manualRequested = false;
   /** Disparo detectado y pendiente de servir cuando pase el retardo de respuesta. */
-  private triggerPending: { atS: number; next: BreathType } | null = null;
+  private triggerPending: { atS: number; next: BreathType; delayS: number } | null = null;
+  /** Demanda inspiratoria del paciente que el regulador de PEEP ya compensa (L/s): filtro de su acción integral (U-43). */
+  private qDemandFilt = 0;
   /** Muestras (t, Paw) de la espiración en curso: de ahí sale la PEEPe anterior a la caída del esfuerzo. */
   private expPawTrace: { t: number; paw: number }[] = [];
   /** Instante en que se detectó el disparo que terminó la espiración (null si no lo hubo). */
@@ -188,6 +197,7 @@ export class VcController {
   /** CPAP/PS: espiración sin respiración en curso, a la espera del paciente; los temporizadores de respaldo corren desde aquí. */
   private esperarDisparo(): void {
     this.triggerPending = null;
+    this.qDemandFilt = 0;
     this.expPawTrace = [];
     this.lastTriggerDetectedS = null;
     this.breath = null;
@@ -204,6 +214,7 @@ export class VcController {
     this.breath = null; // la respiración en curso se descarta (causa standby); no se registra como completa
     this.apnea = false;
     this.triggerPending = null;
+    this.qDemandFilt = 0;
     this.expPawTrace = [];
     this.lastTriggerDetectedS = null;
     this.phase = 'standby';
@@ -326,7 +337,7 @@ export class VcController {
       // El temporizador de FR gobierna la siguiente obligatoria: el tiempo no usado por una inspiración acortada (Pmáx) va a la espiración (P).
       case 'exp': {
         const pendiente = this.triggerPending
-          ? Math.max(0, this.triggerPending.atS + TRIGGER_DELAY_S - this.simT)
+          ? Math.max(0, this.triggerPending.atS + this.triggerPending.delayS - this.simT)
           : Number.POSITIVE_INFINITY;
         const plazo = this.settings.mode === 'CPAP_PS' ? this.plazoDeRespaldo() : t.tCycleS;
         return Math.min(pendiente, Math.max(0, plazo - this.tBreath - this.tPhase));
@@ -559,6 +570,13 @@ export class VcController {
         // queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
         const rValve = p.params.rExpValve ?? 0;
         const tOpen = Math.max(0, (p.params.expValveOpenMs ?? DEFAULT_EXP_VALVE_OPEN_MS) / 1000);
+        // Regulador de PEEP con ancho de banda finito (U-43): si el paciente tira gas (demanda > 0) la fuente no es
+        // ideal sino peep + K·demandaYaCompensada con una resistencia extra K. En álgebra, py = peep − rValve·q −
+        // K·(q − qFilt): la caída es proporcional a la demanda NO compensada y desaparece en régimen cuando qFilt ≈ q.
+        const K = PEEP_REGULATOR_DROOP_CMH2O_S_L;
+        const qLibre = p.flowForPaw(peep, this.pmusAt(this.simT), p.v, rValve);
+        const pawSrc = qLibre > 0 ? peep + K * this.qDemandFilt : peep,
+          rDroop = qLibre > 0 ? K : 0;
         let dV = 0,
           dVLeak = 0,
           qEnd = 0,
@@ -571,8 +589,8 @@ export class VcController {
           const hs = h / nSub;
           for (let i = 0; i < nSub; i++) {
             const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
-            const rNow = rValve + VALVE_CLOSED_R * u * u;
-            const r = p.integratePressureSource(peep, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
+            const rNow = rValve + rDroop + VALVE_CLOSED_R * u * u;
+            const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
             dV += r.dV;
             dVLeak += r.dVLeak;
             qEnd = r.qEnd;
@@ -580,13 +598,17 @@ export class VcController {
             pyEnd = r.pyEnd;
           }
         } else {
-          const r = p.integratePressureSource(peep, this.pmusAt, this.simT, h, false, s.biasFlow, rValve, EXP_MAX_FLOW_LPS);
+          const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT, h, false, s.biasFlow, rValve + rDroop, EXP_MAX_FLOW_LPS);
           dV = r.dV;
           dVLeak = r.dVLeak;
           qEnd = r.qEnd;
           qLeakEnd = r.qLeakEnd;
           pyEnd = r.pyEnd;
         }
+        // Acción integral del regulador: la demanda ya compensada sigue al flujo que la máquina realmente sirve
+        // (q > 0 = hacia el paciente) con τ de 0,1 s. En espiración pasiva decae a 0 y la vía queda como antes.
+        const qVent = Math.max(0, qEnd + qLeakEnd);
+        this.qDemandFilt += Math.min(1, h / PEEP_REGULATOR_TAU_S) * (qVent - this.qDemandFilt);
         // El gas comprimido en el circuito vuelve por la válvula como un flujo más: lo ve el sensor de la máquina.
         const delta = this.circuitTransfer(pyEnd, h, qEnd + qLeakEnd);
         // VTe de pantalla: lo que vuelve por la válvula espiratoria, que es lo que sale del pulmón menos lo que se va por la fuga.
@@ -613,7 +635,12 @@ export class VcController {
         ) {
           // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
           // paciente tira del flujo de base. En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida.
-          this.triggerPending = { atS: this.simT + h, next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted' };
+          this.triggerPending = {
+            atS: this.simT + h,
+            next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted',
+            // El retardo se congela al detectar: un cambio del tipo de disparo a mitad de espera no lo altera.
+            delayS: triggerDelayS(s.triggerByPressure),
+          };
           this.lastTriggerDetectedS = this.simT + h;
           this.events.push({ type: 'trigger', breathId: this.breath?.breathId ?? '', simTimeS: this.simT + h, qLps: qEnd });
         }
@@ -750,6 +777,7 @@ export class VcController {
     const peepe = this.peepeAtExpEnd(next);
     if (this.breath) this.breath.peepeEnd = peepe;
     this.lastExpPaw = peepe;
+    this.qDemandFilt = 0; // la inspiración corta la demanda que quedara filtrada
     this.expPawTrace = [];
     this.lastTriggerDetectedS = null;
     if (this.apnea && (next === 'spontaneous' || next === 'assisted')) {
@@ -854,6 +882,7 @@ export class VcController {
     if (prev) this.finishBreath(prev);
     const breathId = `b${this.breathSeq + 1}`;
     this.triggerPending = null;
+    this.qDemandFilt = 0;
     const modeBefore = this.settings.mode;
     this.flushPending(breathId);
     const s = this.settings;

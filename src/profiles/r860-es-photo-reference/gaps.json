@@ -353,8 +353,8 @@
     {
       "id": "U-43",
       "question": "Deflexión de presión durante un esfuerzo inefectivo: depende del ancho de banda del regulador de PEEP del equipo, que no está publicado.",
-      "policy": "P: el regulador de PEEP es ideal hasta el flujo de base, así que la huella de un esfuerzo inefectivo aparece en el flujo (muesca) pero no en la presión. Declarado como límite y fijado por prueba, en vez de inventar una constante de control.",
-      "status": "nueva (v0.4.5)",
+      "policy": "P: regulador de PEEP con ancho de banda finito — caída K·(demanda no compensada) con K = 3 cmH2O·s/L y recuperación integral con τ = 0,1 s. Una demanda inspiratoria repentina hunde la Pva transitoriamente; en régimen la caída desaparece y la Pva vuelve a PEEP. Sólo actúa cuando el esfuerzo tira gas (demanda > 0, superada la PEEP intrínseca); la vía pasiva queda idéntica. El ancho de banda real del equipo sigue sin publicar.",
+      "status": "revisada (v0.4.7)",
       "blocks": []
     },
     {
@@ -423,8 +423,8 @@
     {
       "id": "U-53",
       "question": "Tiempo de respuesta del disparo del R860 (detección, decisión y apertura de válvula) y ancho de banda de su regulador de PEEP durante ese lapso; no publicados en las fuentes leídas.",
-      "policy": "P: retardo fijo de 80 ms, dentro del rango de banco de los ventiladores de cuidados intensivos (60–150 ms), con el regulador de PEEP ideal hasta el flujo de base (U-43). La caída de presión resultante (≈ 2 cmH2O con Pmus 8 y base 4) es del orden de la publicada en bancos; no reproduce la cifra del equipo.",
-      "status": "nueva (v0.4.1)",
+      "policy": "P: retardo por tipo de disparo — 80 ms por flujo y 110 ms por presión (la caída debe propagarse y medirse en la rama), dentro del rango de banco ICU (60–100 ms flujo, 100–150 ms presión), con el regulador de PEEP de ancho de banda finito (U-43). La caída resultante es del orden de la publicada en bancos; no reproduce la cifra del equipo.",
+      "status": "revisada (v0.4.7)",
       "blocks": []
     }
   ],
