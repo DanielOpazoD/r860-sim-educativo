@@ -207,6 +207,16 @@ export const PHYS: Record<string, PhysSpec> = {
     get: (fr) => (fr.truth.effort.enabled ? fr.truth.effort.amplitude : 0),
     cmd: (v) => ({ type: 'setEffort', params: { enabled: v > 0, amplitude: v } }),
   },
+  effortExp: {
+    label: 'Esfuerzo espiratorio',
+    unit: 'cmH₂O',
+    min: 0,
+    max: 15,
+    step: 1,
+    help: 'patient.effortExp',
+    get: (fr) => fr.truth.effort.expAmplitude ?? 0,
+    cmd: (v) => ({ type: 'setEffort', params: { expAmplitude: v > 0 ? v : undefined } }),
+  },
   patientRR: {
     label: 'Frecuencia del paciente',
     unit: '/min',
@@ -261,7 +271,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setSensors', params: { fio2Bias: v / 100 } }),
   },
 };
-export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
+export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort', 'effortExp'];
 export const PATIENT_EXTRA = [
   'secondCrs',
   'secondR',

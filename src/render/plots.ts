@@ -665,18 +665,21 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
 export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: number): void {
   const { ctx, w, h } = context(canvas),
     recent = points.filter((p) => p[0] >= end - 10 && p[0] <= end),
-    max = Math.max(10, ...recent.map((p) => p[4] * 1.3)),
     top = 14,
-    bottom = h - 10;
+    bottom = h - 10,
+    // La espiración activa lleva Pmus a valores negativos: eje simétrico con línea de cero explícita.
+    hi = Math.max(10, ...recent.map((p) => p[4] * 1.3)),
+    lo = Math.min(0, ...recent.map((p) => p[4] * 1.3)),
+    y = (v: number) => bottom - ((v - lo) / (hi - lo)) * (bottom - top);
   line(ctx, 0, bottom, w, bottom, '#6385a64a');
-  line(ctx, 0, (top + bottom) / 2, w, (top + bottom) / 2, '#6385a62a');
+  line(ctx, 0, lo < 0 ? y(0) : (top + bottom) / 2, w, lo < 0 ? y(0) : (top + bottom) / 2, '#6385a62a');
   if (!recent.length) return;
   ctx.beginPath();
   recent.forEach((p, i) => {
     const x = ((p[0] - (end - 10)) / 10) * w,
-      y = bottom - (p[4] / max) * (bottom - top);
-    if (i) ctx.lineTo(x, y);
-    else ctx.moveTo(x, y);
+      yy = y(p[4]);
+    if (i) ctx.lineTo(x, yy);
+    else ctx.moveTo(x, yy);
   });
   ctx.strokeStyle = '#b2a5ee';
   ctx.lineWidth = 2;

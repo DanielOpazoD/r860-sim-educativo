@@ -268,6 +268,13 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'Constante de tiempo espiratoria: τ = Rexp × CEST',
   },
+  'patient.effortExp': {
+    title: 'Esfuerzo espiratorio',
+    text: [
+      'Contracción espiratoria activa: Pmus negativa en medio seno que empieza al final de la inspiración neural.',
+      'Aumenta el flujo espiratorio y puede vaciar el pulmón por debajo de la FRC. Si hay limitación al flujo espiratorio (colapso), el esfuerzo no aumenta el flujo a igual volumen (mecanismo de Starling).',
+    ],
+  },
   'patient.effort': {
     title: 'Intensidad del esfuerzo',
     text: [

@@ -190,6 +190,13 @@ export interface EffortParams {
   shape?: 'halfSine' | 'riseRelax';
   /** Constante de tiempo de la relajación (s); sólo con 'riseRelax'. */
   relaxTauS?: number;
+  /**
+   * Amplitud de la contracción espiratoria activa (cmH2O): Pmus NEGATIVA en medio seno que empieza al terminar la
+   * inspiración neural (τ = tiS) y se suma a la cola de relajación de 'riseRelax'. Ausente o 0 = espiración pasiva.
+   */
+  expAmplitude?: CmH2O;
+  /** Duración del pulso espiratorio (s); por omisión 0,6, con tope 0,8·(período − tiS). */
+  expTiS?: number;
   /** Variabilidad determinista respiración a respiración (fracciones 0–0,5): la amplitud y el período de cada esfuerzo se escalan por 1 + frac·(2u − 1), con u de un generador con semilla (la de la sesión). Ausente o 0 = esfuerzo perfectamente periódico. P. */
   variability?: { amplitudeFrac: number; periodFrac: number };
 }
