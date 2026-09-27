@@ -113,6 +113,56 @@ export const PHYS: Record<string, PhysSpec> = {
       params: fr.truth.patient.sigmoid ? { sigmoid: { ...fr.truth.patient.sigmoid, d: v } } : {},
     }),
   },
+  recruitFrac: {
+    label: 'Reclutamiento: capacidad ganable',
+    unit: '% de C',
+    min: 0,
+    max: 100,
+    step: 5,
+    help: 'patient.recruit',
+    get: (fr) => (fr.truth.patient.recruit?.frac ?? 0) * 100,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: {
+        recruit:
+          v <= 0
+            ? undefined
+            : {
+                frac: v / 100,
+                pOpen: fr.truth.patient.recruit?.pOpen ?? 28,
+                pClose: fr.truth.patient.recruit?.pClose ?? 10,
+                tauOpenS: fr.truth.patient.recruit?.tauOpenS ?? 0.5,
+                tauCloseS: fr.truth.patient.recruit?.tauCloseS ?? 5,
+              },
+      },
+    }),
+  },
+  recruitPOpen: {
+    label: 'Reclutamiento: presión de apertura',
+    unit: 'cmH₂O',
+    min: 5,
+    max: 45,
+    step: 1,
+    help: 'patient.recruit',
+    get: (fr) => fr.truth.patient.recruit?.pOpen ?? 28,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: fr.truth.patient.recruit ? { recruit: { ...fr.truth.patient.recruit, pOpen: v } } : {},
+    }),
+  },
+  recruitPClose: {
+    label: 'Reclutamiento: presión de cierre',
+    unit: 'cmH₂O',
+    min: 0,
+    max: 30,
+    step: 1,
+    help: 'patient.recruit',
+    get: (fr) => fr.truth.patient.recruit?.pClose ?? 10,
+    cmd: (v, fr) => ({
+      type: 'setPatient',
+      params: fr.truth.patient.recruit ? { recruit: { ...fr.truth.patient.recruit, pClose: v } } : {},
+    }),
+  },
   secondCrs: {
     label: 'Segunda unidad: compliance',
     unit: 'mL/cmH₂O',
@@ -251,6 +301,32 @@ export const PHYS: Record<string, PhysSpec> = {
       params: { variability: v > 0 ? { amplitudeFrac: v / 100, periodFrac: v / 100 } : undefined },
     }),
   },
+  reverseAmp: {
+    label: 'Disparo reverso (Pmus evocada)',
+    unit: 'cmH₂O',
+    min: 0,
+    max: 15,
+    step: 0.5,
+    help: 'patient.reverse',
+    get: (fr) => fr.truth.effort.reverse?.amplitude ?? 0,
+    cmd: (v, fr) => ({
+      type: 'setEffort',
+      params: { reverse: v > 0 ? { amplitude: v, delayS: fr.truth.effort.reverse?.delayS ?? 0.5 } : undefined },
+    }),
+  },
+  reverseDelay: {
+    label: 'Latencia del disparo reverso',
+    unit: 's',
+    min: 0.1,
+    max: 1.5,
+    step: 0.1,
+    help: 'patient.reverseDelay',
+    get: (fr) => fr.truth.effort.reverse?.delayS ?? 0.5,
+    cmd: (v, fr) => ({
+      type: 'setEffort',
+      params: { reverse: { amplitude: fr.truth.effort.reverse?.amplitude ?? 0, delayS: v } },
+    }),
+  },
   o2Tau: {
     label: 'Sensor O₂: constante',
     unit: 's',
@@ -281,6 +357,9 @@ export const PATIENT_EXTRA = [
   'sigmoidB',
   'sigmoidC',
   'sigmoidD',
+  'recruitFrac',
+  'recruitPOpen',
+  'recruitPClose',
   'viscoelastic',
   'viscTau',
   'rohrer',
@@ -290,6 +369,8 @@ export const PATIENT_EXTRA = [
   'patientRR',
   'muscleTi',
   'effortVariability',
+  'reverseAmp',
+  'reverseDelay',
   'o2Tau',
   'o2Bias',
 ];

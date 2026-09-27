@@ -31,7 +31,7 @@ import { VcController } from './controller';
 import type { ControllerEvent } from './controllerTypes';
 import { EffortGenerator } from './effort';
 import { MetricEngine } from './metrics';
-import { equilibriumVolumeFor, PatientModel } from './patient';
+import { equilibriumVolumeFor, PatientModel, recruitmentAtRest } from './patient';
 import { ProcedureManager, type O2ProcedureState } from './procedures';
 import { FlowSensor, O2Sensor, SampleRing } from './sensors';
 import { ENGINE_VERSION } from './version';
@@ -67,8 +67,10 @@ export interface Truth {
   pel: number;
   /** Aporte del elemento viscoelástico a la presión elástica (cmH2O); 0 sin E2. */
   pVisc: number;
-  /** Compliance local del modelo (L/cmH2O): con sigmoide cambia con el volumen. */
+  /** Compliance local del modelo (L/cmH2O): con sigmoide cambia con el volumen; con reclutamiento, con la fracción abierta. */
   cLocal: number;
+  /** Fracción reclutada de la capacidad ganable (0–1); 0 sin `recruit`. */
+  recruited: number;
   pmus: number;
   /** Gas comprimido en el circuito (L): Cc·Py del nodo; 0 sin compliance del circuito. */
   vCircL: number;
@@ -178,7 +180,8 @@ export class Simulator {
     this.init = init;
     this.clock = new SimClock(init.dtMs, init.startWallTimeMs);
     const peep = init.settings.peep === 'off' ? 0 : init.settings.peep;
-    const v0 = init.initialV === 'equilibrium' ? equilibriumVolumeFor(init.patient, peep) : init.initialV;
+    const v0 =
+      init.initialV === 'equilibrium' ? equilibriumVolumeFor(init.patient, peep, recruitmentAtRest(init.patient, peep)) : init.initialV;
     this.patient = new PatientModel(init.patient, v0);
     this.effort = new EffortGenerator(init.effort, init.seed);
     this.controller = new VcController(this.patient, this.effort, init.settings);
@@ -397,7 +400,15 @@ export class Simulator {
     this.procedures.step(this.clock.simTimeMs);
     this.drainController();
     // Vigilancia de divergencia: si el modelo deja de dar números finitos hay que decirlo, no seguir publicando.
-    if (!this.diverged && !(Number.isFinite(this.patient.v) && Number.isFinite(this.patient.vVisc) && Number.isFinite(this.patient.v2))) {
+    if (
+      !this.diverged &&
+      !(
+        Number.isFinite(this.patient.v) &&
+        Number.isFinite(this.patient.vVisc) &&
+        Number.isFinite(this.patient.v2) &&
+        Number.isFinite(this.patient.recruited)
+      )
+    ) {
       this.diverged = true;
       this.logEvent('discontinuity', 'system', { reason: 'el modelo dejó de dar números finitos', simTimeMs: this.clock.simTimeMs });
     }
@@ -466,6 +477,7 @@ export class Simulator {
         pel: this.patient.pel(),
         pVisc: this.patient.pVisc,
         cLocal: this.patient.compliance(),
+        recruited: this.patient.recruited,
         pmus: this.effort.pmusAt(t / 1000),
         vCircL: this.controller.vCirc,
         peepiEndExp: Math.max(0, this.patient.equilibratedPressure(this.breathVStart, this.breathV2Start) - this.controller.peepTarget),

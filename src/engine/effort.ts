@@ -16,18 +16,26 @@ export class EffortGenerator {
   private onsetS: number | null = null;
   private periodS = 0;
   private ampFactor = 1;
+  /** Disparo reverso: respiraciones de máquina contadas y onset de la contracción evocada pendiente. */
+  private machineCount = 0;
+  private reverseOnsetS: number | null = null;
   constructor(params: EffortParams, seed = 1) {
     this.params = { ...params };
     this.rng = mulberry32(seed);
   }
-  /** Forma del pulso: `tau` dentro del esfuerzo, `amp` pico, `ti` instante del pico (riseRelax) o duración (halfSine). */
-  private pulse(tau: number, amp: number, ti: number): number {
+  /** Subida en cuarto de seno hasta `ti` y relajación exponencial; la forma del disparo reverso es siempre ésta. */
+  private riseRelaxPulse(tau: number, amp: number, ti: number): number {
     const p = this.params;
-    if ((p.shape ?? 'halfSine') === 'halfSine') return tau < ti ? amp * Math.sin((Math.PI * tau) / ti) : 0;
     if (tau < ti) return amp * Math.sin((Math.PI * tau) / (2 * ti));
     const tauRel = Math.max(1e-3, p.relaxTauS ?? DEFAULT_RELAX_TAU_S);
     const v = amp * Math.exp(-(tau - ti) / tauRel);
     return v < 1e-3 * amp ? 0 : v;
+  }
+  /** Forma del pulso espontáneo: `tau` dentro del esfuerzo, `amp` pico, `ti` instante del pico (riseRelax) o duración (halfSine). */
+  private pulse(tau: number, amp: number, ti: number): number {
+    const p = this.params;
+    if ((p.shape ?? 'halfSine') === 'halfSine') return tau < ti ? amp * Math.sin((Math.PI * tau) / ti) : 0;
+    return this.riseRelaxPulse(tau, amp, ti);
   }
   /**
    * Contracción espiratoria activa (P): medio seno NEGATIVO que arranca al final de la inspiración neural (τ = ti)
@@ -50,15 +58,35 @@ export class EffortGenerator {
     this.periodS = (60 / p.ratePerMin) * (1 + (v?.periodFrac ?? 0) * (2 * this.rng() - 1));
     this.ampFactor = 1 + (v?.amplitudeFrac ?? 0) * (2 * this.rng() - 1);
   }
+  /**
+   * Disparo reverso (P): cada respiración iniciada por la máquina ('mandatory'/'backup') puede evocar una
+   * contracción fase-bloqueada; una de cada `ratio` la programa `delayS` después del inicio de la insuflación.
+   * Sólo una evocada pendiente: una notificación que llega antes de la anterior la sobrescribe.
+   */
+  notifyMachineBreath(tS: number): void {
+    const r = this.params.reverse;
+    if (!this.params.enabled || !r || r.amplitude <= 0) return;
+    this.machineCount++;
+    if (this.machineCount % (r.ratio ?? 1) === 0) this.reverseOnsetS = tS + r.delayS;
+  }
   pmusAt(tS: number): number {
     const p = this.params;
-    if (!p.enabled || p.amplitude <= 0 || p.ratePerMin <= 0) return 0;
+    if (!p.enabled) return 0;
+    // Si quitaron `reverse` por setEffort, el conteo se limpia una vez (con params externos no hay setter).
+    if (!p.reverse && this.machineCount > 0) {
+      this.machineCount = 0;
+      this.reverseOnsetS = null;
+    }
+    let evocado = 0;
+    if (p.reverse && p.reverse.amplitude > 0 && this.reverseOnsetS !== null && tS >= this.reverseOnsetS)
+      evocado = this.riseRelaxPulse(tS - this.reverseOnsetS, p.reverse.amplitude, p.tiS);
+    if (p.amplitude <= 0 || p.ratePerMin <= 0) return evocado;
     const v = p.variability;
     // Sin variabilidad la fórmula periódica pura se conserva bit a bit: mismo resultado que siempre.
     if (!v || (v.amplitudeFrac === 0 && v.periodFrac === 0)) {
       const period = 60 / p.ratePerMin;
       const tau = (((tS - p.phaseS) % period) + period) % period;
-      return this.pulse(tau, p.amplitude, p.tiS) + this.expPulse(tau, p.tiS, period, 1);
+      return this.pulse(tau, p.amplitude, p.tiS) + this.expPulse(tau, p.tiS, period, 1) + evocado;
     }
     // Con variabilidad los esfuerzos se encadenan: cada uno sortea su período y su amplitud (monótono en t).
     if (this.onsetS === null) {
@@ -69,9 +97,9 @@ export class EffortGenerator {
       this.onsetS += this.periodS;
       this.draw();
     }
-    if (tS < this.onsetS) return 0;
+    if (tS < this.onsetS) return evocado;
     const tau = tS - this.onsetS,
       ti = Math.min(p.tiS, 0.8 * this.periodS);
-    return this.pulse(tau, p.amplitude * this.ampFactor, ti) + this.expPulse(tau, ti, this.periodS, this.ampFactor);
+    return this.pulse(tau, p.amplitude * this.ampFactor, ti) + this.expPulse(tau, ti, this.periodS, this.ampFactor) + evocado;
   }
 }
