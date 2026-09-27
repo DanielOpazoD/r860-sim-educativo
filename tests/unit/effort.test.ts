@@ -97,3 +97,49 @@ describe('Pmus · variabilidad determinista respiración a respiración', () => 
     expect(distintos).toBe(true);
   });
 });
+
+// Disparo reverso (entrainment, P): contracción 'riseRelax' evocada por las respiraciones de máquina.
+describe('Pmus · disparo reverso (entrainment)', () => {
+  const base = { enabled: true, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0, shape: 'riseRelax' as const };
+
+  it('sin `reverse`, pmusAt es idéntico en todas las muestras (bit a bit)', () => {
+    const a = new EffortGenerator({ ...base, amplitude: 8 });
+    const b = new EffortGenerator({ ...base, amplitude: 8, reverse: { amplitude: 5, delayS: 0.5 } });
+    for (let i = 0; i < 2000; i++) expect(b.pmusAt(i * 0.004)).toBe(a.pmusAt(i * 0.004));
+  });
+
+  it('la evocada arranca en onset + delayS y hace pico en +tiS, aunque la amplitud espontánea sea 0', () => {
+    const g = new EffortGenerator({ ...base, reverse: { amplitude: 8, delayS: 0.5 } });
+    g.notifyMachineBreath(10);
+    expect(g.pmusAt(10.4)).toBe(0); // antes del onset evocado
+    expect(g.pmusAt(10.5 + 0.8)).toBeCloseTo(8, 6); // pico en delay + tiS
+    expect(g.pmusAt(10.5 + 0.8 + 0.15)).toBeCloseTo(8 * Math.exp(-1), 3); // una τ de relajación (0,15 por omisión)
+  });
+
+  it('con ratio 2 sólo evoca en una de cada dos respiraciones de máquina', () => {
+    const g = new EffortGenerator({ ...base, reverse: { amplitude: 8, delayS: 0.5, ratio: 2 } });
+    g.notifyMachineBreath(0); // cuenta 1: no evoca
+    expect(g.pmusAt(1.3)).toBe(0);
+    g.notifyMachineBreath(10); // cuenta 2: sí evoca
+    expect(g.pmusAt(11.3)).toBeCloseTo(8, 6);
+  });
+
+  it('una notificación nueva sobrescribe la evocada pendiente', () => {
+    const g = new EffortGenerator({ ...base, reverse: { amplitude: 8, delayS: 0.5 } });
+    g.notifyMachineBreath(0);
+    g.notifyMachineBreath(2); // la anterior queda sustituida
+    expect(g.pmusAt(1.3)).toBe(0); // la del onset 0,5 ya no existe (a 1,3 debería hacer pico)
+    expect(g.pmusAt(3.3)).toBeCloseTo(8, 6); // onset 2,5 + tiS 0,8
+  });
+
+  it('disabled o reverse ausente anulan la evocada; validateEffort acota los campos', () => {
+    const off = new EffortGenerator({ ...base, enabled: false, reverse: { amplitude: 8, delayS: 0.5 } });
+    off.notifyMachineBreath(0);
+    expect(off.pmusAt(1.3)).toBe(0);
+    const b = { enabled: true, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0 };
+    expect(validateEffort({ ...b, reverse: { amplitude: 8, delayS: 0.5 } })).toEqual([]);
+    expect(validateEffort({ ...b, reverse: { amplitude: 25, delayS: 0.5 } }).length).toBeGreaterThan(0);
+    expect(validateEffort({ ...b, reverse: { amplitude: 8, delayS: 3 } }).length).toBeGreaterThan(0);
+    expect(validateEffort({ ...b, reverse: { amplitude: 8, delayS: 0.5, ratio: 4 as never } }).length).toBeGreaterThan(0);
+  });
+});
