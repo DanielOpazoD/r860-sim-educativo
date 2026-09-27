@@ -285,6 +285,12 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       case 'clearLoop':
         plots.clearLoopReference();
         break;
+      case 'waveReference':
+        plots.saveWaveReference();
+        break;
+      case 'clearWaveRef':
+        plots.clearWaveReference();
+        break;
       case 'tools':
         ctx.dialog.open('tools', 'Mecánica y procedimientos', toolsHTML());
         break;

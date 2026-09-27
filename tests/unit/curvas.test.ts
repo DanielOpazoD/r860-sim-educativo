@@ -7,6 +7,7 @@ import {
   cyclePoints,
   getBounds,
   nearestSample,
+  referenceShift,
   stableBounds,
   timeAxisLabels,
   visiblePoints,
@@ -250,6 +251,37 @@ describe('CUR-03 · congeladas, el eje y el cursor dicen el mismo tiempo', () =>
       const pts = traza(ids);
       for (const w of ['last', 'current'] as const) expect(cyclePoints(pts, w), `${w} ${ids.join(',')}`).toEqual(antiguo(pts, w));
     }
+  });
+
+  it('la respiración de referencia se alinea al inicio del último ciclo visible', () => {
+    const mk = (t: number, id: number): Point => [t, 10 + t, 0, 0, 0, id];
+    // La referencia guardada arranca en 6,0 s y la última respiración a la vista en 11,0 s: el fantasma se corre 5 s.
+    const all: Point[] = [mk(1.0, 1), mk(1.5, 1), mk(6.0, 2), mk(6.5, 2), mk(11.0, 3), mk(11.2, 3), mk(11.4, 3)];
+    expect(
+      referenceShift(
+        all.filter((p) => p[0] >= 11.0),
+        all,
+        all.filter((p) => p[5] === 2),
+      ),
+    ).toBeCloseTo(5.0, 9);
+    // Aunque la primera muestra del ciclo en curso ya salió de la ventana, el ancla es su inicio real en la traza.
+    expect(
+      referenceShift(
+        all.filter((p) => p[0] >= 11.2),
+        all,
+        all.filter((p) => p[5] === 2),
+      ),
+    ).toBeCloseTo(5.0, 9);
+    // Sin respiración a la vista, sin referencia o con muestras sin ciclo asignado no hay nada que alinear.
+    expect(
+      referenceShift(
+        [],
+        all,
+        all.filter((p) => p[5] === 2),
+      ),
+    ).toBeNull();
+    expect(referenceShift(all, all, [])).toBeNull();
+    expect(referenceShift([mk(1, 0)], [mk(1, 0)], [mk(6, 2)])).toBeNull();
   });
 
   it('el lector no escribe un cero con signo', () => {

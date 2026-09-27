@@ -414,6 +414,9 @@ export function startApp(opts: AppOptions): void {
     get points() {
       return plots.points.length;
     },
+    get waveRef() {
+      return plots.waveRefAt;
+    },
     /** Banderas de la lección: las pruebas de extremo a extremo esperan por ellas en vez de por un plazo fijo. */
     get lessonFlags() {
       return lesson.flags;

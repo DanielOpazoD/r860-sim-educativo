@@ -32,6 +32,8 @@ declare global {
       points: number;
       /** Valor amortiguado que muestra la columna de presión. */
       gaugePaw: number | null;
+      /** Inicio (s de simulación) de la respiración guardada como referencia, o null. */
+      waveRef: number | null;
     };
   }
 }

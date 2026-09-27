@@ -45,6 +45,11 @@ export interface PlotsView {
   toggleFreeze(): void;
   saveLoopReference(): void;
   clearLoopReference(): void;
+  /** Guarda la última respiración completa como referencia dibujada atenuada bajo las curvas. */
+  saveWaveReference(): void;
+  clearWaveReference(): void;
+  /** Instante de inicio de la respiración guardada como referencia (s), o null. */
+  readonly waveRefAt: number | null;
   setWaveWindow(s: number): void;
   setWaveStyle(style: 'sweep' | 'scroll'): void;
   /** Deslizador de historia (0–1000) con las curvas congeladas. */
@@ -69,7 +74,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     reviewEnd = 0,
     cursorTime: number | null = null,
     cursorRatio: number | null = null,
-    loopReference: Point[] | null = null;
+    loopReference: Point[] | null = null,
+    waveReference: Point[] | null = null;
   let dirty = true,
     lastPlot = 0,
     lastView = '';
@@ -138,6 +144,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         bounds: waveBounds('waves', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
+        reference: waveReference,
       });
     else if (view === 'basic')
       drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
@@ -147,6 +154,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         bounds: waveBounds('basic', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
+        reference: waveReference,
       });
     else if (view === 'loops') {
       drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv', {
@@ -248,6 +256,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         triggerDetectionsS = [];
         lastTriggerSeq = 0;
         loopReference = null;
+        waveReference = null;
         resetScales();
       }
       for (const e of fr.eventsTail) {
@@ -268,6 +277,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       triggerDetectionsS = [];
       lastTriggerSeq = 0;
       loopReference = null;
+      waveReference = null;
       resetScales();
     },
     clearPoints() {
@@ -297,6 +307,34 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     clearLoopReference() {
       loopReference = null;
       put('#loop-reference-label', 'Sin referencia');
+      dirty = true;
+    },
+    get waveRefAt() {
+      return waveReference?.length ? waveReference[0]![0] : null;
+    },
+    saveWaveReference() {
+      const cyc = cyclePoints(points);
+      if (cyc.length < 3) {
+        ctx.toast('Espera un ciclo completo.', true);
+        return;
+      }
+      waveReference = cyc.map((x) => [...x] as Point);
+      const btn = $<HTMLButtonElement>('#wave-ref-button');
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+      (btn.querySelector('span') as HTMLElement).textContent = `Ref ${clock(cyc[0]![0])}`;
+      $('#wave-ref-clear').hidden = false;
+      ctx.lesson.flags.referenceWave = true;
+      dirty = true;
+      ctx.lesson.evaluate();
+    },
+    clearWaveReference() {
+      waveReference = null;
+      const btn = $<HTMLButtonElement>('#wave-ref-button');
+      btn.classList.remove('active');
+      btn.setAttribute('aria-pressed', 'false');
+      (btn.querySelector('span') as HTMLElement).textContent = 'Referencia';
+      $('#wave-ref-clear').hidden = true;
       dirty = true;
     },
     setWaveWindow(s) {
