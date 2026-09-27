@@ -237,12 +237,28 @@ export function canvasLogicalWidth(canvas: HTMLCanvasElement): number {
   return setups.get(canvas)?.w ?? Number(canvas.getAttribute('width'));
 }
 
+/**
+ * Desplazamiento temporal (s) con que se dibuja la respiración de referencia: su inicio queda alineado con el de la
+ * respiración visible más reciente, que es con la que el alumno la compara. El inicio real del ciclo se busca en la
+ * traza completa —su primera muestra puede haber quedado fuera de la ventana—. null cuando no hay con qué alinearla
+ * (sin muestras a la vista o sin respiración asignada).
+ */
+export function referenceShift(visible: Point[], all: Point[], ref: Point[]): number | null {
+  if (!ref.length || !visible.length) return null;
+  const id = visible[visible.length - 1]![5];
+  if (id <= 0) return null;
+  for (const p of all) if (p[5] === id) return p[0] - ref[0]![0];
+  return null;
+}
+
 export interface WaveOptions {
   window?: number;
   style?: 'sweep' | 'scroll';
   single?: boolean;
   frozen?: boolean;
   cursorTime?: number | null;
+  /** Ciclo medido guardado como referencia: se dibuja tenue bajo la traza, alineado al inicio de la última respiración visible. */
+  reference?: Point[] | null;
   /** Escala ya decidida por quien llama (con histéresis, `stableBounds`); sin ella, la de lo visible en este cuadro. */
   bounds?: Bounds;
   /** Techo de presión Pmáx del ajuste vigente: se dibuja como línea de referencia en el panel de Pva. */
@@ -265,6 +281,8 @@ export function drawWave(
     win = options.window ?? 12,
     style = options.style ?? 'sweep';
   const points = visiblePoints(all, end, win);
+  const ref = options.reference?.length ? options.reference : null,
+    refShift = ref ? referenceShift(points, all, ref) : null;
   const range = options.bounds ?? getBounds(points, peep, vtMl),
     single = options.single ?? false;
   type Spec = {
@@ -416,6 +434,32 @@ export function drawWave(
       ctx.closePath();
       ctx.fillStyle = gradient;
       ctx.fill();
+    }
+    // Respiración de referencia: atenuada, sobre el relleno y bajo el trazo de la curva actual, como el fantasma de
+    // los monitores. Se compara de forma, no de fase — si el ciclo actual cambió de duración la referencia no se
+    // estira, y esa diferencia es justo lo que se quiere ver.
+    if (ref && refShift !== null) {
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = '#edc87eb3';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      let refStarted = false,
+        refPrevX = 0;
+      for (const p of ref) {
+        const x = xfn(p[0] + refShift);
+        if (x < left - 0.5 || x > w - right + 0.5) continue;
+        const y = yf(p[sp.index]);
+        if (!refStarted || x < refPrevX - plotW * 0.5) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        refStarted = true;
+        refPrevX = x;
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const seg of segments) {
+      if (seg.length < 2) continue;
       ctx.strokeStyle = sp.color;
       ctx.lineWidth = 1.8;
       ctx.lineJoin = 'round';

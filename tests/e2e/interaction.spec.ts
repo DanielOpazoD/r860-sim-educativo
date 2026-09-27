@@ -565,6 +565,57 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   });
 });
 
+test.describe('CUR · respiración de referencia superpuesta', () => {
+  test('guardar una referencia dibuja el ciclo previo atenuado bajo la traza actual', async ({ page }) => {
+    await open(page, { speed: 4 });
+    await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(2);
+    await page.click('#wave-ref-button');
+    await expect(page.locator('#wave-ref-button')).toHaveClass(/active/);
+    await expect(page.locator('#wave-ref-button')).toContainText('Ref');
+    await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
+    await expect(page.locator('#wave-ref-clear')).toBeVisible();
+    // Para que el fantasma no quede escondido bajo una curva idéntica, suben PEEP y Vt: la referencia queda
+    // con la línea de base y el volumen viejos bajo la traza nueva — la separación es el punto didáctico.
+    const bc0 = (await frame(page)).breathCount;
+    await page.click('[data-setting-quick="peep"]');
+    for (let k = 0; k < 6; k++) await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Enter');
+    await page.click('[data-setting-quick="vt"]');
+    for (let k = 0; k < 4; k++) await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Enter');
+    await expect
+      .poll(async () => (await frame(page)).breathCount, { timeout: 20_000 })
+      .toBeGreaterThanOrEqual(bc0 + 2);
+    // Con la traza congelada el dibujo es estático: los únicos píxeles que cambian al quitar la referencia son
+    // los del fantasma. La línea base se toma tras el primer repintado congelado.
+    await page.click('#freeze-button');
+    await expect(page.locator('#frozen-ribbon')).toBeVisible();
+    await page.waitForTimeout(300);
+    await page.evaluate(() => {
+      const c = document.querySelector<HTMLCanvasElement>('#waves-canvas')!;
+      (window as unknown as { __r860shot: number[] }).__r860shot = Array.from(
+        c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data,
+      );
+    });
+    const cambiados = () =>
+      page.evaluate(() => {
+        const c = document.querySelector<HTMLCanvasElement>('#waves-canvas')!;
+        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+        const a = (window as unknown as { __r860shot: number[] }).__r860shot;
+        let n = 0;
+        for (let i = 0; i < d.length; i += 4)
+          if (Math.abs(d[i]! - a[i]!) > 12 || Math.abs(d[i + 1]! - a[i + 1]!) > 12 || Math.abs(d[i + 2]! - a[i + 2]!) > 12)
+            n++;
+        return n;
+      });
+    await page.click('#wave-ref-clear');
+    await expect(page.locator('#wave-ref-button')).toContainText('Referencia');
+    await expect(page.locator('#wave-ref-button')).not.toHaveClass(/active/);
+    await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).toBeNull();
+    await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
+  });
+});
+
 test.describe('BLD · bucle docente con presión muscular', () => {
   test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
     await open(page, { scenario: 'SC-19' });

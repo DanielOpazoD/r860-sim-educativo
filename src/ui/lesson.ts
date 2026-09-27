@@ -98,6 +98,7 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   basic: (c) => !!c.flags.basic,
   loops: (c) => !!c.flags.loops,
   referenceLoop: (c) => !!c.flags.referenceLoop,
+  referenceWave: (c) => !!c.flags.referenceWave,
   snapshot: (c) => !!c.flags.snapshot,
   vtNear430: (c) => c.frame.settings.mode === 'AC_PC' && Math.abs((c.frame.metrics.vte?.value ?? 0) - 0.432) < 0.02,
   vtDropPc: (c) =>
