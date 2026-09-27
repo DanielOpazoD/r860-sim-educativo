@@ -51,9 +51,22 @@ export function sigmoidCompliance(s: SigmoidPV, p0: number, v: number): number {
 /** Conductancia con la que se representa el circuito abierto (L/s por cmH2O): 0,5 L/s bajan el nodo a 0,25 cmH2O (P). */
 export const DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O = 2;
 
-export function equilibriumVolumeFor(params: { crs: number; p0: number; sigmoid?: SigmoidPV }, paw: number): number {
+export function equilibriumVolumeFor(
+  params: { crs: number; p0: number; sigmoid?: SigmoidPV; recruit?: { frac: number } },
+  paw: number,
+  recruited = 0,
+): number {
   const s = params.sigmoid;
-  return s && s.b > 0 ? sigmoidVolume(s, params.p0, paw) : params.crs * (paw - params.p0);
+  const escala = 1 + recruited * (params.recruit?.frac ?? 0);
+  return s && s.b > 0 ? sigmoidVolume({ ...s, b: s.b * escala }, params.p0, paw) : params.crs * escala * (paw - params.p0);
+}
+
+/** Fracción reclutada al arrancar ventilado a una presión dada: abierto sólo si la distensión de equilibrio supera el umbral (pulmón «recién ventilado», sin historia). */
+export function recruitmentAtRest(params: { p0: number; recruit?: { pOpen: number; pClose: number } }, paw: number): number {
+  const rc = params.recruit;
+  if (!rc) return 0;
+  const pdist = paw - params.p0;
+  return pdist > rc.pOpen ? 1 : 0;
 }
 
 /**
@@ -78,14 +91,52 @@ export class PatientModel {
   vVisc: number;
   /** Volumen de la segunda unidad alveolar (L), si el paciente la declara. */
   v2: number;
+  /**
+   * Fracción reclutada de la capacidad ganable (0–1). Sólo con `recruit` declarado: las unidades reclutables
+   * abren cuando la distensión supera `pOpen`, se cierran por debajo de `pClose` y entre ambas conservan el
+   * estado (histéresis estática de la curva P-V).
+   */
+  recruited = 0;
 
   constructor(params: PatientParams, initialV = 0) {
     this.params = { ...params };
     this.v = initialV;
     this.vVisc = initialV; // arranca relajado: Pel(0) = P0
+    this.recruited = recruitmentAtRest(params, this.pelStaticAt(initialV, 0));
     const sec = params.second;
     // La segunda unidad arranca en equilibrio a la misma presión que la principal.
     this.v2 = sec ? sec.crs * (this.pelStatic(initialV) - params.p0) : 0;
+  }
+
+  /** Configuración de reclutamiento activa, o null si el paciente no la declara (frac ≤ 0 la apaga). */
+  private get recruitCfg(): { frac: number; pOpen: number; pClose: number; tauOpenS: number; tauCloseS: number } | null {
+    const rc = this.params.recruit;
+    return rc && Number.isFinite(rc.frac) && rc.frac > 0 ? rc : null;
+  }
+  /** Factor por el que la reclutación agranda la capacidad elástica de la unidad principal: 1 + r·frac. */
+  private capacityScale(recruited: number = this.recruited): number {
+    const rc = this.recruitCfg;
+    return rc ? 1 + recruited * rc.frac : 1;
+  }
+  /** Pel estática con una fracción reclutada dada, sin tocar el estado. */
+  private pelStaticAt(v: number, recruited: number): number {
+    const s = this.params.sigmoid,
+      escala = this.capacityScale(recruited);
+    return s && s.b > 0 ? sigmoidPressure({ ...s, b: s.b * escala }, this.params.p0, v) : this.params.p0 + v / (this.params.crs * escala);
+  }
+
+  /**
+   * Avanza la fracción reclutada un tramo. La distensión que manda es la elástica estática (Pel − P0): por encima
+   * de `pOpen` abre exponencialmente hacia 1 con `tauOpenS`; por debajo de `pClose` se cierra hacia 0 con
+   * `tauCloseS`; en la banda intermedia no pasa nada — ese punto muerto ES la histéresis: la presión a la que se
+   * abrió no es la presión a la que se cierra. Solución exacta del tramo, como `relax`.
+   */
+  private recruitStep(dt: number, v: number = this.v): void {
+    const rc = this.recruitCfg;
+    if (!rc || !(dt > 0)) return;
+    const pdist = this.pelStaticAt(v, this.recruited) - this.params.p0;
+    if (pdist > rc.pOpen) this.recruited = 1 - (1 - this.recruited) * Math.exp(-dt / rc.tauOpenS);
+    else if (pdist < rc.pClose) this.recruited *= Math.exp(-dt / rc.tauCloseS);
   }
 
   private get e2(): number {
@@ -121,13 +172,12 @@ export class PatientModel {
   }
   /** Presión elástica estática (sin el término viscoelástico): la meseta a la que tiende una oclusión larga. */
   pelStatic(v: number = this.v): number {
-    const s = this.params.sigmoid;
-    return s && s.b > 0 ? sigmoidPressure(s, this.params.p0, v) : this.params.p0 + v / this.params.crs;
+    return this.pelStaticAt(v, this.recruited);
   }
 
-  /** Volumen de equilibrio pasivo bajo una presión de vía aérea constante. */
+  /** Volumen de equilibrio pasivo bajo una presión de vía aérea constante, con la reclutación vigente. */
   equilibriumVolume(paw: number): number {
-    return equilibriumVolumeFor(this.params, paw);
+    return equilibriumVolumeFor(this.params, paw, this.recruited);
   }
 
   /** Volumen total del pulmón (todas las unidades) sobre el volumen de relajación. */
@@ -178,10 +228,20 @@ export class PatientModel {
     this.v2 = total - this.v;
   }
 
-  /** Lleva todas las unidades al equilibrio pasivo a una presión dada y deja relajado el elemento viscoelástico. */
+  /**
+   * Lleva todas las unidades al equilibrio pasivo a una presión dada y deja relajado el elemento viscoelástico.
+   * La fracción reclutada va al estado estático que corresponde a esa presión: abierta por encima de `pOpen`,
+   * cerrada por debajo de `pClose`, y conservada en la banda intermedia (histéresis).
+   */
   equilibrateTo(paw: number): void {
+    const rc = this.recruitCfg;
+    if (rc) {
+      const pdist = paw - this.params.p0;
+      if (pdist > rc.pOpen) this.recruited = 1;
+      else if (pdist < rc.pClose) this.recruited = 0;
+    }
     const c2 = this.hasSecond ? (this.params.second?.crs ?? 0) : 0;
-    this.setAbsoluteVolume(equilibriumVolumeFor(this.params, paw) + c2 * (paw - this.params.p0));
+    this.setAbsoluteVolume(equilibriumVolumeFor(this.params, paw, this.recruited) + c2 * (paw - this.params.p0));
   }
 
   /**
@@ -199,6 +259,7 @@ export class PatientModel {
     const totalPrevio = this.vTotal;
     this.params = { ...next };
     const tieneSegunda = this.hasSecond;
+    if (!this.recruitCfg) this.recruited = 0; // quitada la capacidad reclutable, la fracción abierta desaparece
     if (teniaSegunda && !tieneSegunda) {
       this.v = totalPrevio;
       this.v2 = 0;
@@ -210,10 +271,11 @@ export class PatientModel {
     }
   }
 
-  /** Compliance local de la unidad principal (pendiente de su curva P-V). */
+  /** Compliance local de la unidad principal (pendiente de su curva P-V), con la capacidad ya reclutada. */
   complianceMain(v: number = this.v): number {
-    const s = this.params.sigmoid;
-    return s && s.b > 0 ? sigmoidCompliance(s, this.params.p0, v) : this.params.crs;
+    const s = this.params.sigmoid,
+      escala = this.capacityScale();
+    return s && s.b > 0 ? sigmoidCompliance({ ...s, b: s.b * escala }, this.params.p0, v) : this.params.crs * escala;
   }
   /** Compliance local del sistema completo: la suma de las unidades, que es lo que mediría una oclusión larga. */
   compliance(v: number = this.v): number {
@@ -521,6 +583,7 @@ export class PatientModel {
       }
       // El elemento viscoelástico se congela dentro del sub-paso (tauVisc ≫ h) y avanza con el flujo medio del tramo.
       this.relax((v - vSub) / h, h, vSub);
+      this.recruitStep(h, v);
       t += h;
     }
     this.v = v;
@@ -558,6 +621,7 @@ export class PatientModel {
       const dV = q * dt;
       this.v += dV;
       this.relax(q, dt, v0);
+      this.recruitStep(dt, this.v); // con q = 0 (oclusión) el volumen no cambia pero la presión sostenida recluta
       return { dV };
     }
     const tauMin = this.minBranchTau();
@@ -576,6 +640,7 @@ export class PatientModel {
       this.v += (h / 2) * (k1a + k2a);
       this.v2 += (h / 2) * (k1b + k2b);
       this.relax((this.v - before) / h, h, before);
+      this.recruitStep(h, this.v);
     }
     return { dV: q * dt }; // lo que entrega el ventilador lo fija el flujo impuesto; el reparto entre unidades (y la fuga) es interno
   }

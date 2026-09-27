@@ -712,6 +712,52 @@ SCENARIOS.push({
     'Resolverse es del paciente y del circuito: la condición física dejó de cumplirse. Reconocer es del usuario: registra que la vio. La banda gris es la resuelta sin reconocer; sólo el reconocimiento la devuelve al azul.',
 });
 
+/**
+ * Pulmón reclutable con histéresis (U-47): la misma consigna de PEEP devuelve compliances distintas según el
+ * camino recorrido. pOpen 28 queda por encima de los picos mareales a PEEP ≤ 12 (~27), así que ni la respiración
+ * corriente ni la medición de partida reclutan; PEEP 20 sí abre cíclicamente y una oclusión la completa; al bajar
+ * a 10–12 (por encima de pClose 9) el pulmón conserva lo reclutado. Es la mecánica de la tabla de PEEP decremental.
+ */
+SCENARIOS.push({
+  id: 'SC-25',
+  name: 'Reclutamiento y PEEP decremental',
+  synthetic: true,
+  category: 'Ventilación protectora',
+  level: 3,
+  description:
+    'Pulmón tipo SDRA con un 60 % de capacidad ganable: las unidades cerradas abren sólo por encima de 28 cmH₂O de distensión y no se cierran hasta bajar de 9. Entre ambas presiones el estado se conserva — eso es la histéresis.',
+  patient: { crs: 0.03, rInsp: 10, rExp: 12, r2: 0, p0: 0, recruit: { frac: 0.6, pOpen: 28, pClose: 9, tauOpenS: 0.6, tauCloseS: 8 } },
+  effort: passive,
+  sensors: idealSensors,
+  settings: { vt: 0.5, rr: 15, ie: 1 / 2, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
+  initialV: 'equilibrium',
+  perturbations: [],
+  observe:
+    'La Cstat medida a la misma PEEP cambia según el pasado: baja al principio, alta tras mantener PEEP 20 y volver a 10–12. El bucle P-V se ensancha y «Reclutamiento» en Datos del modelo muestra la fracción abierta.',
+  caution:
+    'Un único umbral de apertura y cierre por compartimento: el pulmón real reparte el reclutamiento en un continuo de unidades con umbrales dispersos, no en un solo par de presiones.',
+  lesson: {
+    title: 'Medir dos veces la misma PEEP',
+    text: 'La tabla de PEEP decremental sólo encuentra la compliance ganada si antes hubo apertura: mide bajando, no subiendo.',
+    tasks: [
+      { id: 'base', text: 'Mide un bloqueo inspiratorio válido a la PEEP inicial: es la compliance dereclutada.', test: 'validInsp' },
+      {
+        id: 'recluta',
+        text: 'Sube PEEP a 20 y mantén —o pide un bloqueo— hasta que «Reclutamiento» en Datos del modelo llegue al 90 %.',
+        test: 'recruitedFull',
+      },
+      {
+        id: 'baja',
+        text: 'Baja PEEP a 10–12 (sin bajar de 9) y repite el bloqueo: la Cstat supera claramente a la primera.',
+        test: 'cstatDecremental',
+      },
+    ],
+  },
+  question: '¿Por qué la PEEP decremental encuentra más compliance que la ascendente al mismo nivel?',
+  answer:
+    'Porque las unidades que abrieron a presión alta no se cierran hasta caer por debajo de su presión de cierre, que es menor: al bajar conservan lo reclutado, mientras que al subir cada nivel aún no había abierto nada.',
+});
+
 /** Referencia visual de las fotografías P1/P3 (O): sólo los AJUSTES visibles; C y R son artificiales; las lecturas se calculan. */
 SCENARIOS.push({
   id: 'SC-P',

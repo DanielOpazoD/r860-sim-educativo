@@ -143,6 +143,17 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   disconnectSeen: (c) => !!c.flags.disconnectSeen,
   /** Reconectado: la alarma de desconexión se vio y ya no está activa. */
   reconnected: (c) => !!c.flags.disconnectSeen && !c.frame.alarms.some((a) => a.id === 'disconnect' && a.conditionActive),
+  /** SC-25: la fracción reclutada del modelo llegó al 90 % (PEEP por encima de la presión de apertura). */
+  recruitedFull: (c) => c.frame.truth.recruited >= 0.9,
+  /**
+   * SC-25: a PEEP baja (≤ 12) hay al menos dos puntos de titulación y el mejor supera en un 30 % al peor. A la
+   * misma consigna el pulmón devuelve compliances distintas según el camino recorrido: es la histéresis medida.
+   */
+  cstatDecremental: (c) => {
+    const puntos = (c.flags.titulacion as { peep: number; cstat: number }[] | undefined) ?? [];
+    const cs = puntos.filter((p) => p.peep <= 12).map((p) => p.cstat);
+    return cs.length >= 2 && Math.max(...cs) >= 1.3 * Math.min(...cs);
+  },
   /** La potencia mecánica de la ventana bajó de 15 J/min con el VT reducido. */
   mpBelow: (c) => c.frame.settings.vt <= 0.4 && (c.frame.metrics.mechPower?.value ?? 99) < 15,
   /** Con el ciclaje subido, el Ti mecánico ya no supera al esfuerzo. */

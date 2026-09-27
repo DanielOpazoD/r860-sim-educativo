@@ -381,8 +381,8 @@
     {
       "id": "U-47",
       "question": "Con qué modelo dar histéresis y reclutamiento a la curva P-V. Hoy la sigmoide es unívoca y la PEEP decremental devuelve exactamente los mismos Cstat que la ascendente, así que la maniobra que se enseña a la cabecera no se puede mostrar.",
-      "policy": "U: no resuelto. La forma más barata es una sigmoide de inflación y otra de deflación con una variable de estado de reclutamiento que se mueva entre ambas con su propia constante de tiempo. Falta decidir los valores y de dónde salen.",
-      "status": "nueva (v0.4.7)",
+      "policy": "Resuelta: histéresis como capacidad reclutable — una fracción `frac` de la capacidad elástica está cerrada hasta que la distensión (Pel − P0) supera `pOpen` y no vuelve a cerrarse hasta caer de `pClose` (< `pOpen`); en la banda conserva el estado. Apertura y cierre exponenciales con `tauOpenS`/`tauCloseS`; capacidad efectiva C·(1 + r·frac), cerrada analíticamente sobre el modelo lineal y sobre la sigmoide (se escala su capacidad b). Valores de partida docentes (pOpen ~25–30, pClose ~9, frac 0,6): un único umbral por compartimento, no un continuo de unidades con umbrales dispersos — esa simplificación queda declarada.",
+      "status": "resuelta (v0.4.8)",
       "blocks": []
     },
     {
