@@ -67,6 +67,9 @@ export interface AppContext {
   setTileDensity(d: 6 | 13): void;
   readonly locked: boolean;
   setLocked(on: boolean): void;
+  /** Modo examen: los valores medidos muestran «?» hasta que el alumno los estima. */
+  readonly examMode: boolean;
+  setExamMode(on: boolean): void;
   /** Sólo quita el bloqueo visual (carga de escenario), sin tocar el editor: mismo comportamiento que la versión monolítica. */
   clearLock(): void;
   /** Pide un redibujado de las curvas en el próximo cuadro de animación. */

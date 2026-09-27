@@ -2,7 +2,7 @@
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
-import { CLOSE_BTN } from './dialogHost';
+import { CANCEL_BTN, CLOSE_BTN } from './dialogHost';
 import { $, $$, btn, esc, icon, put } from './dom';
 import { clock } from './format';
 import { helpContent, helpEntry, infoButton, infoPanel } from './helpPanels';
@@ -44,6 +44,12 @@ export interface MetricsView {
   resetLog(): void;
   /** Diálogo de mecánica respiratoria o, con `metric`, la ficha de una medición. */
   mechanics(metric?: string | null): void;
+  /** Clic sobre una medición: en examen sin estimar abre el diálogo de estimación; si no, su ficha. */
+  metricClick(metric: string): void;
+  /** Registra la estimación escrita en el diálogo y muestra el valor real con el error cometido. */
+  submitEstimate(): void;
+  /** Cuántas mediciones ya estimó el alumno en el escenario actual. */
+  readonly examEstimateCount: number;
 }
 
 /**
@@ -57,8 +63,13 @@ function celdaValor(texto: string, unidad: string): string {
 
 export function createMetricsView(ctx: AppContext): MetricsView {
   let logSignature = '';
+  /** Estimaciones del alumno en modo examen: la medición tapada se revela sólo tras escribir una cifra. */
+  const examEstimates = new Map<string, { guess: number; actual: number }>();
+  let examPending: string | null = null;
   const value = (spec: MetricSpec): number | null => metricValue(ctx.frame, spec);
   const quality = (spec: MetricSpec): string => metricQuality(ctx.frame, spec);
+  /** El dato existe pero en examen todavía no se estimó: la casilla enseña «?» en su lugar. */
+  const oculto = (key: string): boolean => ctx.examMode && !examEstimates.has(key);
   return {
     init() {
       $('#numeric-grid').innerHTML = METRICS.map(
@@ -87,7 +98,9 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           else motivo = razon.length > 16 ? razon.slice(0, 16) + '…' : razon;
         }
         if (motivo) valor.innerHTML = `<span class="sin-dato">${esc(motivo)}</span>`;
+        else if (oculto(m.key)) put(valor, '?');
         else put(valor, f(value(m), m.decimals));
+        el.classList.toggle('exam-masked', !motivo && oculto(m.key));
         put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
@@ -97,25 +110,33 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           el.querySelector('.numeric-unit'),
           metricSample(fr, m.key)?.reason?.startsWith('twoCompartments') ? `${m.unit} · aprox.` : m.unit,
         );
+        const est = examEstimates.get(m.key);
         put(
           el.querySelector('.numeric-age'),
-          m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
-            ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
-            : '',
+          est
+            ? `Est. ${f(est.guess, m.decimals)}`
+            : m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
+              ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
+              : '',
         );
       }
       for (const e of $$('#big-metrics [data-metric]')) {
         const spec = METRICS.find((m) => m.key === e.dataset.metric) as MetricSpec;
-        put(e.querySelector('b'), f(value(spec), spec.decimals));
+        put(e.querySelector('b'), oculto(spec.key) && value(spec) !== null ? '?' : f(value(spec), spec.decimals));
         put(e.querySelector('.numeric-limits'), limitPair(fr, spec.key));
       }
       if (ctx.view === 'data') {
         // Dos tablas en paralelo. Con una sola, diecisiete filas de 47 px no cabían en los 425 disponibles y nueve
         // quedaban bajo el pliegue sin ninguna señal: entre ellas la Cstat, la ΔP y el índice de estrés, que son el
         // núcleo docente. La unidad se pega al valor, como en la columna numérica, para dejar sitio a la procedencia.
-        const fila = (m: (typeof ALL_METRICS)[number]): string =>
-          `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td>` +
-          `<td>${celdaValor(f(value(m), m.decimals), m.unit)}</td><td>${esc(quality(m))}</td></tr>`;
+        const fila = (m: (typeof ALL_METRICS)[number]): string => {
+          const est = examEstimates.get(m.key);
+          return (
+            `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td>` +
+            `<td>${oculto(m.key) && value(m) !== null ? celdaValor('?', m.unit) : celdaValor(f(value(m), m.decimals), m.unit)}</td>` +
+            `<td>${esc(`${est ? `Estimaste ${f(est.guess, m.decimals)} · ` : ''}${quality(m)}`)}</td></tr>`
+          );
+        };
         const mitad = Math.ceil(ALL_METRICS.length / 2);
         $('#data-table-body').innerHTML = ALL_METRICS.slice(0, mitad).map(fila).join('');
         $('#data-table-body-2').innerHTML = ALL_METRICS.slice(mitad).map(fila).join('');
@@ -146,6 +167,53 @@ export function createMetricsView(ctx: AppContext): MetricsView {
     },
     resetLog() {
       logSignature = '';
+      examEstimates.clear(); // las respuestas del examen son del escenario, no de la sesión
+    },
+    get examEstimateCount() {
+      return examEstimates.size;
+    },
+    metricClick(metric: string): void {
+      const spec = ALL_METRICS.find((m) => m.key === metric);
+      if (!spec) return;
+      if (oculto(metric) && value(spec) !== null) {
+        examPending = metric;
+        ctx.dialog.open(
+          'examEstimate',
+          `Estimar ${spec.label}`,
+          `<div class="exam-estimate-body"><p>¿Cuánto crees que marca ${spec.label} ahora mismo? Escribe tu estimación y se revela el valor medido.</p><div class="editor-value"><input type="number" id="exam-estimate-input" inputmode="decimal" step="any" aria-label="Tu estimación de ${spec.label}"><span>${spec.unit}</span></div></div>`,
+          CANCEL_BTN + btn('Comprobar', 'examSubmit', 'primary-button'),
+          'compact',
+        );
+        setTimeout(() => $('#exam-estimate-input').focus(), 0);
+        return;
+      }
+      this.mechanics(metric);
+    },
+    submitEstimate(): void {
+      const spec = ALL_METRICS.find((m) => m.key === examPending);
+      const input = $<HTMLInputElement>('#exam-estimate-input');
+      if (!spec || !input) return;
+      const guess = Number(input.value.replace(',', '.'));
+      if (!Number.isFinite(guess)) {
+        ctx.toast('Escribe un número para estimar.', true);
+        return;
+      }
+      const actual = value(spec);
+      if (actual === null) {
+        ctx.dialog.close();
+        ctx.toast(`${spec.label} aún no tiene dato que estimar.`, true);
+        return;
+      }
+      examEstimates.set(spec.key, { guess, actual });
+      examPending = null;
+      ctx.lesson.flags.examEstimate = true;
+      ctx.lesson.evaluate();
+      ctx.dialog.close();
+      const errorPct = Math.abs(actual) > 1e-9 ? ((guess - actual) / Math.abs(actual)) * 100 : 0;
+      ctx.toast(
+        `${spec.label}: estimaste ${f(guess, spec.decimals)} y el monitor marca ${f(actual, spec.decimals)} ${spec.unit} (error ${Math.abs(errorPct).toFixed(0)} %).`,
+      );
+      ctx.updateUI();
     },
     mechanics(metric = null) {
       if (metric) {
@@ -164,7 +232,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       ctx.dialog.open(
         'mechanics',
         'Mecánica respiratoria',
-        `<table class="info-table"><thead><tr><th>Dato</th><th>Resultado</th><th>Medición</th></tr></thead><tbody>${rows.map((m) => `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td><td>${f(value(m), m.decimals)} ${m.unit}</td><td>${esc(quality(m))}</td></tr>`).join('')}</tbody></table><div class="context-help-row"><span>Cómo se obtiene Cstat</span>${infoButton('metric.cstat', 'help-mechanics')}</div>${infoPanel('metric.cstat', 'help-mechanics')}`,
+        `<table class="info-table"><thead><tr><th>Dato</th><th>Resultado</th><th>Medición</th></tr></thead><tbody>${rows.map((m) => `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td><td>${oculto(m.key) && value(m) !== null ? '?' : f(value(m), m.decimals)} ${m.unit}</td><td>${esc(quality(m))}</td></tr>`).join('')}</tbody></table><div class="context-help-row"><span>Cómo se obtiene Cstat</span>${infoButton('metric.cstat', 'help-mechanics')}</div>${infoPanel('metric.cstat', 'help-mechanics')}`,
         btn('Bloqueo espiratorio', 'expiratory', 'secondary-button') + btn('Bloqueo inspiratorio', 'inspiratory'),
         'wide',
       );

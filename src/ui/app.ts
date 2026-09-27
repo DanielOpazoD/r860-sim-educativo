@@ -71,6 +71,8 @@ export function startApp(opts: AppOptions): void {
     discontinuities: Discontinuity[] = [],
     generation = -1;
   let locked = false;
+  /** Modo examen: las mediciones muestran «?» hasta que el alumno escribe su estimación. */
+  let examMode = false;
   const guardada = localStorage.getItem('r860.tileDensity');
   let tileDensity: 6 | 13 = guardada === '6' ? 6 : 13;
   let scenario: Scenario = findScenario(params.get('scenario') ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
@@ -183,6 +185,18 @@ export function startApp(opts: AppOptions): void {
       return locked;
     },
     setLocked,
+    get examMode() {
+      return examMode;
+    },
+    setExamMode(on: boolean) {
+      examMode = on;
+      $('#monitor').classList.toggle('exam-on', on);
+      const boton = $<HTMLButtonElement>('#exam-toggle');
+      boton.classList.toggle('active', on);
+      boton.setAttribute('aria-pressed', String(on));
+      toast(on ? 'Modo examen: las mediciones se ocultan hasta que las estimas.' : 'Modo examen desactivado.');
+      updateUI();
+    },
     clearLock() {
       locked = false;
       $('#lock-overlay').hidden = true;
@@ -416,6 +430,9 @@ export function startApp(opts: AppOptions): void {
     },
     get waveRef() {
       return plots.waveRefAt;
+    },
+    get exam() {
+      return { active: examMode, estimates: metrics.examEstimateCount };
     },
     /** Banderas de la lección: las pruebas de extremo a extremo esperan por ellas en vez de por un plazo fijo. */
     get lessonFlags() {

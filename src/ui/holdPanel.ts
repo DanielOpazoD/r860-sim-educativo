@@ -84,10 +84,23 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     const h = !active ? fr.procedure.last[holdType] : null;
     const v1 = insp ? h?.values.pplat : h?.values.peepTot,
       v2 = insp ? h?.values.cstat : h?.values.peepi;
-    put('#hold-value', h?.quality === 'valid' && v1?.value !== null && v1?.value !== undefined ? f(v1.value, 0) : '—');
+    // En examen el resultado es justo lo que se pide estimar: el panel lo tapa como las casillas numéricas.
+    const tapar = ctx.examMode;
+    put(
+      '#hold-value',
+      tapar && h?.quality === 'valid'
+        ? '?'
+        : h?.quality === 'valid' && v1?.value !== null && v1?.value !== undefined
+          ? f(v1.value, 0)
+          : '—',
+    );
     put(
       '#hold-second',
-      h?.quality === 'valid' && v2?.value !== null && v2?.value !== undefined ? f(insp ? v2.value * 1000 : v2.value, insp ? 0 : 1) : '—',
+      tapar && h?.quality === 'valid'
+        ? '?'
+        : h?.quality === 'valid' && v2?.value !== null && v2?.value !== undefined
+          ? f(insp ? v2.value * 1000 : v2.value, insp ? 0 : 1)
+          : '—',
     );
     // ▶ sólo inicia; mientras hay una solicitud en cola o en curso queda deshabilitado y aparece «Cancelar».
     const run = $<HTMLButtonElement>('#hold-run');
@@ -133,7 +146,9 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
       }
       ctx.toast(
         h.quality === 'valid'
-          ? `Bloqueo medido: ${insp ? 'Pplat' : 'PEEP total'} ${f(v1?.value ?? null, 0)} cmH₂O`
+          ? ctx.examMode
+            ? `Bloqueo medido · estima ${insp ? 'Pplat y Cstat' : 'PEEP total y PEEPi'} en su casilla`
+            : `Bloqueo medido: ${insp ? 'Pplat' : 'PEEP total'} ${f(v1?.value ?? null, 0)} cmH₂O`
           : `Bloqueo no válido: ${humanReason(h.reason)}`,
         h.quality !== 'valid',
       );

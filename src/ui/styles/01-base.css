@@ -649,6 +649,22 @@ a {
   right: 0;
   z-index: 2;
 }
+.exam-toggle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+.exam-toggle.active {
+  /* El modo examen activo se nota en la propia columna: el botón queda encendido como «Bloqueo» cuando corre. */
+  background: #5b3d10;
+  border-color: #edc87e;
+  color: #ffe2ad;
+}
+.numeric.exam-masked .numeric-value {
+  /* La interrogante ocupa el sitio de la cifra: se lee «hay un dato que aún no estimaste», no «no hay dato». */
+  color: #f5d9a8;
+}
 .numeric-grid {
   flex: 1;
   display: grid;
