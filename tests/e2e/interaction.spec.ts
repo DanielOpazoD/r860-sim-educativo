@@ -583,9 +583,7 @@ test.describe('CUR · respiración de referencia superpuesta', () => {
     await page.click('[data-setting-quick="vt"]');
     for (let k = 0; k < 4; k++) await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Enter');
-    await expect
-      .poll(async () => (await frame(page)).breathCount, { timeout: 20_000 })
-      .toBeGreaterThanOrEqual(bc0 + 2);
+    await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(bc0 + 2);
     // Con la traza congelada el dibujo es estático: los únicos píxeles que cambian al quitar la referencia son
     // los del fantasma. La línea base se toma tras el primer repintado congelado.
     await page.click('#freeze-button');
@@ -604,8 +602,7 @@ test.describe('CUR · respiración de referencia superpuesta', () => {
         const a = (window as unknown as { __r860shot: number[] }).__r860shot;
         let n = 0;
         for (let i = 0; i < d.length; i += 4)
-          if (Math.abs(d[i]! - a[i]!) > 12 || Math.abs(d[i + 1]! - a[i + 1]!) > 12 || Math.abs(d[i + 2]! - a[i + 2]!) > 12)
-            n++;
+          if (Math.abs(d[i]! - a[i]!) > 12 || Math.abs(d[i + 1]! - a[i + 1]!) > 12 || Math.abs(d[i + 2]! - a[i + 2]!) > 12) n++;
         return n;
       });
     await page.click('#wave-ref-clear');
@@ -613,6 +610,45 @@ test.describe('CUR · respiración de referencia superpuesta', () => {
     await expect(page.locator('#wave-ref-button')).not.toHaveClass(/active/);
     await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).toBeNull();
     await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
+  });
+});
+
+test.describe('EXM · modo examen', () => {
+  test('los valores medidos se ocultan hasta que el alumno los estima', async ({ page }) => {
+    await open(page, { speed: 4 });
+    await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
+    const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
+    const real = (await frame(page)).metrics.ppeak!.value;
+    await expect(pico.locator('.numeric-value')).not.toHaveText('?');
+    await page.click('#exam-toggle');
+    await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => page.evaluate(() => window.__r860.exam.active)).toBe(true);
+    // Las casillas con dato muestran «?»; las sin medición conservan su motivo, nunca una cifra falsa.
+    await expect(pico.locator('.numeric-value')).toHaveText('?');
+    await page.click('#numeric-grid [data-metric="ppeak"]');
+    await expect(page.locator('#app-dialog')).toBeVisible();
+    await expect(page.locator('#dialog-title')).toContainText('Estimar');
+    await page.fill('#exam-estimate-input', String(Math.round(real! * 1.2)));
+    await page.click('[data-action="examSubmit"]');
+    await expect(page.locator('#app-dialog')).not.toBeVisible();
+    await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
+    await expect(pico.locator('.numeric-age')).toContainText('Est.');
+    await expect.poll(() => page.evaluate(() => window.__r860.exam.estimates)).toBe(1);
+    await expect(page.locator('.toast').last()).toContainText('estimaste');
+    // La tabla de mediciones aplica la misma regla: estimada muestra el valor y la estimación; las demás siguen «?».
+    await page.click('[data-view="data"]');
+    const filaPico = page.locator('#data-table-body tr', { has: page.locator('[data-metric="ppeak"]') });
+    await expect(filaPico).toContainText('Estimaste');
+    const filaVte = page.locator('#data-table-body tr', { has: page.locator('[data-metric="vte"]') });
+    await expect(filaVte).toContainText('?');
+    await page.click('[data-view="waves"]');
+    // Al apagar el modo examen todo vuelve; al encenderlo de nuevo la estimación ya hecha sigue visible.
+    await page.click('#exam-toggle');
+    await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
+    await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).not.toHaveText('?');
+    await page.click('#exam-toggle');
+    await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('?');
+    await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
   });
 });
 

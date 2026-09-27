@@ -291,6 +291,12 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       case 'clearWaveRef':
         plots.clearWaveReference();
         break;
+      case 'exam':
+        ctx.setExamMode(!ctx.examMode);
+        break;
+      case 'examSubmit':
+        metrics.submitEstimate();
+        break;
       case 'tools':
         ctx.dialog.open('tools', 'Mecánica y procedimientos', toolsHTML());
         break;
@@ -371,7 +377,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (el.dataset.scenario) instructor.loadScenario(el.dataset.scenario);
       if (el.dataset.mode && !(el as HTMLButtonElement).disabled) modes.selectMode(el.dataset.mode as VentMode);
       if (el.dataset.event) void instructor.fault(el.dataset.event);
-      if (el.dataset.metric) metrics.mechanics(el.dataset.metric);
+      if (el.dataset.metric) metrics.metricClick(el.dataset.metric);
       if (el.dataset.helpTab) openHelp(el.dataset.helpTab);
     });
     document.addEventListener('input', (e) => {
