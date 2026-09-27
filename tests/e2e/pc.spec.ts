@@ -154,32 +154,44 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
   test('la columna de presión desciende de forma progresiva al terminar la inspiración', async ({ page }) => {
     await open(page, { speed: 1, instructor: 0 });
     await page.waitForFunction(() => window.__r860.frame?.live.phase === 'inspFlow');
+    // 8 s cubren más de un ciclo a 12 rpm: si el navegador se salta los fotogramas de una bajada, la respiración
+    // siguiente vuelve a ofrecerla. La afirmación es sobre la forma de la bajada, no sobre qué respiración la mostró.
     const serie = await page.evaluate(
       async () =>
-        await new Promise<[number, number, string][]>((res) => {
-          const out: [number, number, string][] = [];
+        await new Promise<[number, number, string, number][]>((res) => {
+          const out: [number, number, string, number][] = [];
           const t0 = performance.now();
           const step = (): void => {
             const f = window.__r860.frame!;
-            out.push([f.live.paw, window.__r860.gaugePaw ?? 0, f.live.phase]);
-            if (performance.now() - t0 < 2500) requestAnimationFrame(step);
+            out.push([f.live.paw, window.__r860.gaugePaw ?? 0, f.live.phase, f.simTimeMs]);
+            if (performance.now() - t0 < 8000) requestAnimationFrame(step);
             else res(out);
           };
           requestAnimationFrame(step);
         }),
     );
-    let i = serie.findIndex((s) => s[2] === 'exp');
-    expect(i).toBeGreaterThan(0);
-    // Cuando el fin de la inspiración cae justo en el borde de un paso de 4 ms, el cuadro de ese instante ya dice
-    // «espiración» pero todavía lleva la presión pico: la válvula no ha empezado a abrirse. Ese cuadro no es la bajada.
-    if (serie[i]![0] >= serie[i - 1]![0] - 3) i += 1;
-    const senal = serie.slice(i, i + 12).map((s) => s[0]);
-    const bajada = serie.slice(i, i + 12).map((s) => s[1]);
     // La señal pierde de golpe lo resistivo (Ppico → presión alveolar) y luego baja con la válvula abriéndose.
-    // La afirmación es que hay un descenso con valores intermedios, no un salto a PEEP. Dónde caiga exactamente el
-    // primer fotograma tras el cambio de fase depende de la carga de la máquina: pedirle 8 cmH2O hacía fallar la
-    // prueba cuando el navegador se saltaba un fotograma y llegaba con la caída ya empezada.
-    expect(senal[0]).toBeLessThan(serie[i - 1]![0] - 3);
+    // La afirmación es que hay un descenso con valores intermedios, no un salto a PEEP. Si el primer fotograma tras
+    // el cambio de fase ya está en PEEP puede ser un salto real o una bajada entera perdida entre fotogramas:
+    // se distingue por el tiempo simulado entre las dos muestras — la bajada dura ~100–200 ms, así que un salto
+    // en menos de 80 ms es una caída real instantánea (se evalúa y reprueba) y uno mayor es un hueco del
+    // muestreo (se espera la siguiente transición).
+    let elegido: { senal: number[]; bajada: number[] } | null = null;
+    const descartadas: string[] = [];
+    for (let k = 1; k + 13 <= serie.length && elegido === null; k++) {
+      if (serie[k]![2] !== 'exp' || serie[k - 1]![2] === 'exp') continue;
+      // Cuando el fin de la inspiración cae justo en el borde de un paso de 4 ms, el cuadro de ese instante ya dice
+      // «espiración» pero todavía lleva la presión pico: la válvula no ha empezado a abrirse. Ese cuadro no es la bajada.
+      const i = serie[k]![0] >= serie[k - 1]![0] - 3 ? k + 1 : k;
+      const tramo = serie.slice(i, i + 12);
+      const senal = tramo.map((s) => s[0]);
+      const enBajada = senal[0]! < serie[i - 1]![0] - 3 && senal[0]! > 5.5;
+      const saltoMs = tramo[0]![3] - serie[i - 1]![3];
+      if (enBajada || (senal[0]! <= 5.5 && saltoMs <= 80)) elegido = { senal, bajada: tramo.map((s) => s[1]) };
+      else descartadas.push(`exp en índice ${k}: paw ${senal[0]!.toFixed(1)} tras ${Math.round(saltoMs)} ms sin muestras`);
+    }
+    expect(elegido, `ninguna bajada quedó muestreada a mitad de camino (${descartadas.join('; ') || 'sin transiciones'})`).not.toBeNull();
+    const { senal, bajada } = elegido!;
     expect(senal[0], 'todavía por encima de PEEP').toBeGreaterThan(5.5);
     expect(new Set(senal.map((v) => Math.round(v))).size, 'la bajada pasa por valores intermedios').toBeGreaterThan(1);
     expect(senal.at(-1)).toBeLessThan(6); // en menos de 200 ms ya está en PEEP
