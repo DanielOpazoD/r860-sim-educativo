@@ -231,6 +231,14 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'V(P) = a + b/(1 + e^(−(P−c)/d))',
   },
+  'patient.recruit': {
+    title: 'Reclutamiento alveolar (histéresis P-V)',
+    text: [
+      'Una parte de la capacidad elástica está colapsada mientras la presión de distensión no supera la de apertura; una vez abierta no se cierra hasta caer por debajo de la de cierre, que es menor. Entre ambas el estado se conserva: subir y bajar la presión no recorre la misma curva — esa zona muerta es la histéresis estática del pulmón real.',
+      'Reclutar suma compliance: a la misma presión el volumen sube y el Pplat baja. Con una PEEP suficiente las unidades quedan abiertas y la bajada posterior ya no devuelve la compliance inicial: es el fenómeno de la tabla de PEEP decremental. Apertura y cierre tienen cada una su constante de tiempo.',
+    ],
+    equation: 'C efectiva = C·(1 + r·frac),  r: 0→1 si Pel−P0 > Papertura',
+  },
   'patient.viscoelastic': {
     title: 'Relajación viscoelástica (E₂)',
     text: [

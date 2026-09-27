@@ -262,13 +262,17 @@ export function validatePatientParams(p: {
   eVisc?: number;
   tauViscS?: number;
   sigmoid?: { b: number; c: number; d: number };
+  recruit?: { frac: number; pOpen: number; pClose: number; tauOpenS: number; tauCloseS: number };
   efl?: { pcrit: number; rusFraction: number };
   rExpVolumeDep?: { gain: number; vRefL: number };
   second?: { crs: number; rInsp: number; rExp: number };
 }): string[] {
   const r: string[] = [];
   for (const [k, v] of Object.entries(p))
-    if (!['sigmoid', 'efl', 'rExpVolumeDep', 'second', 'disconnected'].includes(k) && (typeof v !== 'number' || !Number.isFinite(v)))
+    if (
+      !['sigmoid', 'recruit', 'efl', 'rExpVolumeDep', 'second', 'disconnected'].includes(k) &&
+      (typeof v !== 'number' || !Number.isFinite(v))
+    )
       r.push(`${k}: no numérico`);
   if (p.disconnected !== undefined && typeof p.disconnected !== 'boolean') r.push('disconnected: debe ser booleano');
   if (r.length) return r;
@@ -326,6 +330,22 @@ export function validatePatientParams(p: {
       if (s.b < 0 || s.b > 5) r.push('Capacidad de la sigmoide fuera de 0–5 L');
       if (s.c < 0 || s.c > 60) r.push('Presión de máxima compliance fuera de 0–60 cmH2O');
       if (s.d < 0.5 || s.d > 20) r.push('Anchura de la sigmoide fuera de 0.5–20 cmH2O');
+    }
+  }
+  if (p.recruit !== undefined) {
+    const rc = p.recruit;
+    if (
+      !rc ||
+      typeof rc !== 'object' ||
+      ![rc.frac, rc.pOpen, rc.pClose, rc.tauOpenS, rc.tauCloseS].every((x) => typeof x === 'number' && Number.isFinite(x))
+    )
+      r.push('Reclutamiento inválido');
+    else {
+      if (rc.frac <= 0 || rc.frac > 1) r.push('Capacidad reclutable fuera de 0–100 %');
+      if (rc.pOpen <= 0 || rc.pOpen > 60) r.push('Presión de apertura fuera de 0–60 cmH2O');
+      if (rc.pClose < 0 || rc.pClose >= rc.pOpen) r.push('Presión de cierre debe quedar entre 0 y la de apertura');
+      if (rc.tauOpenS < 0.05 || rc.tauOpenS > 60) r.push('Constante de reclutamiento fuera de 0.05–60 s');
+      if (rc.tauCloseS < 0.05 || rc.tauCloseS > 600) r.push('Constante de desreclutamiento fuera de 0.05–600 s');
     }
   }
   if (Math.min(p.rInsp, p.rExp) * p.crs < 1e-3) r.push('tau = R·C menor que 1 ms');

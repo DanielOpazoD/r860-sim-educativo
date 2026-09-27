@@ -129,6 +129,17 @@ export interface PatientParams {
    */
   sigmoid?: { b: Liters; c: CmH2O; d: CmH2O };
   /**
+   * Unidades alveolares reclutables con histéresis (U-47). Una fracción `frac` de la capacidad elástica de la
+   * unidad principal está cerrada hasta que la presión de distensión (Pel − P0) supera `pOpen`; abierta, sigue
+   * abierta mientras no caiga por debajo de `pClose`. Entre ambas el estado se conserva: es la histéresis
+   * estática — subir y bajar la presión no recorre la misma curva. La apertura y el cierre avanzan con sus
+   * constantes de tiempo `tauOpenS` y `tauCloseS`. La capacidad efectiva es la declarada × (1 + r·frac), con r
+   * la fracción reclutada (0–1): reclutar suma compliance y baja el retroceso elástico al mismo volumen.
+   * Sólo la unidad principal; la segunda queda lineal fija (simplificación declarada). Ausente = sin
+   * reclutamiento, exactamente el modelo de siempre.
+   */
+  recruit?: { frac: number; pOpen: CmH2O; pClose: CmH2O; tauOpenS: number; tauCloseS: number };
+  /**
    * Limitación al flujo espiratorio (resistor de Starling). Cuando la presión en la vía aérea cae por debajo de
    * `pcrit`, el segmento colapsable se estrecha y el flujo deja de depender de la presión aguas abajo: queda fijado
    * por el retroceso elástico y la resistencia aguas arriba del punto de estrangulamiento.

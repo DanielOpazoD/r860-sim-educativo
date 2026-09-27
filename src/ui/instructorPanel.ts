@@ -92,6 +92,7 @@ export function createInstructorPanel(
     const opciones: string[] = [];
     if ((p.eVisc ?? 0) > 0) opciones.push('viscoelástica');
     if ((p.sigmoid?.b ?? 0) > 0) opciones.push('P-V sigmoidea');
+    if (p.recruit) opciones.push(`reclutamiento ${Math.round(fr.truth.recruited * 100)} %`);
     if (p.r2 > 0) opciones.push('Rohrer');
     if (p.efl) opciones.push('limitación flujo esp.');
     if ((p.rExpVolumeDep?.gain ?? 0) > 0) opciones.push('Rexp(V)');
@@ -107,6 +108,11 @@ export function createInstructorPanel(
       const cc = p.circuitComplianceLPerCmH2O ?? 0;
       vcircCell.hidden = !(cc > 0);
       put('#truth-vcirc', `${f(fr.truth.vCircL * 1000, 0)} mL`);
+    }
+    const recruitCell = document.getElementById('truth-recruit-cell');
+    if (recruitCell) {
+      recruitCell.hidden = !p.recruit;
+      put('#truth-recruit', `${Math.round(fr.truth.recruited * 100)} %`);
     }
     for (const [id, on] of [
       ['apnea', apneaApplied && (!fr.truth.effort.enabled || fr.truth.effort.amplitude === 0)],

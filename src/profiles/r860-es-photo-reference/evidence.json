@@ -1172,6 +1172,19 @@
         "tests/bench/viscoelasticoReferencia.test.ts (BM-VE)",
         "tests/e2e/interaction.spec.ts (PRE · presets de mecánica del paciente)"
       ]
+    },
+    {
+      "id": "E-093",
+      "claim": "Histéresis de la curva P-V como reclutamiento (U-47): una fracción `frac` de la capacidad elástica de la unidad principal permanece cerrada mientras la distensión estática (Pel − P0) no supera `pOpen`; una vez abierta no se cierra hasta bajar de `pClose` (< pOpen), y entre ambas conserva el estado — la zona muerta ES la histéresis estática. Apertura y cierre avanzan en exponenciales con `tauOpenS`/`tauCloseS`. La capacidad efectiva es C·(1 + r·frac): reclutar suma compliance, baja Pel al mismo volumen y sube la EELV; sobre la sigmoide se escala su capacidad b (la solución sigue cerrada). La distensión que manda es la elástica estática, así que una oclusión sostenida recluta y la meseta cae al abrirse. Umbrales declarados por compartimento (pOpen ~25–30, pClose ~9, frac 0,6 en el banco docente): un solo par de umbrales, no un continuo de unidades. Medido (BM-RC): Cstat 30 mL/cmH2O a PEEP 5–12 sin reclutar y ≈48 tras mantener PEEP 20 y bajar a 10 — la tabla de PEEP decremental funciona; por debajo de pClose se desrecluta con su constante.",
+      "status": "P (modelo y umbrales: fisiología real, valores docentes aproximados)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (recruited, recruitStep, pelStaticAt, equilibriumVolumeFor, recruitmentAtRest); src/domain/validation.ts (rangos recruit); src/ui/patientControls.ts (deslizadores); src/ui/instructorPanel.ts (celda y opciones); src/ui/help.ts (patient.recruit); src/scenarios/index.ts (SC-25)",
+      "tests": [
+        "tests/unit/reclutamiento.test.ts (RC-01)",
+        "tests/bench/reclutamiento.test.ts (BM-RC)",
+        "tests/e2e/interaction.spec.ts (RC · reclutamiento alveolar con histéresis)"
+      ]
     }
   ]
 }
