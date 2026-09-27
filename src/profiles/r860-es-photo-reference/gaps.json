@@ -381,14 +381,14 @@
     {
       "id": "U-47",
       "question": "Con qué modelo dar histéresis y reclutamiento a la curva P-V. Hoy la sigmoide es unívoca y la PEEP decremental devuelve exactamente los mismos Cstat que la ascendente, así que la maniobra que se enseña a la cabecera no se puede mostrar.",
-      "policy": "U: no resuelto. La forma más barata es una sigmoide de inflación y otra de deflación con una variable de estado de reclutamiento que se mueva entre ambas con su propia constante de tiempo. Falta decidir los valores y de dónde salen.",
-      "status": "nueva (v0.4.7)",
+      "policy": "Resuelta: histéresis como capacidad reclutable — una fracción `frac` de la capacidad elástica está cerrada hasta que la distensión (Pel − P0) supera `pOpen` y no vuelve a cerrarse hasta caer de `pClose` (< `pOpen`); en la banda conserva el estado. Apertura y cierre exponenciales con `tauOpenS`/`tauCloseS`; capacidad efectiva C·(1 + r·frac), cerrada analíticamente sobre el modelo lineal y sobre la sigmoide (se escala su capacidad b). Valores de partida docentes (pOpen ~25–30, pClose ~9, frac 0,6): un único umbral por compartimento, no un continuo de unidades con umbrales dispersos — esa simplificación queda declarada.",
+      "status": "resuelta (v0.4.8)",
       "blocks": []
     },
     {
       "id": "U-48",
       "question": "Si el esfuerzo debe poder ser espiratorio. Hoy Pmus ≥ 0 siempre, de modo que no hay espiración activa, frenado espiratorio ni meseta contaminada por contracción espiratoria.",
-      "policy": "Parcialmente cerrada: el generador de esfuerzo admite una amplitud espiratoria independiente (`expAmplitude`, Pmus negativa en medio seno que arranca al final de la inspiración neural), opcional y 0 por omisión, con banco BM-EA (pico de flujo +98 %, vaciamiento bajo la FRC, tope iso-volumen de Starling). Quedan U el frenado espiratorio fino y el disparo reverso como lecciones propias.",
+      "policy": "Parcialmente cerrada: el generador de esfuerzo admite una amplitud espiratoria independiente (`expAmplitude`, Pmus negativa en medio seno que arranca al final de la inspiración neural), opcional y 0 por omisión, con banco BM-EA; y el disparo reverso (entrainment) está modelado como contracción 'riseRelax' evocada por cada respiración de máquina (`effort.reverse`: amplitud, latencia, ratio 1–3), que dispara respiraciones asistidas apiladas por el mecanismo normal cuando sobrevive al ciclado (banco BM-RT, escenario SC-24). Queda U el frenado espiratorio fino.",
       "status": "parcialmente cerrada",
       "blocks": []
     },
@@ -425,6 +425,13 @@
       "question": "Tiempo de respuesta del disparo del R860 (detección, decisión y apertura de válvula) y ancho de banda de su regulador de PEEP durante ese lapso; no publicados en las fuentes leídas.",
       "policy": "P: retardo por tipo de disparo — 80 ms por flujo y 110 ms por presión (la caída debe propagarse y medirse en la rama), dentro del rango de banco ICU (60–100 ms flujo, 100–150 ms presión), con el regulador de PEEP de ancho de banda finito (U-43). La caída resultante es del orden de la publicada en bancos; no reproduce la cifra del equipo.",
       "status": "revisada (v0.4.7)",
+      "blocks": []
+    },
+    {
+      "id": "U-54",
+      "question": "Latencia del disparo reverso (tiempo entre el inicio de la insuflación de la máquina y la contracción evocada), su amplitud y el acoplamiento (ratio máquina:paciente 1:1/1:2/1:3) en pacientes reales; la literatura describe el fenómeno sin fijar cifras universales.",
+      "policy": "P: amplitud propia del pulso 'riseRelax' (comparte tiS y relaxTauS del esfuerzo), latencia 0–2 s y ratio 1–3 ajustables por el instructor y por escenario; SC-24 usa 8 cmH2O y 0,5 s (que muere antes del ciclado) pasando a 1,4 s (que sobrevive y apila). No es una lección sobre una cifra concreta sino sobre el mecanismo: si la contracción sobrevive al ciclado, dispara la siguiente.",
+      "status": "nueva (v0.5.0)",
       "blocks": []
     }
   ],

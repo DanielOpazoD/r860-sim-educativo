@@ -231,6 +231,14 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'V(P) = a + b/(1 + e^(−(P−c)/d))',
   },
+  'patient.recruit': {
+    title: 'Reclutamiento alveolar (histéresis P-V)',
+    text: [
+      'Una parte de la capacidad elástica está colapsada mientras la presión de distensión no supera la de apertura; una vez abierta no se cierra hasta caer por debajo de la de cierre, que es menor. Entre ambas el estado se conserva: subir y bajar la presión no recorre la misma curva — esa zona muerta es la histéresis estática del pulmón real.',
+      'Reclutar suma compliance: a la misma presión el volumen sube y el Pplat baja. Con una PEEP suficiente las unidades quedan abiertas y la bajada posterior ya no devuelve la compliance inicial: es el fenómeno de la tabla de PEEP decremental. Apertura y cierre tienen cada una su constante de tiempo.',
+    ],
+    equation: 'C efectiva = C·(1 + r·frac),  r: 0→1 si Pel−P0 > Papertura',
+  },
   'patient.viscoelastic': {
     title: 'Relajación viscoelástica (E₂)',
     text: [
@@ -252,6 +260,21 @@ export const HELP: Record<string, HelpEntry> = {
       'Es lo que aporta sobre todo el tubo endotraqueal: a menor diámetro, mayor K₂.',
     ],
     equation: 'R(Q) = K₁ + K₂·|Q|',
+  },
+  'patient.reverse': {
+    title: 'Disparo reverso (entrainment)',
+    text: [
+      'La insuflación pasiva del ventilador puede evocar una contracción diafragmática fase-bloqueada: el paciente «responde» a cada respiración de la máquina (fenómeno descrito por Akoumianaki 2013; acoplamientos 1:1 y 1:2 típicos).',
+      'Si la contracción evocada sobrevive al ciclado de la respiración, su demanda dispara la siguiente por el mecanismo normal del simulador y aparecen respiraciones apiladas (doble disparo). Con latencia corta la contracción muere antes del ciclado y no deja rastro más que en Pmus.',
+      'La amplitud (0 = apagado) y la latencia son valores propuestos del simulador (P), no del equipo. El pulso evocado usa siempre la forma fisiológica subida-relajación.',
+    ],
+  },
+  'patient.reverseDelay': {
+    title: 'Latencia del disparo reverso',
+    text: [
+      'Tiempo desde que arranca la insuflación de la máquina hasta que empieza la contracción evocada. Con latencias cortas el pulso cae antes del ciclado; con latencias largas (p. ej. ≈ 1,4 s en SC-24) sobrevive y dispara la respiración siguiente.',
+      'Valor propuesto del simulador (P): la literatura describe el fenómeno sin fijar latencias universales.',
+    ],
   },
   'patient.presetTissue': {
     title: 'Preset de tejido (E₂/τ₂)',

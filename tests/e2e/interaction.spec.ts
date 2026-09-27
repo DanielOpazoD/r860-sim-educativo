@@ -655,6 +655,16 @@ test.describe('DEN · densidad de la columna numérica', () => {
   });
 });
 
+test.describe('RT · disparo reverso (SC-24)', () => {
+  test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
+    await open(page, { scenario: 'SC-24' });
+    await page.click('[data-instructor="patient"]');
+    await page.locator('.advanced-patient summary').click();
+    await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
+    await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
+  });
+});
+
 test.describe('PRE · presets de mecánica del paciente', () => {
   test('«TET 7,0 mm» fija el deslizador K₂ a 9,2 y moverlo a mano deja «Personalizado»', async ({ page }) => {
     await open(page);
@@ -673,5 +683,40 @@ test.describe('PRE · presets de mecánica del paciente', () => {
     await tejido.selectOption('healthy');
     await expect(page.locator('[data-phys-number="viscoelastic"]')).toHaveValue('3');
     await expect(page.locator('#preset-tissue-note')).toContainText('D’Angelo');
+  });
+});
+
+test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
+  const ponerPeep = async (page: Page, peep: number): Promise<void> => {
+    await page.click('[data-setting-quick="peep"]');
+    await page.fill('#quick-value', String(peep));
+    await page.click('[data-action="confirmEdit"]');
+    await page.waitForFunction((p) => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
+      timeout: 20_000,
+    });
+  };
+  const reclutado = (page: Page): Promise<number> =>
+    page.evaluate(() => (window.__r860.frame as unknown as { truth: { recruited: number } }).truth.recruited);
+
+  test('subir PEEP por encima de la apertura recluta; bajarla por encima del cierre lo conserva', async ({ page }) => {
+    await open(page, { scenario: 'SC-25', speed: 8 });
+    await page.click('[data-instructor="patient"]');
+    await page.locator('#truth-details summary').click();
+    // La celda del modelo aparece sólo con reclutamiento configurado, y arranca en 0 % (PEEP 5, picos ~22 < pOpen 28).
+    await expect(page.locator('#truth-recruit-cell')).toBeVisible();
+    expect(await reclutado(page)).toBeLessThan(0.05);
+    // PEEP 20: los picos inspiratorios (~37) superan pOpen y la fracción abierta sube respiración a respiración.
+    await ponerPeep(page, 20);
+    await page.waitForFunction(() => (window.__r860.frame as unknown as { truth: { recruited: number } }).truth.recruited > 0.9, null, {
+      timeout: 40_000,
+    });
+    // De vuelta a PEEP 10 —dentro de la banda, por encima del cierre— se conserva lo abierto: histéresis.
+    await ponerPeep(page, 10);
+    const n = (await frame(page)).breathCount;
+    await page.waitForFunction((b) => (window.__r860.frame as unknown as { breathCount: number }).breathCount >= b + 4, n, {
+      timeout: 40_000,
+    });
+    expect(await reclutado(page)).toBeGreaterThan(0.9);
+    await expect(page.locator('#truth-recruit')).not.toHaveText(/^0\s*%$/);
   });
 });

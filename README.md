@@ -33,7 +33,7 @@ Capturas de validación con metadatos (viewport, hora, semilla, tiempo simulado)
 
 ## Parámetros de URL
 
-`?scenario=SC-01` (<!-- hechos:escenarios -->SC-01…SC-23 (19 escenarios de enseñanza; la numeración salta los no implementados) y SC-P de referencia fotográfica<!-- /hechos:escenarios -->) · `fixture=P1|P3` (transcripción de foto, sin motor) · `t0=2026-08-18T21:04:05-04:00` · `seed=1` · `dt=4` · `speed=2` · `paused=1` · `autopause=12000` · `view=waves|basic|loops|data|trends|log` · `instructor=0` · `inline=1` · `editTimeout=1500` (sólo pruebas).
+`?scenario=SC-01` (<!-- hechos:escenarios -->SC-01…SC-25 (21 escenarios de enseñanza; la numeración salta los no implementados) y SC-P de referencia fotográfica<!-- /hechos:escenarios -->) · `fixture=P1|P3` (transcripción de foto, sin motor) · `t0=2026-08-18T21:04:05-04:00` · `seed=1` · `dt=4` · `speed=2` · `paused=1` · `autopause=12000` · `view=waves|basic|loops|data|trends|log` · `instructor=0` · `inline=1` · `editTimeout=1500` (sólo pruebas).
 
 ## Atajos
 

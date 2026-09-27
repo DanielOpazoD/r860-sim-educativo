@@ -1148,6 +1148,19 @@
       ]
     },
     {
+      "id": "E-092",
+      "claim": "Disparo reverso (entrainment): la insuflación pasiva de una respiración de máquina evoca una contracción diafragmática fase-bloqueada, modelada como pulso 'riseRelax' que arranca `delayS` después del inicio de la insuflación con amplitud y acoplamiento propios (`effort.reverse`; ratio máquina:paciente 1:1–1:3). Sólo las respiraciones 'mandatory'/'backup' la evocan — una asistida disparada por la evocada no re-evoca—; si la contracción sobrevive al ciclado, su demanda dispara la siguiente respiración por el mecanismo normal y emerge el doble disparo. Verificado en banco: con SC-24 (VC 450 mL, C 0,045, R 10, amplitud 8, latencia 0,5) el pico de Pmus cae a inicio+0,5+0,8 s en todos los ciclos y el registro es todo 'mandatory'; con latencia 1,4 aparecen respiraciones 'assisted' apiladas a ~0,6 s del fin de la inspiración previa (demanda > Pel−PEEP mientras aún queda volumen; con 0,9 físicamente no dispara: el pico 8 no supera Pel−PEEP ≈ 9,5). Fenómeno descrito por Akoumianaki 2013 (Chest 143:927); latencia, amplitud y ratio son valores propuestos (U-54).",
+      "status": "P (fenómeno descrito; valores propuestos del simulador)",
+      "source": "literatura",
+      "locator": "Akoumianaki et al., Chest 2013;143(4):927 (reverse triggering / entrainment)",
+      "implemented": "src/domain/types.ts (EffortParams.reverse); src/engine/effort.ts (notifyMachineBreath, riseRelaxPulse evocado); src/engine/controller.ts (aviso en startBreath mandatory/backup); src/ui/patientControls.ts (reverseAmp, reverseDelay); src/ui/help.ts (patient.reverse, patient.reverseDelay); src/scenarios/index.ts (SC-24)",
+      "tests": [
+        "tests/unit/effort.test.ts (entrainment: identidad sin reverse, onset/pico, ratio, sobrescritura)",
+        "tests/bench/disparoReverso.test.ts (BM-RT)",
+        "tests/e2e/interaction.spec.ts (RT · disparo reverso)"
+      ]
+    },
+    {
       "id": "E-089",
       "claim": "Presets de referencia fisiológica para la mecánica del paciente (panel docente, sin cambiar valores por omisión ni escenarios): viscoelasticidad «Adulto sano» E2 3 cmH2O/L y τ2 1,1 s para el sistema respiratorio total anestesiado-paralizado (oclusión rápida a flujo constante) y «Restrictivo / SDRA» E2 9, τ2 1,0 s (2–3× la sana); K2 inspiratorio del TET adulto por diámetro interno 2,4/3,1/4,7/6,0/9,2/12,8 cmH2O/(L/s)² para 9,0/8,5/8,0/7,5/7,0/6,5 mm (método de oclusión), con el término lineal K1 del tubo incluido en la resistencia del paciente. Verificado en banco: con el preset sano y VC 500 mL a 0,5 L/s una oclusión de 3 s mide P1−P2 = 0,87 cmH2O (2,57 con SDRA, > 2×), y el TET 7,0 mm sube la Ppico 2,33 cmH2O a 0,5 L/s ≈ K2·Q².",
       "status": "P (E2/τ2, valores aproximados de literatura) / D (K2 por diámetro, Anaesth Intensive Care 2011)",
@@ -1158,6 +1171,19 @@
         "tests/unit/mechanicsPresets.test.ts (PRE)",
         "tests/bench/viscoelasticoReferencia.test.ts (BM-VE)",
         "tests/e2e/interaction.spec.ts (PRE · presets de mecánica del paciente)"
+      ]
+    },
+    {
+      "id": "E-093",
+      "claim": "Histéresis de la curva P-V como reclutamiento (U-47): una fracción `frac` de la capacidad elástica de la unidad principal permanece cerrada mientras la distensión estática (Pel − P0) no supera `pOpen`; una vez abierta no se cierra hasta bajar de `pClose` (< pOpen), y entre ambas conserva el estado — la zona muerta ES la histéresis estática. Apertura y cierre avanzan en exponenciales con `tauOpenS`/`tauCloseS`. La capacidad efectiva es C·(1 + r·frac): reclutar suma compliance, baja Pel al mismo volumen y sube la EELV; sobre la sigmoide se escala su capacidad b (la solución sigue cerrada). La distensión que manda es la elástica estática, así que una oclusión sostenida recluta y la meseta cae al abrirse. Umbrales declarados por compartimento (pOpen ~25–30, pClose ~9, frac 0,6 en el banco docente): un solo par de umbrales, no un continuo de unidades. Medido (BM-RC): Cstat 30 mL/cmH2O a PEEP 5–12 sin reclutar y ≈48 tras mantener PEEP 20 y bajar a 10 — la tabla de PEEP decremental funciona; por debajo de pClose se desrecluta con su constante.",
+      "status": "P (modelo y umbrales: fisiología real, valores docentes aproximados)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/patient.ts (recruited, recruitStep, pelStaticAt, equilibriumVolumeFor, recruitmentAtRest); src/domain/validation.ts (rangos recruit); src/ui/patientControls.ts (deslizadores); src/ui/instructorPanel.ts (celda y opciones); src/ui/help.ts (patient.recruit); src/scenarios/index.ts (SC-25)",
+      "tests": [
+        "tests/unit/reclutamiento.test.ts (RC-01)",
+        "tests/bench/reclutamiento.test.ts (BM-RC)",
+        "tests/e2e/interaction.spec.ts (RC · reclutamiento alveolar con histéresis)"
       ]
     }
   ]
