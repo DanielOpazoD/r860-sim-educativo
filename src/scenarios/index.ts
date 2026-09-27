@@ -451,6 +451,63 @@ export const SCENARIOS: Scenario[] = [
     observe: 'Separar objetivo, entrega y medición.',
     caution: 'Escenario sintético; no asociado a fallas reales del equipo fotografiado.',
   },
+  {
+    id: 'SC-24',
+    name: 'Disparo reverso',
+    synthetic: true,
+    category: 'Sincronía',
+    level: 3,
+    lesson: {
+      title: 'La máquina que dispara al paciente',
+      text: 'Este paciente sedado no inicia ninguna respiración: todas son de la máquina. Pero la insuflación evoca una contracción diafragmática 0,5 s después de arrancar, que muere antes del ciclado. A los 40 s la latencia pasa a 1,4 s: la contracción sobrevive al ciclado y dispara ella misma la siguiente respiración.',
+      tasks: [
+        {
+          id: 'fase',
+          text: 'Abre «Datos del modelo» y observa el Pmus: aparece siempre el mismo tiempo después del inicio de la insuflación, aunque el paciente no se esfuerce.',
+          test: 'truthOpen',
+        },
+        {
+          id: 'apiladas',
+          text: 'Tras la perturbación, observa en el registro las respiraciones asistidas pegadas a la anterior.',
+          test: 'assisted',
+        },
+      ],
+    },
+    question:
+      '¿Por qué un paciente sedado «dispara» respiraciones justo después de las de la máquina, y por qué las apiladas sólo salen con la latencia larga?',
+    answer:
+      'Porque el disparo reverso no es una decisión del paciente: la insuflación pasiva evoca una contracción diafragmática a una latencia fija (entrainment). Mientras esa contracción muere antes del ciclado no se ve nada; cuando sobrevive al ciclado, su demanda cruza el umbral del disparo y la máquina entrega una segunda respiración apilada sobre la anterior.',
+    description:
+      'Paciente sedado con contracción evocada por cada respiración mandatoria (Pmus 8, latencia 0,5 s). A los 40 s la latencia pasa a 1,4 s y aparecen respiraciones apiladas.',
+    patient: { crs: 0.045, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
+    effort: {
+      enabled: true,
+      amplitude: 0,
+      ratePerMin: 12,
+      tiS: 0.8,
+      phaseS: 0,
+      shape: 'riseRelax',
+      relaxTauS: 0.2,
+      reverse: { amplitude: 8, delayS: 0.5 },
+    },
+    sensors: idealSensors,
+    settings: {
+      vt: 0.45,
+      rr: 14,
+      ie: 1 / 2,
+      peep: 5,
+      pmax: 45,
+      plimit: 100,
+      pausePct: 0,
+      assistControl: true,
+      flowTrigger: 2 / 60,
+      biasFlow: 4 / 60,
+    },
+    initialV: 'equilibrium',
+    perturbations: [{ atSimTimeMs: 40_000, effort: { reverse: { amplitude: 8, delayS: 1.4 } }, note: 'latencia evocada 0,5 → 1,4 s' }],
+    observe: 'Pmus fase-bloqueada tras cada insuflación; tras la perturbación, respiraciones asistidas apiladas.',
+    caution: 'El disparo reverso es un fenómeno propuesto (P): la latencia y el acoplamiento son valores del simulador, no del equipo.',
+  },
 ];
 
 SCENARIOS.push({

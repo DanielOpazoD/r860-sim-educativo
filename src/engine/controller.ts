@@ -881,6 +881,8 @@ export class VcController {
     const prev = this.breath;
     if (prev) this.finishBreath(prev);
     const breathId = `b${this.breathSeq + 1}`;
+    // Disparo reverso: sólo las respiraciones iniciadas por la máquina evocan la contracción (U-48 parcial).
+    if (type === 'mandatory' || type === 'backup') this.effort.notifyMachineBreath(this.simT);
     this.triggerPending = null;
     this.qDemandFilt = 0;
     const modeBefore = this.settings.mode;

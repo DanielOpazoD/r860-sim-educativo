@@ -604,6 +604,16 @@ test.describe('DEN · densidad de la columna numérica', () => {
   });
 });
 
+test.describe('RT · disparo reverso (SC-24)', () => {
+  test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
+    await open(page, { scenario: 'SC-24' });
+    await page.click('[data-instructor="patient"]');
+    await page.locator('.advanced-patient summary').click();
+    await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
+    await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
+  });
+});
+
 test.describe('PRE · presets de mecánica del paciente', () => {
   test('«TET 7,0 mm» fija el deslizador K₂ a 9,2 y moverlo a mano deja «Personalizado»', async ({ page }) => {
     await open(page);
