@@ -756,9 +756,6 @@
   .instructor-header h2 {
     font-size: 17px;
   }
-  .stage-heading h1 {
-    font-size: 16px;
-  }
   .app-top {
     padding-left: 34px;
     padding-right: 34px;
@@ -841,9 +838,6 @@
   }
   .stage-sub {
     display: none;
-  }
-  .stage-heading h1 {
-    font-size: 13px;
   }
   .stage-footnote > span:last-child {
     display: none;
@@ -993,9 +987,6 @@
   }
   .stage-sub {
     display: inline;
-  }
-  .stage-heading h1 {
-    font-size: 14px;
   }
   .time-controls {
     gap: 15px;

@@ -63,17 +63,6 @@
     padding: 18px 13px;
     gap: 22px;
   }
-  .stage-heading {
-    align-items: flex-start;
-    margin: 0 2px 9px;
-    gap: 10px;
-  }
-  .stage-heading > div {
-    gap: 7px;
-  }
-  .stage-heading h1 {
-    font-size: 13px;
-  }
   .stage-sub {
     display: block;
     font-size: 9px;
@@ -463,12 +452,6 @@
   .workspace {
     display: block;
     padding: 0;
-  }
-  .stage-heading {
-    color: #111;
-  }
-  .stage-heading h1 {
-    color: #111;
   }
   .device-shell {
     box-shadow: none;

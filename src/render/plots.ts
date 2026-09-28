@@ -80,17 +80,21 @@ export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
     minV = Math.min(minV, p[3]);
   }
   const volume = nice(maxV * 1.1, ESCALA_VOLUMEN);
-  // El suelo del eje de volumen tiene que caber el mínimo REAL, no un 10 % fijo de la escala superior. La traza es el
-  // volumen desde el inicio de la respiración, así que baja de cero cuando el pulmón devuelve gas que no recibió en
-  // ese ciclo: apilamiento, espiración activa o liberación de aire atrapado. Con el suelo fijo, la señal que más
-  // enseña —la curva de volumen hundiéndose bajo la línea de base— se dibujaba como una barra plana recortada: en el
-  // escenario de doble disparo la traza llega a −516 mL contra un suelo de −60.
-  const holgura = -volume * 0.1;
+  // El suelo del eje de volumen tiene que caber el mínimo REAL, no un porcentaje fijo de la escala superior. La traza
+  // es el volumen desde el inicio de la respiración, así que baja de cero cuando el pulmón devuelve gas que no
+  // recibió en ese ciclo: apilamiento, espiración activa o liberación de aire atrapado. Con el suelo fijo, la señal
+  // que más enseña —la curva de volumen hundiéndose bajo la línea de base— se dibujaba como una barra plana
+  // recortada: en el escenario de doble disparo la traza llega a −516 mL contra un suelo de −60.
+  const holgura = -volume * 0.05;
+  const pressure = nice(maxP * 1.12, [30, 40, 60, 80, 100, 120]);
   return {
-    pressure: nice(maxP * 1.12, [30, 40, 60, 80, 100, 120]),
+    pressure,
     flow: nice(maxF * 1.15, [40, 60, 80, 120, 160, 240, 320]),
     volume,
-    minPressure: Math.min(-10, Math.floor(minP / 10) * 10),
+    // Un pulmón pasivo nunca baja de 0 cmH₂O: el suelo fijo de −10 dejaba vacío un cuarto del panel. Sólo baja
+    // cuando la señal lo hace (esfuerzo del paciente); en reposo queda un margen del 5 % para que la línea de base
+    // no se pegue al marco.
+    minPressure: minP >= -0.5 ? -pressure * 0.05 : Math.min(-5, Math.floor(minP / 5) * 5),
     minVolume: minV < holgura ? -nice(-minV * 1.12, ESCALA_VOLUMEN) : holgura,
   };
 }
@@ -315,7 +319,9 @@ export function drawWave(
           index: 1,
           min: range.minPressure,
           max: range.pressure,
-          ticks: [0, range.pressure / 2, range.pressure],
+          // Con suelo negativo hace falta su marca, como en el volumen: la excursión se ve pero también se mide.
+          ticks:
+            range.minPressure <= -5 ? [range.minPressure, 0, range.pressure / 2, range.pressure] : [0, range.pressure / 2, range.pressure],
           color: '#dcfff2',
           fill: 'pressure',
         },
@@ -347,8 +353,8 @@ export function drawWave(
     rowH = h / specs.length;
   const xfn = (t: number): number => left + (style === 'sweep' ? (((t % win) + win) % win) / win : (t - (end - win)) / win) * plotW;
   specs.forEach((sp, i) => {
-    const ytop = i * rowH + 25,
-      ybottom = (i + 1) * rowH - 12,
+    const ytop = i * rowH + 21,
+      ybottom = (i + 1) * rowH - (i === specs.length - 1 ? 13 : 7),
       ph = ybottom - ytop;
     const yf = (v: number): number => ybottom - ((v - sp.min) / (sp.max - sp.min)) * ph;
     text(ctx, sp.label, left + 1, i * rowH + 16, 13, '#b8ecff', 'left', '500');

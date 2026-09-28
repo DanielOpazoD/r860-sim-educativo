@@ -204,7 +204,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     // que entrega 0 mL no alarma sólo por Pmáx: también saltan VTesp bajo y VMesp bajo, y esas dos se activaron DESPUÉS
     // del reconocimiento anterior. Así que al resolverse la causa la banda queda gris —resuelta, pendiente de
     // reconocer— y hace falta reconocer otra vez para limpiarla. Ése es justamente el contrato que esta prueba fija.
-    await page.click('[data-instructor="patient"]'); // la pestaña que se abre es «Entrenar»
+    await page.click('[data-instructor="patient"]'); // la pestaña que se abre es «Paciente»
     await page.fill('[data-phys-number="resistance"]', '10');
     await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
@@ -679,7 +679,7 @@ test.describe('EXM · modo examen', () => {
 test.describe('BLD · bucle docente con presión muscular', () => {
   test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
     await open(page, { scenario: 'SC-19' });
-    await page.click('[data-instructor="patient"]'); // el panel abre en «Entrenar»
+    await page.click('[data-instructor="patient"]'); // el panel abre en «Paciente»
     await page.locator('#truth-details summary').click();
     const canvas = page.locator('#muscle-loop-canvas');
     await expect(canvas).toBeVisible();

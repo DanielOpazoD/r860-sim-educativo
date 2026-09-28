@@ -193,9 +193,9 @@ describe('Los ejes de las curvas tienen que caber los datos', () => {
     expect(b.minVolume).toBeLessThanOrEqual(-516);
   });
 
-  it('sin excursión negativa el suelo se queda en la holgura de siempre', () => {
+  it('sin excursión negativa el suelo se queda en la holgura del 5 %', () => {
     const b = getBounds(traza([0, 250, 500, 250, 0]), 5, 500);
-    expect(b.minVolume).toBeCloseTo(-b.volume * 0.1, 9);
+    expect(b.minVolume).toBeCloseTo(-b.volume * 0.05, 9);
   });
 
   it('los demás ejes siguen cabiendo sus extremos', () => {
