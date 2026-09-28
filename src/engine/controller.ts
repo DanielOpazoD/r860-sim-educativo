@@ -17,6 +17,7 @@ import {
   PEEP_REGULATOR_TAU_S,
   thresholdCrossing,
   TRIGGER_MIN_PEEP_DROP_CMH2O,
+  TRIGGER_PEEP_DWELL_S,
   TRIGGER_REFRACTORY_S,
   triggerDelayS,
 } from './trigger';
@@ -97,6 +98,12 @@ export class VcController {
   private qDemandFilt = 0;
   /** Muestras (t, Paw) de la espiración en curso: de ahí sale la PEEPe anterior a la caída del esfuerzo. */
   private expPawTrace: { t: number; paw: number }[] = [];
+  /** Tiempo continuo que esta espiración ha mantenido la Pva cerca de la PEEP (s). */
+  private peepHeldS = 0;
+  /** La espiración en curso ya demostró sostener presión de circuito (dwell alcanzado). Separar «nunca hubo
+   * PEEP» (desconexión o fuga que el flujo de base no cubre) de «la Pva está baja AHORA» (esfuerzo que la
+   * hunde) es lo que deja disparar umbrales por debajo de peep−DROP sin abrir una tormenta de autodisparos. */
+  private peepDemostrada = false;
   /** Instante en que se detectó el disparo que terminó la espiración (null si no lo hubo). */
   private lastTriggerDetectedS: number | null = null;
   /** CPAP/PS: se declaró apnea y el ventilador está entregando respaldo hasta que el paciente vuelva a disparar. */
@@ -199,6 +206,8 @@ export class VcController {
     this.triggerPending = null;
     this.qDemandFilt = 0;
     this.expPawTrace = [];
+    this.peepHeldS = 0;
+    this.peepDemostrada = false;
     this.lastTriggerDetectedS = null;
     this.breath = null;
     this.phase = 'exp';
@@ -216,6 +225,8 @@ export class VcController {
     this.triggerPending = null;
     this.qDemandFilt = 0;
     this.expPawTrace = [];
+    this.peepHeldS = 0;
+    this.peepDemostrada = false;
     this.lastTriggerDetectedS = null;
     this.phase = 'standby';
     this.tPhase = 0;
@@ -621,6 +632,11 @@ export class VcController {
         this.expPawTrace.push({ t: this.simT + h, paw: this.paw });
         while (this.expPawTrace.length && (this.expPawTrace[0] as { t: number }).t < this.simT + h - PEEPE_TRACE_S)
           this.expPawTrace.shift();
+        // La guardia de disparo mira si esta espiración SOSTUVO la PEEP (dwell continuo), no si la Paw del
+        // instante está alta: un esfuerzo que la hunde debe poder disparar con cualquier umbral admitido.
+        if (this.paw > peep - TRIGGER_MIN_PEEP_DROP_CMH2O) this.peepHeldS += h;
+        else this.peepHeldS = 0;
+        if (this.peepHeldS >= TRIGGER_PEEP_DWELL_S) this.peepDemostrada = true;
         if (this.manualRequested) {
           // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
           this.manualRequested = false;
@@ -629,8 +645,9 @@ export class VcController {
           !this.triggerPending &&
           (s.assistControl || s.mode === 'CPAP_PS') &&
           this.tPhase + h >= TRIGGER_REFRACTORY_S &&
-          // Sin PEEP en el circuito (desconexión, fuga mayor que el flujo de base) no hay disparo que evaluar (P).
-          this.paw > peep - TRIGGER_MIN_PEEP_DROP_CMH2O &&
+          // Sin PEEP en el circuito (desconexión, fuga mayor que el flujo de base) no hay disparo que evaluar:
+          // con el circuito abierto la espiración nunca sostiene PEEP y la bandera no se iza (P).
+          this.peepDemostrada &&
           (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : this.q >= s.flowTrigger)
         ) {
           // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
@@ -755,6 +772,8 @@ export class VcController {
     }
     this.phase = 'exp';
     this.tPhase = 0;
+    this.peepHeldS = 0;
+    this.peepDemostrada = false;
   }
 
   /**
@@ -839,6 +858,8 @@ export class VcController {
       if (!hold) return;
       this.phase = 'exp';
       this.tPhase = 0;
+      this.peepHeldS = 0;
+      this.peepDemostrada = false;
       return;
     }
     this.hold = null;
@@ -874,6 +895,8 @@ export class VcController {
     if (hold.req.kind === 'inspHold') {
       this.phase = 'exp';
       this.tPhase = 0;
+      this.peepHeldS = 0;
+      this.peepDemostrada = false;
     } else this.startBreath('mandatory');
   }
 
