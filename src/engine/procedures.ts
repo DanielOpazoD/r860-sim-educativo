@@ -74,6 +74,9 @@ export class ProcedureManager {
     private readonly wallTimeOf: (simTimeMs: number) => number,
     /** Pulmón con segunda unidad en paralelo: la Cstat y la resistencia medidas no equivalen a un solo compartimento. */
     private readonly hasSecondUnit: () => boolean = () => false,
+    /** Firma de la mecánica vigente: con ella un bloqueo espiratorio queda vinculado a su contexto y un
+     * bloqueo inspiratorio sabe si la PEEPtot medida sigue siendo de la misma mecánica (o de una anterior). */
+    private readonly contextSig: () => string = () => '',
   ) {}
 
   private nextId(): string {
@@ -169,12 +172,22 @@ export class ProcedureManager {
     if (o.kind === 'inspHold') {
       const pplat = quality === 'valid' ? o.pawEnd : null;
       values.pplat = mkSample('pplatHold', pplat, 'cmH2O', { ...base, quality, reason });
-      // Denominador: PEEPtot si hay un bloqueo espiratorio válido medido con la misma PEEP programada (P, E-035); si no, PEEPe con motivo.
+      // Denominador: PEEPtot si hay un bloqueo espiratorio válido medido con la misma PEEP programada Y en la
+      // misma mecánica (P, E-035). La PEEPe igual no basta: la autoPEEP depende de toda la mecánica — tras
+      // cambiar la resistencia espiratoria la PEEPtot vieja contamina la Cstat nueva (publicaba 118,9 mL/cmH₂O
+      // en un pulmón de 50). Si la firma cambió, se cae a PEEPe con el motivo explícito.
       const prevExp = this.last.expHold;
       const peepTotPrev =
-        prevExp && prevExp.quality === 'valid' && Math.abs((prevExp.values.peepe?.value ?? Number.NaN) - o.peepeStart) < 1e-9
+        prevExp &&
+        prevExp.quality === 'valid' &&
+        prevExp.contextSig !== undefined &&
+        prevExp.contextSig === this.contextSig() &&
+        Math.abs((prevExp.values.peepe?.value ?? Number.NaN) - o.peepeStart) < 1e-9
           ? (prevExp.values.peepTot?.value ?? null)
           : null;
+      // Había PEEPtot con la misma PEEPe pero medida bajo otra mecánica: el motivo dice por qué no se combinó.
+      const peepTotDeOtraMecanica =
+        peepTotPrev === null && prevExp?.quality === 'valid' && Math.abs((prevExp.values.peepe?.value ?? Number.NaN) - o.peepeStart) < 1e-9;
       const denom = o.pawEnd - (peepTotPrev ?? o.peepeStart);
       if (quality === 'valid' && denom >= MIN_CSTAT_DENOMINATOR && o.vtInspL > 0) {
         values.cstat = mkSample('cstatHold', o.vtInspL / denom, 'L/cmH2O', {
@@ -183,7 +196,9 @@ export class ProcedureManager {
           reason:
             this.aproximacion() +
             (peepTotPrev === null
-              ? 'denominador=Pplat−PEEPe (sin PEEPtot medida)'
+              ? peepTotDeOtraMecanica
+                ? 'denominador=Pplat−PEEPe (la PEEPtot previa es de otra mecánica)'
+                : 'denominador=Pplat−PEEPe (sin PEEPtot medida)'
               : 'denominador=Pplat−PEEPtot (bloqueo espiratorio previo)'),
         });
         values.driving = mkSample('drivingHold', denom, 'cmH2O', {
@@ -193,7 +208,9 @@ export class ProcedureManager {
           // PEEP total medida, que es justo la distinción que esta magnitud existe para enseñar.
           reason:
             peepTotPrev === null
-              ? 'Pplat − PEEPe al inicio de esa inspiración (sin PEEPtot medida)'
+              ? peepTotDeOtraMecanica
+                ? 'Pplat − PEEPe (la PEEPtot previa es de otra mecánica)'
+                : 'Pplat − PEEPe al inicio de esa inspiración (sin PEEPtot medida)'
               : 'Pplat − PEEPtot (bloqueo espiratorio previo)',
         });
         values.vt = mkSample('vtHold', o.vtInspL, 'L', { ...base, quality: 'valid', reason: null });
@@ -256,6 +273,8 @@ export class ProcedureManager {
       quality,
       reason,
       values,
+      // La maniobra queda vinculada a la mecánica que la produjo: sólo las espiratorias válidas la llevan.
+      ...(o.kind === 'expHold' && quality === 'valid' ? { contextSig: this.contextSig() } : {}),
     };
     // Se conserva como «último» aunque sea inválido: el usuario debe ver el motivo; un resultado válido anterior queda en el historial.
     this.last[o.kind] = result;

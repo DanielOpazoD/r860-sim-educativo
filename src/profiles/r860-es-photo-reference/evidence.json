@@ -514,14 +514,15 @@
     },
     {
       "id": "E-035",
-      "claim": "Cstat del bloqueo inspiratorio usa PEEPtot como denominador cuando existe un bloqueo espiratorio válido reciente con la misma PEEP programada; si no, usa PEEPe y el motivo de la muestra lo dice.",
+      "claim": "Cstat del bloqueo inspiratorio usa PEEPtot como denominador cuando existe un bloqueo espiratorio válido reciente con la misma PEEP programada Y la misma mecánica (firma contextSig: paciente, esfuerzo y ajustes salvo FiO2, con reclutamiento al 1 %); si no —o si la PEEPtot es de otra mecánica— usa PEEPe y el motivo de la muestra lo dice.",
       "status": "P",
       "source": "Natalini 2016 (auto-PEEP = PEEPtot − PEEP; docs/03 §5) y revisión adversarial 06-09-2026",
       "locator": "—",
-      "note": "Antes (v0.3) siempre Pplat − PEEPe, motivo «sin PEEPtot medida»; con auto-PEEP sobreestimaba la carga elástica.",
-      "implemented": "src/engine/procedures.ts (resultado del bloqueo inspiratorio)",
+      "note": "Antes (v0.3) siempre Pplat − PEEPe, motivo «sin PEEPtot medida»; con auto-PEEP sobreestimaba la carga elástica. La condición inicial «misma PEEPe» bastaba hasta que una auditoría mostró que una PEEPtot previa contaminaba la Cstat tras cambiar la mecánica (118,9 mL/cmH2O publicados en un pulmón de 50): ahora la combinación exige también la firma de contexto.",
+      "implemented": "src/engine/procedures.ts (resultado del bloqueo inspiratorio, contextSig); src/engine/simulator.ts (firma de contexto); src/domain/types.ts (ProcedureResult.contextSig)",
       "tests": [
         "tests/unit/review3.test.ts «con atrapamiento (Rexp 30, FR 30) la Cstat vuelve a 50 mL/cmH₂O tras medir PEEPtot»",
+        "tests/unit/review3.test.ts «tras cambiar la mecánica la PEEPtot medida antes no contamina la Cstat nueva»",
         "tests/unit/procedures.test.ts"
       ]
     },

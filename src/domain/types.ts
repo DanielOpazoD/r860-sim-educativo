@@ -291,6 +291,10 @@ export interface ProcedureResult {
   quality: Quality;
   reason: string | null;
   values: Record<string, MetricSample>;
+  /** Firma de la mecánica (paciente, esfuerzo, ajustes) al terminar la maniobra. La llevan los bloqueos
+   * espiratorios válidos: un bloqueo inspiratorio sólo combina la PEEPtot si la firma coincide — la PEEP
+   * externa igual no basta, la autoPEEP depende de toda la mecánica. */
+  contextSig?: string;
 }
 
 export type AlarmPriority = 'high' | 'medium' | 'informational';
