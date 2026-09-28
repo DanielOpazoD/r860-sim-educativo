@@ -284,9 +284,11 @@ export function startApp(opts: AppOptions): void {
     const text = learnerText(reason);
     const failedInit = /inici|init|par[áa]metro|inv[áa]lid|\bdt\b/i.test(reason);
     engineBanner(
-      failedInit && frame === null
-        ? `No se pudo iniciar la simulación: ${text}. Revisa los parámetros de la dirección o recarga la página.`
-        : `El motor de simulación se ejecuta sin Worker: ${text}. La simulación continúa en la página; puede perder fluidez.`,
+      client.sessionRestarted
+        ? `Falló el Worker y la sesión se reinició en la página con la configuración vigente al arrancar: quedó en pausa y el avance se perdió.`
+        : failedInit && frame === null
+          ? `No se pudo iniciar la simulación: ${text}. Revisa los parámetros de la dirección o recarga la página.`
+          : `El motor de simulación se ejecuta sin Worker: ${text}. La simulación continúa en la página; puede perder fluidez.`,
     );
     versionTag();
   }

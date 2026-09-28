@@ -1,7 +1,7 @@
 import type { Command } from '../domain/commands';
 import type { Actor } from '../domain/types';
 import type { SimulatorInit } from '../engine/simulator';
-import type { SessionFile } from '../history/session';
+import { importSession as parseSession, type SessionFile } from '../history/session';
 import type { Scenario } from '../scenarios';
 import { EngineHost } from './engineHost';
 import type { EngineToMain, MainToEngine } from './protocol';
@@ -18,9 +18,13 @@ export const WORKER_READY_TIMEOUT_MS = 4000;
 export class EngineClient {
   mode: 'worker' | 'inline';
   degradedReason: string | null = null;
+  /** true cuando la degradación reinició la sesión desde la última configuración entregada (el avance se perdió). */
+  sessionRestarted = false;
   onDegraded: ((reason: string) => void) | null = null;
   private worker: Worker | null = null;
   private inline: EngineHost | null = null;
+  /** Órdenes que crean un mundo (init, loadScenario, importSession) en orden, para reconstruirlo en el respaldo. */
+  private restartMsgs: MainToEngine[] = [];
   private nextId = 1;
   private pending = new Map<number, (m: EngineToMain) => void>();
   private frameListeners: FrameListener[] = [];
@@ -68,6 +72,21 @@ export class EngineClient {
     const pend = [...this.pending.values()];
     this.pending.clear();
     for (const cb of pend) cb({ type: 'commandResult', id: -1, accepted: false, reason: `motor degradado: ${reason}` });
+    // El respaldo nunca vio arrancar la sesión y no puede continuarla a mitad: se reinicia con la última
+    // configuración entregada y queda en pausa con el motivo a la vista, en vez de seguir congelada mientras
+    // el aviso decía que «la simulación continúa» (auditoría).
+    if (this.restartMsgs.length) {
+      this.sessionRestarted = true;
+      for (const msg of this.restartMsgs)
+        this.inline.handle(
+          msg.type === 'init' ? { ...msg, init: JSON.parse(JSON.stringify(msg.init)) as SimulatorInit, running: false } : msg,
+        );
+      this.inline.handle({
+        type: 'control',
+        action: 'pause',
+        reason: 'sesión reiniciada tras el fallo del motor; el avance se perdió',
+      });
+    }
     this.onDegraded?.(reason);
     if (!this.readyDone) this.dispatch({ type: 'ready' });
   }
@@ -107,7 +126,9 @@ export class EngineClient {
   }
 
   init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number, warmUp = true): void {
-    this.send({ type: 'init', init, speed, running, warmUp, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) });
+    const m: MainToEngine = { type: 'init', init, speed, running, warmUp, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) };
+    this.restartMsgs = [m];
+    this.send(m);
   }
 
   command(cmd: Command, actor: Actor = 'learner'): Promise<{ accepted: boolean; reason?: string }> {
@@ -136,7 +157,9 @@ export class EngineClient {
     this.send({ type: 'requestFrame' });
   }
   loadScenario(scenario: Scenario, keepSettings = false): void {
-    this.send({ type: 'loadScenario', scenario, keepSettings });
+    const m: MainToEngine = { type: 'loadScenario', scenario, keepSettings };
+    this.restartMsgs.push(m);
+    this.send(m);
   }
 
   /**
@@ -156,8 +179,18 @@ export class EngineClient {
     const id = this.nextId++;
     return new Promise((res) => {
       this.pending.set(id, (m) => {
-        if (m.type === 'importResult')
+        if (m.type === 'importResult') {
+          // El mundo pasa a ser el de la sesión importada: su init sustituye a las órdenes de reconstrucción
+          // anteriores (sin reejecutar la reproducción completa si el respaldo arranca después).
+          if (m.ok) {
+            const parsed = parseSession(text);
+            if (parsed.ok)
+              this.restartMsgs = [
+                { type: 'init', init: JSON.parse(JSON.stringify(parsed.session.init)) as SimulatorInit, speed: 1, running: false },
+              ];
+          }
           res({ ok: m.ok, ...(m.errors ? { errors: m.errors } : {}), ...(m.warnings ? { warnings: m.warnings } : {}) });
+        }
         // Cualquier otra respuesta (motor degradado, sin simulador) es un fallo con motivo, nunca una espera eterna.
         else res({ ok: false, errors: [m.type === 'commandResult' && m.reason ? m.reason : 'el motor no pudo abrir la sesión'] });
       });
