@@ -8,6 +8,7 @@ import { wallDate } from './format';
 import { collapseHelp, helpContent } from './helpPanels';
 import { humanReason, learnerText } from './humanize';
 import { isMobile } from './labels';
+import type { PuntoTitulacion } from './teaching';
 import type { QuickEditor } from './quickEditor';
 
 export type HoldKind = 'inspHold' | 'expHold';
@@ -140,8 +141,10 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
         const cstat = h.values.cstat?.value;
         const peep = ctx.frame?.settings.peep;
         if (typeof cstat === 'number' && typeof peep === 'number') {
-          const puntos = (ctx.lesson.flags.titulacion as { peep: number; cstat: number }[] | undefined) ?? [];
-          ctx.lesson.flags.titulacion = [...puntos.filter((x) => Math.abs(x.peep - peep) > 1e-9), { peep, cstat: cstat * 1000 }];
+          // Historial cronológico: cada medición se conserva (la curva deduplica por PEEP quedándose la última;
+          // las pruebas como la decremental necesitan el orden, no un solo punto por consigna — auditoría SC-25).
+          const puntos = (ctx.lesson.flags.titulacion as PuntoTitulacion[] | undefined) ?? [];
+          ctx.lesson.flags.titulacion = [...puntos, { peep, cstat: cstat * 1000, t: h.completedAtMs ?? ctx.frame?.simTimeMs }];
         }
       }
       ctx.toast(

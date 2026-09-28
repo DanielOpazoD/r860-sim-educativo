@@ -87,12 +87,12 @@ export const SCENARIOS: Scenario[] = [
       title: 'El mismo volumen, otra presión',
       text: 'A los 20 s la C baja a 20 mL/cmH2O. El mismo VT exige más presión elástica. La etiqueta describe mecánica, no un paciente con SDRA.',
       tasks: [
-        { id: 'meseta', text: 'Mide Pplat con un bloqueo inspiratorio antes del cambio.', test: 'validInsp' },
+        { id: 'meseta', text: 'Mide Pplat con un bloqueo inspiratorio antes del cambio.', test: 'holdBeforePatient' },
         { id: 'after', text: 'Repite el bloqueo después de los 20 s.', test: 'holdAfter20' },
         {
           id: 'peep',
           text: 'Sube la PEEP a 8 y repite el bloqueo: Pplat sube esos mismos 3 cmH₂O. Con C 20 no cabe más: a PEEP 10 la inspiración ya termina por Pmáx.',
-          test: 'peepChanged',
+          test: 'peep8YHold',
         },
       ],
     },
@@ -797,7 +797,7 @@ SCENARIOS.push({
     title: 'Medir dos veces la misma PEEP',
     text: 'La tabla de PEEP decremental sólo encuentra la compliance ganada si antes hubo apertura: mide bajando, no subiendo.',
     tasks: [
-      { id: 'base', text: 'Mide un bloqueo inspiratorio válido a la PEEP inicial: es la compliance dereclutada.', test: 'validInsp' },
+      { id: 'base', text: 'Mide un bloqueo inspiratorio válido a la PEEP inicial: es la compliance dereclutada.', test: 'holdDereclutada' },
       {
         id: 'recluta',
         text: 'Sube PEEP a 20 y mantén —o pide un bloqueo— hasta que «Reclutamiento» en Datos del modelo llegue al 90 %.',

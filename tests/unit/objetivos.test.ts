@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { ProcedureResult } from '../../src/domain/types';
 import type { EngineFrame } from '../../src/engine/simulator';
 import { Simulator } from '../../src/engine/simulator';
 import { defaultInit, R860_PROFILE } from '../../src/profiles';
@@ -35,12 +36,14 @@ class Alumno {
     private readonly tareas: LessonTask[],
   ) {}
   mirar(frame: EngineFrame): void {
+    const perturbaciones = SCENARIOS.find((s) => s.id === this.id)?.perturbations ?? [];
     const ctx: LessonContext = {
       frame,
       scenarioId: this.id,
       lessonStartMs: 0,
       patientChangeMs: -1,
       settingsChangeMs: this.settingsChangeMs,
+      perturbationMs: perturbaciones.length ? Math.min(...perturbaciones.map((p) => p.atSimTimeMs)) : undefined,
       flags: this.flags,
     };
     for (let i = 0; i < this.tareas.length; i++) {
@@ -362,5 +365,134 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
       if (vistas.size) ruidosos.push(`${e.id}: ${[...vistas].sort().join(',')}`);
     }
     expect(ruidosos).toEqual(['SC-18: ppeakLow,vteHigh,vteLow']);
+  });
+});
+
+// Auditoría (hallazgo 6): un bloqueo a los 25 s completaba «antes de los 20» y «después» a la vez; cambiar la PEEP a
+// 4 cerraba la tarea que pide 8; y en SC-25 bastaban dos puntos a PEEP distintas para declarar la histéresis sin que
+// hubiera apertura de por medio. Estas pruebas fijan la cronología: qué medición precede a qué.
+describe('OBJ · las comparaciones exigen la cronología que piden', () => {
+  const meseta = (completedAtMs: number): ProcedureResult =>
+    ({ kind: 'inspHold', phase: 'done', quality: 'valid', completedAtMs, values: {} }) as unknown as ProcedureResult;
+  const ctxCon = (h: ProcedureResult | null, peep = 5, over: Partial<LessonContext> = {}): LessonContext =>
+    ({
+      frame: { procedure: { last: { inspHold: h, expHold: null } }, settings: { peep } } as unknown as EngineFrame,
+      scenarioId: 'SC-02',
+      lessonStartMs: 0,
+      patientChangeMs: -1,
+      settingsChangeMs: -1,
+      perturbationMs: 20_000,
+      flags: {},
+      ...over,
+    }) as LessonContext;
+
+  it('SC-02 · «antes del cambio» rechaza una meseta medida después (el falso logro)', () => {
+    const tarde = ctxCon(meseta(25_000));
+    expect(LESSON_TESTS.holdBeforePatient!(tarde)).toBe(false);
+    expect(LESSON_TESTS.holdAfter20!(tarde)).toBe(true);
+    expect(LESSON_TESTS.holdBeforePatient!(ctxCon(meseta(15_000)))).toBe(true);
+    // Si la mecánica cambió por otra vía (panel del paciente) a los 30 s, el «antes» se mide contra ese instante.
+    expect(LESSON_TESTS.holdBeforePatient!(ctxCon(meseta(25_000), 5, { patientChangeMs: 30_000 }))).toBe(true);
+  });
+
+  it('SC-02 · la tarea de PEEP exige llegar a 8 y medir la meseta después del ajuste', () => {
+    const hold = meseta(30_000);
+    // PEEP quedó en 4: no es lo pedido aunque haya bloqueo posterior.
+    expect(LESSON_TESTS.peep8YHold!(ctxCon(hold, 4, { flags: { peepChangedMs: 25_000 } }))).toBe(false);
+    // PEEP a 8 pero el bloqueo es anterior al ajuste.
+    expect(LESSON_TESTS.peep8YHold!(ctxCon(meseta(10_000), 8, { flags: { peepChangedMs: 25_000 } }))).toBe(false);
+    // PEEP a 8 y meseta posterior: cumple.
+    expect(LESSON_TESTS.peep8YHold!(ctxCon(hold, 8, { flags: { peepChangedMs: 25_000 } }))).toBe(true);
+    // Sin el registro del cambio no hay secuencia que comprobar.
+    expect(LESSON_TESTS.peep8YHold!(ctxCon(hold, 8))).toBe(false);
+  });
+
+  it('SC-25 · la decremental exige una medida previa a la apertura y otra posterior', () => {
+    const titulacion = (puntos: { peep: number; cstat: number; t?: number }[], recruitedAltaMs?: number) => ({
+      flags: { titulacion: puntos, recruitedAltaMs },
+    });
+    // Dos puntos a PEEP distintas sin apertura completa de por medio: el falso logro de la auditoría.
+    expect(
+      LESSON_TESTS.cstatDecremental!(
+        ctxCon(
+          null,
+          10,
+          titulacion([
+            { peep: 5, cstat: 30, t: 1_000 },
+            { peep: 10, cstat: 45, t: 2_000 },
+          ]),
+        ),
+      ),
+    ).toBe(false);
+    // Con apertura a los 1,5 s simulados: el punto de PEEP 10 posterior supera al previo → histéresis demostrada.
+    expect(
+      LESSON_TESTS.cstatDecremental!(
+        ctxCon(
+          null,
+          10,
+          titulacion(
+            [
+              { peep: 5, cstat: 30, t: 1_000 },
+              { peep: 10, cstat: 45, t: 2_000 },
+            ],
+            1_500,
+          ),
+        ),
+      ),
+    ).toBe(true);
+    // Sin punto previo a la apertura no hay comparación.
+    expect(
+      LESSON_TESTS.cstatDecremental!(
+        ctxCon(
+          null,
+          11,
+          titulacion(
+            [
+              { peep: 10, cstat: 45, t: 2_000 },
+              { peep: 11, cstat: 50, t: 3_000 },
+            ],
+            1_500,
+          ),
+        ),
+      ),
+    ).toBe(false);
+    // La ganancia tiene que ser clara (≥ 30 %), no cualquier diferencia.
+    expect(
+      LESSON_TESTS.cstatDecremental!(
+        ctxCon(
+          null,
+          10,
+          titulacion(
+            [
+              { peep: 5, cstat: 40, t: 1_000 },
+              { peep: 10, cstat: 45, t: 2_000 },
+            ],
+            1_500,
+          ),
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it('SC-25 · la medida «dereclutada» deja de contar una vez abierto el pulmón', () => {
+    expect(LESSON_TESTS.holdDereclutada!(ctxCon(meseta(5_000)))).toBe(true);
+    expect(LESSON_TESTS.holdDereclutada!(ctxCon(meseta(5_000), 5, { flags: { recruitedAltaMs: 4_000 } }))).toBe(false);
+  });
+
+  it('SC-02 en el simulador: medir sólo después de los 20 s deja «antes» sin cumplir', () => {
+    const esc = SCENARIOS.find((s) => s.id === 'SC-02')!;
+    const sim = simular('SC-02');
+    const a = new Alumno('SC-02', esc.lesson!.tasks);
+    runUntilBreath(sim, 8); // ≈ 32 s a FR 15: la hora del cambio programado ya pasó
+    a.mirar(bloqueo(sim, 3));
+    expect(sim.frame().procedure.last.inspHold!.completedAtMs!).toBeGreaterThan(20_000);
+    expect(a.hechos.has('meseta')).toBe(false);
+    expect(a.hechos.has('after')).toBe(true);
+    // Con la medición de verdad antes del cambio, «antes» sí se cumple.
+    const sim2 = simular('SC-02');
+    const a2 = new Alumno('SC-02', esc.lesson!.tasks);
+    a2.mirar(bloqueo(sim2, 3));
+    expect(sim2.frame().procedure.last.inspHold!.completedAtMs!).toBeLessThan(20_000);
+    expect(a2.hechos.has('meseta')).toBe(true);
   });
 });
