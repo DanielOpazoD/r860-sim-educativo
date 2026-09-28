@@ -19,6 +19,7 @@ import {
   metricSample,
   metricValue,
   type MetricSpec,
+  veredictoEstimacion,
 } from './metricsTable';
 
 const EVENT_KIND: Record<string, string> = {
@@ -50,6 +51,8 @@ export interface MetricsView {
   submitEstimate(): void;
   /** Cuántas mediciones ya estimó el alumno en el escenario actual. */
   readonly examEstimateCount: number;
+  /** La medición ya fue estimada en este examen (el resto de vistas la destapa con `ctx.examMasked`). */
+  examEstimated(key: string): boolean;
 }
 
 /**
@@ -65,11 +68,13 @@ export function createMetricsView(ctx: AppContext): MetricsView {
   let logSignature = '';
   /** Estimaciones del alumno en modo examen: la medición tapada se revela sólo tras escribir una cifra. */
   const examEstimates = new Map<string, { guess: number; actual: number }>();
-  let examPending: string | null = null;
+  // La referencia se fija al abrir la pregunta: si la simulación sigue corriendo, el valor no se mueve mientras
+  // el alumno piensa su respuesta (auditoría).
+  let examPending: { key: string; actual: number } | null = null;
   const value = (spec: MetricSpec): number | null => metricValue(ctx.frame, spec);
   const quality = (spec: MetricSpec): string => metricQuality(ctx.frame, spec);
   /** El dato existe pero en examen todavía no se estimó: la casilla enseña «?» en su lugar. */
-  const oculto = (key: string): boolean => ctx.examMode && !examEstimates.has(key);
+  const oculto = (key: string): boolean => ctx.examMasked(key);
   return {
     init() {
       $('#numeric-grid').innerHTML = METRICS.map(
@@ -172,11 +177,15 @@ export function createMetricsView(ctx: AppContext): MetricsView {
     get examEstimateCount() {
       return examEstimates.size;
     },
+    examEstimated(key) {
+      return examEstimates.has(key);
+    },
     metricClick(metric: string): void {
       const spec = ALL_METRICS.find((m) => m.key === metric);
       if (!spec) return;
-      if (oculto(metric) && value(spec) !== null) {
-        examPending = metric;
+      const actual = value(spec);
+      if (oculto(metric) && actual !== null) {
+        examPending = { key: metric, actual };
         ctx.dialog.open(
           'examEstimate',
           `Estimar ${spec.label}`,
@@ -190,28 +199,26 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       this.mechanics(metric);
     },
     submitEstimate(): void {
-      const spec = ALL_METRICS.find((m) => m.key === examPending);
+      const pending = examPending;
+      const spec = pending && ALL_METRICS.find((m) => m.key === pending.key);
       const input = $<HTMLInputElement>('#exam-estimate-input');
-      if (!spec || !input) return;
-      const guess = Number(input.value.replace(',', '.'));
+      if (!spec || !pending || !input) return;
+      const texto = input.value.trim();
+      // El campo vacío no vale como «0»: `Number('')` lo devuelve y la auditoría lo cazó como acierto gratis.
+      const guess = texto === '' ? Number.NaN : Number(texto.replace(',', '.'));
       if (!Number.isFinite(guess)) {
         ctx.toast('Escribe un número para estimar.', true);
         return;
       }
-      const actual = value(spec);
-      if (actual === null) {
-        ctx.dialog.close();
-        ctx.toast(`${spec.label} aún no tiene dato que estimar.`, true);
-        return;
-      }
+      const actual = pending.actual;
       examEstimates.set(spec.key, { guess, actual });
       examPending = null;
       ctx.lesson.flags.examEstimate = true;
       ctx.lesson.evaluate();
       ctx.dialog.close();
-      const errorPct = Math.abs(actual) > 1e-9 ? ((guess - actual) / Math.abs(actual)) * 100 : 0;
+      const veredicto = veredictoEstimacion(guess, actual, spec.decimals, spec.unit);
       ctx.toast(
-        `${spec.label}: estimaste ${f(guess, spec.decimals)} y el monitor marca ${f(actual, spec.decimals)} ${spec.unit} (error ${Math.abs(errorPct).toFixed(0)} %).`,
+        `${spec.label}: estimaste ${f(guess, spec.decimals)} y el monitor marcaba ${f(actual, spec.decimals)} ${spec.unit} (${veredicto}).`,
       );
       ctx.updateUI();
     },

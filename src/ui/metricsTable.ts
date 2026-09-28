@@ -1,6 +1,7 @@
 /** Tabla de mediciones del monitor: especificación, valor mostrado, calidad y pareja de límites. Funciones puras sobre el cuadro. */
 import type { MetricSample, OffOr } from '../domain/types';
 import type { EngineFrame } from '../engine/simulator';
+import { formatNumber } from '../domain/units';
 import { clock, wallDate } from './format';
 import { humanReason, QUALITY, SOURCE } from './humanize';
 
@@ -95,6 +96,19 @@ export function metricValue(frame: EngineFrame | null, spec: MetricSpec): number
   if (!frame || frame.ventilation === 'standby') return null;
   const s = metricSample(frame, spec.key);
   return s && s.value !== null ? s.value * spec.factor : null;
+}
+
+/**
+ * Veredicto de una estimación de examen. El porcentaje sobre el valor real informa cuando éste no es casi cero;
+ * cerca de cero ese porcentaje miente (contra un 0 real cualquier respuesta daba «error 0 %», auditoría), así que
+ * se informa la diferencia absoluta. Caer dentro del medio dígito mostrado cuenta como exacto.
+ */
+export function veredictoEstimacion(guess: number, actual: number, decimals: number, unit: string): string {
+  const err = guess - actual;
+  const paso = Math.pow(10, -decimals) / 2;
+  if (Math.abs(err) <= paso) return 'exacto';
+  if (Math.abs(actual) > 1e-9) return `error ${Math.abs((err / actual) * 100).toFixed(0)} %`;
+  return `diferencia de ${formatNumber(Math.abs(err), decimals)} ${unit}`.trimEnd();
 }
 /** Frase de calidad y procedencia para el alumno. */
 export function metricQuality(frame: EngineFrame | null, spec: MetricSpec): string {

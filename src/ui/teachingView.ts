@@ -14,8 +14,13 @@ export interface TeachingView {
 }
 
 /** Esquema de una respiración en volumen control: rampa, meseta y espiración, a la escala de lo medido. */
-function esquema(fr: EngineFrame): string {
+function esquema(fr: EngineFrame, oculto: (k: string) => boolean): string {
   const nv = niveles(fr);
+  // En examen cada llave enseña su número sólo si todas las mediciones que lo componen ya se estimaron; la consigna
+  // (PEEP programada) no se tapa nunca: no es una medición.
+  const ver = (k: string): boolean => !oculto(k);
+  const verPeep = nv.peepOrigen === 'bloqueo' ? ver('pplat') && ver('driving') : nv.peepOrigen === 'peepe' ? ver('peepe') : true;
+  const cifra = (visible: boolean, texto: string): string => (visible ? texto : '?');
   const techo = Math.max(40, (nv.ppico ?? 20) * 1.25);
   const W = 880,
     H = 156,
@@ -63,12 +68,20 @@ function esquema(fr: EngineFrame): string {
   };
 
   const llaves = hayMeseta
-    ? llave(pPico, pPlat, 'resistiva, R·Q', `${f(pPico - pPlat, 1)} cmH₂O`, '#ffd27a') +
-      llave(pPlat, peep, 'elástica, ΔP', `${f(pPlat - peep, 1)} cmH₂O`, '#7ce0b8') +
+    ? llave(pPico, pPlat, 'resistiva, R·Q', cifra(ver('ppeak') && ver('pplat'), `${f(pPico - pPlat, 1)} cmH₂O`), '#ffd27a') +
+      llave(pPlat, peep, 'elástica, ΔP', cifra(ver('pplat') && verPeep, `${f(pPlat - peep, 1)} cmH₂O`), '#7ce0b8') +
       // Con atrapamiento la carga elástica se mide desde la PEEP TOTAL, y el tramo que va de la programada a la total
       // es la PEEP intrínseca: el esquema la dibuja aparte en vez de esconderla dentro de la elástica.
-      (peepe !== null ? llave(peep, peepe, 'PEEP intrínseca', `${f(peep - peepe, 1)} cmH₂O`, '#ffb0c8') : '') +
-      llave(peepe ?? peep, 0, peepe !== null ? 'PEEP programada' : 'PEEP', `${f(peepe ?? peep, 1)} cmH₂O`, '#9fd0f0')
+      (peepe !== null
+        ? llave(peep, peepe, 'PEEP intrínseca', cifra(ver('peepe') && verPeep, `${f(peep - peepe, 1)} cmH₂O`), '#ffb0c8')
+        : '') +
+      llave(
+        peepe ?? peep,
+        0,
+        peepe !== null ? 'PEEP programada' : 'PEEP',
+        cifra(peepe !== null ? ver('peepe') : verPeep, `${f(peepe ?? peep, 1)} cmH₂O`),
+        '#9fd0f0',
+      )
     : `<text x="${xFin + 14}" y="${y(pPlat)}" font-size="12" fill="#a6d0ed">Haz un bloqueo inspiratorio</text>` +
       `<text x="${xFin + 14}" y="${y(pPlat) + 15}" font-size="12" fill="#a6d0ed">para separar las dos cargas</text>`;
 
@@ -88,19 +101,33 @@ function esquema(fr: EngineFrame): string {
   );
 }
 
-function tarjetaHTML(t: Tarjeta): string {
-  const valor = t.valor === null ? '—' : f(t.valor, t.decimales);
-  // La sustitución puede faltar por dos motivos que no se pueden confundir: o no hay medición todavía, o la hay pero
-  // la descomposición necesita la meseta. La Ppico se lee siempre; su desglose en carga resistiva y elástica, no.
-  // Fórmula y sustitución en una sola línea: se leen juntas y así las cuatro tarjetas caben sin desplazar la pestaña.
-  const linea = t.sustituida
-    ? `<code class="edu-formula">${esc(t.formula)} <span class="edu-flecha">→</span> <b>${esc(t.sustituida)}</b></code>`
-    : `<code class="edu-formula">${esc(t.formula)}</code><p class="edu-falta">${esc(t.faltaPara)}</p>`;
+/** Qué métrica muestra cada tarjeta y qué mediciones mezcla su fórmula sustituida (para taparlas en examen). */
+const CLAVE_TARJETA: Record<string, string> = { ppico: 'ppeak', pplat: 'pplat', driving: 'driving', cstat: 'cstat' };
+const MEZCLA_TARJETA: Record<string, string[]> = {
+  ppico: ['ppeak', 'pplat', 'driving', 'peepe'],
+  pplat: ['pplat', 'driving'],
+  driving: ['pplat', 'driving'],
+  cstat: ['cstat', 'driving', 'vte'],
+};
+
+function tarjetaHTML(t: Tarjeta, oculto: (k: string) => boolean): string {
+  const clave = CLAVE_TARJETA[t.id] ?? t.id;
+  // Tapar el número pero dejar el color «dentro/fuera» delataría el veredicto: con el «?» el estado se neutraliza.
+  const tapado = oculto(clave) && t.valor !== null;
+  const valor = tapado ? '?' : t.valor === null ? '—' : f(t.valor, t.decimales);
+  // La sustitución mezcla otras mediciones: se oculta entera si cualquiera de sus ingredientes sigue tapado,
+  // o si la propia medición de la tarjeta lo está (enseñar «23 = 5 + 8 + 10» ya responde la estimación).
+  const tapaSustitucion = tapado || (t.sustituida !== null && (MEZCLA_TARJETA[t.id] ?? []).some(oculto));
+  const linea = tapaSustitucion
+    ? `<code class="edu-formula">${esc(t.formula)}</code><p class="edu-falta">En examen se revela al estimar la medición en la columna numérica.</p>`
+    : t.sustituida
+      ? `<code class="edu-formula">${esc(t.formula)} <span class="edu-flecha">→</span> <b>${esc(t.sustituida)}</b></code>`
+      : `<code class="edu-formula">${esc(t.formula)}</code><p class="edu-falta">${esc(t.faltaPara)}</p>`;
   const ref = t.referencia
     ? `<p class="edu-ref">Referencia <b>${esc(t.referencia.texto)}</b> <small>${esc(t.referencia.fuente)}</small></p>`
     : '<p class="edu-ref edu-sinref">Sin rango de referencia</p>';
   return (
-    `<article class="edu-card edu-${t.estado}">` +
+    `<article class="edu-card edu-${tapado ? 'sinDato' : t.estado}">` +
     `<header><h3>${esc(t.titulo)}</h3><b>${esc(valor)}<small>${esc(t.unidad)}</small></b></header>` +
     linea +
     ref +
@@ -130,8 +157,10 @@ function silueta(b: number, activo: boolean, titulo: string, pie: string): strin
 }
 
 /** Curva de titulación con los puntos que el alumno midió; sin puntos, dice cómo construirla. */
-function graficoTitulacion(puntos: PuntoTitulacion[]): string {
+function graficoTitulacion(puntos: PuntoTitulacion[], oculto: (k: string) => boolean): string {
   const { puntos: p, mejor } = titulacion(puntos);
+  // Cada punto es una Cstat: con la métrica tapada, sus rótulos también (la posición ya la dibuja la geometría).
+  const verCstat = !oculto('cstat');
   if (p.length < 2)
     return (
       `<p class="edu-falta">Mide la distensibilidad con un bloqueo inspiratorio a distintas PEEP y aquí se dibuja tu curva. ` +
@@ -157,7 +186,7 @@ function graficoTitulacion(puntos: PuntoTitulacion[]): string {
     .join('');
   const marca = mejor
     ? `<text x="${Math.min(W - 90, X(mejor.peep) + 8).toFixed(1)}" y="${(Y(mejor.cstat) - 8).toFixed(1)}" font-size="11" fill="#7ce0b8" font-weight="600">` +
-      `${f(mejor.cstat, 0)} a PEEP ${f(mejor.peep, 0)}</text>`
+      `${verCstat ? f(mejor.cstat, 0) : '?'} a PEEP ${f(mejor.peep, 0)}</text>`
     : '';
   return (
     `<svg viewBox="0 0 ${W} ${H}" class="edu-titulacion" role="img" aria-label="Distensibilidad estática medida a distintas PEEP">` +
@@ -166,7 +195,7 @@ function graficoTitulacion(puntos: PuntoTitulacion[]): string {
     `<polyline points="${linea}" fill="none" stroke="#bfe6ff" stroke-width="1.5"/>` +
     circulos +
     marca +
-    `<text x="${izq + 4}" y="12" font-size="10" fill="#9dc4e2">${f(y1, 0)} mL/cmH₂O</text>` +
+    `<text x="${izq + 4}" y="12" font-size="10" fill="#9dc4e2">${verCstat ? `${f(y1, 0)} mL/cmH₂O` : '?'}</text>` +
     `<text x="${izq - 6}" y="${H - aba}" text-anchor="end" font-size="10" fill="#9dc4e2">0</text>` +
     `<text x="${izq}" y="${H - 8}" font-size="10" fill="#9dc4e2">PEEP ${f(x0, 0)}</text>` +
     `<text x="${W - 12}" y="${H - 8}" text-anchor="end" font-size="10" fill="#9dc4e2">PEEP ${f(x1, 0)}</text>` +
@@ -175,20 +204,23 @@ function graficoTitulacion(puntos: PuntoTitulacion[]): string {
 }
 
 /** Potencia mecánica con su descomposición: la energía que va contra la PEEP, la resistiva y la elástica de la última respiración. */
-function potenciaHTML(fr: EngineFrame): string {
+function potenciaHTML(fr: EngineFrame, oculto: (k: string) => boolean): string {
   const pm = fr.metrics.mechPower;
-  const valor = pm && pm.value !== null ? `${f(pm.value, 1)}<small>J/min</small>` : '—';
+  const valor = pm && pm.value !== null ? (oculto('mechPower') ? '?' : `${f(pm.value, 1)}<small>J/min</small>`) : '—';
   const s = fr.settings;
   const peep = s.peep === 'off' ? 0 : s.peep;
   const vte = fr.metrics.vte?.value ?? null,
     ppeak = fr.metrics.ppeak?.value ?? null,
     pplat = fr.metrics.pplatCycle?.value ?? fr.procedure.last.inspHold?.values.pplat?.value ?? null,
     rr = fr.metrics.rr?.value ?? null;
+  // En examen cada cifra medida se tapa por separado; la PEEP es consigna y queda a la vista.
+  const cifra = (keys: string[], texto: string): string => (keys.every((k) => !oculto(k)) ? texto : '?');
+  const hayVteRr = vte !== null && rr !== null;
   const partes =
-    vte !== null && ppeak !== null && rr !== null
-      ? `Con la última respiración (${f(vte * 1000, 0)} mL a ${f(rr, 0)}/min): contra la PEEP ${f(0.098 * rr * vte * peep, 1)} J/min` +
+    hayVteRr && ppeak !== null
+      ? `Con la última respiración (${cifra(['vte'], f(vte * 1000, 0))} mL a ${cifra(['rr'], f(rr, 0))}/min): contra la PEEP ${cifra(['vte', 'rr'], f(0.098 * rr * vte * peep, 1))} J/min` +
         (pplat !== null
-          ? ` · resistiva ${f(0.098 * rr * vte * Math.max(0, ppeak - pplat), 1)} · elástica ${f(0.098 * rr * vte * 0.5 * Math.max(0, pplat - peep), 1)}`
+          ? ` · resistiva ${cifra(['vte', 'rr', 'ppeak', 'pplat'], f(0.098 * rr * vte * Math.max(0, ppeak - pplat), 1))} · elástica ${cifra(['vte', 'rr', 'pplat'], f(0.098 * rr * vte * 0.5 * Math.max(0, pplat - peep), 1))}`
           : ' · resistiva y elástica juntas: mide una Pplat para separarlas') +
         '.'
       : 'Aparece con la ventana de respiraciones completa.';
@@ -202,11 +234,18 @@ function potenciaHTML(fr: EngineFrame): string {
   );
 }
 
-function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[]): string {
+function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: string) => boolean): string {
   const e = estres(fr);
-  const activo = (r: string): boolean => e.regimen === r;
-  const cabecera = e.valor === null ? '—' : f(e.valor, 2);
-  const lectura = e.valor === null ? `No se puede leer aquí: ${humanReason(e.motivo)}.` : e.lectura;
+  // En examen el número, el régimen que describe y la silueta activa van tapados: cualquiera de los tres respondería
+  // la estimación antes de que el alumno la escriba.
+  const taparEstres = oculto('stressIndex') && e.valor !== null;
+  const activo = (r: string): boolean => !taparEstres && e.regimen === r;
+  const cabecera = taparEstres ? '?' : e.valor === null ? '—' : f(e.valor, 2);
+  const lectura = taparEstres
+    ? 'En examen se revela al estimar la medición en la columna numérica.'
+    : e.valor === null
+      ? `No se puede leer aquí: ${humanReason(e.motivo)}.`
+      : e.lectura;
   return (
     `<div class="edu-prot">` +
     `<section class="edu-bloque">` +
@@ -222,11 +261,11 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[]): string {
     `</section>` +
     `<section class="edu-bloque">` +
     `<header><h3>Titulación de PEEP</h3><b>${puntos.length}<small>${puntos.length === 1 ? 'punto' : 'puntos'}</small></b></header>` +
-    graficoTitulacion(puntos) +
+    graficoTitulacion(puntos, oculto) +
     `<p class="edu-nota">Tu propia curva: cada punto es una distensibilidad que mediste con un bloqueo a esa PEEP. ` +
     `El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.</p>` +
     `</section>` +
-    potenciaHTML(fr) +
+    potenciaHTML(fr, oculto) +
     `</div>`
   );
 }
@@ -261,16 +300,21 @@ export function createTeachingView(ctx: AppContext): TeachingView {
     }
     const puntos = (ctx.lesson.flags.titulacion as PuntoTitulacion[] | undefined) ?? [];
     const t = tarjetas(fr);
-    // Sólo se vuelve a pintar cuando algún número cambia: la pestaña no debe parpadear a cada cuadro.
-    const nueva = JSON.stringify([pantalla, t.map((x) => [x.valor, x.estado, x.sustituida]), niveles(fr), estres(fr), puntos]);
+    const oculto = (k: string): boolean => ctx.examMasked(k);
+    // Sólo se vuelve a pintar cuando algún número cambia: la pestaña no debe parpadear a cada cuadro. La firma
+    // incluye qué métricas están tapadas: al estimar una, el resumen tiene que revelar su parte.
+    const tapadas = ctx.examMode
+      ? ['ppeak', 'peepe', 'pplat', 'driving', 'cstat', 'vte', 'rr', 'mechPower', 'stressIndex'].filter(oculto)
+      : [];
+    const nueva = JSON.stringify([pantalla, t.map((x) => [x.valor, x.estado, x.sustituida]), niveles(fr), estres(fr), puntos, tapadas]);
     if (nueva === firma) return;
     firma = nueva;
     $('#teaching-body').innerHTML =
       pantalla === 'presiones'
-        ? `<div class="edu-diagram">${esquema(fr)}</div><div class="edu-cards">${t.map(tarjetaHTML).join('')}</div>` +
+        ? `<div class="edu-diagram">${esquema(fr, oculto)}</div><div class="edu-cards">${t.map((x) => tarjetaHTML(x, oculto)).join('')}</div>` +
           `<p class="edu-pie">Las referencias valen para un paciente <b>pasivo</b> en ventilación controlada: con esfuerzo ` +
           `espontáneo la meseta y la presión motriz dejan de medir lo que se cree que miden.</p>`
-        : proteccionHTML(fr, puntos);
+        : proteccionHTML(fr, puntos, oculto);
   }
 
   return { render };
