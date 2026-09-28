@@ -117,6 +117,29 @@ describe('R3-05 · Cstat del bloqueo inspiratorio usa PEEPtot cuando hay bloqueo
     expect(second.values.cstat?.value ?? 0).toBeCloseTo(0.05, 2);
     expect(second.values.cstat?.reason).toMatch(/PEEPtot/);
   });
+
+  it('tras cambiar la mecánica la PEEPtot medida antes no contamina la Cstat nueva (auditoría: publicaba 118,9)', () => {
+    const sim = benchSim({ patient: { ...BENCH_PATIENT, rExp: 30 }, settings: { ...BENCH_SETTINGS, rr: 30, ie: 1, pausePct: 0 } });
+    runUntilBreath(sim, 12);
+    sim.command({ type: 'requestHold', kind: 'expHold', durationS: 5 });
+    runUntilBreath(sim, 16);
+    const exp = sim.frame().procedure.last.expHold!;
+    expect(exp.quality).toBe('valid');
+    const peepTotVieja = exp.values.peepTot!.value!;
+    expect(peepTotVieja).toBeGreaterThan(8); // atrapamiento medido bajo la mecánica obstructiva
+    // La PEEPe no cambia (5) pero la mecánica sí: bajar Rexp y estabilizar.
+    expect(sim.command({ type: 'setPatient', params: { rExp: 10 } }).accepted).toBe(true);
+    runUntilBreath(sim, 30);
+    sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 3 });
+    runUntilBreath(sim, 34);
+    const insp = sim.frame().procedure.last.inspHold!;
+    expect(insp.quality).toBe('valid');
+    const pplat = insp.values.pplat!.value!;
+    // La combinación prohibida daba denominador 4,21 → Cstat 0,119; ahora el denominador es Pplat − PEEPe.
+    expect(insp.values.driving!.value!).toBeCloseTo(pplat - 5, 1);
+    expect(insp.values.cstat!.value!).toBeLessThan(0.07);
+    expect(insp.values.cstat!.reason).toMatch(/otra mecánica/);
+  });
 });
 
 describe('R3-06 · fronteras: claves, modo, esfuerzo, sensores, duración de bloqueo y espera', () => {

@@ -192,6 +192,16 @@ export class Simulator {
       this.controller,
       (ms) => init.startWallTimeMs + ms,
       () => this.patient.hasSecond,
+      // Firma del contexto que determina la PEEPtot: mecánica del paciente (incl. fracción reclutada al 1 %),
+      // esfuerzo y todos los ajustes salvo FiO₂ (que no mueve la mecánica). Cualquier cambio invalida la
+      // combinación expHold→inspHold; el reclutamiento se cuantiza para no vetarla por deriva irrelevante.
+      () =>
+        JSON.stringify({
+          p: this.patient.params,
+          e: this.effort.params,
+          r: Math.round(this.patient.recruited * 100) / 100,
+          s: { ...this.controller.settings, fio2: 0 },
+        }),
     );
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
