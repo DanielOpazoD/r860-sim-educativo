@@ -412,9 +412,9 @@ export class VcController {
     const s = this.settings;
     switch (this.phase) {
       case 'standby': {
-        const { qEnd } = p.integratePressureSource(0, this.pmusAt, this.simT, h);
+        const { qEnd, qLeakEnd } = p.integratePressureSource(0, this.pmusAt, this.simT, h);
         this.paw = 0;
-        this.q = qEnd + this.circuitTransfer(0, h) / h;
+        this.q = qEnd + qLeakEnd + this.circuitTransfer(0, h, qEnd + qLeakEnd) / h;
         return h;
       }
       case 'inspFlow': {
@@ -514,7 +514,9 @@ export class VcController {
           pawLast = r.clamped ? r.pyEnd : tg;
         }
         // El circuito compresible también entrega/recoge gas por el sensor de la máquina (la fuente de presión no lo mueve).
-        const delta = this.circuitTransfer(pawLast, h);
+        // El gas comprimido comparte el mismo presupuesto del actuador que el flujo al pulmón+fuga: sin qOther el
+        // sensor podía mostrar 2×160 L/min (320) — un tope para cada gasto es como no tener tope.
+        const delta = this.circuitTransfer(pawLast, h, qLast);
         if (this.breath) {
           this.breath.vtInsp += dVtot + dVLeakTot + Math.max(0, delta); // VTi de pantalla: lo entregado, fuga incluida
           this.breath.vtExp += dVexp + Math.max(0, -delta);
@@ -548,8 +550,8 @@ export class VcController {
           }
           return h;
         }
-        const { dV, qEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
-        const delta = this.circuitTransfer(s.plimit, h);
+        const { dV, qEnd, qLeakEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
+        const delta = this.circuitTransfer(s.plimit, h, qEnd + qLeakEnd);
         if (this.breath) {
           this.breath.vtInsp += dV + Math.max(0, delta);
           this.breath.vtExp += Math.max(0, -delta);
