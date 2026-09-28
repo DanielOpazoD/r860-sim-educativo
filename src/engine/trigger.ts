@@ -36,6 +36,15 @@ export const PEEP_REGULATOR_TAU_S = 0.1;
 export const TRIGGER_MIN_PEEP_DROP_CMH2O = 3;
 
 /**
+ * Tiempo continuo (s) que la Pva espiratoria debe mantenerse dentro de `TRIGGER_MIN_PEEP_DROP` de la PEEP para que
+ * la espiración «demuestre» circuito presurizado y habilite la evaluación del disparo. Es la separación entre
+ * «la espiración nunca sostuvo PEEP» (desconexión o fuga mayor que el flujo de base: sin disparo que evaluar) y
+ * «la Pva está baja AHORA» (el esfuerzo del paciente la hunde: el disparo debe poder ocurrir a cualquier umbral
+ * admitido, también los de −3 cmH2O o más negativos). Más corto que el refractario para no retrasar el disparo.
+ */
+export const TRIGGER_PEEP_DWELL_S = 0.15;
+
+/**
  * Cuál de los dos techos de presión actúa dentro de un tramo, y en qué fracción de él.
  *
  * Durante la inspiración a flujo constante la presión sube de forma monótona, así que **gana el umbral que se cruza

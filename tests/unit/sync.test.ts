@@ -55,6 +55,36 @@ describe('SYN-02 · disparo por presión', () => {
     runUntilBreath(hard, 10);
     expect(hard.breaths.every((b) => b.type === 'mandatory')).toBe(true);
   });
+  it('todo el rango de umbral admitido dispara cuando el esfuerzo lo alcanza (regresión: −3 o menos quedaban inertes)', () => {
+    // La guardia anti-desconexión exigía Pva > PEEP−3 en el INSTANTE del disparo, así que un umbral de −3 o más
+    // profundo nunca podía cumplirla: no disparaba aunque el esfuerzo hundiera la Pva más allá del umbral.
+    // Ahora la guardia mira si la espiración sostuvo PEEP (dwell), y con Pmus 12 el valle llega a ≈ −5 cmH₂O.
+    const profundo = { ...effort, amplitude: 12 };
+    for (const umbral of [-0.5, -3, -5, -10]) {
+      const sim = benchSim({
+        effort: profundo,
+        settings: { ...BENCH_SETTINGS, assistControl: true, triggerByPressure: true, pressureTrigger: umbral },
+      });
+      runUntilBreath(sim, 10);
+      expect(sim.breaths.some((b) => b.type === 'assisted')).toBe(true);
+    }
+  });
+  it('con el circuito abierto la espiración nunca sostiene PEEP y el esfuerzo no dispara (guarda LEAK-05)', () => {
+    // Desconectado la Pva queda en ≈0 toda la espiración: la bandera de PEEP demostrada no se iza y la caída del
+    // esfuerzo (que sí cumple el umbral −5: 0 ≤ 5−5) no dispara — la separación que reemplaza a la guardia de
+    // instante conserva la protección contra la tormenta de autodisparos.
+    const sim = benchSim({
+      effort: { ...effort, amplitude: 12 },
+      settings: { ...BENCH_SETTINGS, assistControl: true, triggerByPressure: true, pressureTrigger: -5 },
+    });
+    runUntilBreath(sim, 3);
+    expect(sim.command({ type: 'setPatient', params: { disconnected: true } }).accepted).toBe(true);
+    const n = sim.breaths.length;
+    runUntilBreath(sim, n + 5);
+    // La primera respiración tras la orden puede venir de un disparo detectado antes de desconectar
+    // (el retardo de respuesta lo arma y se entrega aunque el circuito ya esté abierto): se salta.
+    expect(sim.breaths.slice(n + 1).every((b) => b.type === 'mandatory')).toBe(true);
+  });
   it('el disparo por presión ignora el umbral de flujo (flujo de disparo alto no bloquea)', () => {
     const sim = benchSim({
       effort,
