@@ -10,6 +10,8 @@ export interface LessonContext {
   lessonStartMs: number;
   patientChangeMs: number;
   settingsChangeMs: number;
+  /** La perturbación programada más temprana del escenario (ms simulados), si tiene: el «antes» medible aunque aún no haya ocurrido. */
+  perturbationMs?: number;
   flags: Record<string, unknown>;
 }
 
@@ -39,7 +41,21 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
     const h = c.frame.procedure.last.inspHold;
     return !!h && h.quality === 'valid' && (h.completedAtMs ?? 0) > 20_000;
   },
-  peepChanged: (c) => c.settingsChangeMs >= 0 && !!c.flags.peepChanged,
+  /** SC-02: la medición «de antes» tiene que ser ANTES del cambio de mecánica — si la única meseta es posterior,
+   *  la comparación que la tarea enseña nunca ocurrió (auditoría: un bloqueo a los 25 s la cumplía igual). */
+  holdBeforePatient: (c) => {
+    const h = c.frame.procedure.last.inspHold;
+    if (!h || h.quality !== 'valid' || !after(h, c.lessonStartMs)) return false;
+    const limite = c.patientChangeMs >= 0 ? c.patientChangeMs : (c.perturbationMs ?? Number.POSITIVE_INFINITY);
+    return (h.completedAtMs ?? 0) < limite;
+  },
+  /** SC-02: la PEEP tiene que llegar a 8 y la meseta de comparación medirse DESPUÉS de ese cambio, no en cualquier momento. */
+  peep8YHold: (c) => {
+    const p = c.frame.settings.peep;
+    const tPeep = c.flags.peepChangedMs as number | undefined;
+    const h = c.frame.procedure.last.inspHold;
+    return p !== 'off' && p >= 8 && tPeep !== undefined && !!h && h.quality === 'valid' && (h.completedAtMs ?? 0) > tPeep;
+  },
   te3: (c) => deriveVcTiming(c.frame.settings).tExpS >= 3,
   expAfterSettings: (c) => {
     const e = c.frame.procedure.last.expHold;
@@ -145,16 +161,27 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   disconnectSeen: (c) => !!c.flags.disconnectSeen,
   /** Reconectado: la alarma de desconexión se vio y ya no está activa. */
   reconnected: (c) => !!c.flags.disconnectSeen && !c.frame.alarms.some((a) => a.id === 'disconnect' && a.conditionActive),
+  /** SC-25: la medida de partida tiene que existir ANTES de la apertura completa; si no, no es la compliance
+   *  dereclutada con la que la decremental se compara. */
+  holdDereclutada: (c) => {
+    const h = c.frame.procedure.last.inspHold;
+    const tRec = c.flags.recruitedAltaMs as number | undefined;
+    return !!h && h.quality === 'valid' && after(h, c.lessonStartMs) && (tRec === undefined || (h.completedAtMs ?? 0) < tRec);
+  },
   /** SC-25: la fracción reclutada del modelo llegó al 90 % (PEEP por encima de la presión de apertura). */
   recruitedFull: (c) => c.frame.truth.recruited >= 0.9,
   /**
-   * SC-25: a PEEP baja (≤ 12) hay al menos dos puntos de titulación y el mejor supera en un 30 % al peor. A la
-   * misma consigna el pulmón devuelve compliances distintas según el camino recorrido: es la histéresis medida.
+   * SC-25: la comparación decremental exige historia: un punto a PEEP ≤ 12 medido ANTES de la primera apertura
+   *  completa y otro a PEEP 9–12 medido después, que lo supere en un 30 %. Sin el orden no hay histéresis
+   *  demostrada — dos puntos cualesquiera a PEEP distintas no comparan nada (auditoría).
    */
   cstatDecremental: (c) => {
-    const puntos = (c.flags.titulacion as { peep: number; cstat: number }[] | undefined) ?? [];
-    const cs = puntos.filter((p) => p.peep <= 12).map((p) => p.cstat);
-    return cs.length >= 2 && Math.max(...cs) >= 1.3 * Math.min(...cs);
+    const hist = (c.flags.titulacion as { peep: number; cstat: number; t?: number }[] | undefined) ?? [];
+    const tRec = c.flags.recruitedAltaMs as number | undefined;
+    if (tRec === undefined) return false;
+    const antes = hist.filter((p) => p.peep <= 12 && (p.t === undefined || p.t < tRec)).map((p) => p.cstat);
+    const despues = hist.filter((p) => p.peep >= 9 && p.peep <= 12 && p.t !== undefined && p.t > tRec).map((p) => p.cstat);
+    return antes.length >= 1 && despues.some((v) => v >= 1.3 * Math.max(...antes));
   },
   /** La potencia mecánica de la ventana bajó de 15 J/min con el VT reducido. */
   mpBelow: (c) => c.frame.settings.vt <= 0.4 && (c.frame.metrics.mechPower?.value ?? 99) < 15,
@@ -181,6 +208,9 @@ export function updateLessonFlags(frame: EngineFrame, flags: Record<string, unkn
   }
   if (frame.alarms.some((a) => a.id === 'apnea' && a.conditionActive)) flags.apneaSeen = true;
   if (frame.alarms.some((a) => a.id === 'disconnect' && a.conditionActive)) flags.disconnectSeen = true;
+  // La primera vez que el reclutamiento llega al 90 % queda fechada: la comparación decremental exige que la
+  // medida «de antes» la preceda de verdad (SC-25, auditoría).
+  if (frame.truth.recruited >= 0.9 && flags.recruitedAltaMs === undefined) flags.recruitedAltaMs = frame.simTimeMs;
 }
 
 /** Duración de la última inspiración espontánea registrada (s), o null si no hay ninguna en la cola de eventos. */

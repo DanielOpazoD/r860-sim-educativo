@@ -260,11 +260,15 @@ export function estres(fr: EngineFrame): Estres {
 export interface PuntoTitulacion {
   peep: number;
   cstat: number;
+  /** Instante simulado de la medición: el historial conserva el orden para las comparaciones cronológicas. */
+  t?: number;
 }
 
-/** Ordena los puntos por PEEP y señala el de mayor distensibilidad, que es el que la maniobra busca. */
+/** La curva muestra un punto por PEEP —la medición más reciente— ordenados por consigna, y señala el mejor. */
 export function titulacion(puntos: PuntoTitulacion[]): { puntos: PuntoTitulacion[]; mejor: PuntoTitulacion | null } {
-  const orden = [...puntos].sort((a, b) => a.peep - b.peep);
+  const ultimoPorPeep = new Map<number, PuntoTitulacion>();
+  for (const p of puntos) ultimoPorPeep.set(p.peep, p);
+  const orden = [...ultimoPorPeep.values()].sort((a, b) => a.peep - b.peep);
   const mejor = orden.reduce<PuntoTitulacion | null>((m, p) => (m === null || p.cstat > m.cstat ? p : m), null);
   return { puntos: orden, mejor };
 }

@@ -260,7 +260,7 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
       void ctx.send({ type: 'confirmSettings', changes: e.changes }).then((r) => {
         if (r.accepted) {
           hideQuickEditor();
-          if ('peep' in e.changes) ctx.lesson.flags.peepChanged = true;
+          if ('peep' in e.changes) ctx.lesson.flags.peepChangedMs = ctx.frame?.simTimeMs ?? 0;
           if ('plimit' in e.changes) ctx.lesson.flags.plimitChanged = true;
           ctx.lesson.noteSettingsChange();
           ctx.toast('Ajuste confirmado. Se aplica en la próxima respiración.');

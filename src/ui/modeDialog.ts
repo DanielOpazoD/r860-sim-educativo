@@ -147,7 +147,7 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const res = await ctx.send({ type: 'confirmSettings', changes });
     if (res.accepted) {
       if ('plimit' in changes) ctx.lesson.flags.plimitChanged = true;
-      if ('peep' in changes) ctx.lesson.flags.peepChanged = true;
+      if ('peep' in changes) ctx.lesson.flags.peepChangedMs = ctx.frame?.simTimeMs ?? 0;
       ctx.lesson.noteSettingsChange();
       ctx.dialog.close();
     }

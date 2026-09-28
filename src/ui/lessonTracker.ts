@@ -33,6 +33,11 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
       .join('');
     $('#lesson-feedback').hidden = tasks.length === 0 || done.size !== tasks.length;
   }
+  // La primera perturbación programada del escenario fija el «antes» aunque la mecánica todavía no haya cambiado.
+  const perturbacionMs = (): number | undefined => {
+    const ps = ctx.scenario.perturbations ?? [];
+    return ps.length ? Math.min(...ps.map((p) => p.atSimTimeMs)) : undefined;
+  };
   return {
     flags,
     done,
@@ -50,6 +55,7 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
             lessonStartMs,
             patientChangeMs,
             settingsChangeMs,
+            perturbationMs: perturbacionMs(),
             flags,
           })
         : new Set();
@@ -67,6 +73,7 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
         lessonStartMs,
         patientChangeMs,
         settingsChangeMs,
+        perturbationMs: perturbacionMs(),
         flags,
       });
       if (!task) return;
