@@ -199,7 +199,9 @@ export function replaySession(session: SessionFile, untilMs = session.finalSimTi
     }
     sim.step();
   }
-  while (i < cmds.length) {
+  // El vaciado final llega sólo hasta untilMs: un comando con hora posterior no ocurrió dentro de la ventana
+  // pedida. Antes se aplicaban todos igual — reproducir 30 s ejecutaba lo previsto para 60 (auditoría).
+  while (i < cmds.length && (cmds[i] as { simTimeMs: number }).simTimeMs <= untilMs + 1e-9) {
     const c = cmds[i] as { actor: Actor; command: Command };
     sim.command(c.command, c.actor);
     i += 1;

@@ -63,4 +63,42 @@ describe('SEC-03 · importación robusta', () => {
     const other = { ...good, schemaVersion: '9.9.9' };
     expect(importSession(JSON.stringify(other)).ok).toBe(false);
   });
+
+  it('rechaza un paciente incompleto y campos opcionales nulos sin lanzar excepciones (auditoría)', () => {
+    const sim = benchSim();
+    runUntilBreath(sim, 1);
+    const good = exportSession(sim);
+    // Objeto presente pero sin las magnitudes obligatorias: `Object.entries` no ve las claves ausentes y el
+    // integrador habría trabajado con undefined.
+    const pacienteIncompleto = JSON.parse(JSON.stringify(good)) as { init: { patient: unknown } };
+    pacienteIncompleto.init.patient = { crs: 0.05 };
+    const r1 = importSession(JSON.stringify(pacienteIncompleto));
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) expect(r1.errors.join(' ')).toMatch(/rInsp|rExp|r2|p0/);
+    // Campos opcionales nulos: antes el validador desestructuraba el null y la importación lanzaba TypeError
+    // (en el Worker eso se veía como fallo del motor); ahora es un motivo de rechazo legible.
+    const nulos = JSON.parse(JSON.stringify(good)) as { init: { effort: Record<string, unknown> } };
+    nulos.init.effort.variability = null;
+    nulos.init.effort.reverse = null;
+    const r2 = importSession(JSON.stringify(nulos));
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(r2.errors.join(' ')).toMatch(/variabilidad|reverso/);
+  });
+
+  it('la reproducción hasta t no aplica comandos previstos para después de t', () => {
+    const sim = benchSim();
+    runUntilBreath(sim, 2);
+    sim.run(Math.max(0, 60_000 - sim.simTimeMs)); // manda a t ≈ 60 s
+    const rrAntes = sim.controller.settings.rr;
+    const r = sim.command({ type: 'confirmSettings', changes: { rr: rrAntes + 4 } }, 'instructor');
+    expect(r.accepted).toBe(true);
+    sim.run(500);
+    const file = exportSession(sim);
+    // Reproducir sólo hasta los 30 s no puede ejecutar el ajuste de los 60 s (antes el vaciado final lo aplicaba
+    // igual: con untilMs=30 s salía el confirmSettings de los 60 s en el registro).
+    const corta = replaySession(file, 30_000);
+    expect(corta.commandLog.some((c) => c.command.type === 'confirmSettings')).toBe(false);
+    const entera = replaySession(file);
+    expect(entera.commandLog.some((c) => c.command.type === 'confirmSettings')).toBe(true);
+  });
 });

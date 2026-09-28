@@ -152,16 +152,24 @@ export function validateEffort(e: EffortParams): string[] {
   if (e.expTiS !== undefined && (!Number.isFinite(e.expTiS) || e.expTiS <= 0 || e.expTiS > 3))
     r.push('esfuerzo: duración espiratoria fuera de 0–3 s');
   if (e.variability !== undefined) {
-    const { amplitudeFrac, periodFrac } = e.variability;
-    if (![amplitudeFrac, periodFrac].every((x) => Number.isFinite(x) && x >= 0 && x <= 0.5))
-      r.push('esfuerzo: variabilidad fuera de 0–0,5');
+    const v = e.variability;
+    if (!v || typeof v !== 'object') r.push('esfuerzo: variabilidad debe ser un objeto');
+    else {
+      const { amplitudeFrac, periodFrac } = v;
+      if (![amplitudeFrac, periodFrac].every((x) => Number.isFinite(x) && x >= 0 && x <= 0.5))
+        r.push('esfuerzo: variabilidad fuera de 0–0,5');
+    }
   }
   if (e.reverse !== undefined) {
-    const { amplitude, delayS, ratio } = e.reverse;
-    if (!Number.isFinite(amplitude) || amplitude < 0 || amplitude > 20)
-      r.push('esfuerzo: amplitud del disparo reverso fuera de 0–20 cmH2O');
-    if (!Number.isFinite(delayS) || delayS < 0 || delayS > 2) r.push('esfuerzo: latencia del disparo reverso fuera de 0–2 s');
-    if (ratio !== undefined && ratio !== 1 && ratio !== 2 && ratio !== 3) r.push('esfuerzo: ratio del disparo reverso debe ser 1, 2 o 3');
+    const v = e.reverse;
+    if (!v || typeof v !== 'object') r.push('esfuerzo: disparo reverso debe ser un objeto');
+    else {
+      const { amplitude, delayS, ratio } = v;
+      if (!Number.isFinite(amplitude) || amplitude < 0 || amplitude > 20)
+        r.push('esfuerzo: amplitud del disparo reverso fuera de 0–20 cmH2O');
+      if (!Number.isFinite(delayS) || delayS < 0 || delayS > 2) r.push('esfuerzo: latencia del disparo reverso fuera de 0–2 s');
+      if (ratio !== undefined && ratio !== 1 && ratio !== 2 && ratio !== 3) r.push('esfuerzo: ratio del disparo reverso debe ser 1, 2 o 3');
+    }
   }
   return r;
 }
@@ -268,9 +276,13 @@ export function validatePatientParams(p: {
   second?: { crs: number; rInsp: number; rExp: number };
 }): string[] {
   const r: string[] = [];
+  // Las cinco magnitudes del modelo son obligatorias: `Object.entries` no ve las claves ausentes, así que un
+  // paciente incompleto llegaba hasta el integrador con undefined (auditoría).
+  for (const k of ['crs', 'rInsp', 'rExp', 'r2', 'p0'] as const)
+    if (typeof p[k] !== 'number' || !Number.isFinite(p[k])) r.push(`${k}: ausente o no numérico`);
   for (const [k, v] of Object.entries(p))
     if (
-      !['sigmoid', 'recruit', 'efl', 'rExpVolumeDep', 'second', 'disconnected'].includes(k) &&
+      !['crs', 'rInsp', 'rExp', 'r2', 'p0', 'sigmoid', 'recruit', 'efl', 'rExpVolumeDep', 'second', 'disconnected'].includes(k) &&
       (typeof v !== 'number' || !Number.isFinite(v))
     )
       r.push(`${k}: no numérico`);

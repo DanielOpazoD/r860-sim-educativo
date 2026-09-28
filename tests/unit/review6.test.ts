@@ -72,6 +72,42 @@ describe('R6-02 · ninguna promesa del cliente queda colgada', () => {
     }
   });
 
+  it('si el Worker muere con la sesión en marcha, el respaldo reinicia pausado y lo anuncia (auditoría)', async () => {
+    class WorkerQueMuere {
+      onmessage: ((e: { data: EngineToMain }) => void) | null = null;
+      onerror: ((e: { message: string }) => void) | null = null;
+      postMessage(m: { type: string }): void {
+        if (m.type === 'init') queueMicrotask(() => this.onmessage?.({ data: { type: 'ready' } }));
+        if (m.type === 'command') queueMicrotask(() => this.onerror?.({ message: 'crash' }));
+      }
+      terminate(): void {}
+    }
+    const g = globalThis as { Worker?: unknown };
+    const prev = g.Worker;
+    g.Worker = WorkerQueMuere;
+    try {
+      const client = new EngineClient({ readyTimeoutMs: 200 });
+      client.init(benchSim().init, 1, true);
+      await client.ready;
+      const pausas: (string | null)[] = [];
+      client.onFrame((m) => pausas.push(m.pauseReason));
+      const r = await conPlazo(client.command({ type: 'acknowledgeAlarms' }));
+      expect(r).not.toBe('TIMEOUT');
+      // La orden que desató el fallo no puede fingirse aceptada.
+      expect((r as { accepted: boolean }).accepted).toBe(false);
+      expect(client.mode).toBe('inline');
+      expect(client.sessionRestarted).toBe(true);
+      // El respaldo quedó inicializado con la configuración del arranque, en pausa y con el motivo a la vista:
+      // nunca un anfitrión vacío mientras la interfaz anunciaba continuidad.
+      expect(pausas.some((p) => /reiniciada/.test(p ?? ''))).toBe(true);
+      const r2 = await conPlazo(client.command({ type: 'acknowledgeAlarms' }));
+      expect((r2 as { accepted: boolean }).accepted).toBe(true);
+    } finally {
+      if (prev === undefined) delete g.Worker;
+      else g.Worker = prev;
+    }
+  });
+
   it('una importación pendiente al degradar se resuelve con el motivo, no con silencio', async () => {
     class WorkerQueMuere {
       onmessage: ((e: { data: EngineToMain }) => void) | null = null;
