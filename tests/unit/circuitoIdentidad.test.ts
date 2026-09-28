@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
+import { ACTUATOR_MAX_FLOW_LPS } from '../../src/engine/controller';
 import { R860_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { benchSim, runUntilBreath, BENCH_PATIENT, BENCH_SETTINGS, BENCH_SENSORS } from '../helpers';
@@ -73,5 +74,20 @@ describe('CIR-02 PC con circuito compresible', () => {
     expect(r2.vMax - r2.vMin).toBeCloseTo(r0.vMax - r0.vMin, 3);
     // El flujo mostrado suma la compresión del circuito al arrancar la inspiración.
     expect(r2.qMax).toBeGreaterThan(r0.qMax);
+  });
+  it('el flujo del sensor nunca supera el tope del actuador: pulmón, fuga y compresión comparten un solo presupuesto', () => {
+    // Regresión de auditoría: con resistencia baja, rampa rápida y circuito compresible el sensor llegó a 320 L/min
+    // porque la (de)compresión recibía su propio presupuesto completo encima del flujo al pulmón.
+    const sim = benchSim({
+      patient: { ...BENCH_PATIENT, rInsp: 2, circuitComplianceLPerCmH2O: 0.005 },
+      settings: { ...BENCH_SETTINGS, mode: 'AC_PC', pinsp: 15, riseMs: 0 },
+    });
+    let qMax = 0;
+    while (sim.breaths.length < 6) {
+      sim.step();
+      qMax = Math.max(qMax, sim.controller.q);
+    }
+    expect(sim.controller.vCirc).toBeGreaterThan(0.02); // la compresión sí se ejerció (Cc·Paw ≈ 0,1 L)
+    expect(qMax).toBeLessThanOrEqual(ACTUATOR_MAX_FLOW_LPS + 1e-9);
   });
 });

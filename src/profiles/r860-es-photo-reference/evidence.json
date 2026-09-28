@@ -502,14 +502,15 @@
     },
     {
       "id": "E-034",
-      "claim": "Tope de flujo del actuador en A/C PC integrado dentro del mismo RK2 con sub-pasos: sin sobreimpulso de presión dependiente de dt cuando el tope de 160 L/min actúa.",
+      "claim": "Tope de flujo del actuador en A/C PC integrado dentro del mismo RK2 con sub-pasos: sin sobreimpulso de presión dependiente de dt cuando el tope de 160 L/min actúa. El tope es del SENSOR de la máquina, así que el flujo a la compresión del circuito comparte el mismo presupuesto que el flujo al pulmón+fuga en todas las fases de presión (inspiración, espiración, espera y plimit): el flujo mostrado nunca supera 160 L/min — antes cada gasto tenía su propio tope y con Cc el sensor llegó a 320 L/min.",
       "status": "P",
-      "source": "revisión adversarial 06-09-2026 (v0.3 aplicaba el tope fuera del integrador)",
+      "source": "revisión adversarial 06-09-2026 (v0.3 aplicaba el tope fuera del integrador); auditoría externa 09-2026 (presupuesto doble con circuito compresible)",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (fase inspPressure), src/engine/patient.ts",
+      "implemented": "src/engine/controller.ts (fases inspPressure/inspSupport/inspLimited/standby/exp, circuitTransfer con qOther), src/engine/patient.ts",
       "tests": [
         "tests/bench/pc.test.ts «tope de flujo del actuador (160 L/min): con R muy baja la presión no alcanza el objetivo de inmediato»",
-        "tests/bench/pc.test.ts (BM-03, PHY-02)"
+        "tests/bench/pc.test.ts (BM-03, PHY-02)",
+        "tests/unit/circuitoIdentidad.test.ts (CIR-02, presupuesto compartido)"
       ]
     },
     {
