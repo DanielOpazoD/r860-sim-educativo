@@ -222,6 +222,18 @@ export function estres(fr: EngineFrame): Estres {
     return { valor: null, motivo: m?.reason ?? 'sinDato', regimen: null, lectura: '' };
   }
   const b = m.value;
+  // La rampa se mide con el flujo de la MÁQUINA: con fuga o circuito compresible ese flujo no es constante en el
+  // pulmón, así que la forma de la presión no describe sólo su distensibilidad. La auditoría lo vio: una fuga de
+  // 40 L/min a 10 cmH₂O bajó el índice a 0,84 en un pulmón lineal y el panel lo contó como reclutamiento.
+  if ((fr.truth.patient.leakLpmAt10 ?? 0) > 0 || (fr.truth.patient.circuitComplianceLPerCmH2O ?? 0) > 0) {
+    return {
+      valor: b,
+      motivo: null,
+      regimen: null,
+      lectura:
+        'Con fuga o circuito compresible el flujo de la máquina no es el del pulmón: la forma mezcla ambos y no permite inferir reclutamiento ni sobredistensión.',
+    };
+  }
   if (b < ESTRES_BAJO)
     return {
       valor: b,

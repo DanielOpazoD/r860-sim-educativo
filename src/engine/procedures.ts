@@ -214,10 +214,13 @@ export class ProcedureManager {
               : 'Pplat − PEEPtot (bloqueo espiratorio previo)',
         });
         values.vt = mkSample('vtHold', o.vtInspL, 'L', { ...base, quality: 'valid', reason: null });
-        // Resistencia INSPIRATORIA: la otra mitad de lo que una oclusión enseña. La caída de presión que desaparece al
-        // parar el flujo es toda resistiva; dividida por ese flujo da cmH2O·s/L. Ojo con lo que NO es: el vaciamiento no
-        // lo gobierna ésta sino la resistencia espiratoria, que en un obstructivo es mucho mayor (SC-03: 10 frente a
-        // 30). La constante de tiempo se mide aparte, sobre la rama espiratoria (métrica `tauExp`).
+        // Resistencia inspiratoria APARENTE: la otra mitad de lo que una oclusión enseña. La caída de presión que
+        // desaparece al parar el flujo es resistiva, pero si la meseta sigue cayendo durante la oclusión (relajación
+        // viscoelástica o redistribución entre unidades) esa caída también entra al numerador: con viscoelast. y
+        // Rinsp=10 el número publicado llegó a 15–21. Por eso la tabla la llama «aparente» y no la equipara al
+        // parámetro de vía aérea. Ojo con lo que NO es: el vaciamiento no lo gobierna ésta sino la resistencia
+        // espiratoria, que en un obstructivo es mucho mayor (SC-03: 10 frente a 30). La constante de tiempo se mide
+        // aparte, sobre la rama espiratoria (métrica `tauExp`).
         const rawOk = o.constantFlowInsp && o.qAtFlowEndLps >= MIN_FLOW_FOR_RAW_LPS && o.pawAtFlowEnd > o.pawEnd;
         const raw = rawOk ? (o.pawAtFlowEnd - o.pawEnd) / o.qAtFlowEndLps : null;
         const motivoRaw = o.constantFlowInsp
