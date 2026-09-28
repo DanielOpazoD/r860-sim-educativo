@@ -30,7 +30,8 @@ export const METRICS: MetricSpec[] = [
 // Sólo en la tabla de mediciones, no en la columna numérica del monitor: con quince casillas esa columna montaba las
 // etiquetas sobre las unidades. Van primero para quedar junto a Cstat, ΔP e índice de estrés, que es su familia.
 export const EXTRA_METRICS: MetricSpec[] = [
-  { key: 'raw', label: 'Resistencia insp.', unit: 'cmH₂O·s/L', factor: 1, decimals: 1, source: 'hold' },
+  // «Aparente»: la caída pico→meseta incluye relajación tisular y redistribución, no sólo el parámetro de vía aérea.
+  { key: 'raw', label: 'Resistencia aparente', unit: 'cmH₂O·s/L', factor: 1, decimals: 1, source: 'hold' },
   { key: 'tauExp', label: 'Constante de tiempo esp.', unit: 's', factor: 1, decimals: 2, source: 'metric' },
   { key: 'mechPower', label: 'Potencia mecánica', unit: 'J/min', factor: 1, decimals: 1, source: 'metric' },
   { key: 'vti', label: 'VT inspirado', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },

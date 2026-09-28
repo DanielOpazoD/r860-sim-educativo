@@ -112,3 +112,26 @@ describe('PROT-04 · la lectura y la curva de titulación', () => {
     expect(titulacion([])).toEqual({ puntos: [], mejor: null });
   });
 });
+
+describe('PROT-05 · la lectura no atribuye al pulmón lo que es del circuito', () => {
+  const simCon = (patient: Partial<typeof BENCH_PATIENT>) => {
+    const sim = benchSim({ patient: { ...BENCH_PATIENT, ...patient }, settings: { ...BENCH_SETTINGS, plimit: 100, pmax: 90 } });
+    runUntilBreath(sim, 8);
+    return sim;
+  };
+  it('con fuga el índice se muestra pero no se interpreta como reclutamiento (auditoría: 0,84 en un pulmón lineal)', () => {
+    // Regresión: la fuga hace que el flujo de la máquina ya no sea el del pulmón, así que la forma no dice nada
+    // de la distensibilidad. Antes el panel la anunciaba como «sigue reclutando».
+    const e = estres(simCon({ leakLpmAt10: 40 }).frame());
+    expect(e.valor).not.toBeNull();
+    expect(e.valor as number).toBeLessThan(0.9); // el número que la auditoría leyó como reclutamiento
+    expect(e.regimen).toBeNull();
+    expect(e.lectura).toMatch(/fuga/i);
+  });
+  it('con circuito compresible tampoco se infiere régimen: la compresión contamina el flujo del pulmón', () => {
+    const e = estres(simCon({ circuitComplianceLPerCmH2O: 0.004 }).frame());
+    expect(e.valor).not.toBeNull();
+    expect(e.regimen).toBeNull();
+    expect(e.lectura).toMatch(/circuito compresible/i);
+  });
+});

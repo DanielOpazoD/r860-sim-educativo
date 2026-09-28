@@ -452,12 +452,13 @@ export const HELP: Record<string, HelpEntry> = {
     equation: 'Fuga (%) = 100 × (VTi − VTe) / VTi',
   },
   'metric.rinsp': {
-    title: 'Resistencia inspiratoria estimada',
+    title: 'Resistencia inspiratoria aparente',
     text: [
       'Separa la presión necesaria para vencer el flujo de la presión elástica. En un ciclo VC pasivo de flujo constante, utiliza la diferencia entre pico y meseta.',
+      'Es una lectura «aparente»: si la meseta sigue cayendo durante la oclusión —relajación viscoelástica o redistribución entre unidades— parte de esa caída no es de la vía aérea y el número sale mayor que el parámetro. Sólo en un pulmón pasivo de un solo compartimento sin relajación coincide con la resistencia inspiratoria.',
       'El resultado pierde validez con esfuerzo, fuga, limitación de presión o un flujo que no cumple esas condiciones.',
     ],
-    equation: 'Rinsp ≈ (Ppico − Pplat) / flujo inspiratorio (L/s)',
+    equation: 'R aparente ≈ (Ppico − Pplat) / flujo inspiratorio (L/s)',
   },
   'metric.tauExp': {
     title: 'Constante de tiempo espiratoria · τ',
