@@ -197,6 +197,9 @@ export function startApp(opts: AppOptions): void {
       toast(on ? 'Modo examen: las mediciones se ocultan hasta que las estimas.' : 'Modo examen desactivado.');
       updateUI();
     },
+    examMasked(key) {
+      return examMode && !metrics.examEstimated(key);
+    },
     clearLock() {
       locked = false;
       $('#lock-overlay').hidden = true;

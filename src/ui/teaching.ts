@@ -189,15 +189,27 @@ export interface Niveles {
   peepe: number | null;
   pplat: number | null;
   ppico: number | null;
+  driving: number | null;
+  /** De dónde sale la presión de base: resta de bloqueos (medición), métrica PEEPe (medición) o la consigna. */
+  peepOrigen: 'bloqueo' | 'peepe' | 'consigna';
 }
 
 export function niveles(fr: EngineFrame): Niveles {
   const peepProg = fr.settings.peep === 'off' ? 0 : (fr.settings.peep as number);
-  const peepe = metrica(fr, 'peepe') ?? peepProg;
+  const peepeMedida = metrica(fr, 'peepe');
+  const peepe = peepeMedida ?? peepProg;
   const pplat = delBloqueo(fr, 'pplat').valor;
   const driving = delBloqueo(fr, 'driving').valor;
-  const peep = pplat !== null && driving !== null ? pplat - driving : peepe;
-  return { peep, peepe: Math.abs(peep - peepe) > 0.05 ? peepe : null, pplat, ppico: metrica(fr, 'ppeak') };
+  const delBloqueoValido = pplat !== null && driving !== null;
+  const peep = delBloqueoValido ? pplat - driving : peepe;
+  return {
+    peep,
+    peepe: Math.abs(peep - peepe) > 0.05 ? peepe : null,
+    pplat,
+    ppico: metrica(fr, 'ppeak'),
+    driving,
+    peepOrigen: delBloqueoValido ? 'bloqueo' : peepeMedida !== null ? 'peepe' : 'consigna',
+  };
 }
 
 /** Lectura del índice de estrés: qué régimen describe y qué significa. */

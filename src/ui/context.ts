@@ -70,6 +70,8 @@ export interface AppContext {
   /** Modo examen: los valores medidos muestran «?» hasta que el alumno los estima. */
   readonly examMode: boolean;
   setExamMode(on: boolean): void;
+  /** La medición `key` está oculta en examen porque aún no se estimó (todas las vistas la consultan igual). */
+  examMasked(key: string): boolean;
   /** Sólo quita el bloqueo visual (carga de escenario), sin tocar el editor: mismo comportamiento que la versión monolítica. */
   clearLock(): void;
   /** Pide un redibujado de las curvas en el próximo cuadro de animación. */

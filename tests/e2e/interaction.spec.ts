@@ -650,6 +650,30 @@ test.describe('EXM · modo examen', () => {
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('?');
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
   });
+
+  test('el campo vacío no vale como cero y el Resumen no revela las cifras tapadas', async ({ page }) => {
+    // Auditoría: `Number('')` aceptaba el vacío como 0, y la pestaña Resumen mostraba lo que la columna tapaba.
+    await open(page, { speed: 4 });
+    await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
+    await page.click('#exam-toggle');
+    const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
+    await expect(pico.locator('.numeric-value')).toHaveText('?');
+    await page.click('#numeric-grid [data-metric="ppeak"]');
+    await page.click('[data-action="examSubmit"]'); // sin escribir nada
+    // El diálogo sigue abierto y no se registró estimación: el vacío no es una respuesta.
+    await expect(page.locator('#app-dialog')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__r860.exam.estimates)).toBe(0);
+    await page.click('[data-action="closeDialog"]');
+    // El Resumen no filtra lo que la columna tapa: ni el valor de la tarjeta ni la fórmula sustituida.
+    await page.click('[data-view="teaching"]');
+    await expect(page.locator('.edu-card').first().locator('header b')).toContainText('?');
+    await expect(page.locator('.edu-card').first()).not.toContainText(/\d+ = /);
+    // El botón Examen vive en la columna numérica, no visible en el Resumen.
+    await page.click('[data-view="waves"]');
+    await page.click('#exam-toggle'); // al salir, la cifra y la sustitución vuelven
+    await page.click('[data-view="teaching"]');
+    await expect(page.locator('.edu-card').first().locator('header b')).not.toContainText('?');
+  });
 });
 
 test.describe('BLD · bucle docente con presión muscular', () => {
