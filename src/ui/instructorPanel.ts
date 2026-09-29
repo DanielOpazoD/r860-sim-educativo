@@ -50,8 +50,8 @@ export function createInstructorPanel(
     $('#workspace').classList.toggle('teacher-hidden', !teacherVisible);
     const tb = $('#teacher-toggle');
     tb.setAttribute('aria-pressed', String(teacherVisible));
-    tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente`);
-    tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel docente`);
+    tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
+    tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
   }
   function updateTeacher(): void {
     const fr = ctx.frame as EngineFrame;
@@ -193,8 +193,6 @@ export function createInstructorPanel(
     if (!sc) return;
     ctx.setScenario(sc);
     ctx.lesson.setSessionImported(false);
-    // Lo primero que necesita quien abre un escenario es qué tiene que hacer en él.
-    switchInstructor('learn');
     ctx.dialog.close();
     deps.quick.cancelQuick();
     deps.hold.closeHoldPanel();

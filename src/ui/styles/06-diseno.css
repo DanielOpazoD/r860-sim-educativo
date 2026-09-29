@@ -1,12 +1,5 @@
 /* Pasada de diseño y correcciones posteriores (era styles.css 4476–4985). */
 /* ---- Pasada de diseño (06-09-2026): escala tipográfica 10/11/12/13/15, espaciado de 8 px, radios de 8 px. ---- */
-.stage-heading {
-  margin: 0 4px 12px;
-}
-.stage-heading h1 {
-  font-size: 13px;
-  font-weight: 600;
-}
 .stage-sub {
   font-size: 11px;
   color: #8ca3b9;

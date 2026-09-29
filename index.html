@@ -44,6 +44,7 @@
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
 <symbol id="i-lung" viewBox="0 0 24 24"><path d="M12 2v9m0-3L8 12m4-4 4 4M9 6C6 3 1 13 2 19c1 4 7 1 7-2V6Zm6 0c3-3 8 7 7 13-1 4-7 1-7-2V6Z"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01"/></symbol>
+<symbol id="i-graduation" viewBox="0 0 24 24"><path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11v5c0 2 3 3.5 6 3.5s6-1.5 6-3.5v-5"/><path d="M22 9v6"/></symbol>
 </defs></svg>
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
@@ -52,7 +53,7 @@
     <button class="button subtle" data-action="scenarios" aria-label="Escenarios" title="Escenarios"><svg class="icon"><use href="#i-grid"/></svg><span>Escenarios</span></button>
     <button class="button subtle" data-action="help" aria-label="Guía" title="Guía"><svg class="icon"><use href="#i-help"/></svg><span>Guía</span></button>
     <button class="button subtle" data-action="session" aria-label="Sesión" title="Sesión"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
-    <button class="button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel docente" title="Ocultar panel docente" aria-pressed="true"><svg class="icon"><use href="#i-lung"/></svg></button>
+    <button class="button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel de entrenamiento" title="Ocultar panel de entrenamiento" aria-pressed="true"><svg class="icon"><use href="#i-graduation"/></svg></button>
     <div class="toolbar-divider"></div>
     <button class="button icon-only" id="sound-toggle" data-action="sound" aria-label="Activar audio de alarmas" title="Activar audio de alarmas" aria-pressed="false"><svg class="icon"><use href="#i-muted"/></svg></button>
     <button class="button icon-only" data-action="fullscreen" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icon"><use href="#i-expand"/></svg></button>
@@ -62,7 +63,6 @@
 <div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
   <section class="stage" aria-label="Ventilador virtual">
-    <div class="stage-heading"><div><span class="live-dot" id="live-dot"></span><h1 id="scenario-name">Banco lineal pasivo</h1><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></div></div>
     <div class="device-scroll"><div class="device-shell" id="device-shell">
       <div class="bezel-top"><span class="bezel-model">CARESCAPE <b>R860</b></span><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
@@ -150,9 +150,8 @@
   <button data-action="modes" aria-label="Modo y ajustes"><svg class="icon"><use href="#i-menu"/></svg><span>Modo</span></button>
 </nav>
 <aside class="instructor" id="instructor" aria-label="Panel docente">
-    <div class="instructor-header"><div><h2>Laboratorio de mecánica</h2></div><svg class="icon"><use href="#i-lung"/></svg></div>
-    <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button role="tab" aria-selected="false" data-instructor="patient">Paciente</button><button class="active" role="tab" aria-selected="true" data-instructor="learn">Entrenar</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button></div>
-    <section class="instructor-pane" id="instructor-patient">
+    <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button><button role="tab" aria-selected="false" data-instructor="learn"><svg class="icon"><use href="#i-graduation"/></svg><span id="learn-tab-label">Entrenar</span></button></div>
+    <section class="instructor-pane active" id="instructor-patient">
       <div id="patient-controls"></div>
       <details class="advanced-patient"><summary>Esfuerzo, sensor de O₂ y más parámetros</summary><div id="patient-extra-controls"></div></details>
       <details class="truth-details" id="truth-details"><summary>Datos del modelo</summary>
@@ -161,7 +160,7 @@
       </details>
       <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
     </section>
-    <section class="instructor-pane active" id="instructor-learn">
+    <section class="instructor-pane" id="instructor-learn">
       <div class="lesson-count" id="lesson-count">0 de 3 objetivos</div><h3 class="lesson-title" id="lesson-title"></h3><p class="lesson-text" id="lesson-text"></p><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa las curvas y el registro para explicar qué cambió.</div>
       <details class="reflection" id="reflection"><summary id="reflection-question"></summary><p id="reflection-answer"></p></details>
       <button class="button full" data-action="debrief"><svg class="icon"><use href="#i-book"/></svg>Resumen de práctica</button><button class="button full subtle" data-action="scenarios">Elegir otro escenario<svg class="icon"><use href="#i-arrow"/></svg></button>
@@ -170,7 +169,7 @@
     <section class="instructor-pane" id="instructor-events"><p class="lesson-text">Introduce cambios durante la ventilación. Cada acción queda en el registro y puede revertirse.</p><div class="fault-grid" id="fault-grid"></div><button class="button full" data-action="undoEvent" id="undo-event"><svg class="icon"><use href="#i-history"/></svg>Deshacer último evento</button><h3 class="small-section-title">Últimos eventos</h3><div class="teacher-log" id="teacher-log"></div></section>
   </aside>
 </main>
-<footer class="safety-strip"><span class="version" id="version-tag">v0.3.0 · Offline</span><button data-action="model">Acerca del simulador</button></footer>
+<footer class="safety-strip"><span class="scenario-tag"><span class="live-dot" id="live-dot"></span><span id="scenario-name">Banco lineal pasivo</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><span class="version" id="version-tag">v0.3.0 · Offline</span><button data-action="model">Acerca del simulador</button></footer>
 <dialog id="app-dialog" class="app-dialog" aria-labelledby="dialog-title"><header class="dialog-header"><h2 id="dialog-title"></h2><button class="close-button" data-action="closeDialog" aria-label="Cerrar ventana"><svg class="icon"><use href="#i-close"/></svg></button></header><div class="dialog-content" id="dialog-content"></div><footer class="dialog-footer" id="dialog-footer"></footer></dialog>
 <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
 <input id="session-input" type="file" accept=".json,application/json" hidden>

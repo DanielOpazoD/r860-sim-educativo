@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
 import { defaultInit, R860_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
+import { scenariosHTML } from '../../src/ui/dialogs';
 import type { LessonContext } from '../../src/ui/lesson';
 import { avisoDeObjetivo, LESSON_TESTS, nextCompletedTask, tareasCumplidasAlAbrir } from '../../src/ui/lesson';
 
@@ -29,6 +30,18 @@ function primerCuadro(id: string): { tasks: { id: string; text: string; test: st
     ctx: { frame, scenarioId: e.id, lessonStartMs: frame.simTimeMs, patientChangeMs: -1, settingsChangeMs: -1, flags: {} },
   };
 }
+
+describe('Catálogo de escenarios', () => {
+  it('destaca ocho casos sin ocultar los demás ni mezclar la referencia fotográfica', () => {
+    const html = scenariosHTML(SCENARIOS, 'SC-01', () => 'A/C VC');
+    const start = html.split('id="scenario-all"')[0]!;
+    expect(start.match(/data-scenario="SC-/g)).toHaveLength(8);
+    expect(html.match(/data-scenario="SC-/g)).toHaveLength(SCENARIOS.length + 8);
+    expect(html).toContain('data-scenario="SC-P"');
+    expect(html).toContain('id="scenario-topic"');
+    expect(html).toContain('data-scenario-view="all"');
+  });
+});
 
 describe('LEC-01 · cumplir un objetivo se anuncia, salvo lo que ya se cumplía al abrir', () => {
   const base = { numero: 2, total: 3, cumplidos: 2, texto: 'Duplica la resistencia inspiratoria hasta ≥ 20.' };
@@ -65,6 +78,11 @@ describe('LEC-01 · cumplir un objetivo se anuncia, salvo lo que ya se cumplía 
 });
 
 describe('LEC-02 · toda tarea nombra una prueba que existe', () => {
+  it('SC-09 no pide deshacer una perturbación automática que no aparece en Eventos', () => {
+    const task = SCENARIOS.find((s) => s.id === 'SC-09')!.lesson!.tasks.find((t) => t.id === 'fix')!;
+    expect(task.text).toContain('Restablece la mecánica');
+    expect(task.text).not.toContain('Deshace');
+  });
   it('cada `test` de cada lección está en la tabla de pruebas', () => {
     // La tabla se consulta con `?.`: un nombre mal escrito dejaba un objetivo imposible sin ningún aviso.
     for (const s of SCENARIOS) for (const t of s.lesson?.tasks ?? []) expect(LESSON_TESTS, `${s.id}/${t.id}`).toHaveProperty(t.test);

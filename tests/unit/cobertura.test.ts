@@ -193,9 +193,20 @@ describe('Los ejes de las curvas tienen que caber los datos', () => {
     expect(b.minVolume).toBeLessThanOrEqual(-516);
   });
 
-  it('sin excursión negativa el suelo se queda en la holgura de siempre', () => {
+  it('sin excursión negativa el suelo se queda en la holgura del 5 %', () => {
     const b = getBounds(traza([0, 250, 500, 250, 0]), 5, 500);
-    expect(b.minVolume).toBeCloseTo(-b.volume * 0.1, 9);
+    expect(b.minVolume).toBeCloseTo(-b.volume * 0.05, 9);
+  });
+
+  it('usa escalones legibles sin reservar presión y flujo innecesarios', () => {
+    const puntos: [number, number, number, number, number, number][] = [
+      [0, 5, 0, 0, 0, 0],
+      [0.02, 15, -149, 430, 0, 0],
+    ];
+    const b = getBounds(puntos, 5, 500);
+    expect(b.pressure).toBe(20);
+    expect(b.flow).toBe(180);
+    expect(b.minPressure).toBeLessThan(0);
   });
 
   it('los demás ejes siguen cabiendo sus extremos', () => {

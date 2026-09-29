@@ -24,7 +24,7 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
     const tasks = l?.tasks ?? [];
     put('#lesson-count', sessionImported ? 'Sesión importada: sus objetivos no se evalúan' : `${done.size} de ${tasks.length} objetivos`);
     // La pestaña dice cuánto falta sin tener que abrirla.
-    put('[data-instructor="learn"]', tasks.length && !sessionImported ? `Entrenar · ${done.size}/${tasks.length}` : 'Entrenar');
+    put('#learn-tab-label', tasks.length && !sessionImported ? `Entrenar · ${done.size}/${tasks.length}` : 'Entrenar');
     $('#lesson-tasks').innerHTML = tasks
       .map(
         (task, i) =>

@@ -243,7 +243,11 @@ export function startApp(opts: AppOptions): void {
     );
     $('#live-dot').classList.toggle('paused', !running);
     $('#sim-pause').innerHTML = icon(running ? 'pause' : 'play') + `<span>${running ? 'Pausar' : 'Reanudar'}</span>`;
-    $('#sim-pause').setAttribute('aria-label', running ? 'Pausar simulación' : 'Reanudar simulación');
+    $('#sim-pause').setAttribute(
+      'aria-label',
+      running ? 'Pausar simulación' : `Reanudar simulación${pauseReason ? ' · ' + pauseReason : ''}`,
+    );
+    $('#sim-pause').setAttribute('title', running ? 'Pausar simulación' : `Reanudar simulación${pauseReason ? ' · ' + pauseReason : ''}`);
     ponerVelocidad(speed);
     const o2 = fr.procedure.o2;
     $('#o2-key').classList.toggle('o2-active', !!o2?.active);

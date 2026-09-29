@@ -355,12 +355,21 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   function bind(): void {
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
-        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
+        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
       );
       if (!el) return;
       e.preventDefault();
       if (el.dataset.helpTarget) {
         toggleHelp(el);
+        return;
+      }
+      if (el.dataset.scenarioView) {
+        const start = el.dataset.scenarioView === 'start';
+        $('#scenario-start').hidden = !start;
+        $('#scenario-all').hidden = start;
+        for (const button of document.querySelectorAll<HTMLElement>('[data-scenario-view]'))
+          button.setAttribute('aria-pressed', String(button.dataset.scenarioView === el.dataset.scenarioView));
+        $('#dialog-content').scrollTop = 0;
         return;
       }
       if (ctx.locked && el.closest('#monitor') && !['mute', 'alarms', 'unlock', 'closeHold'].includes(el.dataset.action ?? '')) {
@@ -394,6 +403,11 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       const el = e.target as HTMLInputElement | HTMLSelectElement;
       if ((el as HTMLInputElement).dataset.physRange || (el as HTMLInputElement).dataset.physNumber) instructor.physChange(el);
       if (el.dataset.physPreset) instructor.presetChange(el as HTMLSelectElement);
+      if (el.id === 'scenario-topic') {
+        for (const group of document.querySelectorAll<HTMLElement>('[data-scenario-topic]'))
+          group.hidden = !!el.value && group.dataset.scenarioTopic !== el.value;
+        $('#scenario-all .scenario-reference').hidden = !!el.value;
+      }
       if (el.id === 'sim-speed') ctx.setSpeed(Number(el.value));
       if (el.id === 'wave-window') plots.setWaveWindow(Number(el.value));
       if (el.id === 'wave-style') plots.setWaveStyle(el.value as 'sweep' | 'scroll');
@@ -437,7 +451,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && ctx.frame && ctx.running && !ctx.fixtureId) {
         ctx.client.visibility(true);
-        ctx.notice('Simulación pausada al ocultar la pestaña. Pulsa Reanudar para continuar sin saltos de tiempo.');
       }
     });
     setInterval(() => {

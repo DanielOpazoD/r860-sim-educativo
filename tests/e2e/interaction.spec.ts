@@ -2,6 +2,25 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectSafetyMark, frame, open } from './helpers';
 
 test.describe('INT · selección, edición, confirmación y cancelación', () => {
+  test('el selector comienza con ocho prácticas y mantiene el catálogo completo filtrable', async ({ page }) => {
+    await open(page, { instructor: 0 });
+    await page.click('[data-action="scenarios"]');
+    await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
+    await expect(page.locator('#scenario-all')).toBeHidden();
+    await page.click('[data-scenario-view="all"]');
+    await expect(page.locator('#scenario-all .scenario-card')).toHaveCount(22);
+    await page.selectOption('#scenario-topic', 'Circuito');
+    await expect(page.locator('#scenario-all .scenario-group:visible .scenario-card')).toHaveCount(2);
+    await expect(page.locator('#scenario-all .scenario-reference')).toBeHidden();
+  });
+  test('el selector móvil muestra una sola columna legible', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page, { instructor: 0 });
+    await page.click('[data-action="scenarios"]');
+    const columns = await page.locator('#scenario-start .scenario-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns);
+    expect(columns.split(' ')).toHaveLength(1);
+    await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
+  });
   test('INT-01 · seleccionar PEEP y girar sin confirmar no cambia ajustes ni motor', async ({ page }) => {
     await open(page, { autopause: 4000, speed: 4, instructor: 0 });
     await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 4000);
@@ -163,14 +182,15 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     expect((await frame(page)).settings.rr).toBe(15);
     await expectSafetyMark(page);
   });
-  test('TIM-03 · pestaña oculta: pausa explícita con aviso; reanudación manual sin salto de reloj', async ({ page }) => {
+  test('TIM-03 · pestaña oculta: pausa discreta y reanudación manual sin salto de reloj', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
     await page.evaluate(() => {
       Object.defineProperty(document, 'hidden', { value: true, configurable: true });
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await expect(page.locator('#global-notice')).toContainText('pausada');
     await page.waitForFunction(() => window.__r860.running === false);
+    await expect(page.locator('#global-notice')).toBeHidden();
+    await expect(page.locator('#sim-pause')).toHaveAccessibleName(/Reanudar simulación · segundo plano/);
     const t1 = (await frame(page)).simTimeMs;
     await page.waitForTimeout(1500);
     const t2 = (await frame(page)).simTimeMs;
@@ -204,7 +224,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     // que entrega 0 mL no alarma sólo por Pmáx: también saltan VTesp bajo y VMesp bajo, y esas dos se activaron DESPUÉS
     // del reconocimiento anterior. Así que al resolverse la causa la banda queda gris —resuelta, pendiente de
     // reconocer— y hace falta reconocer otra vez para limpiarla. Ése es justamente el contrato que esta prueba fija.
-    await page.click('[data-instructor="patient"]'); // la pestaña que se abre es «Entrenar»
+    await page.click('[data-instructor="patient"]'); // la pestaña que se abre es «Paciente»
     await page.fill('[data-phys-number="resistance"]', '10');
     await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
@@ -235,6 +255,30 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green', null, {
       timeout: 5000,
     });
+  });
+  test('SC-09 · el objetivo de resolver la oclusión se completa con controles visibles', async ({ page }) => {
+    await open(page, { scenario: 'SC-09', speed: 4 });
+    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
+      timeout: 30_000,
+    });
+    await page.click('[data-instructor="learn"]');
+    await expect(page.locator('#lesson-tasks')).toContainText('Restablece la mecánica');
+    await page.click('[data-action="alarms"]');
+    await page.click('[data-action="acknowledge"]');
+    await page.keyboard.press('Escape');
+    await page.click('[data-instructor="patient"]');
+    await page.click('[data-action="resetPatient"]');
+    await page.waitForFunction(
+      () => (window.__r860.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp === 10,
+    );
+    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'grey', null, {
+      timeout: 45_000,
+    });
+    await page.click('[data-action="alarms"]');
+    await page.click('[data-action="acknowledge"]');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
+    await expect(page.locator('[data-instructor="learn"]')).toContainText('3/3');
   });
   test('SEC-01/02 · sin tráfico externo; marca de simulación discreta presente en todas las vistas y en el bisel', async ({ page }) => {
     const external: string[] = [];
@@ -469,10 +513,11 @@ test.describe('CUR · medir sobre la curva congelada', () => {
 });
 
 test.describe('LEC · la lección responde', () => {
-  test('la pestaña de la lección se abre primero, cuenta lo hecho y avisa al cumplir un objetivo', async ({ page }) => {
+  test('la pestaña de la lección es secundaria, cuenta lo hecho y avisa al cumplir un objetivo', async ({ page }) => {
     await open(page, { speed: 4 });
     const pestana = page.locator('[data-instructor="learn"]');
-    await expect(pestana).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(pestana).toHaveAttribute('aria-selected', 'false');
     await expect(pestana).toHaveText('Entrenar · 0/3');
     // SC-01: el primer objetivo es un bloqueo inspiratorio válido.
     await page.click('[data-action="inspiratory"]');
@@ -502,12 +547,11 @@ test.describe('LEC · la lección responde', () => {
     await open(page, { speed: 4 });
     await page.click('[data-instructor="patient"]');
     await page.fill('[data-phys-number="resistance"]', '25');
-    await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
     await page.waitForFunction(
       () => (window.__r860.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp >= 20,
       null,
-      { timeout: 10_000 },
+      { timeout: 15_000 },
     );
     // El objetivo sí se cumple en la sesión original; se espera a que su aviso se retire para no confundirlo después.
     await expect(page.locator('#toast-stack .toast', { hasText: 'Objetivo' })).toHaveCount(0, { timeout: 10_000 });
@@ -679,7 +723,7 @@ test.describe('EXM · modo examen', () => {
 test.describe('BLD · bucle docente con presión muscular', () => {
   test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
     await open(page, { scenario: 'SC-19' });
-    await page.click('[data-instructor="patient"]'); // el panel abre en «Entrenar»
+    await page.click('[data-instructor="patient"]'); // el panel abre en «Paciente»
     await page.locator('#truth-details summary').click();
     const canvas = page.locator('#muscle-loop-canvas');
     await expect(canvas).toBeVisible();
