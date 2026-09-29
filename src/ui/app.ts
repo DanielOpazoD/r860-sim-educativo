@@ -440,6 +440,9 @@ export function startApp(opts: AppOptions): void {
     get waveRef() {
       return plots.waveRefAt;
     },
+    get waveScale() {
+      return plots.waveScaleMode;
+    },
     get exam() {
       return { active: examMode, estimates: metrics.examEstimateCount };
     },

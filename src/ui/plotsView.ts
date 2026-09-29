@@ -16,14 +16,19 @@ import {
   drawMuscleLoop,
   drawTrends,
   drawWave,
+  expandBounds,
   getBounds,
+  cursorMeasurements,
   nearestSample,
   stableBounds,
   visiblePoints,
+  waveMarkers,
   WAVE_MARGIN,
   type Bounds,
   type Point,
   type ScaleState,
+  type WaveBreath,
+  type WaveMarker,
 } from '../render/plots';
 import type { AppContext } from './context';
 import { $, icon, put } from './dom';
@@ -34,6 +39,7 @@ export interface PlotsView {
   /** Valor que muestra la columna de presión (con la amortiguación de presentación). */
   readonly gaugePaw: number | null;
   readonly frozen: boolean;
+  readonly waveScaleMode: 'auto' | 'fixed';
   /** Añade todas las muestras del cuadro a la traza y reinicia si el tiempo retrocedió. */
   ingest(prev: EngineFrame | null, fr: EngineFrame): void;
   /** Vacía la traza y el ciclo de referencia (escenario nuevo, sesión importada). */
@@ -52,10 +58,11 @@ export interface PlotsView {
   readonly waveRefAt: number | null;
   setWaveWindow(s: number): void;
   setWaveStyle(style: 'sweep' | 'scroll'): void;
+  setWaveScaleMode(mode: 'auto' | 'fixed'): void;
   /** Deslizador de historia (0–1000) con las curvas congeladas. */
   slideHistory(value: number): void;
-  /** Deslizador del cursor de medición (0–1000) sobre la ventana congelada: el mismo cálculo que el puntero. */
-  slideCursor(value: number): void;
+  /** Deslizadores A/B (0–1000) sobre la ventana congelada. */
+  slideCursor(value: number, cursor: 'A' | 'B'): void;
   /** Arranca el bucle de animación y los oyentes de canvas. */
   start(): void;
 }
@@ -67,15 +74,23 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     frozenTriggerDetections: number[] = [],
     lastTriggerSeq = 0;
   let waveWindow = 12,
-    waveStyle: 'sweep' | 'scroll' = 'sweep';
+    waveStyle: 'sweep' | 'scroll' = 'sweep',
+    waveScaleMode: 'auto' | 'fixed' = 'auto';
   let frozen = false,
     frozenPoints: Point[] = [],
     freezeEnd = 0,
     reviewEnd = 0,
     cursorTime: number | null = null,
     cursorRatio: number | null = null,
+    cursorTimeB: number | null = null,
+    cursorRatioB: number | null = null,
     loopReference: Point[] | null = null,
-    waveReference: Point[] | null = null;
+    waveReference: Point[] | null = null,
+    breaths: WaveBreath[] = [],
+    markerCache: WaveMarker[] = [],
+    markerCacheKey = '',
+    mechanicsSignature = '';
+  const fixedBounds: Record<'waves' | 'basic', Bounds | null> = { waves: null, basic: null };
   let dirty = true,
     lastPlot = 0,
     lastView = '';
@@ -116,6 +131,10 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
   const drawStyle = (): 'sweep' | 'scroll' => (frozen && reviewEnd < freezeEnd - 1e-9 ? 'scroll' : waveStyle);
   function waveBounds(canvas: 'waves' | 'basic', pts: Point[], end: number, peep: number, vtMl: number): Bounds {
     const measured = getBounds(visiblePoints(pts, end, waveWindow), peep, vtMl);
+    if (waveScaleMode === 'fixed') {
+      fixedBounds[canvas] = fixedBounds[canvas] ? expandBounds(fixedBounds[canvas], measured) : (scales[canvas]?.bounds ?? measured);
+      return fixedBounds[canvas];
+    }
     // Congeladas no se mueven: la escala es la de lo que se ve, sin memoria.
     if (frozen) return measured;
     const s = stableBounds(scales[canvas], measured, end, waveWindow, waveStyle);
@@ -135,12 +154,39 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     const peep = fr.settings.peep === 'off' ? 0 : fr.settings.peep,
       vtMl = fr.settings.vt * 1000;
     const style = drawStyle();
+    const latestBreath = [...breaths].reverse().find((b) => b.endSimTimeMs <= end * 1000 + 1) ?? null;
+    const lastHold = fr.procedure.last.inspHold;
+    const pplat = lastHold?.quality === 'valid' ? lastHold.values.pplat?.value : null;
+    const holdBreath =
+      lastHold?.breathId && (lastHold.completedAtMs ?? 0) >= (end - waveWindow) * 1000
+        ? (breaths.find((b) => b.breathId === lastHold.breathId) ?? null)
+        : null;
+    const annotatedBreath = holdBreath ?? latestBreath;
+    const markerKey = `${annotatedBreath?.breathId ?? ''}:${lastHold?.procedureId ?? ''}:${typeof pplat === 'number' ? pplat : ''}`;
+    if (markerKey !== markerCacheKey) {
+      markerCacheKey = markerKey;
+      markerCache = waveMarkers(
+        pts,
+        annotatedBreath,
+        lastHold && typeof pplat === 'number'
+          ? {
+              breathId: lastHold.breathId,
+              startedAtMs: lastHold.startedAtMs,
+              completedAtMs: lastHold.completedAtMs,
+              pplat,
+            }
+          : null,
+      );
+    }
+    const markers = markerCache;
     if (view === 'waves')
       drawWave($<HTMLCanvasElement>('#waves-canvas'), pts, end, peep, vtMl, {
         window: waveWindow,
         style,
         frozen,
         cursorTime,
+        cursorTimeB,
+        markers,
         bounds: waveBounds('waves', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
@@ -151,6 +197,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         window: waveWindow,
         style,
         frozen,
+        markers,
         bounds: waveBounds('basic', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
@@ -192,38 +239,63 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     }
     requestAnimationFrame(tick);
   }
-  /** Pone el cursor de medición en una fracción de la ventana congelada, escribe la lectura y la anuncia. */
-  function setCursorAt(ratio: number): void {
-    if (!frozen || !frozenPoints.length) return;
-    cursorRatio = Math.max(0, Math.min(1, ratio));
-    cursorTime = cursorTimeAt(cursorRatio, drawStyle(), reviewEnd, waveWindow);
-    const nearest = nearestSample(frozenPoints, cursorTime) as Point;
-    const lectura = `t ${f(nearest[0], 2)} s · Paw ${f(nearest[1], 1)} cmH₂O · Flujo ${f(nearest[2], 1)} L/min · Volumen ${f(nearest[3], 0)} mL · datos del sensor`;
+  function updateCursorReadout(): void {
+    if (cursorTime === null) return;
+    const a = nearestSample(frozenPoints, cursorTime) as Point;
+    const parts = [`A · t ${f(a[0], 2)} s · Paw ${f(a[1], 1)} · Flujo ${f(a[2], 1)} · V ${f(a[3], 0)}`];
+    if (cursorTimeB !== null) {
+      const b = nearestSample(frozenPoints, cursorTimeB) as Point;
+      const m = cursorMeasurements(a, b);
+      parts.push(`B · t ${f(b[0], 2)} s · Paw ${f(b[1], 1)} · Flujo ${f(b[2], 1)} · V ${f(b[3], 0)}`);
+      parts.push(`ΔP ${f(m.deltaP, 1)} cmH₂O · Ti/Δt ${f(m.deltaT, 2)} s · τesp ${m.tauExp === null ? '—' : f(m.tauExp, 2) + ' s'}`);
+    }
+    const lectura = parts.join('  |  ');
     put('#inspector-label', lectura);
-    // El propio control anuncia la lectura: el rótulo es texto sin región viva, y con lector de pantalla no se oía.
-    const slider = $<HTMLInputElement>('#cursor-slider');
-    slider.value = String(Math.round(cursorRatio * 1000));
-    slider.setAttribute('aria-valuetext', lectura);
+    for (const id of ['#cursor-slider', '#cursor-b-slider']) document.querySelector(id)?.setAttribute('aria-valuetext', lectura);
+  }
+  function setCursorAt(ratio: number, cursor: 'A' | 'B' = 'A'): void {
+    if (!frozen || !frozenPoints.length) return;
+    const bounded = Math.max(0, Math.min(1, ratio));
+    const time = cursorTimeAt(bounded, drawStyle(), reviewEnd, waveWindow);
+    if (cursor === 'A') {
+      cursorRatio = bounded;
+      cursorTime = time;
+    } else {
+      cursorRatioB = bounded;
+      cursorTimeB = time;
+    }
+    const slider = $<HTMLInputElement>(cursor === 'A' ? '#cursor-slider' : '#cursor-b-slider');
+    slider.value = String(Math.round(bounded * 1000));
+    updateCursorReadout();
     dirty = true;
   }
   function toggleFreeze(): void {
     frozen = !frozen;
     cursorTime = null;
     cursorRatio = null;
+    cursorTimeB = null;
+    cursorRatioB = null;
     resetScales();
     const slider = $<HTMLInputElement>('#cursor-slider');
-    slider.value = '500';
+    const sliderB = $<HTMLInputElement>('#cursor-b-slider');
+    slider.value = '350';
+    sliderB.value = '650';
     slider.removeAttribute('aria-valuetext');
+    sliderB.removeAttribute('aria-valuetext');
     if (frozen) {
       frozenPoints = points.map((x) => [...x] as Point);
       frozenTriggerDetections = [...triggerDetectionsS];
       freezeEnd = ctx.simS();
       reviewEnd = freezeEnd;
       ($('#history-slider') as HTMLInputElement).value = '1000';
-      put(
-        '#inspector-label',
-        'Curvas congeladas tal como estaban; los números siguen en vivo. Mueve el cursor o toca la curva; al recorrer la historia el trazado pasa a continuo.',
-      );
+      put('#inspector-label', 'Curvas congeladas tal como estaban; los números siguen en vivo. Mueve los cursores A y B para medir.');
+      const latest = [...breaths].reverse().find((b) => b.endSimTimeMs <= freezeEnd * 1000 + 1);
+      const startRatio = latest ? ((((latest.startSimTimeMs / 1000) % waveWindow) + waveWindow) % waveWindow) / waveWindow : 0.35;
+      const cycleRatio = latest
+        ? ((((latest.startSimTimeMs / 1000 + latest.tInspS) % waveWindow) + waveWindow) % waveWindow) / waveWindow
+        : 0.65;
+      setCursorAt(startRatio, 'A');
+      setCursorAt(cycleRatio, 'B');
     } else frozenPoints = [];
     $('#signal-inspector').hidden = !frozen;
     $('#frozen-ribbon').hidden = !frozen;
@@ -239,6 +311,21 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     const x = ((e.clientX - rect.left) / rect.width) * w;
     setCursorAt((x - WAVE_MARGIN.left) / (w - WAVE_MARGIN.left - WAVE_MARGIN.right));
   }
+  function setWaveReference(cyc: Point[]): void {
+    waveReference = cyc.map((x) => [...x] as Point);
+    const btn = $<HTMLButtonElement>('#wave-ref-button');
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
+    $('#wave-ref-clear').hidden = false;
+    dirty = true;
+  }
+  function resetWaveReferenceButton(): void {
+    const btn = $<HTMLButtonElement>('#wave-ref-button');
+    btn.classList.remove('active');
+    btn.setAttribute('aria-pressed', 'false');
+    (btn.querySelector('span') as HTMLElement).textContent = 'Comparar última respiración';
+    $('#wave-ref-clear').hidden = true;
+  }
   return {
     get gaugePaw() {
       return gaugePaw;
@@ -249,7 +336,11 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     get frozen() {
       return frozen;
     },
+    get waveScaleMode() {
+      return waveScaleMode;
+    },
     ingest(prev, fr) {
+      const nextMechanicsSignature = JSON.stringify([fr.settings, fr.truth.patient, fr.truth.effort, fr.truth.sensors]);
       if (prev && prev.simTimeMs > fr.simTimeMs) {
         // sesión nueva (escenario o importación): el historial anterior no debe filtrar las muestras nuevas
         points = [];
@@ -257,18 +348,47 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         lastTriggerSeq = 0;
         loopReference = null;
         waveReference = null;
+        resetWaveReferenceButton();
+        breaths = [];
+        markerCache = [];
+        markerCacheKey = '';
+        fixedBounds.waves = null;
+        fixedBounds.basic = null;
         resetScales();
+      } else if (prev && !waveReference && mechanicsSignature !== '' && mechanicsSignature !== nextMechanicsSignature) {
+        const before = cyclePoints(points);
+        if (before.length >= 3) setWaveReference(before);
       }
       for (const e of fr.eventsTail) {
         if (e.kind !== 'breath' || e.sequence <= lastTriggerSeq) continue;
-        const p = e.payload as { trigger?: unknown };
+        const p = e.payload as Record<string, unknown>;
         if (typeof p.trigger === 'number') {
           triggerDetectionsS.push(e.simTimeMs / 1000);
           if (triggerDetectionsS.length > 200) triggerDetectionsS = triggerDetectionsS.slice(-200);
         }
+        if (
+          typeof p.breathId === 'string' &&
+          typeof p.startSimTimeMs === 'number' &&
+          typeof p.endSimTimeMs === 'number' &&
+          typeof p.tInspS === 'number' &&
+          typeof p.ppeak === 'number'
+        ) {
+          breaths.push({
+            breathId: p.breathId,
+            startSimTimeMs: p.startSimTimeMs,
+            endSimTimeMs: p.endSimTimeMs,
+            tInspS: p.tInspS,
+            ppeak: p.ppeak,
+            pplatCycle: typeof p.pplatCycle === 'number' ? p.pplatCycle : null,
+            tauExpS: typeof p.tauExpS === 'number' ? p.tauExpS : null,
+            cyclingCause: String(p.cause ?? ''),
+          });
+          if (breaths.length > 200) breaths = breaths.slice(-200);
+        }
         lastTriggerSeq = Math.max(lastTriggerSeq, e.sequence);
       }
       appendSamples(points, fr.samples);
+      mechanicsSignature = nextMechanicsSignature;
       dirty = true;
     },
     reset() {
@@ -278,12 +398,25 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       lastTriggerSeq = 0;
       loopReference = null;
       waveReference = null;
+      resetWaveReferenceButton();
+      breaths = [];
+      markerCache = [];
+      markerCacheKey = '';
+      mechanicsSignature = '';
+      fixedBounds.waves = null;
+      fixedBounds.basic = null;
       resetScales();
     },
     clearPoints() {
       points = [];
       triggerDetectionsS = [];
       lastTriggerSeq = 0;
+      breaths = [];
+      markerCache = [];
+      markerCacheKey = '';
+      mechanicsSignature = '';
+      fixedBounds.waves = null;
+      fixedBounds.basic = null;
       resetScales();
       dirty = true;
     },
@@ -318,29 +451,21 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         ctx.toast('Espera un ciclo completo.', true);
         return;
       }
-      waveReference = cyc.map((x) => [...x] as Point);
-      const btn = $<HTMLButtonElement>('#wave-ref-button');
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed', 'true');
-      (btn.querySelector('span') as HTMLElement).textContent = `Ref ${clock(cyc[0]![0])}`;
-      $('#wave-ref-clear').hidden = false;
+      setWaveReference(cyc);
       ctx.lesson.flags.referenceWave = true;
       dirty = true;
       ctx.lesson.evaluate();
     },
     clearWaveReference() {
       waveReference = null;
-      const btn = $<HTMLButtonElement>('#wave-ref-button');
-      btn.classList.remove('active');
-      btn.setAttribute('aria-pressed', 'false');
-      (btn.querySelector('span') as HTMLElement).textContent = 'Referencia';
-      $('#wave-ref-clear').hidden = true;
+      resetWaveReferenceButton();
       dirty = true;
     },
     setWaveWindow(s) {
       waveWindow = s;
       resetScales();
-      if (cursorRatio !== null) setCursorAt(cursorRatio);
+      if (cursorRatio !== null) setCursorAt(cursorRatio, 'A');
+      if (cursorRatioB !== null) setCursorAt(cursorRatioB, 'B');
       dirty = true;
     },
     setWaveStyle(style) {
@@ -348,19 +473,32 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       resetScales();
       dirty = true;
     },
+    setWaveScaleMode(mode) {
+      waveScaleMode = mode;
+      if (mode === 'auto') {
+        fixedBounds.waves = null;
+        fixedBounds.basic = null;
+        resetScales();
+      } else {
+        fixedBounds.waves = scales.waves?.bounds ?? null;
+        fixedBounds.basic = scales.basic?.bounds ?? null;
+      }
+      dirty = true;
+    },
     slideHistory(value) {
       const start = Math.min(freezeEnd, frozenPoints[0]?.[0] ?? freezeEnd);
       reviewEnd = Math.min(freezeEnd, start + waveWindow + ((freezeEnd - start - waveWindow) * value) / 1000);
       // El cursor conserva su posición en la ventana, no su instante, que puede haber quedado fuera de lo que se ve.
-      if (cursorRatio !== null) setCursorAt(cursorRatio);
-      else {
+      if (cursorRatio !== null) setCursorAt(cursorRatio, 'A');
+      if (cursorRatioB !== null) setCursorAt(cursorRatioB, 'B');
+      if (cursorRatio === null && cursorRatioB === null) {
         cursorTime = null;
         put('#inspector-label', `Historia congelada · final de ventana ${clock(reviewEnd)}. Los números del monitor siguen en vivo.`);
       }
       dirty = true;
     },
-    slideCursor(value) {
-      setCursorAt(value / 1000);
+    slideCursor(value, cursor) {
+      setCursorAt(value / 1000, cursor);
     },
     start() {
       const canvas = $('#waves-canvas');

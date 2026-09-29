@@ -851,6 +851,37 @@ SCENARIOS.push({
     'Porque la mecánica del paciente fotografiado es desconocida; C y R aquí son artificiales y el motor calcula sus propias lecturas.',
 });
 
+export type WaveformFeatureKey = 'ppeak' | 'minPressure' | 'peakInspFlow' | 'peakExpFlow' | 'maxVolume' | 'minVolume';
+export interface ScenarioWaveformContract {
+  atSimTimeMs: number;
+  ranges: Partial<Record<WaveformFeatureKey, [number, number]>>;
+}
+
+export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContract> = {
+  'SC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakInspFlow: [29, 31], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
+  'SC-02': { atSimTimeMs: 32_000, ranges: { ppeak: [34, 36], peakExpFlow: [-155, -125], maxVolume: [490, 510] } },
+  'SC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [25, 30], peakExpFlow: [-45, -25], maxVolume: [490, 510] } },
+  'SC-04': { atSimTimeMs: 32_000, ranges: { ppeak: [29, 31], maxVolume: [330, 380] } },
+  'SC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [17, 22], minVolume: [-20, 5], maxVolume: [490, 510] } },
+  'SC-09': { atSimTimeMs: 24_000, ranges: { ppeak: [39, 41], maxVolume: [-5, 30] } },
+  'SC-18': { atSimTimeMs: 60_000, ranges: { ppeak: [20, 35], peakExpFlow: [-30, -10], minVolume: [-30, 10] } },
+  'SC-17': { atSimTimeMs: 18_000, ranges: { ppeak: [18, 22], peakExpFlow: [-170, -120], maxVolume: [490, 510] } },
+  'SC-16': { atSimTimeMs: 18_000, ranges: { ppeak: [22, 27], peakExpFlow: [-45, -25], maxVolume: [490, 510] } },
+  'SC-15': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 18], maxVolume: [290, 310] } },
+  'SC-14': { atSimTimeMs: 18_000, ranges: { ppeak: [26, 30], peakExpFlow: [-115, -90], maxVolume: [490, 510] } },
+  'SC-10': { atSimTimeMs: 18_000, ranges: { ppeak: [11, 14], minPressure: [-2, 1], maxVolume: [490, 510] } },
+  'SC-12': { atSimTimeMs: 22_000, ranges: { ppeak: [19, 21], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
+  'SC-24': { atSimTimeMs: 52_000, ranges: { ppeak: [20, 30], minVolume: [-350, -200], maxVolume: [440, 460] } },
+  'SC-13': { atSimTimeMs: 42_000, ranges: { ppeak: [14, 16], peakInspFlow: [23, 30], maxVolume: [280, 340] } },
+  'SC-19': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [55, 75], maxVolume: [550, 700] } },
+  'SC-20': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], maxVolume: [300, 400] } },
+  'SC-21': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-130, -100], maxVolume: [490, 510] } },
+  'SC-22': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 16], maxVolume: [300, 400] } },
+  'SC-23': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
+  'SC-25': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 28], maxVolume: [490, 510] } },
+  'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-115, -90], maxVolume: [280, 290] } },
+};
+
 export function findScenario(id: string): Scenario | undefined {
   return SCENARIOS.find((s) => s.id === id);
 }

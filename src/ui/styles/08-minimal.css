@@ -144,15 +144,32 @@
     border: 1px solid #262626;
   }
 }
-@media (min-width: 701px) and (max-width: 1250px) {
-  .signal-toolbar .button.small > span {
+@media (min-width: 701px) and (max-width: 1500px) {
+  #sim-pause > span,
+  #freeze-button > span,
+  .signal-toolbar .simulation-clock {
     display: none;
+  }
+  .signal-toolbar .inline-select {
+    gap: 0;
+    font-size: 0;
+  }
+  .signal-toolbar .inline-select select {
+    font-size: 10px;
+  }
+  .signal-toolbar .time-controls {
+    min-width: 0;
+    gap: 6px;
   }
 }
 @media (min-width: 1700px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr) 300px;
   }
+}
+.inspector-hint {
+  color: #88a8bb;
+  font-size: 10px;
 }
 .scenario-picker-tabs {
   display: flex;

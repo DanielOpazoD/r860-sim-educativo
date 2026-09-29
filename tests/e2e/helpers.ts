@@ -34,6 +34,7 @@ declare global {
       gaugePaw: number | null;
       /** Inicio (s de simulación) de la respiración guardada como referencia, o null. */
       waveRef: number | null;
+      waveScale: 'auto' | 'fixed';
       /** Modo examen: activo y cuántas mediciones ya se estimaron. */
       exam: { active: boolean; estimates: number };
     };
