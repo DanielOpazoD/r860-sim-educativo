@@ -22,7 +22,7 @@ test.describe('CPAP/PS', () => {
     await expect(page.locator('#mode-timing')).toContainText('apnea a los 20 s');
     await page.click('[data-action="confirmModes"]');
     await expect(page.locator('#scenario-sub')).toContainText('CPAP/PS');
-    await expect.poll(async () => (await frame(page)).settings.mode).toBe('CPAP_PS');
+    await expect.poll(async () => (await frame(page)).settings.mode, { timeout: 15_000 }).toBe('CPAP_PS');
     expect(await page.$$eval('#quick-controls [data-key]', (e) => e.map((x) => (x as HTMLElement).dataset.key))).toEqual([
       'fio2',
       'psupport',

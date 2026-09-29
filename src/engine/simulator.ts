@@ -335,8 +335,12 @@ export class Simulator {
           breathId: ev.record.breathId,
           type: ev.record.type,
           cause: ev.record.cyclingCause,
+          startSimTimeMs: ev.record.startSimTimeMs,
+          endSimTimeMs: ev.record.endSimTimeMs,
           vte: ev.record.vtExp,
           ppeak: ev.record.ppeak,
+          pplatCycle: ev.record.pplatCycle,
+          tauExpS: ev.record.tauExpS ?? null,
           tInspS: ev.record.tInspS,
         });
         break;

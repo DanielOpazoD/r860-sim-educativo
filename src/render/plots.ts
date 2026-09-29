@@ -65,6 +65,86 @@ export interface Bounds {
   minPressure: number;
   minVolume: number;
 }
+export interface WaveBreath {
+  breathId: string;
+  startSimTimeMs: number;
+  endSimTimeMs: number;
+  tInspS: number;
+  ppeak: number;
+  pplatCycle: number | null;
+  tauExpS: number | null;
+  cyclingCause: string;
+}
+export type WaveMarkerKind = 'start' | 'cycle' | 'ppeak' | 'pplat' | 'end' | 'effort';
+export interface WaveMarker {
+  kind: WaveMarkerKind;
+  t: number;
+  label: string;
+  value?: number;
+}
+export interface WaveformFeatures {
+  ppeak: number;
+  minPressure: number;
+  peakInspFlow: number;
+  peakExpFlow: number;
+  maxVolume: number;
+  minVolume: number;
+}
+
+export function expandBounds(current: Bounds, measured: Bounds): Bounds {
+  return {
+    pressure: Math.max(current.pressure, measured.pressure),
+    flow: Math.max(current.flow, measured.flow),
+    volume: Math.max(current.volume, measured.volume),
+    minPressure: Math.min(current.minPressure, measured.minPressure),
+    minVolume: Math.min(current.minVolume, measured.minVolume),
+  };
+}
+
+export function cursorMeasurements(a: Point, b: Point): { deltaP: number; deltaT: number; tauExp: number | null } {
+  const deltaT = Math.abs(b[0] - a[0]);
+  const q1 = Math.abs(a[2]);
+  const q2 = Math.abs(b[2]);
+  const bothExpiratory = a[2] < -1 && b[2] < -1;
+  const tauExp = bothExpiratory && q1 > q2 && deltaT > 0 ? deltaT / Math.log(q1 / q2) : null;
+  return { deltaP: Math.abs(b[1] - a[1]), deltaT, tauExp: tauExp !== null && Number.isFinite(tauExp) ? tauExp : null };
+}
+
+export function waveformFeatures(points: Point[]): WaveformFeatures {
+  return {
+    ppeak: points.length ? Math.max(...points.map((p) => p[1])) : 0,
+    minPressure: points.length ? Math.min(...points.map((p) => p[1])) : 0,
+    peakInspFlow: points.length ? Math.max(...points.map((p) => p[2])) : 0,
+    peakExpFlow: points.length ? Math.min(...points.map((p) => p[2])) : 0,
+    maxVolume: points.length ? Math.max(...points.map((p) => p[3])) : 0,
+    minVolume: points.length ? Math.min(...points.map((p) => p[3])) : 0,
+  };
+}
+
+export function waveMarkers(
+  points: Point[],
+  breath: WaveBreath | null,
+  hold: { breathId: string | null; startedAtMs: number | null; completedAtMs: number | null; pplat: number } | null,
+): WaveMarker[] {
+  if (!breath) return [];
+  const start = breath.startSimTimeMs / 1000;
+  const cycle = start + breath.tInspS;
+  const end = breath.endSimTimeMs / 1000;
+  const breathPoints = points.filter((p) => p[0] >= start && p[0] <= end);
+  const ppeakPoint = breathPoints.reduce<Point | null>((best, p) => (!best || p[1] > best[1] ? p : best), null);
+  const effortPoint = points.find((p) => p[0] >= start - 1 && p[0] <= cycle && p[4] > 0.2) ?? null;
+  const markers: WaveMarker[] = [
+    { kind: 'start', t: start, label: 'Inicio' },
+    { kind: 'cycle', t: cycle, label: 'Ciclado' },
+    { kind: 'end', t: end, label: 'Fin esp.' },
+  ];
+  if (ppeakPoint) markers.push({ kind: 'ppeak', t: ppeakPoint[0], label: `Ppico ${format(breath.ppeak, 1)}`, value: breath.ppeak });
+  if (effortPoint) markers.push({ kind: 'effort', t: effortPoint[0], label: 'Esfuerzo' });
+  if (hold?.breathId === breath.breathId && hold.startedAtMs !== null)
+    markers.push({ kind: 'pplat', t: hold.startedAtMs / 1000, label: `Pplat ${format(hold.pplat, 1)}`, value: hold.pplat });
+  return markers;
+}
+
 const ESCALA_VOLUMEN = [300, 400, 600, 800, 1000, 1500, 2000, 2500, 4000];
 export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
   let maxP = Math.max(peep + 10, 16),
@@ -261,6 +341,8 @@ export interface WaveOptions {
   single?: boolean;
   frozen?: boolean;
   cursorTime?: number | null;
+  cursorTimeB?: number | null;
+  markers?: WaveMarker[];
   /** Ciclo medido guardado como referencia: se dibuja tenue bajo la traza, alineado al inicio de la última respiración visible. */
   reference?: Point[] | null;
   /** Escala ya decidida por quien llama (con histéresis, `stableBounds`); sin ella, la de lo visible en este cuadro. */
@@ -463,6 +545,10 @@ export function drawWave(
       }
       ctx.stroke();
       ctx.restore();
+      if (i === 0) {
+        text(ctx, 'Antes', left + 5, ytop + 10, 8, '#edc87e');
+        text(ctx, 'Después', left + 39, ytop + 10, 8, sp.color);
+      }
     }
     for (const seg of segments) {
       if (seg.length < 2) continue;
@@ -472,6 +558,30 @@ export function drawWave(
       ctx.beginPath();
       seg.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       ctx.stroke();
+    }
+    for (const marker of options.markers ?? []) {
+      if (marker.t < end - win || marker.t > end) continue;
+      const x = xfn(marker.t);
+      if (x < left || x > w - right) continue;
+      if (marker.kind === 'start' || marker.kind === 'cycle' || marker.kind === 'end') {
+        ctx.save();
+        ctx.setLineDash([2, 4]);
+        line(ctx, x, ytop, x, ybottom, marker.kind === 'cycle' ? '#ffd36e80' : '#b4dcf060', 0.8);
+        ctx.restore();
+        if (i === 0) {
+          const labelY = marker.kind === 'start' ? ytop + 10 : marker.kind === 'cycle' ? ybottom - 16 : ybottom - 5;
+          text(ctx, marker.label, x + 3, labelY, 8, '#c4e5f2');
+        }
+      } else if (i === 0) {
+        const value = marker.value ?? sp.min;
+        const y = marker.kind === 'effort' ? ybottom - 4 : yf(value);
+        const markerColor = marker.kind === 'pplat' ? '#ffe49a' : marker.kind === 'ppeak' ? '#ffb0aa' : '#d6b7ff';
+        ctx.fillStyle = markerColor;
+        ctx.beginPath();
+        ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+        text(ctx, marker.label, x + 4, Math.max(ytop + 8, y - 4), 8, markerColor);
+      }
     }
     if (style === 'sweep' && !options.frozen) {
       const cursor = xfn(end);
@@ -490,6 +600,12 @@ export function drawWave(
     if (typeof options.cursorTime === 'number' && Number.isFinite(options.cursorTime)) {
       const x = xfn(options.cursorTime);
       line(ctx, x, ytop, x, ybottom, '#ffffffd0', 0.8);
+      if (i === 0) text(ctx, 'A', x + 3, ytop + 10, 8, '#ffffffd0', 'left', '600');
+    }
+    if (typeof options.cursorTimeB === 'number' && Number.isFinite(options.cursorTimeB)) {
+      const x = xfn(options.cursorTimeB);
+      line(ctx, x, ytop, x, ybottom, '#ffe49ad0', 0.8);
+      if (i === 0) text(ctx, 'B', x + 3, ytop + 10, 8, '#ffe49ad0', 'left', '600');
     }
     ctx.restore();
     if (i === specs.length - 1)

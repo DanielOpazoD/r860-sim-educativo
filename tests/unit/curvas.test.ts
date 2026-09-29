@@ -3,21 +3,26 @@ import { Simulator, type EngineFrame } from '../../src/engine/simulator';
 import { defaultInit, R860_PROFILE } from '../../src/profiles';
 import {
   appendSamples,
+  cursorMeasurements,
   cursorTimeAt,
   cyclePoints,
+  expandBounds,
   getBounds,
   nearestSample,
   referenceShift,
   stableBounds,
   timeAxisLabels,
   visiblePoints,
+  waveformFeatures,
+  waveMarkers,
   type Bounds,
   type Point,
   type SampleBuffers,
   type ScaleState,
+  type WaveBreath,
 } from '../../src/render/plots';
 import { formatNumber } from '../../src/domain/units';
-import { SCENARIOS } from '../../src/scenarios';
+import { SCENARIOS, SCENARIO_WAVEFORM_CONTRACTS } from '../../src/scenarios';
 
 // Lo que se dibuja tiene que decir lo mismo que el número y la alarma, y no cambiar de tamaño bajo el ojo del alumno.
 // Estas pruebas reconstruyen la traza como la interfaz —cuadro a cuadro, con las muestras que publica el motor— en vez
@@ -136,9 +141,13 @@ describe('CUR-01 · la curva llega a donde dicen el número y la alarma', () => 
 });
 
 describe('Curvas de todos los escenarios', () => {
-  it.each(SCENARIOS.map((s) => s.id))('%s conserva presión, flujo y volumen finitos y sin recortes tras sus perturbaciones', (id) => {
-    const scenario = SCENARIOS.find((s) => s.id === id)!;
-    const endMs = Math.max(18_000, ...scenario.perturbations.map((p) => p.atSimTimeMs + 12_000));
+  it('cada escenario declara un descriptor fisiológico verificable', () => {
+    expect(Object.keys(SCENARIO_WAVEFORM_CONTRACTS).sort()).toEqual(SCENARIOS.map((s) => s.id).sort());
+  });
+
+  it.each(SCENARIOS.map((s) => s.id))('%s conserva señales válidas y cumple su descriptor tras las perturbaciones', (id) => {
+    const contract = SCENARIO_WAVEFORM_CONTRACTS[id]!;
+    const endMs = contract.atSimTimeMs;
     const pts: Point[] = [];
     let scale: ScaleState | null = null;
     let count = 0;
@@ -167,6 +176,65 @@ describe('Curvas de todos los escenarios', () => {
         `${id} a ${end.toFixed(1)} s: curva fuera de escala`,
       ).toBe(true);
     });
+    const features = waveformFeatures(visiblePoints(pts, endMs / 1000, 8));
+    for (const [key, [min, max]] of Object.entries(contract.ranges)) {
+      const value = features[key as keyof typeof features];
+      expect(value, `${id} · ${key}: ${value} fuera de ${min}…${max}`).toBeGreaterThanOrEqual(min);
+      expect(value, `${id} · ${key}: ${value} fuera de ${min}…${max}`).toBeLessThanOrEqual(max);
+    }
+  });
+});
+
+describe('Análisis educativo de curvas', () => {
+  const pts: Point[] = [
+    [10, 5, 0, 0, 0, 2],
+    [10.2, 14, 30, 120, 0.4, 2],
+    [10.8, 20, 30, 500, 2, 2],
+    [11, 15, -60, 500, 1, 2],
+    [12, 5, -20, 40, 0, 2],
+    [13, 5, 0, 0, 0, 2],
+  ];
+  const breath: WaveBreath = {
+    breathId: 'b2',
+    startSimTimeMs: 10_000,
+    endSimTimeMs: 13_000,
+    tInspS: 1,
+    ppeak: 20,
+    pplatCycle: 15,
+    tauExpS: 0.5,
+    cyclingCause: 'time',
+  };
+
+  it('calcula ΔP, Ti y τ espiratoria entre dos cursores sin inventar τ con flujos no válidos', () => {
+    expect(cursorMeasurements(pts[3]!, pts[4]!)).toEqual({ deltaP: 10, deltaT: 1, tauExp: 1 / Math.log(3) });
+    expect(cursorMeasurements(pts[1]!, pts[2]!).tauExp).toBeNull();
+  });
+
+  it('la escala fija conserva su encuadre pero crece si una señal lo supera', () => {
+    const fija: Bounds = { pressure: 30, flow: 80, volume: 600, minPressure: -1.5, minVolume: -30 };
+    expect(expandBounds(fija, { pressure: 20, flow: 60, volume: 400, minPressure: -1, minVolume: -20 })).toEqual(fija);
+    expect(expandBounds(fija, { pressure: 40, flow: 120, volume: 800, minPressure: -5, minVolume: -100 })).toEqual({
+      pressure: 40,
+      flow: 120,
+      volume: 800,
+      minPressure: -5,
+      minVolume: -100,
+    });
+  });
+
+  it('marca inicio, ciclado, Ppico, fin espiratorio, esfuerzo y Pplat medida', () => {
+    const markers = waveMarkers(pts, breath, {
+      breathId: 'b2',
+      startedAtMs: 10_900,
+      completedAtMs: 11_900,
+      pplat: 15,
+    });
+    expect(new Set(markers.map((m) => m.kind))).toEqual(new Set(['start', 'cycle', 'ppeak', 'end', 'effort', 'pplat']));
+    expect(markers.find((m) => m.kind === 'ppeak')?.value).toBe(20);
+  });
+
+  it('extrae descriptores cuantitativos de una ventana', () => {
+    expect(waveformFeatures(pts)).toMatchObject({ ppeak: 20, minPressure: 5, peakInspFlow: 30, peakExpFlow: -60, maxVolume: 500 });
   });
 });
 
