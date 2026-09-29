@@ -203,7 +203,11 @@ export const SCENARIOS: Scenario[] = [
       tasks: [
         { id: 'alarm', text: 'Abre la lista de alarmas mientras la alarma está activa.', test: 'alarmSeen' },
         { id: 'ack', text: 'Reconoce la alarma: la condición sigue activa.', test: 'acknowledged' },
-        { id: 'fix', text: 'Deshace el evento en el panel docente y comprueba que la banda vuelve a verde.', test: 'alarmCleared' },
+        {
+          id: 'fix',
+          text: 'Restablece la mecánica en Paciente y reconoce las alarmas resueltas hasta que la banda vuelva a verde.',
+          test: 'alarmCleared',
+        },
       ],
     },
     question: '¿Reconocer resuelve la alarma?',

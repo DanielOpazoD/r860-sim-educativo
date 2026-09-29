@@ -67,7 +67,7 @@ export interface Bounds {
 }
 const ESCALA_VOLUMEN = [300, 400, 600, 800, 1000, 1500, 2000, 2500, 4000];
 export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
-  let maxP = peep + 20 || 35,
+  let maxP = Math.max(peep + 10, 16),
     maxF = 40,
     maxV = vtMl || 450,
     minP = 0,
@@ -86,10 +86,10 @@ export function getBounds(points: Point[], peep: number, vtMl: number): Bounds {
   // que más enseña —la curva de volumen hundiéndose bajo la línea de base— se dibujaba como una barra plana
   // recortada: en el escenario de doble disparo la traza llega a −516 mL contra un suelo de −60.
   const holgura = -volume * 0.05;
-  const pressure = nice(maxP * 1.12, [30, 40, 60, 80, 100, 120]);
+  const pressure = nice(maxP * 1.12, [20, 25, 30, 35, 40, 45, 50, 60, 80, 100, 120]);
   return {
     pressure,
-    flow: nice(maxF * 1.15, [40, 60, 80, 120, 160, 240, 320]),
+    flow: nice(maxF * 1.15, [40, 60, 80, 100, 120, 160, 180, 200, 240, 320]),
     volume,
     // Un pulmón pasivo nunca baja de 0 cmH₂O: el suelo fijo de −10 dejaba vacío un cuarto del panel. Sólo baja
     // cuando la señal lo hace (esfuerzo del paciente); en reposo queda un margen del 5 % para que la línea de base

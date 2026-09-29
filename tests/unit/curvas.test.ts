@@ -60,6 +60,8 @@ function correr(id: string, hastaMs: number, pasosPorCuadro: number | (() => num
       while (pendientes.length && sim.simTimeMs >= pendientes[0]!.atSimTimeMs) {
         const p = pendientes.shift()!;
         if (p.patient) sim.command({ type: 'setPatient', params: p.patient });
+        if (p.effort) sim.command({ type: 'setEffort', params: p.effort });
+        if (p.sensors) sim.command({ type: 'setSensors', params: p.sensors });
       }
     }
     alCuadro(sim.frame());
@@ -130,6 +132,41 @@ describe('CUR-01 · la curva llega a donde dicen el número y la alarma', () => 
     expect(pts[0]![0]).toBeCloseTo(10_000 * 0.004, 9);
     appendSamples(pts, muestras(39_999, 1), 30_000);
     expect(pts.length, 'una muestra del mismo instante no entra dos veces').toBe(30_000);
+  });
+});
+
+describe('Curvas de todos los escenarios', () => {
+  it.each(SCENARIOS.map((s) => s.id))('%s conserva presión, flujo y volumen finitos y sin recortes tras sus perturbaciones', (id) => {
+    const scenario = SCENARIOS.find((s) => s.id === id)!;
+    const endMs = Math.max(18_000, ...scenario.perturbations.map((p) => p.atSimTimeMs + 12_000));
+    const pts: Point[] = [];
+    let scale: ScaleState | null = null;
+    let count = 0;
+    correr(id, endMs, 25, (fr) => {
+      appendSamples(pts, fr.samples);
+      count++;
+      if (count % 10 !== 0) return;
+      const end = fr.simTimeMs / 1000;
+      const visible = visiblePoints(pts, end, 12);
+      const peep = fr.settings.peep === 'off' ? 0 : fr.settings.peep;
+      scale = stableBounds(scale, getBounds(visible, peep, fr.settings.vt * 1000), end, 12, 'sweep');
+      const bounds: Bounds = scale.bounds;
+      expect(
+        visible.every((p) => p.slice(1, 4).every(Number.isFinite)),
+        `${id} a ${end.toFixed(1)} s: señal no finita`,
+      ).toBe(true);
+      expect(
+        visible.every(
+          (p) =>
+            p[1] >= bounds.minPressure &&
+            p[1] <= bounds.pressure &&
+            Math.abs(p[2]) <= bounds.flow &&
+            p[3] >= bounds.minVolume &&
+            p[3] <= bounds.volume,
+        ),
+        `${id} a ${end.toFixed(1)} s: curva fuera de escala`,
+      ).toBe(true);
+    });
   });
 });
 
