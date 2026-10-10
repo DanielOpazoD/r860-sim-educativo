@@ -136,10 +136,6 @@
     transform: rotate(360deg);
   }
 }
-/* Capas fijas de móvil por encima de cualquier contenido del escenario. */
-.mobile-toolbar {
-  z-index: 200;
-}
 .hold-panel.mobile-hold {
   z-index: 210;
 }
@@ -151,10 +147,6 @@
   left: 8px;
   right: auto;
   width: calc(100vw - 16px);
-}
-.mobile-toolbar {
-  right: auto;
-  width: 100vw;
 }
 .hold-title button {
   position: relative;
@@ -186,11 +178,6 @@
     padding: 6px;
     min-width: 30px;
   }
-}
-.mobile-toolbar {
-  left: 0;
-  right: 0;
-  width: auto;
 }
 /* Geometría estable de la ventana de bloqueo en móvil: el título ocupa el ancho sobrante y la altura no oscila con el estado. */
 .hold-title b {

@@ -47,48 +47,7 @@
 .mode-error.warn {
   color: #ffd98a;
 }
-/* Barra táctil fija en móvil: accesos de 44 px fuera del monitor escalado (las teclas del monitor quedan pequeñas al escalar). */
-.mobile-toolbar {
-  display: none;
-}
 @media (max-width: 700px), (pointer: coarse) and (max-width: 900px) {
-  .mobile-toolbar {
-    display: flex;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 55;
-    gap: 4px;
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-    background: #0f1a27f2;
-    border-top: 1px solid #33465b;
-    overflow-x: auto;
-  }
-  .mobile-toolbar button {
-    flex: 1 0 44px;
-    min-width: 44px;
-    min-height: 44px;
-    border-radius: 8px;
-    border: 1px solid #3475ad;
-    background: linear-gradient(#377db7, #123c78);
-    color: #d6ecfb;
-    font-size: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    padding: 2px 4px;
-  }
-  .mobile-toolbar button[aria-pressed='true'] {
-    background: linear-gradient(#6dd8cb, #3aa596);
-    color: #06202a;
-  }
-  .mobile-toolbar button .icon {
-    width: 18px;
-    height: 18px;
-  }
   .hold-panel.mobile-hold {
     bottom: 68px;
   }
@@ -96,9 +55,6 @@
     top: 12px;
     bottom: auto;
     left: 12px;
-  }
-  body {
-    padding-bottom: 72px;
   }
   .info-button,
   .numeric-info {
@@ -148,11 +104,6 @@ body {
 .safety-strip {
   background: var(--shell-bg);
 }
-.mobile-toolbar {
-  background: color-mix(in srgb, var(--shell-bg) 95%, transparent);
-  border-top-color: var(--shell-line);
-}
-
 /* ---- Diálogos compactos (06-09-2026): menos padding, tipografía más pequeña, ancho contenido. ---- */
 .app-dialog {
   width: min(820px, calc(100vw - 38px));

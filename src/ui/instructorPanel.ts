@@ -17,6 +17,7 @@ import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
 import { savePrefs } from './prefs';
+import { isMobile } from './labels';
 
 export interface InstructorPanel {
   readonly teacherVisible: boolean;
@@ -52,10 +53,12 @@ export function createInstructorPanel(
 
   function renderToggle(): void {
     $('#workspace').classList.toggle('teacher-hidden', !teacherVisible);
-    const tb = $('#teacher-toggle');
-    tb.setAttribute('aria-pressed', String(teacherVisible));
-    tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
-    tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
+    for (const tb of [$<HTMLButtonElement>('#teacher-toggle'), $<HTMLButtonElement>('#panel-button')]) {
+      tb.setAttribute('aria-pressed', String(teacherVisible));
+      tb.classList.toggle('active', teacherVisible);
+      tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
+      tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
+    }
   }
   function syncProfileButtons(patient: EngineFrame['truth']['patient'], effort: EngineFrame['truth']['effort']): void {
     const json = JSON.stringify([patient, effort]);
@@ -283,7 +286,11 @@ export function createInstructorPanel(
     toggleTeacher() {
       teacherVisible = !teacherVisible;
       renderToggle();
-      if (!ctx.fixtureId) savePrefs({ instructorVisible: teacherVisible });
+      if (!ctx.fixtureId && !isMobile()) savePrefs({ instructorVisible: teacherVisible });
+      if (isMobile()) {
+        if (teacherVisible) $('[data-instructor].active').focus();
+        else $('#panel-button').focus();
+      }
     },
     async resetPatient() {
       const scenario = ctx.scenario;

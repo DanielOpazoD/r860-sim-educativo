@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { frame, open } from './helpers';
+import { frame, open, showPanel } from './helpers';
 
 type FrameLike = {
   settings: { mode: string; psupport: number };
@@ -53,7 +53,7 @@ test.describe('CPAP/PS', () => {
     await expect(page.locator('[data-instructor="learn"]')).toHaveText(/Entrenar · [01]\/3/);
     await expect.poll(async () => (await frame(page)).metrics.rrSpont?.value ?? 0, { timeout: 30_000 }).toBeGreaterThan(10);
     // Apnea desde el panel docente: el esfuerzo se apaga; a los 20 s de tiempo simulado, alarma y respaldo.
-    await page.click('[data-instructor="events"]');
+    await showPanel(page, 'events');
     await page.click('[data-event="apnea"]');
     await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Apnea', { timeout: 30_000 });
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);

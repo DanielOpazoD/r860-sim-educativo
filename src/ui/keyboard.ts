@@ -4,6 +4,7 @@ import { $, trapTab } from './dom';
 import { collapseHelp } from './helpPanels';
 import type { CommandPalette } from './commandPalette';
 import type { QuickEditor } from './quickEditor';
+import { isMobile } from './labels';
 
 /** Flechas dentro de una rejilla de casillas con tabindex itinerante (numéricas y datos grandes). */
 export function roveGrid(e: KeyboardEvent, t: HTMLElement): boolean {
@@ -33,6 +34,7 @@ export function bindKeyboard(
 ): void {
   const { quick } = deps;
   document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented) return;
     if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       if ($<HTMLDialogElement>('#app-dialog').open) ctx.dialog.close();
@@ -61,6 +63,11 @@ export function bindKeyboard(
       if (e.key === 'ArrowDown') quick.stepQuick(-1);
       if (e.key === 'Enter') quick.confirmQuick();
       if (e.key === 'Escape') quick.cancelQuick();
+      return;
+    }
+    if (e.key === 'Escape' && isMobile() && $('#panel-button').getAttribute('aria-pressed') === 'true') {
+      e.preventDefault();
+      void deps.action('teacher');
       return;
     }
     if (t.dataset.metric && roveGrid(e, t)) return;

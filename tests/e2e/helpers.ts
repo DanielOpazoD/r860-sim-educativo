@@ -51,6 +51,22 @@ export async function open(page: Page, params: Record<string, string | number> =
   await page.goto(`/?${q.toString()}`);
   await page.waitForFunction(() => window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
 }
+export async function showPanel(page: Page, tab?: 'patient' | 'events' | 'learn'): Promise<void> {
+  const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
+  if (mobile) {
+    const button = page.locator('#panel-button');
+    if ((await button.getAttribute('aria-pressed')) !== 'true') await button.click();
+  } else if (await page.locator('#workspace').evaluate((el) => el.classList.contains('teacher-hidden'))) {
+    await page.locator('#teacher-toggle').click();
+  }
+  if (tab) await page.locator(`[data-instructor="${tab}"]`).click();
+}
+export async function hidePanel(page: Page): Promise<void> {
+  const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
+  if (mobile && (await page.locator('#panel-button').getAttribute('aria-pressed')) === 'true') {
+    await page.locator('#instructor-close').click();
+  }
+}
 export const frame = (page: Page): Promise<FrameLike> => page.evaluate(() => window.__r860.frame as unknown as FrameLike);
 export async function screenshot(page: Page, info: TestInfo, name: string, meta: Record<string, unknown> = {}): Promise<void> {
   const f = await frame(page);
