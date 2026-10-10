@@ -722,3 +722,66 @@
     margin-right: 0;
   }
 }
+.group-row th {
+  position: static;
+  top: auto;
+  padding: 5px 10px 3px;
+  background: transparent;
+  color: #8fc3e6;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.device-table td.metric-status {
+  max-width: 270px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.device-table tbody tr[data-row] td {
+  padding: 3px 8px;
+}
+.q-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.q-ok {
+  background: #0f5a4a;
+  color: #c8f5e6;
+}
+.q-warn {
+  background: #6a4a12;
+  color: #ffe2ad;
+}
+.q-off {
+  border-color: #3d6f9e;
+  background: transparent;
+  color: #a6c8e6;
+}
+.q-src {
+  margin-left: 6px;
+  color: #9ccbe8;
+  font-size: 10px;
+  font-weight: 400;
+}
+.q-estimate {
+  font-size: 10px;
+}
+.device-table td .sin-dato {
+  color: #a6c8e6;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 500;
+}
+@media (max-width: 700px) {
+  .q-src {
+    display: none;
+  }
+}

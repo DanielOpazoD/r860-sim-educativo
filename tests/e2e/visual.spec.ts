@@ -94,7 +94,7 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await page.click('[data-view="data"]');
     // Las veinte mediciones se ven a la vez, en dos columnas: con una sola tabla nueve quedaban bajo el pliegue
     // sin ninguna señal, entre ellas la Cstat, la ΔP y el índice de estrés.
-    await expect(page.locator('#data-table-body tr, #data-table-body-2 tr')).toHaveCount(20);
+    await expect(page.locator('#data-table-body tr[data-row], #data-table-body-2 tr[data-row]')).toHaveCount(20);
     const caben = await page.evaluate(() => {
       const c = document.querySelector('.data-tables') as HTMLElement;
       return c.scrollHeight <= c.clientHeight;
@@ -102,11 +102,27 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     // En móvil las dos columnas se apilan y el desplazamiento es inevitable y correcto; ahí no se exige.
     if ((page.viewportSize()?.width ?? 0) >= 900) expect(caben, 'la tabla de mediciones no puede esconder filas').toBe(true);
     await expect(page.locator('.data-tables')).toContainText('Índice de estrés');
-    await expect(page.locator('#data-table-body')).toContainText('sensor del ventilador');
+    const estadoPico = page.locator('tr[data-row="ppeak"] .metric-status');
+    await expect(estadoPico).toContainText('Válido');
+    await expect(estadoPico).toContainText('Sensor');
+    await expect(estadoPico).toHaveAttribute('title', /sensor del ventilador/);
     await page.click('[data-view="trends"]');
     await page.waitForTimeout(200);
     await page.click('[data-view="log"]');
     await expect(page.locator('#device-event-log .event-log-row').first()).toBeVisible();
+  });
+  test('DAT-08 · grupos y estado Pplat cambian al completar un bloqueo válido', async ({ page }) => {
+    await open(page, { scenario: 'SC-02', instructor: 0, speed: 4 });
+    await page.click('[data-view="data"]');
+    await expect(page.locator('.group-row').filter({ hasText: 'Mecánica por bloqueo' })).toBeVisible();
+    const pplat = page.locator('tr[data-row="pplat"]');
+    await expect(pplat.locator('td').nth(1)).toHaveText('—');
+    await expect(pplat.locator('.q-chip')).toHaveText('Requiere bloqueo');
+    await page.click('[data-action="inspiratory"]');
+    await page.click('#hold-run');
+    await expect(page.locator('#hold-value')).toHaveText('15', { timeout: 20_000 });
+    await page.click('[data-view="data"]');
+    await expect(pplat.locator('.q-chip')).toHaveText(/^Bloqueo · hace \d{2}:\d{2}$/, { timeout: 20_000 });
   });
   test('VIS-06 · A/C PC: presión cuadrada con rampa, flujo decelerante y volumen exponencial; vista básica como P3', async ({
     page,
