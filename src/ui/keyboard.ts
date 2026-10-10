@@ -2,6 +2,7 @@
 import type { AppContext } from './context';
 import { $, trapTab } from './dom';
 import { collapseHelp } from './helpPanels';
+import type { CommandPalette } from './commandPalette';
 import type { QuickEditor } from './quickEditor';
 
 /** Flechas dentro de una rejilla de casillas con tabindex itinerante (numéricas y datos grandes). */
@@ -24,11 +25,21 @@ export function roveGrid(e: KeyboardEvent, t: HTMLElement): boolean {
   return true;
 }
 
-const SHORTCUTS: Record<string, string> = { ' ': 'pause', c: 'freeze', f: 'snapshot', a: 'alarms', h: 'home', '?': 'help' };
+export const SHORTCUTS: Record<string, string> = { ' ': 'pause', c: 'freeze', f: 'snapshot', a: 'alarms', h: 'home', '?': 'help' };
 
-export function bindKeyboard(ctx: AppContext, deps: { quick: QuickEditor; action: (a: string) => Promise<void> }): void {
+export function bindKeyboard(
+  ctx: AppContext,
+  deps: { quick: QuickEditor; action: (a: string) => Promise<void>; palette: CommandPalette },
+): void {
   const { quick } = deps;
   document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if ($<HTMLDialogElement>('#app-dialog').open) ctx.dialog.close();
+      deps.palette.toggle();
+      return;
+    }
+    if (deps.palette.isOpen) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Escape' && $<HTMLDialogElement>('#app-dialog').open) {
       e.preventDefault();

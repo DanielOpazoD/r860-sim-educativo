@@ -16,6 +16,7 @@ import { defaultInit } from '../profiles';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
 import { createActions, syncWaveOptionsSummary } from './actions';
 import { createAlarmsUi } from './alarmsUi';
+import { createCommandPalette, type PaletteCommand } from './commandPalette';
 import type { Actor, AppContext, CommandResult, FixtureId } from './context';
 import { createDialogHost } from './dialogHost';
 import { $, icon, put } from './dom';
@@ -24,7 +25,7 @@ import { fillStaticHelp } from './helpPanels';
 import { createHoldPanel } from './holdPanel';
 import { learnerText } from './humanize';
 import { createInstructorPanel } from './instructorPanel';
-import { bindKeyboard } from './keyboard';
+import { bindKeyboard, SHORTCUTS } from './keyboard';
 import { isMobile, MODE_LABEL } from './labels';
 import { createLessonTracker } from './lessonTracker';
 import { createMetricsView } from './metricsView';
@@ -32,9 +33,10 @@ import { createTeachingView } from './teachingView';
 import { createModeDialog } from './modeDialog';
 import { createPlotsView } from './plotsView';
 import { createQuickEditor } from './quickEditor';
-import { createViews } from './views';
+import { createViews, VIEWS } from './views';
 import { welcomeHTML } from './dialogs';
 import { loadPrefs, savePrefs } from './prefs';
+import { PATIENT_PROFILES, profileHint } from './patientProfiles';
 
 const PHASE_TEXT: Record<string, string> = {
   inspFlow: 'Inspiración',
@@ -49,6 +51,41 @@ const PHASE_TEXT: Record<string, string> = {
 };
 /** Plazo para recibir el primer cuadro del motor antes de avisar (ms). */
 const FIRST_FRAME_TIMEOUT_MS = 5000;
+const PALETTE_ACTIONS = [
+  { id: 'pause', label: 'Pausar o reanudar', keywords: 'detener parar play pausa continuar' },
+  { id: 'freeze', label: 'Congelar curvas', keywords: 'congelar inmovilizar ondas' },
+  { id: 'snapshot', label: 'Captura del monitor', keywords: 'foto png imagen captura pantalla' },
+  { id: 'alarms', label: 'Alarmas activas', keywords: 'alarmas alertas límites' },
+  { id: 'home', label: 'Volver al inicio del monitor', keywords: 'inicio casa principal' },
+  { id: 'help', label: 'Guía y alcance', keywords: 'ayuda información instrucciones' },
+  { id: 'modes', label: 'Modo y ajustes del ventilador', keywords: 'modo ventilación parámetros configuración' },
+  { id: 'scenarios', label: 'Elegir escenario', keywords: 'caso práctica simulación' },
+  { id: 'inspiratory', label: 'Bloqueo inspiratorio', keywords: 'pausa pplat meseta' },
+  { id: 'expiratory', label: 'Bloqueo espiratorio', keywords: 'autopeep peep intrinseca' },
+  { id: 'exam', label: 'Modo examen', keywords: 'evaluación estimaciones' },
+  { id: 'session', label: 'Sesión y archivos', keywords: 'guardar importar exportar' },
+  { id: 'exportSession', label: 'Exportar sesión', keywords: 'json archivo descargar' },
+  { id: 'debrief', label: 'Resumen para el debriefing', keywords: 'resumen práctica informe' },
+  { id: 'teacher', label: 'Mostrar u ocultar panel docente', keywords: 'entrenamiento instructor' },
+  { id: 'sound', label: 'Audio de alarmas', keywords: 'sonido silenciar mute' },
+  { id: 'resetPatient', label: 'Restablecer mecánica', keywords: 'reiniciar paciente valores' },
+  { id: 'resetPrefs', label: 'Restablecer preferencias', keywords: 'borrar ajustes configuración' },
+];
+const VIEW_LABELS: Record<string, string> = {
+  waves: 'Curvas y datos',
+  basic: 'Datos grandes',
+  loops: 'Bucles',
+  data: 'Tabla de mediciones',
+  trends: 'Tendencias',
+  log: 'Registro de eventos',
+  teaching: 'Resumen docente',
+};
+
+function paletteShortcut(action: string): string | undefined {
+  const key = Object.keys(SHORTCUTS).find((candidate) => SHORTCUTS[candidate] === action);
+  if (key === undefined) return undefined;
+  return key === ' ' ? 'Espacio' : key.toUpperCase();
+}
 
 export interface AppOptions {
   params: URLSearchParams;
@@ -234,7 +271,46 @@ export function startApp(opts: AppOptions): void {
     plots,
     initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : (prefs?.instructorVisible ?? true),
   });
-  const actions = createActions(ctx, { quick, hold, modes, alarms, metrics, plots, instructor });
+  let openPalette = (): void => {};
+  const actions = createActions(ctx, { quick, hold, modes, alarms, metrics, plots, instructor, openPalette: () => openPalette() });
+  const palette = createCommandPalette(() => {
+    const commands: PaletteCommand[] = [
+      ...PALETTE_ACTIONS.map((item) => ({
+        ...item,
+        group: 'Acciones' as const,
+        shortcut: paletteShortcut(item.id),
+        run: () => actions.action(item.id).catch((error: Error) => ctx.notice(error.message)),
+      })),
+      ...VIEWS.map((id) => ({
+        id: `view-${id}`,
+        group: 'Vistas' as const,
+        label: VIEW_LABELS[id] ?? id,
+        run: () => views.switchView(id),
+      })),
+      ...SCENARIOS.map((scenarioItem) => ({
+        id: `scenario-${scenarioItem.id}`,
+        group: 'Escenarios' as const,
+        label: scenarioItem.name,
+        keywords: `${scenarioItem.id} ${scenarioItem.category ?? ''}`,
+        run: () => instructor.loadScenario(scenarioItem.id),
+      })),
+    ];
+    if (!ctx.fixtureId) {
+      commands.push(
+        ...PATIENT_PROFILES.map((patientProfile) => ({
+          id: `profile-${patientProfile.id}`,
+          group: 'Perfiles' as const,
+          label: `Perfil: ${patientProfile.label}`,
+          keywords: profileHint(patientProfile),
+          run: () => instructor.applyProfile(patientProfile.id),
+        })),
+      );
+    }
+    return commands;
+  });
+  openPalette = () => palette.open();
+  const shortcutLabel = document.querySelector<HTMLElement>('.palette-kbd');
+  if (shortcutLabel) shortcutLabel.textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
   function showWelcome(): void {
     welcomeOpen = true;
     dialog.open('welcome', 'Bienvenido a R860 Lab', welcomeHTML(), null, 'compact');
@@ -430,7 +506,7 @@ export function startApp(opts: AppOptions): void {
   versionTag();
   dialog.bind();
   actions.bind();
-  bindKeyboard(ctx, { quick, action: actions.action });
+  bindKeyboard(ctx, { quick, action: actions.action, palette });
   lesson.render();
   wireDegraded();
   client.onFrame((m) => {
