@@ -23,6 +23,7 @@ export function createViews(ctx: AppContext): Views {
     switchView(v) {
       if (!(VIEWS as string[]).includes(v)) return;
       view = v as ViewId;
+      $('#numeric-density').hidden = view !== 'waves';
       for (const e of $$('[data-view-panel]')) e.classList.toggle('active', e.dataset.viewPanel === v);
       for (const b of $$('[data-view]')) {
         b.classList.toggle('chosen', b.dataset.view === v);

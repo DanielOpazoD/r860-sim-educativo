@@ -87,6 +87,16 @@
 .wave-options-wrap {
   position: relative;
 }
+.numeric-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.numeric-tools .exam-toggle[aria-pressed='true'] {
+  background: #173e3c;
+  border-color: var(--accent);
+  color: #e1f4f2;
+}
 .wave-options-button {
   white-space: nowrap;
 }
@@ -308,6 +318,15 @@
   .signal-toolbar .time-controls {
     min-width: 0;
     gap: 6px;
+  }
+}
+@media (min-width: 701px) and (max-width: 1300px) {
+  .signal-toolbar #wave-ref-button > span {
+    font-size: 0;
+  }
+  .signal-toolbar #wave-ref-button > span::after {
+    content: 'Comparar ciclo';
+    font-size: 11px;
   }
 }
 @media (max-width: 700px) {

@@ -622,24 +622,6 @@ a {
   display: flex;
   min-width: 0;
 }
-.numeric-density {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 2;
-}
-.exam-toggle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-}
-.exam-toggle.active {
-  /* El modo examen activo se nota en la propia columna: el botón queda encendido como «Bloqueo» cuando corre. */
-  background: #5b3d10;
-  border-color: #edc87e;
-  color: #ffe2ad;
-}
 .numeric.exam-masked .numeric-value {
   /* La interrogante ocupa el sitio de la cifra: se lee «hay un dato que aún no estimaste», no «no hay dato». */
   color: #f5d9a8;
@@ -649,7 +631,7 @@ a {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(6, 1fr);
-  padding: 26px 2px 2px 0; /* el alternador de densidad ocupa la esquina superior derecha de la columna */
+  padding: 2px 2px 2px 0;
   gap: 2px 5px;
 }
 /* Vista reducida a las seis casillas que muestra el equipo (Ppico, PEEPe, Pplat, VTesp, FR, FiO₂). */
@@ -677,7 +659,7 @@ a {
   font-size: 10px;
 }
 .numeric-grid.six .numeric .numeric-value .sin-dato {
-  font-size: 13px;
+  font-size: inherit;
 }
 .numeric {
   position: relative;
@@ -736,10 +718,10 @@ a {
   flex-shrink: 0; /* en celdas justas el flex la colapsaba a 0 px y la línea quedaba invisible */
 }
 .numeric .numeric-value .sin-dato {
-  font-size: 10px;
+  font-size: inherit;
   font-weight: 400;
-  font-style: italic;
-  color: #b9e6ff;
+  font-style: normal;
+  color: #b5e0ff;
   letter-spacing: 0;
 }
 /*

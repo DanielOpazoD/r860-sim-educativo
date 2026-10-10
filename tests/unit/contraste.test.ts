@@ -60,6 +60,7 @@ describe('CTR-02 · las cifras pequeñas de la columna numérica contrastan sobr
     ['.numeric .numeric-age', 6],
     ['.numeric-label', 6],
     ['.numeric-unit', 6],
+    ['.numeric .numeric-value .sin-dato', 6],
   ] as const) {
     it(`${selector} ≥ ${minimo}:1`, () => {
       // Texto de 8–9 px: se exige más que el mínimo AA porque el tamaño ya castiga la lectura.
