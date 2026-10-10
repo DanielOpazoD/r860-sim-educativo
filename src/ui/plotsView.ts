@@ -40,6 +40,7 @@ export interface PlotsView {
   readonly gaugePaw: number | null;
   readonly frozen: boolean;
   readonly waveScaleMode: 'auto' | 'fixed';
+  readonly waveGuides: boolean;
   /** Añade todas las muestras del cuadro a la traza y reinicia si el tiempo retrocedió. */
   ingest(prev: EngineFrame | null, fr: EngineFrame): void;
   /** Vacía la traza y el ciclo de referencia (escenario nuevo, sesión importada). */
@@ -59,6 +60,8 @@ export interface PlotsView {
   setWaveWindow(s: number): void;
   setWaveStyle(style: 'sweep' | 'scroll'): void;
   setWaveScaleMode(mode: 'auto' | 'fixed'): void;
+  setWaveGuides(on: boolean): void;
+  setWaveAnnotations(on: boolean): void;
   /** Deslizador de historia (0–1000) con las curvas congeladas. */
   slideHistory(value: number): void;
   /** Deslizadores A/B (0–1000) sobre la ventana congelada. */
@@ -74,6 +77,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     frozenTriggerDetections: number[] = [],
     lastTriggerSeq = 0;
   let waveWindow = 12,
+    waveGuides = true,
+    waveAnnotations = true,
     waveStyle: 'sweep' | 'scroll' = 'sweep',
     waveScaleMode: 'auto' | 'fixed' = 'auto';
   let frozen = false,
@@ -178,7 +183,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
           : null,
       );
     }
-    const markers = markerCache;
+    const markers = waveAnnotations ? markerCache : [];
     if (view === 'waves')
       drawWave($<HTMLCanvasElement>('#waves-canvas'), pts, end, peep, vtMl, {
         window: waveWindow,
@@ -190,7 +195,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         bounds: waveBounds('waves', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
-        reference: waveReference,
+        reference: waveGuides ? waveReference : null,
       });
     else if (view === 'basic')
       drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
@@ -201,7 +206,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         bounds: waveBounds('basic', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
-        reference: waveReference,
+        reference: waveGuides ? waveReference : null,
       });
     else if (view === 'loops') {
       drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv', {
@@ -301,6 +306,12 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     $('#frozen-ribbon').hidden = !frozen;
     $('#freeze-button').innerHTML = icon(frozen ? 'play' : 'freeze') + `<span>${frozen ? 'Reanudar curvas' : 'Congelar curvas'}</span>`;
     $('#freeze-button').classList.toggle('active', frozen);
+    $('#freeze-button').setAttribute('aria-pressed', String(frozen));
+    $('#freeze-button').setAttribute('aria-label', frozen ? 'Reanudar curvas' : 'Congelar curvas');
+    put(
+      '#view-active-state',
+      [frozen ? 'Curvas congeladas' : '', waveGuides && waveReference ? 'Referencia activa' : ''].filter(Boolean).join(' · '),
+    );
     dirty = true;
   }
   function onPointer(e: PointerEvent): void {
@@ -318,6 +329,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     btn.setAttribute('aria-pressed', 'true');
     btn.setAttribute('aria-label', 'Dejar de comparar la última respiración');
     btn.title = 'Quita la respiración de referencia';
+    (btn.querySelector('span') as HTMLElement).textContent = 'Dejar de comparar';
+    put('#view-active-state', [frozen ? 'Curvas congeladas' : '', waveGuides ? 'Referencia activa' : ''].filter(Boolean).join(' · '));
     dirty = true;
   }
   function resetWaveReferenceButton(): void {
@@ -327,6 +340,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     (btn.querySelector('span') as HTMLElement).textContent = 'Comparar última respiración';
     btn.setAttribute('aria-label', 'Comparar última respiración');
     btn.title = 'Superpone la última respiración completa para compararla con las siguientes';
+    put('#view-active-state', frozen ? 'Curvas congeladas' : '');
   }
   return {
     get gaugePaw() {
@@ -340,6 +354,18 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     },
     get waveScaleMode() {
       return waveScaleMode;
+    },
+    get waveGuides() {
+      return waveGuides;
+    },
+    setWaveGuides(on) {
+      waveGuides = on;
+      $<HTMLButtonElement>('#wave-ref-button').disabled = !on;
+      dirty = true;
+    },
+    setWaveAnnotations(on) {
+      waveAnnotations = on;
+      dirty = true;
     },
     ingest(prev, fr) {
       const nextMechanicsSignature = JSON.stringify([fr.settings, fr.truth.patient, fr.truth.effort, fr.truth.sensors]);

@@ -25,7 +25,7 @@ const FOCUSABLE =
   'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])';
 /** Elementos enfocables visibles dentro de un contenedor (para atrapar Tab en editores no modales). */
 export function focusableWithin(root: HTMLElement): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((e) => !e.hidden && e.offsetParent !== null);
+  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((e) => !e.hidden && e.offsetParent !== null && e.tabIndex >= 0);
 }
 /** Mantiene Tab / Shift+Tab dentro de `root`. Devuelve true si gestionó la tecla. */
 export function trapTab(e: KeyboardEvent, root: HTMLElement): boolean {

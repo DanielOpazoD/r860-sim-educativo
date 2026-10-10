@@ -1,13 +1,24 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectSafetyMark, frame, open, screenshot, showPanel } from './helpers';
+import {
+  closePersonalization,
+  expectSafetyMark,
+  frame,
+  open,
+  openPersonalization,
+  openPresentation,
+  openTimeControls,
+  screenshot,
+  showPanel,
+} from './helpers';
 
 test.describe('NAV móvil · opciones de cabecera', () => {
   test('la cabecera muestra Buscar y ⋯; el menú añade Sesión', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'sólo proyecto móvil');
     await open(page, { instructor: 0 });
-    await expect(page.locator('.top-actions button:visible')).toHaveCount(2);
+    await expect(page.locator('.top-actions button:visible')).toHaveCount(3);
     await expect(page.locator('.palette-trigger')).toBeVisible();
     await expect(page.locator('#more-button')).toBeVisible();
+    await expect(page.locator('#panel-button')).toBeVisible();
     await page.locator('#more-button').click();
     await expect(page.locator('#more-menu')).toBeVisible();
     await expect(page.locator('#more-menu [data-action="session"]')).toBeVisible();
@@ -243,17 +254,38 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await expect(page.locator('#instructor-close')).toBeHidden();
   });
 
-  test('el popover Pantalla abierto cabe en el viewport a 360 px', async ({ page }) => {
-    await page.setViewportSize({ width: 360, height: 780 });
+  test('el diálogo conserva su caja y cabe en cada pestaña a 375 px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
     await open(page, { scenario: 'SC-02', instructor: 0 });
-    await page.locator('#wave-options-button').click();
-    await expect(page.locator('#wave-options')).toBeVisible();
-    const bounds = await page.locator('#wave-options').evaluate((el) => {
-      const { top, right, bottom } = el.getBoundingClientRect();
-      return { top, right, bottom };
-    });
-    expect(bounds.top).toBeGreaterThanOrEqual(0);
-    expect(bounds.right).toBeLessThanOrEqual(360);
-    expect(bounds.bottom).toBeLessThanOrEqual(780);
+    const boxes: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      right: number;
+      bottom: number;
+      scroll: number;
+      client: number;
+    }[] = [];
+    for (const select of [openPersonalization, openPresentation, openTimeControls]) {
+      await select(page);
+      boxes.push(
+        await page.locator('#wave-options').evaluate((el) => {
+          const { x, y, width, height, right, bottom } = el.getBoundingClientRect();
+          return { x, y, width, height, right, bottom, scroll: el.scrollWidth, client: el.clientWidth };
+        }),
+      );
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
+    }
+    for (const box of boxes) {
+      expect(box.x).toBeCloseTo(boxes[0]!.x, 0);
+      expect(box.y).toBeCloseTo(boxes[0]!.y, 0);
+      expect(box.width).toBeCloseTo(boxes[0]!.width, 0);
+      expect(box.height).toBeCloseTo(boxes[0]!.height, 0);
+      expect(box.right).toBeLessThanOrEqual(375);
+      expect(box.bottom).toBeLessThanOrEqual(800);
+      expect(box.scroll).toBeLessThanOrEqual(box.client + 1);
+    }
+    await closePersonalization(page);
   });
 });

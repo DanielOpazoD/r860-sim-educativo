@@ -83,6 +83,12 @@ export function createMetricsView(ctx: AppContext): MetricsView {
   const oculto = (key: string): boolean => ctx.examMasked(key);
   return {
     init() {
+      $('#variable-legend').innerHTML =
+        '<h2>Variables del monitor</h2><dl>' +
+        METRICS.map(
+          (m) => `<div><dt>${esc(m.label)}</dt><dd>${esc(helpEntry(METRIC_HELP[m.key] ?? '')?.title ?? m.label)}</dd></div>`,
+        ).join('') +
+        '</dl>';
       $('#numeric-grid').innerHTML = METRICS.map(
         (m, i) =>
           `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}</span><strong class="numeric-value"><span>—</span></strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span><span class="numeric-age"></span></button>`,

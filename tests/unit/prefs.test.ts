@@ -30,6 +30,19 @@ describe('preferencias de interfaz', () => {
     expect(loadPrefs()).toEqual({ v: 1, welcomed: true });
   });
 
+  it('acepta las preferencias de ayudas sólo cuando son booleanas', () => {
+    for (const key of ['variableDescriptions', 'waveGuides', 'waveAnnotations'] as const) {
+      for (const value of [true, false]) {
+        vi.stubGlobal('localStorage', storage({ [PREFS_KEY]: JSON.stringify({ v: 1, [key]: value }) }));
+        expect(loadPrefs()).toEqual({ v: 1, [key]: value });
+      }
+      for (const value of ['true', 'false', null]) {
+        vi.stubGlobal('localStorage', storage({ [PREFS_KEY]: JSON.stringify({ v: 1, [key]: value }) }));
+        expect(loadPrefs()).toEqual({ v: 1 });
+      }
+    }
+  });
+
   it('combina cambios con las preferencias existentes', () => {
     const local = storage({ [PREFS_KEY]: JSON.stringify({ v: 1, lastScenario: 'SC-03', welcomed: true }) });
     vi.stubGlobal('localStorage', local);

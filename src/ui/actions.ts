@@ -366,10 +366,44 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   }
 
   function bind(): void {
-    const speedPopover = { button: $<HTMLButtonElement>('#speed-button'), panel: $('#speed-options') };
-    const waveOptionsPopover = { button: $<HTMLButtonElement>('#wave-options-button'), panel: $('#wave-options') };
+    const viewDialog = $<HTMLDialogElement>('#wave-options');
+    const viewButton = $('#wave-options-button');
+    viewButton.addEventListener('click', () => {
+      viewDialog.showModal();
+      viewButton.setAttribute('aria-expanded', 'true');
+      viewDialog.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+    });
+    viewDialog.addEventListener('close', () => {
+      viewButton.setAttribute('aria-expanded', 'false');
+      viewButton.focus();
+    });
+    $('#view-options-close').addEventListener('click', () => viewDialog.close());
+    const viewTabs = [...viewDialog.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const selectViewTab = (tab: HTMLButtonElement): void => {
+      for (const item of viewTabs) {
+        const selected = item === tab;
+        item.setAttribute('aria-selected', String(selected));
+        item.tabIndex = selected ? 0 : -1;
+        $('#' + item.getAttribute('aria-controls')).hidden = !selected;
+      }
+      tab.focus();
+    };
+    for (const [index, tab] of viewTabs.entries()) {
+      tab.addEventListener('click', () => selectViewTab(tab));
+      tab.addEventListener('keydown', (e) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+        e.preventDefault();
+        const next =
+          e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? viewTabs.length - 1
+              : (index + (e.key === 'ArrowLeft' ? -1 : 1) + viewTabs.length) % viewTabs.length;
+        selectViewTab(viewTabs[next]!);
+      });
+    }
     const morePopover = { button: $<HTMLButtonElement>('#more-button'), panel: $('#more-menu') };
-    const popovers = [speedPopover, waveOptionsPopover, morePopover];
+    const popovers = [morePopover];
     const setPopoverOpen = (popover: (typeof popovers)[number], open: boolean, returnFocus = false): void => {
       popover.panel.hidden = !open;
       popover.button.setAttribute('aria-expanded', String(open));
@@ -381,7 +415,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         for (const other of popovers) setPopoverOpen(other, false);
         if (open) {
           setPopoverOpen(popover, true);
-          popover.panel.querySelector<HTMLElement>('input[type="radio"]:checked, [aria-checked="true"]')?.focus();
+          popover.panel.querySelector<HTMLElement>('button, input')?.focus();
         }
       });
     }
@@ -390,7 +424,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       const option = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-speed]');
       if (!option) return;
       ctx.setSpeed(Number(option.dataset.speed));
-      setPopoverOpen(speedPopover, false, true);
     });
     speedOptions.addEventListener('keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
@@ -500,6 +533,19 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     });
     document.addEventListener('change', (e) => {
       const el = e.target as HTMLInputElement | HTMLSelectElement;
+      if (el instanceof HTMLInputElement && el.id === 'variable-descriptions') {
+        $('#variable-legend').hidden = !el.checked;
+        if (!ctx.fixtureId) savePrefs({ variableDescriptions: el.checked });
+      }
+      if (el instanceof HTMLInputElement && el.id === 'wave-guides') {
+        plots.setWaveGuides(el.checked);
+        if (!ctx.fixtureId) savePrefs({ waveGuides: el.checked });
+        ctx.updateUI();
+      }
+      if (el instanceof HTMLInputElement && el.id === 'wave-annotations') {
+        plots.setWaveAnnotations(el.checked);
+        if (!ctx.fixtureId) savePrefs({ waveAnnotations: el.checked });
+      }
       if ((el as HTMLInputElement).dataset.physRange || (el as HTMLInputElement).dataset.physNumber) instructor.physChange(el);
       if (el.dataset.physPreset) instructor.presetChange(el as HTMLSelectElement);
       if (el.id === 'scenario-topic') {
