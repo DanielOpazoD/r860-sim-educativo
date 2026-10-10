@@ -11,12 +11,14 @@ import {
   ALL_METRICS,
   BIG_METRICS,
   CORE_METRICS,
+  DATA_TABLE_GROUPS,
   limitPair,
   METRIC_HELP,
   METRICS,
   metricInAlarm,
   metricQuality,
   metricSample,
+  metricStatus,
   metricValue,
   type MetricSpec,
   veredictoEstimacion,
@@ -64,8 +66,8 @@ export interface MetricsView {
  * cifra se leía como una regla o como una muestra de leyenda.
  */
 function celdaValor(texto: string, unidad: string): string {
-  if (texto === '—') return `<span class="sin-dato">sin dato</span>`;
-  return `${texto}${unidad ? `<small>${unidad}</small>` : ''}`;
+  if (texto === '—') return `<span class="sin-dato">—</span>`;
+  return `${esc(texto)}${unidad ? `<small>${esc(unidad)}</small>` : ''}`;
 }
 
 export function createMetricsView(ctx: AppContext): MetricsView {
@@ -151,20 +153,32 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         put(e.querySelector('.numeric-limits'), limitPair(fr, spec.key));
       }
       if (ctx.view === 'data') {
-        // Dos tablas en paralelo. Con una sola, diecisiete filas de 47 px no cabían en los 425 disponibles y nueve
-        // quedaban bajo el pliegue sin ninguna señal: entre ellas la Cstat, la ΔP y el índice de estrés, que son el
-        // núcleo docente. La unidad se pega al valor, como en la columna numérica, para dejar sitio a la procedencia.
-        const fila = (m: (typeof ALL_METRICS)[number]): string => {
+        const fila = (key: string): string => {
+          const m = ALL_METRICS.find((candidate) => candidate.key === key);
+          if (!m) return '';
           const est = examEstimates.get(m.key);
+          const status = metricStatus(ctx.frame, m);
+          const valor = oculto(m.key) && value(m) !== null ? '?' : f(value(m), m.decimals);
+          const estado =
+            `<span class="q-chip q-${status.tone}">${esc(status.label)}</span>` +
+            (status.source ? `<span class="q-src">${esc(status.source)}</span>` : '');
           return (
-            `<tr><td><button class="metric-name" data-metric="${m.key}">${m.label}${icon('info')}</button></td>` +
-            `<td>${oculto(m.key) && value(m) !== null ? celdaValor('?', m.unit) : celdaValor(f(value(m), m.decimals), m.unit)}</td>` +
-            `<td>${esc(`${est ? `Estimaste ${f(est.guess, m.decimals)} · ` : ''}${quality(m)}`)}</td></tr>`
+            `<tr data-row="${esc(m.key)}"><td><button class="metric-name" data-metric="${esc(m.key)}">${esc(m.label)}${icon('info')}</button></td>` +
+            `<td>${celdaValor(valor, m.unit)}</td>` +
+            `<td class="metric-status" title="${esc(status.detail)}">${
+              est ? `<span class="q-estimate">${esc(`Estimaste ${f(est.guess, m.decimals)} · `)}</span>` : ''
+            }${estado}</td></tr>`
           );
         };
-        const mitad = Math.ceil(ALL_METRICS.length / 2);
-        $('#data-table-body').innerHTML = ALL_METRICS.slice(0, mitad).map(fila).join('');
-        $('#data-table-body-2').innerHTML = ALL_METRICS.slice(mitad).map(fila).join('');
+        const grupos = (items: (typeof DATA_TABLE_GROUPS)[number]): string =>
+          items
+            .map(
+              (group) =>
+                `<tr class="group-row"><th colspan="3" scope="colgroup">${esc(group.title)}</th></tr>${group.keys.map(fila).join('')}`,
+            )
+            .join('');
+        $('#data-table-body').innerHTML = grupos(DATA_TABLE_GROUPS[0]!);
+        $('#data-table-body-2').innerHTML = grupos(DATA_TABLE_GROUPS[1]!);
       }
     },
     updateLogs() {

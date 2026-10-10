@@ -87,3 +87,17 @@ describe('CTR-03 · la prioridad va en palabras y la luz roja parpadea salvo con
     expect(reducido![1]).toMatch(/animation: none !important/);
   });
 });
+
+describe('CTR-04 · los chips de estado y la procedencia son legibles sobre el monitor', () => {
+  for (const selector of ['.q-ok', '.q-warn'] as const) {
+    it(`${selector}: texto ≥ ${AA}:1 sobre su fondo`, () => {
+      const fondo = /(?<![-\w])background: (#[0-9a-f]{6})/i.exec(bloque(selector))![1] as string;
+      expect(contraste(color(selector), fondo)).toBeGreaterThanOrEqual(AA);
+    });
+  }
+  for (const selector of ['.q-off', '.q-src'] as const) {
+    it(`${selector}: texto ≥ ${AA}:1 sobre el azul del monitor`, () => {
+      expect(contraste(color(selector), AZUL_MONITOR)).toBeGreaterThanOrEqual(AA);
+    });
+  }
+});

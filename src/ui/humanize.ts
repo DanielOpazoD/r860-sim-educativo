@@ -66,6 +66,13 @@ export const SOURCE: Record<MetricSample['source'], string> = {
   derivedModel: 'calculado',
   fixture: 'transcripción',
 };
+export const SOURCE_SHORT: Partial<Record<MetricSample['source'], string>> = {
+  ventilator: 'Sensor',
+  airwayModule: 'Módulo vía aérea',
+  procedure: 'Maniobra',
+  derivedModel: 'Calculado',
+  fixture: 'Transcripción',
+};
 export const CHANNEL: Record<string, string> = {
   'ventilator.paw': 'presión de vía aérea',
   'ventilator.flow': 'flujo espirado',

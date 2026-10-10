@@ -837,8 +837,8 @@ test.describe('DEN · densidad de la columna numérica', () => {
     await expect(page.locator('#numeric-density')).toHaveAttribute('aria-pressed', 'false');
     // La tabla «Datos» completa no cambia: sigue con las veinte filas repartidas en dos tablas.
     await page.click('[data-view="data"]');
-    await expect(page.locator('#data-table-body tr')).toHaveCount(10);
-    await expect(page.locator('#data-table-body-2 tr')).toHaveCount(10);
+    await expect(page.locator('#data-table-body tr[data-row]')).toHaveCount(10);
+    await expect(page.locator('#data-table-body-2 tr[data-row]')).toHaveCount(10);
   });
 });
 

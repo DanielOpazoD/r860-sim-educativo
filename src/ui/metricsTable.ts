@@ -3,7 +3,7 @@ import type { MetricSample, OffOr } from '../domain/types';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber } from '../domain/units';
 import { clock, wallDate } from './format';
-import { humanReason, QUALITY, SOURCE } from './humanize';
+import { humanReason, QUALITY, SOURCE, SOURCE_SHORT } from './humanize';
 
 export interface MetricSpec {
   key: string;
@@ -41,6 +41,17 @@ export const EXTRA_METRICS: MetricSpec[] = [
   { key: 'vteSpont', label: 'VTesp espontáneo', unit: 'mL', factor: 1000, decimals: 0, source: 'metric' },
 ];
 export const ALL_METRICS: MetricSpec[] = [...METRICS, ...EXTRA_METRICS];
+export const DATA_TABLE_GROUPS: { title: string; keys: string[] }[][] = [
+  [
+    { title: 'Presiones', keys: ['ppeak', 'peepe', 'pmean', 'pplatCycle'] },
+    { title: 'Volumen y frecuencia', keys: ['vte', 'vti', 'mve', 'rr', 'fio2', 'leakPct'] },
+  ],
+  [
+    { title: 'Mecánica por bloqueo', keys: ['pplat', 'cstat', 'driving', 'raw'] },
+    { title: 'Índices derivados', keys: ['stressIndex', 'tauExp', 'mechPower'] },
+    { title: 'Respiración espontánea', keys: ['vteSpont', 'mveSpont', 'rrSpont'] },
+  ],
+];
 /** Las seis casillas de la vista reducida, como en la pantalla del equipo real. */
 export const CORE_METRICS: readonly string[] = ['ppeak', 'peepe', 'pplat', 'vte', 'rr', 'fio2'];
 /** Seis valores grandes de la vista básica (foto P3). */
@@ -122,6 +133,42 @@ export function metricQuality(frame: EngineFrame | null, spec: MetricSpec): stri
     return `Bloqueo a las ${wallDate(h.wallTimeMs ?? 0).slice(-8)} · hace ${clock(frame.simTimeMs / 1000 - (h.completedAtMs ?? 0) / 1000)}${s.quality !== 'valid' ? ` · ${humanReason(s.reason)}` : ''}`;
   }
   return `${QUALITY[s.quality]}${s.reason ? ' · ' + humanReason(s.reason) : ''} · ${SOURCE[s.source]}${s.breathId ? ' · respiración ' + s.breathId.replace('b', '') : ''}${s.windowMs ? ' · ventana ' + (s.windowMs / 1000).toFixed(1) + ' s' : ''}`;
+}
+export interface MetricStatus {
+  tone: 'ok' | 'warn' | 'off';
+  label: string;
+  source: string;
+  detail: string;
+}
+export function metricStatus(frame: EngineFrame | null, spec: MetricSpec): MetricStatus {
+  const detail = metricQuality(frame, spec);
+  const status = (tone: MetricStatus['tone'], label: string, source = ''): MetricStatus => ({
+    tone,
+    label,
+    source,
+    detail,
+  });
+  if (!frame) return status('off', '');
+  if (frame.ventilation === 'standby') return status('off', 'En espera');
+  if (spec.source === 'hold') {
+    const hold = frame.procedure.last.inspHold;
+    if (!hold) return status('off', 'Requiere bloqueo');
+    const sample = metricSample(frame, spec.key);
+    if (!sample) return status('off', 'Sin dato');
+    if (hold.quality !== 'valid' || sample.quality !== 'valid') return status('warn', 'Bloqueo no válido');
+    return status('ok', `Bloqueo · hace ${clock(frame.simTimeMs / 1000 - (hold.completedAtMs ?? 0) / 1000)}`);
+  }
+  const sample = metricSample(frame, spec.key);
+  if (!sample) return status('off', 'Sin dato');
+  const byQuality: Record<MetricSample['quality'], Pick<MetricStatus, 'tone' | 'label'>> = {
+    valid: { tone: 'ok', label: 'Válido' },
+    stale: { tone: 'warn', label: 'Antiguo' },
+    inProgress: { tone: 'warn', label: 'En curso' },
+    invalid: { tone: 'warn', label: 'No válido' },
+    unavailable: { tone: 'off', label: 'No disponible' },
+  };
+  const result = byQuality[sample.quality];
+  return status(result.tone, result.label, SOURCE_SHORT[sample.source] ?? '');
 }
 /** Pareja «alto\nbajo» de límites de alarma para la casilla de una medición; un límite apagado deja su renglón vacío. */
 export function limitPair(fr: EngineFrame, key: string): string {
