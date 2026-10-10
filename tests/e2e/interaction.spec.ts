@@ -28,13 +28,13 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await expect(page.locator('#app-dialog')).toBeVisible();
     await expect(page.locator('#scenario-start')).toBeVisible();
   });
-  test('los ajustes de curvas resumen los valores y cierran con Escape devolviendo el foco', async ({ page }) => {
+  test('el popover Pantalla cierra con Escape y devuelve el foco', async ({ page }) => {
     await open(page);
     const button = page.locator('#wave-options-button');
     await page.click('#wave-options-button');
     await expect(page.locator('#wave-options')).toBeVisible();
     await page.selectOption('#wave-window', '24');
-    await expect(button).toContainText('24 s');
+    await expect(button).toContainText('Pantalla');
     await page.keyboard.press('Escape');
     await expect(page.locator('#wave-options')).toBeHidden();
     await expect(button).toBeFocused();
@@ -641,7 +641,7 @@ test.describe('DESC · desconexión del circuito', () => {
 test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   test('Pausar, velocidad y Congelar viven en .signal-toolbar y no se confunden', async ({ page }) => {
     await open(page, { speed: 4 });
-    for (const id of ['#sim-pause', '#sim-speed', '#freeze-button']) await expect(page.locator(`.signal-toolbar ${id}`)).toBeVisible();
+    for (const id of ['#sim-pause', '#speed-button', '#freeze-button']) await expect(page.locator(`.signal-toolbar ${id}`)).toBeVisible();
     await page.click('#freeze-button');
     await expect(page.locator('#freeze-button')).toHaveClass(/active/);
     await expect(page.locator('#frozen-ribbon')).toBeVisible();
@@ -650,6 +650,33 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
     await expect(page.locator('#sim-pause')).toContainText('Reanudar');
     await page.click('#sim-pause');
     await expect(page.locator('#sim-pause')).toContainText('Pausar');
+  });
+  test('la velocidad se actualiza desde el menú y Escape devuelve el foco', async ({ page }) => {
+    await open(page);
+    const button = page.locator('#speed-button');
+    await button.click();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await page.locator('#speed-options [data-speed="2"]').click();
+    await expect.poll(() => page.evaluate(() => window.__r860.speed)).toBe(2);
+    await expect(button).toContainText('2×');
+    await expect(button).toHaveClass(/is-modified/);
+    await expect(page.locator('#speed-options [data-speed="2"]')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('#speed-options')).toBeHidden();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#simulation-clock')).toContainText('2×');
+    await button.click();
+    await page.locator('#speed-options [data-speed="4"]').focus();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#speed-options')).toBeHidden();
+    await expect(button).toBeFocused();
+    await button.click();
+    await page.locator('#freeze-button').click();
+    await expect(page.locator('#speed-options')).toBeHidden();
+  });
+  test('una velocidad personalizada de la URL aparece en el menú', async ({ page }) => {
+    await open(page, { speed: 3 });
+    await expect(page.locator('#speed-button')).toContainText('3×');
+    await expect(page.locator('#speed-options [data-speed="3"]')).toHaveAttribute('aria-checked', 'true');
   });
   test('la escala alterna entre automática y fija', async ({ page }) => {
     await open(page);
@@ -662,9 +689,16 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   });
   test('los controles de tiempo caben sin desbordar el ancho del viewport', async ({ page }) => {
     await open(page);
-    for (const id of ['#sim-pause', '#sim-speed', '#freeze-button']) await expect(page.locator(id)).toBeVisible();
+    for (const id of ['#sim-pause', '#speed-button', '#freeze-button']) await expect(page.locator(id)).toBeVisible();
     const d = await page.locator('.signal-toolbar').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
     expect(d.scroll).toBeLessThanOrEqual(d.client + 1);
+  });
+  test('la barra muestra como máximo cinco controles interactivos', async ({ page }) => {
+    await open(page);
+    const count = await page
+      .locator('.signal-toolbar button:visible, .signal-toolbar select:visible, .signal-toolbar input:visible')
+      .count();
+    expect(count).toBeLessThanOrEqual(5);
   });
 });
 
@@ -684,9 +718,10 @@ test.describe('CUR · comparación antes/después', () => {
     await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(2);
     await page.click('#wave-ref-button');
     await expect(page.locator('#wave-ref-button')).toHaveClass(/active/);
+    await expect(page.locator('#wave-ref-button')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#wave-ref-button')).toContainText('Comparar última respiración');
     await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
-    await expect(page.locator('#wave-ref-clear')).toBeVisible();
+    await expect(page.locator('#wave-ref-clear')).toHaveCount(0);
     // Para que el fantasma no quede escondido bajo una curva idéntica, suben PEEP y Vt: la referencia queda
     // con la línea de base y el volumen viejos bajo la traza nueva — la separación es el punto didáctico.
     const bc0 = (await frame(page)).breathCount;
@@ -718,9 +753,10 @@ test.describe('CUR · comparación antes/después', () => {
           if (Math.abs(d[i]! - a[i]!) > 12 || Math.abs(d[i + 1]! - a[i + 1]!) > 12 || Math.abs(d[i + 2]! - a[i + 2]!) > 12) n++;
         return n;
       });
-    await page.click('#wave-ref-clear');
+    await page.click('#wave-ref-button');
     await expect(page.locator('#wave-ref-button')).toContainText('Comparar última respiración');
     await expect(page.locator('#wave-ref-button')).not.toHaveClass(/active/);
+    await expect(page.locator('#wave-ref-button')).toHaveAttribute('aria-pressed', 'false');
     await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).toBeNull();
     await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
   });
@@ -729,12 +765,15 @@ test.describe('CUR · comparación antes/después', () => {
 test.describe('EXM · modo examen', () => {
   test('los valores medidos se ocultan hasta que el alumno los estima', async ({ page }) => {
     await open(page, { speed: 4 });
+    await page.click('[data-instructor="learn"]');
+    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
     const real = (await frame(page)).metrics.ppeak!.value;
     await expect(pico.locator('.numeric-value')).not.toHaveText('?');
     await page.click('#exam-toggle');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#exam-toggle')).toHaveClass(/active/);
     await expect.poll(() => page.evaluate(() => window.__r860.exam.active)).toBe(true);
     // Las casillas con dato muestran «?»; las sin medición conservan el guion y explican el motivo debajo.
     await expect(pico.locator('.numeric-value')).toHaveText('?');
@@ -756,6 +795,7 @@ test.describe('EXM · modo examen', () => {
     await expect(filaVte).toContainText('?');
     await page.click('[data-view="waves"]');
     // Al apagar el modo examen todo vuelve; al encenderlo de nuevo la estimación ya hecha sigue visible.
+    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await page.click('#exam-toggle');
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).not.toHaveText('?');
@@ -767,6 +807,8 @@ test.describe('EXM · modo examen', () => {
   test('el campo vacío no vale como cero y el Resumen no revela las cifras tapadas', async ({ page }) => {
     // Auditoría: `Number('')` aceptaba el vacío como 0, y la pestaña Resumen mostraba lo que la columna tapaba.
     await open(page, { speed: 4 });
+    await page.click('[data-instructor="learn"]');
+    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     await page.click('#exam-toggle');
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
@@ -781,10 +823,24 @@ test.describe('EXM · modo examen', () => {
     await page.click('[data-view="teaching"]');
     await expect(page.locator('.edu-card').first().locator('header b')).toContainText('?');
     await expect(page.locator('.edu-card').first()).not.toContainText(/\d+ = /);
-    // El botón Examen vive en la barra de señal y está disponible desde cualquier vista.
+    // El control Examen vive en Entrenar y puede alternarse con cualquier vista del monitor.
+    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await page.click('#exam-toggle'); // al salir, la cifra y la sustitución vuelven
     await page.click('[data-view="teaching"]');
     await expect(page.locator('.edu-card').first().locator('header b')).not.toContainText('?');
+  });
+});
+
+test.describe('EXM · ubicación del modo examen', () => {
+  test('el interruptor vive en Entrenar y no en la barra de señal', async ({ page }) => {
+    await open(page);
+    const button = page.locator('#exam-toggle');
+    expect(await button.evaluate((el) => el.closest('#instructor-learn'))).not.toBeNull();
+    expect(await button.evaluate((el) => el.closest('.signal-toolbar'))).toBeNull();
+    await page.click('[data-instructor="learn"]');
+    await button.scrollIntoViewIfNeeded();
+    await expect(button).toContainText('Modo examen');
+    await expect(button).toContainText('Las mediciones se ocultan hasta que escribes tu estimación');
   });
 });
 
@@ -801,29 +857,33 @@ test.describe('BLD · bucle docente con presión muscular', () => {
 });
 
 test.describe('DEN · densidad de la columna numérica', () => {
-  test('los controles quedan fuera del monitor y la densidad sólo aparece en Curvas', async ({ page }) => {
+  test('Casillas vive en Pantalla y se oculta fuera de Curvas', async ({ page }) => {
     await open(page);
-    for (const id of ['numeric-density', 'exam-toggle']) {
-      const button = page.locator(`#${id}`);
-      expect(await button.evaluate((el) => el.closest('#monitor'))).toBeNull();
-      expect(await button.evaluate((el) => el.closest('.signal-toolbar'))).not.toBeNull();
-    }
     const density = page.locator('#numeric-density');
+    const densityField = page.locator('#density-field');
+    expect(await density.evaluate((el) => el.tagName.toLowerCase())).toBe('select');
+    expect(await density.evaluate((el) => el.closest('#wave-options'))).not.toBeNull();
+    await page.click('#wave-options-button');
     await expect(density).toBeVisible();
     await page.click('[data-view="loops"]');
-    await expect(density).toBeHidden();
+    await expect(densityField).toHaveJSProperty('hidden', true);
     await page.click('[data-view="waves"]');
+    await expect(densityField).toHaveJSProperty('hidden', false);
+    await page.click('#wave-options-button');
     await expect(density).toBeVisible();
+    await page.click('[data-view="data"]');
+    await page.click('#wave-options-button');
+    await expect(densityField).toHaveJSProperty('hidden', true);
   });
 
-  test('el alternador muestra 6 casillas grandes, persiste y vuelve a 13 sin romper la tabla', async ({ page }) => {
+  test('la selección de 6 casillas grandes persiste y vuelve a 13 sin romper la tabla', async ({ page }) => {
     await open(page);
     const visibles = () => page.locator('#numeric-grid .numeric:visible');
     await expect(visibles()).toHaveCount(13);
-    await page.click('#numeric-density');
+    await page.click('#wave-options-button');
+    await page.selectOption('#numeric-density', '6');
     await expect(visibles()).toHaveCount(6);
-    await expect(page.locator('#numeric-density')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#numeric-density')).toHaveText('13 datos');
+    await expect(page.locator('#numeric-density')).toHaveValue('6');
     const rotulos = await visibles().locator('.numeric-label').allTextContents();
     // El orden es el de la rejilla completa (METRICS), con VTesp en su lugar habitual tras FR.
     expect(rotulos).toEqual(['Ppico', 'PEEPe', 'Pplat', 'FR', 'VTesp', 'FiO₂']);
@@ -832,9 +892,10 @@ test.describe('DEN · densidad de la columna numérica', () => {
     // La preferencia persiste entre recargas.
     await page.reload();
     await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(6);
-    await page.click('#numeric-density');
+    await page.click('#wave-options-button');
+    await page.selectOption('#numeric-density', '13');
     await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(13);
-    await expect(page.locator('#numeric-density')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#numeric-density')).toHaveValue('13');
     // La tabla «Datos» completa no cambia: sigue con las veinte filas repartidas en dos tablas.
     await page.click('[data-view="data"]');
     await expect(page.locator('#data-table-body tr[data-row]')).toHaveCount(10);

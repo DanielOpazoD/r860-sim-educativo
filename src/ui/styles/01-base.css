@@ -244,16 +244,6 @@ a {
   color: #b5f0bf;
   border-color: #528263;
 }
-.speed-control select {
-  background: #1a2838;
-  color: #d6e4f2;
-  border: 1px solid #3a4c61;
-  padding: 7px 4px 7px 10px;
-  font-size: 12px;
-  border-radius: 6px;
-  height: 37px;
-  width: 59px;
-}
 .global-notice {
   padding: 12px 28px;
   background: #443714;

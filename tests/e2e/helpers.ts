@@ -29,6 +29,7 @@ declare global {
       view: string;
       mode: string;
       running: boolean;
+      speed: number;
       points: number;
       /** Valor amortiguado que muestra la columna de presión. */
       gaugePaw: number | null;

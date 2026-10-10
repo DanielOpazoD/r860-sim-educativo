@@ -14,7 +14,7 @@ import { frameFromFixture, PHOTO_FIXTURES } from '../fixtures/photoFixtures';
 import type { ProfileSpec } from '../domain/profile';
 import { defaultInit } from '../profiles';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
-import { createActions, syncWaveOptionsSummary } from './actions';
+import { createActions } from './actions';
 import { createAlarmsUi } from './alarmsUi';
 import { createCommandPalette, type PaletteCommand } from './commandPalette';
 import type { Actor, AppContext, CommandResult, FixtureId } from './context';
@@ -184,6 +184,7 @@ export function startApp(opts: AppOptions): void {
     setSpeed(s) {
       speed = s;
       client.setSpeed(speed);
+      ponerVelocidad(speed);
     },
     simS: () => (frame?.simTimeMs ?? 0) / 1000,
     send,
@@ -211,9 +212,7 @@ export function startApp(opts: AppOptions): void {
       localStorage.setItem('r860.tileDensity', String(d));
       const grid = $('#numeric-grid');
       grid.classList.toggle('six', d === 6);
-      const boton = $('#numeric-density');
-      boton.textContent = d === 6 ? '13 datos' : '6 datos';
-      boton.setAttribute('aria-pressed', String(d === 6));
+      ($('#numeric-density') as HTMLSelectElement).value = String(d);
       // La casilla con tabindex 0 puede quedar oculta: la entrada de Tab pasa a la primera visible.
       const visibles = [...grid.querySelectorAll<HTMLElement>('[data-metric]')].filter((x) => x.offsetParent !== null);
       if (visibles.length && !visibles.some((x) => x.tabIndex === 0)) {
@@ -417,20 +416,23 @@ export function startApp(opts: AppOptions): void {
     return v;
   }
 
-  /**
-   * El selector ofrece cinco velocidades, pero `?speed=` admite cualquiera entre 0,1 y 10. Cuando la efectiva no era
-   * una de las cinco, el desplegable se quedaba EN BLANCO —sin error— mientras el motor corría a otra cosa: la
-   * pantalla decía menos que la verdad. Si hace falta, la velocidad efectiva se añade como opción propia.
-   */
   function ponerVelocidad(v: number): void {
-    const sel = $('#sim-speed') as HTMLSelectElement;
-    if (![...sel.options].some((o) => Number(o.value) === v)) {
-      const o = document.createElement('option');
-      o.value = String(v);
-      o.textContent = `${v}×`;
-      sel.append(o);
+    const options = $('#speed-options');
+    const speedOptions = [...options.querySelectorAll<HTMLButtonElement>('[data-speed]')];
+    if (!speedOptions.some((o) => Number(o.dataset.speed) === v)) {
+      const option = document.createElement('button');
+      option.className = 'speed-option';
+      option.type = 'button';
+      option.setAttribute('role', 'menuitemradio');
+      option.setAttribute('aria-checked', 'false');
+      option.dataset.speed = String(v);
+      option.textContent = `${v}×`;
+      options.append(option);
     }
-    sel.value = String(v);
+    put('#speed-value', `${v}×`);
+    $('#speed-button').classList.toggle('is-modified', v !== 1);
+    for (const option of options.querySelectorAll<HTMLButtonElement>('[data-speed]'))
+      option.setAttribute('aria-checked', String(Number(option.dataset.speed) === v));
   }
 
   function startEngine(): void {
@@ -500,7 +502,6 @@ export function startApp(opts: AppOptions): void {
     ($('#wave-scale') as HTMLSelectElement).value = prefs.waveScale;
     plots.setWaveScaleMode(prefs.waveScale);
   }
-  syncWaveOptionsSummary();
   views.initMonitorScale();
   instructor.initChrome();
   versionTag();
@@ -542,6 +543,9 @@ export function startApp(opts: AppOptions): void {
     },
     get running() {
       return running;
+    },
+    get speed() {
+      return speed;
     },
     get points() {
       return plots.points.length;
