@@ -627,3 +627,44 @@
     display: none;
   }
 }
+@media (max-width: 700px) {
+  .bezel-bottom {
+    height: 58px;
+    gap: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .hard-keys {
+    gap: 6px;
+  }
+  .bezel-bottom .hard-key {
+    width: 30px;
+    height: 30px;
+    padding: 4px;
+  }
+  .bezel-bottom .hard-key .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .trim-knob {
+    width: 44px;
+    height: 44px;
+  }
+  .bezel-signature {
+    font-size: 13px;
+  }
+  .bezel-signature > span {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .bezel-signature small {
+    margin-top: 4px;
+    font-size: 4px;
+    letter-spacing: 1px;
+  }
+}
+@media (max-width: 380px) {
+  .bezel-signature {
+    display: none;
+  }
+}
