@@ -164,8 +164,8 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     } else {
       audio.enabled = false;
     }
-    $('#sound-toggle').innerHTML = icon(audio.enabled ? 'sound' : 'muted');
-    $('#sound-toggle').setAttribute('aria-pressed', String(audio.enabled));
+    $('#sound-toggle use').setAttribute('href', `#i-${audio.enabled ? 'sound' : 'muted'}`);
+    $('#sound-toggle').setAttribute('aria-checked', String(audio.enabled));
     if (ctx.frame) updateAlarm();
   }
   return { updateAlarm, alarms, alarmSetup, readLimits, confirmLimits, toggleAudio };

@@ -474,9 +474,55 @@
   .top-actions {
     flex: none;
   }
-  .top-actions [data-action='help'],
-  .top-actions [data-action='session'] {
+  .top-actions > [data-action='session'] {
     display: none;
+  }
+}
+.more-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.more-menu {
+  top: calc(100% + 8px);
+  right: 0;
+  bottom: auto;
+  width: max-content;
+  min-width: 220px;
+  z-index: 30;
+}
+.more-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--shell-radius-sm);
+  background: transparent;
+  color: var(--shell-text);
+  text-align: left;
+}
+.more-menu > button:hover {
+  background: var(--shell-hover);
+}
+.more-menu > button .icon {
+  width: 16px;
+  height: 16px;
+}
+.more-menu > .more-mobile-only {
+  display: none;
+}
+@media (max-width: 700px) {
+  .more-menu {
+    position: fixed;
+    top: 70px;
+    right: 8px;
+    left: auto;
+    width: min(240px, calc(100vw - 16px));
+  }
+  .more-menu > .more-mobile-only {
+    display: flex;
   }
 }
 @media (min-width: 1700px) {

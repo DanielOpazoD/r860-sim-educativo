@@ -1,6 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectSafetyMark, frame, open, screenshot } from './helpers';
 
+test.describe('NAV móvil · opciones de cabecera', () => {
+  test('la cabecera muestra Buscar y ⋯; el menú añade Sesión', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'sólo proyecto móvil');
+    await open(page, { instructor: 0 });
+    await expect(page.locator('.top-actions button:visible')).toHaveCount(2);
+    await expect(page.locator('.palette-trigger')).toBeVisible();
+    await expect(page.locator('#more-button')).toBeVisible();
+    await page.locator('#more-button').click();
+    await expect(page.locator('#more-menu')).toBeVisible();
+    await expect(page.locator('#more-menu [data-action="session"]')).toBeVisible();
+    await expect(page.locator('#more-menu [role^="menuitem"]:visible')).toHaveCount(4);
+  });
+});
+
 // Monitor vertical en teléfono: nada se desplaza de lado, cada cifra queda a la vista y sigue siendo legible.
 test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', () => {
   test.skip(({ isMobile }) => !isMobile, 'sólo proyecto móvil');

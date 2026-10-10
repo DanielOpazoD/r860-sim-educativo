@@ -58,6 +58,7 @@ const PALETTE_ACTIONS = [
   { id: 'alarms', label: 'Alarmas activas', keywords: 'alarmas alertas límites' },
   { id: 'home', label: 'Volver al inicio del monitor', keywords: 'inicio casa principal' },
   { id: 'help', label: 'Guía y alcance', keywords: 'ayuda información instrucciones' },
+  { id: 'fullscreen', label: 'Pantalla completa', keywords: 'completa maximizar' },
   { id: 'modes', label: 'Modo y ajustes del ventilador', keywords: 'modo ventilación parámetros configuración' },
   { id: 'scenarios', label: 'Elegir escenario', keywords: 'caso práctica simulación' },
   { id: 'inspiratory', label: 'Bloqueo inspiratorio', keywords: 'pausa pplat meseta' },

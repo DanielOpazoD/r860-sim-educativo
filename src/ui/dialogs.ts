@@ -10,9 +10,6 @@ export const MENU_ENTRIES: [string, string, string, string][] = [
   ['alarmSetup', 'bell', 'Alarmas', 'Límites y condiciones activas'],
   ['tools', 'lung', 'Mecánica y procedimientos', 'Bloqueos y mediciones'],
   ['patient', 'person', 'Adulto virtual', 'Perfil sintético'],
-  ['session', 'download', 'Sesión y archivos', 'Guardar, continuar y exportar'],
-  ['scenarios', 'grid', 'Escenarios', 'Prácticas guiadas'],
-  ['help', 'book', 'Guía y alcance', 'Uso, modelo y fuentes'],
 ];
 export const menuHTML = (): string =>
   `<div class="menu-grid">${MENU_ENTRIES.map(

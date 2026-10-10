@@ -1,6 +1,55 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectSafetyMark, frame, hidePanel, open, showPanel } from './helpers';
 
+test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
+  test('escritorio agrupa las opciones en ⋯ y Audio alterna aria-checked', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'sólo escritorio');
+    await open(page, { instructor: 0 });
+    await expect(page.locator('.top-actions button:visible')).toHaveCount(4);
+
+    const button = page.locator('#more-button');
+    const menu = page.locator('#more-menu');
+    await button.click();
+    await expect(menu).toBeVisible();
+    await expect(menu.locator('[role^="menuitem"]:visible')).toHaveCount(3);
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+
+    await button.click();
+    const sound = page.locator('#sound-toggle');
+    await sound.click();
+    await expect(sound).toHaveAttribute('aria-checked', 'true');
+    await expect(sound).toContainText('Audio de alarmas');
+    await button.click();
+    await sound.click();
+    await expect(sound).toHaveAttribute('aria-checked', 'false');
+
+    await button.click();
+    await menu.locator('[data-action="help"]').click();
+    await expect(page.locator('#app-dialog')).toBeVisible();
+    await expect(page.locator('#dialog-title')).toHaveText('Guía del simulador');
+  });
+
+  test('el Menú del R860 conserva sólo sus cuatro entradas funcionales', async ({ page }) => {
+    await open(page, { instructor: 0 });
+    await page.locator('#monitor [data-action="menu"]').click();
+    const entries = page.locator('#dialog-content .menu-entry');
+    await expect(entries).toHaveCount(4);
+    for (const action of ['session', 'scenarios', 'help']) {
+      await expect(page.locator(`#dialog-content .menu-entry[data-action="${action}"]`)).toHaveCount(0);
+    }
+  });
+
+  test('Modo explica en texto los modos del R860 que no se simulan', async ({ page }) => {
+    await open(page, { instructor: 0 });
+    await page.locator('#monitor [data-action="menu"]').click();
+    await page.locator('#dialog-content .menu-entry[data-action="modes"]').click();
+    await expect(page.locator('.mode-option[disabled]')).toHaveCount(0);
+    await expect(page.locator('.mode-other-note')).toHaveText('Otros modos del R860 (PRVC, SIMV, BiLevel, APRV, NIV) no se simulan.');
+  });
+});
+
 test.describe('INT · selección, edición, confirmación y cancelación', () => {
   test('el selector comienza con ocho prácticas y mantiene el catálogo completo filtrable', async ({ page }) => {
     await open(page, { instructor: 0 });
