@@ -281,7 +281,7 @@
   font-weight: 600;
 }
 .hold-result > small {
-  font-size: 8px;
+  font-size: var(--type-2xs);
   color: #b1daf5;
   white-space: nowrap;
 }
@@ -393,7 +393,7 @@
   margin-bottom: 18px;
 }
 .editor-top small {
-  font-size: 9px;
+  font-size: var(--type-2xs);
   letter-spacing: 1px;
   color: #c8d797;
 }
@@ -468,7 +468,7 @@
 }
 .knob-hint {
   display: block;
-  font-size: 9px;
+  font-size: var(--type-2xs);
   color: #7198b2;
   margin: 16px 0 0;
   text-align: center;

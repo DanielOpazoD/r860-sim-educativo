@@ -820,7 +820,7 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   if (s.ppeak !== null && Math.abs(s.ppeak - s.pmax) < max * 0.04) {
     const y = yf(s.ppeak);
     line(ctx, x - 2, y, x + bw + 2, y, '#c9f9ff', 3);
-    text(ctx, 'Ppico', x - 6, y + 14, 10, '#c9f9ff', 'right');
+    text(ctx, 'Ppico', x + bw + 7, y + 15, 10, '#c9f9ff');
   } else marker(s.ppeak, 'Ppico', '#c9f9ff');
   marker(s.peep, 'PEEP', '#81e1e1');
   text(ctx, 'VTesp', w / 2, 420, 10, '#9adaff', 'center');

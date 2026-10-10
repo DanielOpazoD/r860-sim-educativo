@@ -118,20 +118,27 @@ function tarjetaHTML(t: Tarjeta, oculto: (k: string) => boolean): string {
   // La sustitución mezcla otras mediciones: se oculta entera si cualquiera de sus ingredientes sigue tapado,
   // o si la propia medición de la tarjeta lo está (enseñar «23 = 5 + 8 + 10» ya responde la estimación).
   const tapaSustitucion = tapado || (t.sustituida !== null && (MEZCLA_TARJETA[t.id] ?? []).some(oculto));
-  const linea = tapaSustitucion
-    ? `<code class="edu-formula">${esc(t.formula)}</code><p class="edu-falta">En examen se revela al estimar la medición en la columna numérica.</p>`
+  const formula = tapaSustitucion
+    ? `<code class="edu-formula">${esc(t.formula)}</code>`
     : t.sustituida
       ? `<code class="edu-formula">${esc(t.formula)} <span class="edu-flecha">→</span> <b>${esc(t.sustituida)}</b></code>`
-      : `<code class="edu-formula">${esc(t.formula)}</code><p class="edu-falta">${esc(t.faltaPara)}</p>`;
+      : `<code class="edu-formula">${esc(t.formula)}</code>`;
+  const mensaje = tapado
+    ? '<p class="edu-falta">En examen se revela al estimar la medición en la columna numérica.</p>'
+    : t.valor === null
+      ? `<p class="edu-falta">${esc(t.faltaPara)}</p>`
+      : null;
   const ref = t.referencia
-    ? `<p class="edu-ref">Referencia <b>${esc(t.referencia.texto)}</b> <small>${esc(t.referencia.fuente)}</small></p>`
+    ? `<p class="edu-ref">Referencia <b>${esc(t.referencia.texto)}</b></p>`
     : '<p class="edu-ref edu-sinref">Sin rango de referencia</p>';
   return (
     `<article class="edu-card edu-${tapado ? 'sinDato' : t.estado}">` +
     `<header><h3>${esc(t.titulo)}</h3><b>${esc(valor)}<small>${esc(t.unidad)}</small></b></header>` +
-    linea +
-    ref +
-    `<p class="edu-nota">${esc(t.nota.trim())}</p>` +
+    formula +
+    (mensaje ?? ref) +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-nota">${esc(t.nota.trim())}</p>` +
+    (t.referencia ? `<p class="edu-ref"><small>${esc(t.referencia.fuente)}</small></p>` : '') +
+    `</details>` +
     `</article>`
   );
 }
@@ -228,8 +235,8 @@ function potenciaHTML(fr: EngineFrame, oculto: (k: string) => boolean): string {
     `<section class="edu-bloque">` +
     `<header><h3>Potencia mecánica</h3><b>${valor}</b></header>` +
     `<p class="edu-nota">${esc(partes)}</p>` +
-    `<p class="edu-ref">Es el área presión-volumen de cada inspiración por la frecuencia: presión, volumen y frecuencia en un solo número. ` +
-    `Bajar el VT la reduce; subir la frecuencia para recuperar el volumen minuto la devuelve.</p>` +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">Es el área presión-volumen de cada inspiración por la frecuencia: presión, volumen y frecuencia en un solo número. ` +
+    `Bajar el VT la reduce; subir la frecuencia para recuperar el volumen minuto la devuelve.</p></details>` +
     `</section>`
   );
 }
@@ -246,6 +253,13 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: 
     : e.valor === null
       ? `No se puede leer aquí: ${humanReason(e.motivo)}.`
       : e.lectura;
+  const grafico = graficoTitulacion(puntos, oculto);
+  const tituloCurva = 'Tu propia curva: cada punto es una distensibilidad que mediste con un bloqueo a esa PEEP.';
+  const mensajeCurva = puntos.length < 2 ? grafico : `${grafico}<p class="edu-nota">${tituloCurva}</p>`;
+  const porQueCurva =
+    puntos.length < 2
+      ? `${tituloCurva} El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.`
+      : 'El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.';
   return (
     `<div class="edu-prot">` +
     `<section class="edu-bloque">` +
@@ -256,14 +270,14 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: 
     silueta(1.55, activo('sobredistension'), 'b > 1,1', 'sobredistensión') +
     `</div>` +
     `<p class="edu-nota">${esc(lectura)}</p>` +
-    `<p class="edu-ref">Es la forma de la rampa de presión con <b>flujo constante</b>: con el volumen creciendo a ritmo fijo, ` +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">Es la forma de la rampa de presión con <b>flujo constante</b>: con el volumen creciendo a ritmo fijo, ` +
     `esa forma es la de la curva presión-volumen dentro del volumen corriente. Sólo se lee con el paciente pasivo y sin techo de presión de por medio.</p>` +
+    `</details>` +
     `</section>` +
     `<section class="edu-bloque">` +
     `<header><h3>Titulación de PEEP</h3><b>${puntos.length}<small>${puntos.length === 1 ? 'punto' : 'puntos'}</small></b></header>` +
-    graficoTitulacion(puntos, oculto) +
-    `<p class="edu-nota">Tu propia curva: cada punto es una distensibilidad que mediste con un bloqueo a esa PEEP. ` +
-    `El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.</p>` +
+    mensajeCurva +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">${esc(porQueCurva)}</p></details>` +
     `</section>` +
     potenciaHTML(fr, oculto) +
     `</div>`

@@ -56,14 +56,9 @@
     bottom: auto;
     left: 12px;
   }
-  .info-button,
-  .numeric-info {
+  .info-button {
     min-width: 44px;
     min-height: 44px;
-  }
-  .monitor .numeric-info {
-    min-width: 0;
-    min-height: 0;
   }
 }
 /* Tema de página: negro fijo por decisión del usuario (06-09-2026); el tema claro se retiró. */
