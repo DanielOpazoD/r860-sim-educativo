@@ -1,16 +1,24 @@
 /* Pasada minimalista (desktop): el monitor manda; el panel de entrenamiento queda secundario y el cromo se adelgaza. */
 :root {
-  --shell-bg: #000;
-  --shell-surface: #0a0a0a;
-  --shell-raised: #141414;
-  --shell-hover: #1c1c1c;
-  --shell-line: #262626;
-  --shell-text: #e5edf5;
-  --shell-muted: #a5b0b9;
-  --shell-dim: #7c8993;
+  --shell-bg: #f3f4f6;
+  --shell-surface: #ffffff;
+  --shell-raised: #f7f8fa;
+  --shell-hover: #eceff3;
+  --shell-line: #e1e5ea;
+  --shell-text: #111827;
+  --shell-muted: #3f4a57;
+  --shell-dim: #5b6573;
+  --shell-accent: #0f766e;
+  --shell-accent-ink: #ffffff;
+  --shell-accent-soft: #e6f4f2;
+  --shell-warning: #805b00;
+  --shell-warning-soft: #fff8e1;
+  --shell-danger: #b42318;
+  --shell-danger-soft: #fef3f2;
   --shell-radius-sm: 6px;
   --shell-radius: 10px;
-  --shell-focus: 0 0 0 2px var(--accent);
+  --shell-focus: 0 0 0 2px var(--shell-accent);
+  --shell-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
   --device-chrome: 232px;
   --device-max: min(100%, max(640px, calc((100vh - var(--device-chrome)) * 1.524)));
 }
@@ -150,7 +158,7 @@
   color: var(--shell-dim);
 }
 .speed-button.is-modified {
-  color: var(--accent);
+  color: var(--shell-accent);
 }
 .wave-options.speed-options {
   right: auto;
@@ -208,12 +216,12 @@
   transition: transform 160ms ease;
 }
 .exam-switch.active .exam-switch-track {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--shell-accent);
+  background: var(--shell-accent);
 }
 .exam-switch.active .exam-switch-track > span {
   transform: translateX(14px);
-  background: var(--shell-text);
+  background: var(--shell-accent-ink);
 }
 .exam-switch-copy {
   display: grid;
@@ -252,7 +260,7 @@
   border: 1px solid var(--shell-line);
   border-radius: var(--shell-radius);
   background: var(--shell-surface);
-  box-shadow: 0 12px 32px #000a;
+  box-shadow: var(--shell-shadow);
 }
 .wave-options .inline-select {
   display: grid;
@@ -339,13 +347,14 @@
     max-width: var(--device-max);
   }
   .device-shell {
+    color: var(--text);
     background: linear-gradient(160deg, #3a4047, #23282d);
     border: 1px solid #454c53;
-    border-bottom-color: var(--shell-raised);
+    border-bottom-color: rgb(20 20 20);
     border-radius: 16px 16px 26px 26px;
     box-shadow:
-      0 14px 40px #0008,
-      inset 0 1px 0 #ffffff14;
+      0 24px 60px rgba(15, 23, 42, 0.18),
+      0 2px 6px rgba(15, 23, 42, 0.12);
     padding: 0 14px;
   }
   .bezel-top {
@@ -402,9 +411,9 @@
     margin-left: 0;
   }
   .instructor {
-    background: transparent;
+    background: var(--shell-surface);
     border: 0;
-    border-left: 1px solid var(--shell-hover);
+    border-left: 1px solid var(--shell-line);
     border-radius: 0;
     box-shadow: none;
     margin-top: 0;
@@ -422,15 +431,16 @@
     padding: 10px 6px 9px;
     font-size: 12px;
     white-space: nowrap;
-    color: #6f8599;
+    color: var(--shell-muted);
   }
   .instructor-tabs button .icon {
     width: 14px;
     height: 14px;
   }
   .instructor-tabs button.active {
-    color: #dbe7f1;
-    border-bottom-color: var(--accent);
+    color: var(--shell-accent);
+    border-bottom-color: var(--shell-accent);
+    background: var(--shell-accent-soft);
   }
   .instructor-pane {
     padding: 12px 14px 14px;
@@ -489,6 +499,10 @@
   width: max-content;
   min-width: 220px;
   z-index: 30;
+  border: 1px solid var(--shell-line);
+  border-radius: var(--shell-radius);
+  background: var(--shell-surface);
+  box-shadow: var(--shell-shadow);
 }
 .more-menu > button {
   display: flex;
@@ -509,6 +523,36 @@
 .more-menu > button .icon {
   width: 16px;
   height: 16px;
+}
+.app-dialog .info-button,
+.instructor .info-button {
+  color: var(--shell-muted);
+}
+.app-dialog .info-button:hover,
+.app-dialog .info-button[aria-expanded='true'],
+.instructor .info-button:hover,
+.instructor .info-button[aria-expanded='true'] {
+  color: var(--shell-accent);
+  background: var(--shell-accent-soft);
+}
+.app-dialog .parameter-help,
+.instructor .parameter-help {
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+.app-dialog .parameter-help h3,
+.instructor .parameter-help h3 {
+  color: var(--shell-text);
+}
+.app-dialog .parameter-help p,
+.instructor .parameter-help p {
+  color: var(--shell-muted);
+}
+.app-dialog .help-equation,
+.instructor .help-equation {
+  border-color: var(--shell-line);
+  color: var(--shell-accent);
 }
 .more-menu > .more-mobile-only {
   display: none;
@@ -531,7 +575,7 @@
   }
 }
 .inspector-hint {
-  color: #88a8bb;
+  color: var(--shell-dim);
   font-size: 10px;
 }
 .scenario-picker-tabs {
@@ -545,15 +589,15 @@
 }
 .scenario-picker-tabs button {
   background: transparent;
-  border: 1px solid #304458;
+  border: 1px solid var(--shell-line);
   border-radius: var(--shell-radius-sm);
   color: var(--shell-muted);
   padding: 8px 14px;
 }
 .scenario-picker-tabs button[aria-pressed='true'] {
-  background: #20394a;
-  border-color: #6ac8c1;
-  color: #e8f4f6;
+  background: var(--shell-accent-soft);
+  border-color: var(--shell-accent);
+  color: var(--shell-accent);
 }
 .scenario-intro {
   color: var(--shell-muted);
@@ -563,21 +607,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #b8cbd8;
+  color: var(--shell-muted);
   margin: 4px 0 16px;
 }
 .scenario-filter select {
-  background: #172838;
-  border: 1px solid #39556b;
+  background: var(--shell-raised);
+  border: 1px solid var(--shell-line);
   border-radius: 6px;
-  color: #e3edf4;
+  color: var(--shell-text);
   padding: 8px;
 }
 .scenario-group {
   margin-bottom: 24px;
 }
 .scenario-group h3 {
-  color: #c7dce9;
+  color: var(--shell-text);
   font-size: 13px;
   margin: 0 0 10px;
 }
@@ -587,14 +631,15 @@
 .scenario-picker .scenario-card {
   min-height: 140px;
   padding: 14px;
-  background: #142536;
-  border-color: #334b5e;
+  background: var(--shell-surface);
+  border-color: var(--shell-line);
 }
 .scenario-picker .scenario-card.selected {
-  background: #1b3746;
+  background: var(--shell-accent-soft);
+  border-color: var(--shell-accent);
 }
 .scenario-card-category {
-  color: #8db4c6;
+  color: var(--shell-muted);
   font-size: 11px;
 }
 .scenario-picker .scenario-card h3 {
@@ -604,14 +649,14 @@
 }
 .scenario-picker .scenario-card p {
   flex: 1;
-  color: #bdd0dc;
+  color: var(--shell-muted);
   font-size: 11px;
   line-height: 1.45;
   margin: 0 0 10px;
 }
 .scenario-picker .scenario-card footer {
-  color: #88a8bb;
-  border-top: 1px solid #2f4556;
+  color: var(--shell-dim);
+  border-top: 1px solid var(--shell-line);
   width: 100%;
 }
 @media (min-width: 701px) and (max-width: 900px) {
@@ -669,12 +714,12 @@
 }
 .profile-chip.active,
 .profile-chip[aria-pressed='true'] {
-  border-color: #4eb9b2;
-  background: #101818;
+  border-color: var(--shell-accent);
+  background: var(--shell-accent-soft);
 }
 .profile-chip.active b,
 .profile-chip[aria-pressed='true'] b {
-  color: #e1f4f2;
+  color: var(--shell-accent);
 }
 .profile-status {
   min-height: 1.25em;
@@ -716,11 +761,11 @@
   border: 1px solid var(--shell-line);
   border-radius: 12px;
   background: var(--shell-surface);
-  box-shadow: 0 18px 54px rgb(0 0 0 / 42%);
+  box-shadow: var(--shell-shadow);
   color: var(--shell-text);
 }
 .command-palette::backdrop {
-  background: rgb(0 0 0 / 55%);
+  background: rgba(15, 23, 42, 0.35);
   backdrop-filter: blur(2px);
 }
 .palette-search {
@@ -778,9 +823,9 @@
   font-size: 13px;
 }
 #palette-list [role='option'][aria-selected='true'] {
-  background: #101818;
-  box-shadow: inset 2px 0 0 #4eb9b2;
-  color: #e1f4f2;
+  background: var(--shell-accent-soft);
+  box-shadow: inset 2px 0 0 var(--shell-accent);
+  color: var(--shell-accent);
 }
 .palette-option-label {
   min-width: 0;
@@ -996,7 +1041,7 @@
     border: 1px solid var(--shell-line);
     border-radius: 999px;
     background: var(--shell-raised);
-    box-shadow: 0 12px 32px #000a;
+    box-shadow: var(--shell-shadow);
   }
   .signal-toolbar .time-controls {
     flex-wrap: nowrap;
@@ -1052,7 +1097,7 @@
     border-bottom: 0;
     border-radius: 16px 16px 0 0;
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
-    box-shadow: 0 12px 32px #000a;
+    box-shadow: var(--shell-shadow);
   }
   .instructor-tabs {
     position: sticky;

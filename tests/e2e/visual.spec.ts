@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectSafetyMark, frame, open, screenshot } from './helpers';
+import { expectSafetyMark, frame, open, screenshot, showPanel } from './helpers';
 
 test.describe('VIS/DAT · fixtures fotográficas (transcripción, no motor)', () => {
   test('VIS-01 + DAT-02 · P1: panel denso y bloqueo; Pplat de bloqueo 32 y Cstat 19 fechados', async ({ page }, info) => {
@@ -32,6 +32,49 @@ test.describe('VIS/DAT · fixtures fotográficas (transcripción, no motor)', ()
     await expect(page.locator('#big-metrics [data-metric="rr"] b')).toHaveText('30');
     await screenshot(page, info, 'vis-02-p3-fixture', { fixture: 'P3' });
   });
+});
+
+test('VIS · el exterior usa tema claro y conserva el fondo del R860', async ({ page }) => {
+  await open(page, { scenario: 'SC-02', instructor: 0 });
+  await showPanel(page, 'patient');
+
+  const styles = await page.evaluate(() => {
+    const luminance = (value: string) => {
+      const rgb = value.match(/rgba?\(([^)]+)\)/)?.[1];
+      const srgb = value.match(/color\(srgb\s+([^)]+)\)/)?.[1];
+      const raw = rgb ?? srgb;
+      if (!raw) return Number.NaN;
+      const channels = raw
+        .split(/[,\s/]+/)
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((channel) => Number(channel) / (rgb ? 255 : 1));
+      if (channels.length !== 3) return Number.NaN;
+      const [r = Number.NaN, g = Number.NaN, b = Number.NaN] = channels.map((channel) =>
+        channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+      );
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const background = (selector: string) => getComputedStyle(document.querySelector(selector)!).backgroundColor;
+    const device = getComputedStyle(document.querySelector('.device-shell')!);
+    return {
+      body: luminance(getComputedStyle(document.body).backgroundColor),
+      header: luminance(background('.app-top')),
+      instructor: luminance(background('#instructor')),
+      deviceBackground: device.backgroundColor,
+      deviceImage: device.backgroundImage,
+    };
+  });
+
+  expect(styles.body).toBeGreaterThan(0.85);
+  expect(styles.header).toBeGreaterThan(0.85);
+  expect(styles.instructor).toBeGreaterThan(0.85);
+  expect(styles.deviceBackground).toBe('rgba(0, 0, 0, 0)');
+  expect(styles.deviceImage).toBe(
+    (page.viewportSize()?.width ?? 1440) <= 700
+      ? 'linear-gradient(150deg, rgb(119, 129, 136) 0px, rgb(86, 95, 102) 17%, rgb(60, 68, 76) 49%, rgb(66, 74, 83) 82%, rgb(116, 127, 133) 100%)'
+      : 'linear-gradient(160deg, rgb(58, 64, 71), rgb(35, 40, 45))',
+  );
 });
 
 test.describe('VIS · casillas del monitor sin desbordamiento', () => {
