@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TISSUE_PRESETS, TUBE_PRESETS } from '../../src/ui/mechanicsPresets';
-import { PHYS } from '../../src/ui/patientControls';
+import { PATIENT_EXTRA, PATIENT_MAIN, PHYS } from '../../src/ui/patientControls';
 
 // PRE · presets de referencia (U-37): datos sanos, dentro de los rangos de los deslizadores, y 'none' = por omisión.
 describe('PRE · presets de mecánica del paciente', () => {
@@ -21,6 +21,12 @@ describe('PRE · presets de mecánica del paciente', () => {
       expect(p.r2).toBeGreaterThanOrEqual(PHYS.rohrer!.min);
       expect(p.r2).toBeLessThanOrEqual(PHYS.rohrer!.max);
     }
+  });
+
+  it('los grupos de paciente cubren cada control fisiológico exactamente una vez', () => {
+    const keys = [...PATIENT_MAIN, ...PATIENT_EXTRA];
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.sort()).toEqual(Object.keys(PHYS).sort());
   });
 
   it("'none' reproduce los valores por omisión (sin viscoelasticidad, sin tubo)", () => {

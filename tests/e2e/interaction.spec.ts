@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectSafetyMark, frame, hidePanel, open, showPanel } from './helpers';
+import { expectSafetyMark, frame, hidePanel, open, openMoreParams, showPanel } from './helpers';
 
 test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
   test('escritorio agrupa las opciones en ⋯ y Audio alterna aria-checked', async ({ page, isMobile }) => {
@@ -972,7 +972,7 @@ test.describe('RT · disparo reverso (SC-24)', () => {
   test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
     await open(page, { scenario: 'SC-24' });
     await showPanel(page, 'patient');
-    await page.locator('.advanced-patient summary').click();
+    await openMoreParams(page);
     await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
     await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
   });
@@ -982,7 +982,7 @@ test.describe('PRE · presets de mecánica del paciente', () => {
   test('«TET 7,0 mm» fija el deslizador K₂ a 9,2 y moverlo a mano deja «Personalizado»', async ({ page }) => {
     await open(page);
     await showPanel(page, 'patient');
-    await page.locator('.advanced-patient summary').click();
+    await openMoreParams(page);
     const tubo = page.locator('#preset-tube');
     await expect(tubo).toHaveValue('none');
     await tubo.selectOption('id70');
@@ -996,6 +996,36 @@ test.describe('PRE · presets de mecánica del paciente', () => {
     await tejido.selectOption('healthy');
     await expect(page.locator('[data-phys-number="viscoelastic"]')).toHaveValue('3');
     await expect(page.locator('#preset-tissue-note')).toContainText('D’Angelo');
+  });
+});
+
+test.describe('PAC · panel Paciente esencial', () => {
+  test('muestra tres controles principales y agrupa Más parámetros en cinco secciones', async ({ page }) => {
+    await open(page, { scenario: 'SC-02' });
+    await showPanel(page, 'patient');
+    const details = page.locator('.advanced-patient');
+    await expect(details).not.toHaveAttribute('open', '');
+    await expect(page.locator('#instructor-patient [data-phys-range]:visible')).toHaveCount(3);
+
+    await openMoreParams(page);
+    await expect(page.locator('#patient-extra-controls .phys-group-title:visible')).toHaveCount(5);
+    await expect(page.locator('[data-phys-range="expResistance"]')).toBeVisible();
+    await expect(page.locator('[data-phys-range="effortExp"]')).toBeVisible();
+  });
+
+  test('recuerda si Más parámetros quedó abierto al recargar', async ({ page }) => {
+    await open(page, { scenario: 'SC-02' });
+    await showPanel(page, 'patient');
+    await openMoreParams(page);
+    await expect
+      .poll(() =>
+        page.evaluate(() => (JSON.parse(localStorage.getItem('r860.prefs') ?? '{}') as { patientMoreOpen?: boolean }).patientMoreOpen),
+      )
+      .toBe(true);
+
+    await page.reload();
+    await showPanel(page, 'patient');
+    await expect(page.locator('.advanced-patient')).toHaveAttribute('open', '');
   });
 });
 

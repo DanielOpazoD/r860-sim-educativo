@@ -61,6 +61,10 @@ export async function showPanel(page: Page, tab?: 'patient' | 'events' | 'learn'
   }
   if (tab) await page.locator(`[data-instructor="${tab}"]`).click();
 }
+export async function openMoreParams(page: Page): Promise<void> {
+  const details = page.locator('.advanced-patient');
+  if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) await details.locator('summary').click();
+}
 export async function hidePanel(page: Page): Promise<void> {
   const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
   if (mobile && (await page.locator('#panel-button').getAttribute('aria-pressed')) === 'true') {

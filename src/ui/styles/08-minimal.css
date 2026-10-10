@@ -1066,3 +1066,13 @@
     padding: 0;
   }
 }
+.phys-group-title {
+  margin: 16px 0 8px;
+  color: var(--shell-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.phys-group:first-child > .phys-group-title {
+  margin-top: 0;
+}
