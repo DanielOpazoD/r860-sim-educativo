@@ -18,7 +18,7 @@ export function createDialogHost(): DialogHost & { bind(): void } {
       $('#app-dialog').className = 'app-dialog ' + size;
       put('#dialog-title', title);
       $('#dialog-content').innerHTML = html;
-      $('#dialog-footer').innerHTML = footer || CLOSE_BTN;
+      $('#dialog-footer').innerHTML = footer === null ? '' : footer || CLOSE_BTN;
       const d = $<HTMLDialogElement>('#app-dialog');
       if (!d.open) d.showModal();
       for (const l of openListeners) l();
@@ -36,9 +36,10 @@ export function createDialogHost(): DialogHost & { bind(): void } {
       closeListeners.push(l);
     },
     bind() {
-      // Cierre nativo (p. ej. gesto del sistema): sólo olvida quién lo abrió; los borradores se limpian al cerrar por acción.
+      // El cierre nativo (p. ej. Escape) debe dejar los mismos rasgos que un cierre por acción.
       $('#app-dialog').addEventListener('cancel', () => {
         kind = '';
+        for (const l of closeListeners) l();
       });
     },
   };

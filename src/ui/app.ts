@@ -33,6 +33,8 @@ import { createModeDialog } from './modeDialog';
 import { createPlotsView } from './plotsView';
 import { createQuickEditor } from './quickEditor';
 import { createViews } from './views';
+import { welcomeHTML } from './dialogs';
+import { loadPrefs, savePrefs } from './prefs';
 
 const PHASE_TEXT: Record<string, string> = {
   inspFlow: 'Inspiración',
@@ -61,6 +63,7 @@ export interface AppOptions {
 
 export function startApp(opts: AppOptions): void {
   const params = opts.params;
+  const prefs = params.has('fixture') ? null : loadPrefs();
   const client = new EngineClient({ forceInline: params.get('inline') === '1' });
   const profile = opts.profile;
   // ---------- estado de sesión ----------
@@ -75,7 +78,7 @@ export function startApp(opts: AppOptions): void {
   let examMode = false;
   const guardada = localStorage.getItem('r860.tileDensity');
   let tileDensity: 6 | 13 = guardada === '6' ? 6 : 13;
-  let scenario: Scenario = findScenario(params.get('scenario') ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
+  let scenario: Scenario = findScenario(params.get('scenario') ?? prefs?.lastScenario ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
   let fixtureId: FixtureId | null = null;
 
   // ---------- utilidades ----------
@@ -208,6 +211,13 @@ export function startApp(opts: AppOptions): void {
     updateUI,
   };
   const dialog = createDialogHost();
+  let welcomeOpen = false;
+  dialog.onClose(() => {
+    if (welcomeOpen) {
+      welcomeOpen = false;
+      savePrefs({ welcomed: true });
+    }
+  });
   const lesson = createLessonTracker(ctx);
   const views = createViews(ctx);
   const quick = createQuickEditor(ctx);
@@ -217,8 +227,19 @@ export function startApp(opts: AppOptions): void {
   const metrics = createMetricsView(ctx);
   const teaching = createTeachingView(ctx);
   const plots = createPlotsView(ctx, { teacherVisible: () => instructor.teacherVisible });
-  const instructor = createInstructorPanel(ctx, { quick, hold, metrics, plots, initialVisible: params.get('instructor') !== '0' });
+  const instructor = createInstructorPanel(ctx, {
+    quick,
+    hold,
+    metrics,
+    plots,
+    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : (prefs?.instructorVisible ?? true),
+  });
   const actions = createActions(ctx, { quick, hold, modes, alarms, metrics, plots, instructor });
+  function showWelcome(): void {
+    welcomeOpen = true;
+    dialog.open('welcome', 'Bienvenido a R860 Lab', welcomeHTML(), null, 'compact');
+    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('#welcome-free')?.focus());
+  }
 
   // ---------- pintado ----------
   function updateUI(): void {
@@ -390,12 +411,20 @@ export function startApp(opts: AppOptions): void {
   ctx.setTileDensity(tileDensity);
   instructor.init();
   fillStaticHelp();
-  // En teléfono el monitor vertical dibuja mejor ventanas cortas: 6 s por omisión (en escritorio quedan 12 s).
-  if (isMobile()) {
-    ($('#wave-window') as HTMLSelectElement).value = '6';
-    plots.setWaveWindow(6);
-    syncWaveOptionsSummary();
+  const waveWindow = prefs?.waveWindow ?? (isMobile() ? '6' : undefined);
+  if (waveWindow) {
+    ($('#wave-window') as HTMLSelectElement).value = waveWindow;
+    plots.setWaveWindow(Number(waveWindow));
   }
+  if (prefs?.waveStyle) {
+    ($('#wave-style') as HTMLSelectElement).value = prefs.waveStyle;
+    plots.setWaveStyle(prefs.waveStyle);
+  }
+  if (prefs?.waveScale) {
+    ($('#wave-scale') as HTMLSelectElement).value = prefs.waveScale;
+    plots.setWaveScaleMode(prefs.waveScale);
+  }
+  syncWaveOptionsSummary();
   views.initMonitorScale();
   instructor.initChrome();
   versionTag();
@@ -413,8 +442,11 @@ export function startApp(opts: AppOptions): void {
     startEngine();
     const fx = params.get('fixture');
     if (fx === 'P1' || fx === 'P3') setTimeout(() => showFixture(fx), 80);
-    const v = params.get('view');
+    const v = params.get('view') ?? prefs?.view;
     if (v) views.switchView(v);
+    if (!params.has('scenario') && !params.has('fixture') && prefs?.welcomed && scenario.id !== 'SC-01')
+      toast(`Continúas en: ${scenario.name}`);
+    if (!params.has('scenario') && !params.has('fixture') && !params.has('view') && !prefs?.welcomed) showWelcome();
   });
   (window as unknown as { __r860: unknown }).__r860 = {
     get frame() {
