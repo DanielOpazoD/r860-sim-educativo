@@ -94,3 +94,66 @@ test.describe('Ventana de curvas por omisión según el ancho del viewport', () 
     await expect(page.locator('#wave-window')).toHaveValue('12');
   });
 });
+
+test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
+  test.skip(({ isMobile }) => !isMobile, 'sólo proyecto móvil');
+
+  test('sin desborde al cargar, abrir Menú y cambiar cada vista', async ({ page }) => {
+    await open(page, { instructor: 0 });
+
+    const comprobarGeometríaMóvil = async () => {
+      await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+      const medición = await page.evaluate(() => {
+        const bisel = document.querySelector('.bezel-bottom')!.getBoundingClientRect();
+        const perilla = document.querySelector('#trim-knob')!.getBoundingClientRect();
+        const barraEl = document.querySelector('.mobile-toolbar')!;
+        const barra = barraEl.getBoundingClientRect();
+        const teclas = [...document.querySelectorAll('.bezel-bottom .hard-key')].map((el) => {
+          const { width, height } = el.getBoundingClientRect();
+          return { width, height };
+        });
+        return {
+          innerWidth,
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          biselRight: bisel.right,
+          perillaRight: perilla.right,
+          barraRight: barra.right,
+          barraClientWidth: barraEl.clientWidth,
+          barraScrollWidth: barraEl.scrollWidth,
+          barraOverflowX: getComputedStyle(barraEl).overflowX,
+          teclas,
+        };
+      });
+      expect(medición.scrollWidth).toBeLessThanOrEqual(medición.clientWidth);
+      expect(medición.innerWidth).toBe(medición.clientWidth);
+      expect(medición.perillaRight).toBeLessThanOrEqual(medición.biselRight - 6);
+      expect(medición.barraRight).toBeLessThanOrEqual(medición.clientWidth);
+      if (medición.barraScrollWidth > medición.barraClientWidth) expect(['auto', 'scroll']).toContain(medición.barraOverflowX);
+      expect(medición.teclas.every(({ width, height }) => width >= 30 && height >= 30)).toBe(true);
+    };
+
+    await comprobarGeometríaMóvil();
+    for (const viewport of [
+      { width: 360, height: 780 },
+      { width: 390, height: 844 },
+      { width: 412, height: 915 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await comprobarGeometríaMóvil();
+
+      await page.locator('[data-action="menu"]').tap();
+      await expect(page.locator('#app-dialog')).toBeVisible();
+      await comprobarGeometríaMóvil();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#app-dialog')).toBeHidden();
+
+      for (const botón of await page.locator('.mobile-toolbar [data-view]').all()) {
+        const vista = await botón.getAttribute('data-view');
+        await botón.tap();
+        await expect.poll(() => page.evaluate(() => window.__r860.view)).toBe(vista);
+        await comprobarGeometríaMóvil();
+      }
+    }
+  });
+});
