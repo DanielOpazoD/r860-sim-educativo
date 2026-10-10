@@ -34,6 +34,23 @@ test.describe('VIS/DAT · fixtures fotográficas (transcripción, no motor)', ()
   });
 });
 
+test.describe('VIS · casillas del monitor sin desbordamiento', () => {
+  test('no usa iconos informativos y sus descendientes caben', async ({ page }) => {
+    await open(page, { scenario: 'SC-02', instructor: 0 });
+    await expect(page.locator('#monitor .numeric-info')).toHaveCount(0);
+    const overflows = await page
+      .locator('#monitor .numeric')
+      .evaluateAll((tiles) =>
+        tiles.flatMap((tile) =>
+          [...tile.querySelectorAll('*')]
+            .filter((el) => el.scrollWidth > el.clientWidth + 1)
+            .map((el) => ({ metric: tile.getAttribute('data-metric'), element: el.className })),
+        ),
+      );
+    expect(overflows).toEqual([]);
+  });
+});
+
 test.describe('VIS · motor vivo con pausa automática determinista', () => {
   test('VIS-03 · banco SC-01 a t = 12 s: curvas, números y manómetro', async ({ page }, info) => {
     await open(page, { autopause: 12000, instructor: 0, speed: 4 });

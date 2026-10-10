@@ -27,7 +27,7 @@
 }
 .dialog-header small {
   display: block;
-  font-size: 9px;
+  font-size: var(--type-2xs);
   color: #89b1c8;
   letter-spacing: 1.2px;
   line-height: 1.5;
@@ -228,7 +228,7 @@
   box-shadow: inset 0 0 0 1px #79b8b5;
 }
 .scenario-card > small {
-  font-size: 9px;
+  font-size: var(--type-2xs);
   letter-spacing: 0.09em;
   color: #7b9fb6;
   text-transform: uppercase;
@@ -247,7 +247,7 @@
   flex: 1;
 }
 .scenario-card .scenario-details {
-  font-size: 9px;
+  font-size: var(--type-2xs);
   color: #8dc7be;
   padding-top: 11px;
   border-top: 1px solid #36556a;
@@ -335,7 +335,7 @@
   position: absolute;
   right: 9px;
   bottom: 8px;
-  font-size: 8px;
+  font-size: var(--type-2xs);
   color: #82adc8;
   pointer-events: none;
 }
@@ -427,7 +427,7 @@
   opacity: 0.7;
 }
 .alarm-priority {
-  font-size: 9px;
+  font-size: var(--type-2xs);
   color: #dce0e3;
   border: 1px solid #b4b9b866;
   padding: 3px 5px;
@@ -719,7 +719,7 @@
   display: inline-block;
   padding: 3px 7px;
   border-radius: 4px;
-  font-size: 9px;
+  font-size: var(--type-2xs);
   color: #87b3c8;
   background: #213d51;
   border: 1px solid #355a73;
@@ -853,13 +853,13 @@
     gap: 7px;
   }
   .inline-select {
-    font-size: 9px;
+    font-size: var(--type-2xs);
   }
   .simulation-clock {
     font-size: 10px;
   }
   .safety-strip {
-    font-size: 9px;
+    font-size: var(--type-2xs);
     padding-left: 20px;
     padding-right: 20px;
     gap: 12px;
@@ -933,7 +933,7 @@
     font-size: 17px;
   }
   .phys-value small {
-    font-size: 9px;
+    font-size: var(--type-2xs);
   }
   .model-note {
     font-size: 11px;
@@ -1010,7 +1010,7 @@
     max-width: 1000px;
   }
   .safety-strip > span:not(.version) {
-    font-size: 9px;
+    font-size: var(--type-2xs);
   }
   .text-button {
     font-size: 11px;

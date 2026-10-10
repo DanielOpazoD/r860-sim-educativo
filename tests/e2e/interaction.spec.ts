@@ -434,6 +434,30 @@ test.describe('CFG · contrato de estado del ajuste', () => {
 });
 
 test.describe('EDU · pestaña Resumen', () => {
+  test('cada tarjeta deja como máximo un párrafo visible fuera de «Por qué»', async ({ page }) => {
+    await open(page, { scenario: 'SC-02', instructor: 0 });
+    await page.click('.monitor-nav [data-view="teaching"]');
+    const visibleParagraphs = async (): Promise<number[]> =>
+      page
+        .locator('.edu-card, .edu-bloque')
+        .evaluateAll((cards) =>
+          cards.map(
+            (card) =>
+              [...card.querySelectorAll('p')].filter(
+                (paragraph) => !paragraph.closest('details') && getComputedStyle(paragraph).display !== 'none',
+              ).length,
+          ),
+        );
+    await expect.poll(visibleParagraphs).toEqual([1, 1, 1, 1]);
+    await page.click('[data-edu-tab="proteccion"]');
+    await expect.poll(visibleParagraphs).toEqual([1, 1, 1]);
+    await expect(page.locator('details.edu-more[open]')).toHaveCount(0);
+    await page.click('[data-edu-tab="presiones"]');
+    const why = page.locator('.edu-card').first().locator('.edu-more');
+    await why.locator('summary').click();
+    await expect(why.locator('.edu-nota')).toBeVisible();
+  });
+
   test('sin bloqueo no inventa números; con bloqueo enseña la cuenta con los del monitor', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
     await page.click('.monitor-nav [data-view="teaching"]');

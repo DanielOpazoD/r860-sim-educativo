@@ -849,7 +849,7 @@
     font-size: 13px;
   }
   .bezel-signature > span {
-    font-size: 8px;
+    font-size: var(--type-2xs);
     letter-spacing: 1px;
   }
   .bezel-signature small {
