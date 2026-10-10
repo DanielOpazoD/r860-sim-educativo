@@ -390,15 +390,15 @@ export const FAULTS: [string, string, string, string, boolean][] = [
 ];
 
 /** Selects de presets fisiológicos (U-37) junto a los deslizadores de E₂/τ₂ y K₂: no cambian valores por omisión. */
-export function presetsHtml(infoButton: (key: string, id: string) => string, infoPanel: (key: string, id: string) => string): string {
+export function presetsHtml(contextualPanel: (key: string, id: string) => string): string {
   const campo = (id: string, preset: 'tissue' | 'tube', label: string, help: string, opciones: string): string => {
     const hid = `help-preset-${preset}`;
     return (
-      `<div class="phys-field"><div class="phys-field-header"><div class="parameter-label"><label for="${id}">${label}</label>${infoButton(help, hid)}</div></div>` +
-      `<select id="${id}" data-phys-preset="${preset}" aria-label="${label}">` +
+      `<div class="phys-field contextual-field"><div class="phys-field-header"><div class="parameter-label"><label for="${id}">${label}</label></div></div>` +
+      `<select id="${id}" data-phys-preset="${preset}" aria-label="${label}" aria-describedby="${hid}">` +
       opciones +
       `<option value="custom" disabled hidden>Personalizado</option></select>` +
-      `<small class="preset-note" id="${id}-note"></small>${infoPanel(help, hid)}</div>`
+      `<small class="preset-note" id="${id}-note"></small>${contextualPanel(help, hid)}</div>`
     );
   };
   return (
@@ -418,16 +418,12 @@ export function presetsHtml(infoButton: (key: string, id: string) => string, inf
     )
   );
 }
-export function physHtml(
-  keys: string[],
-  infoButton: (key: string, id: string) => string,
-  infoPanel: (key: string, id: string) => string,
-): string {
+export function physHtml(keys: string[], contextualPanel: (key: string, id: string) => string): string {
   return keys
     .map((k) => {
       const sp = PHYS[k] as PhysSpec;
       const id = `help-phys-${k}`;
-      return `<div class="phys-field"><div class="phys-field-header"><div class="parameter-label"><label for="phys-${k}">${sp.label}</label>${infoButton(sp.help, id)}</div><div class="phys-value"><input id="phys-${k}" data-phys-number="${k}" type="number" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="${sp.label}"><small>${sp.unit}</small></div></div><input type="range" data-phys-range="${k}" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="Deslizador ${sp.label}"><div class="phys-range-labels"><span>${sp.min}</span><span>${sp.max}</span></div>${infoPanel(sp.help, id)}</div>`;
+      return `<div class="phys-field contextual-field"><div class="phys-field-header"><div class="parameter-label"><label for="phys-${k}">${sp.label}</label><small class="phys-unit">${sp.unit}</small></div><div class="phys-value"><button class="step-button" type="button" data-phys-step="${k}" data-direction="-1" aria-label="Disminuir ${sp.label}" aria-describedby="${id}">−</button><input id="phys-${k}" data-phys-number="${k}" type="number" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="${sp.label} (${sp.unit})" aria-describedby="${id}"><button class="step-button" type="button" data-phys-step="${k}" data-direction="1" aria-label="Aumentar ${sp.label}" aria-describedby="${id}">+</button></div></div><input type="range" data-phys-range="${k}" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="Deslizador ${sp.label}" aria-describedby="${id}"><div class="phys-range-labels"><span>${sp.min}</span><span>${sp.max}</span></div>${contextualPanel(sp.help, id)}</div>`;
     })
     .join('');
 }

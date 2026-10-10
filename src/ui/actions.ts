@@ -42,7 +42,8 @@ import type { MetricsView } from './metricsView';
 import type { ModeDialog } from './modeDialog';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
-import type { SettingsKey, VentMode } from '../domain/types';
+import type { AlarmLimits, SettingsKey, VentMode } from '../domain/types';
+import { segmentedValue } from './segmented';
 
 export interface Features {
   quick: QuickEditor;
@@ -378,7 +379,10 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       popover.button.addEventListener('click', () => {
         const open = popover.panel.hidden;
         for (const other of popovers) setPopoverOpen(other, false);
-        if (open) setPopoverOpen(popover, true);
+        if (open) {
+          setPopoverOpen(popover, true);
+          popover.panel.querySelector<HTMLElement>('input[type="radio"]:checked, [aria-checked="true"]')?.focus();
+        }
       });
     }
     const speedOptions = $('#speed-options');
@@ -387,6 +391,21 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (!option) return;
       ctx.setSpeed(Number(option.dataset.speed));
       setPopoverOpen(speedPopover, false, true);
+    });
+    speedOptions.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+      const options = [...speedOptions.querySelectorAll<HTMLButtonElement>('[data-speed]:not(:disabled)')];
+      const current = options.indexOf(document.activeElement as HTMLButtonElement);
+      const index =
+        e.key === 'Home'
+          ? 0
+          : e.key === 'End'
+            ? options.length - 1
+            : (current + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1) + options.length) % options.length;
+      const next = options[index];
+      if (!next) return;
+      e.preventDefault();
+      next.focus();
     });
     morePopover.panel.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menuitemcheckbox"]')) setPopoverOpen(morePopover, false, true);
@@ -398,6 +417,17 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       e.preventDefault();
       setPopoverOpen(open, false, true);
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Home' && e.key !== 'End') return;
+      const group = (e.target as HTMLElement).closest<HTMLElement>('.inline-segment');
+      if (!group) return;
+      const choices = [...group.querySelectorAll<HTMLInputElement>('input[type="radio"]:not(:disabled)')];
+      const choice = e.key === 'Home' ? choices[0] : choices[choices.length - 1];
+      if (!choice) return;
+      e.preventDefault();
+      choice.focus();
+      choice.click();
+    });
     document.addEventListener('click', (e) => {
       const target = e.target as Node;
       for (const popover of popovers) {
@@ -406,7 +436,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     });
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
-        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-profile],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
+        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-profile],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode],[data-mode-step],[data-phys-step],[data-limit-step]',
       );
       if (!el) return;
       e.preventDefault();
@@ -425,6 +455,18 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       }
       if (el.dataset.profile) {
         if (!(el as HTMLButtonElement).disabled) void instructor.applyProfile(el.dataset.profile);
+        return;
+      }
+      if (el.dataset.modeStep) {
+        modes.stepModeField(el.dataset.modeStep as SettingsKey, el.dataset.direction === '-1' ? -1 : 1);
+        return;
+      }
+      if (el.dataset.physStep) {
+        void instructor.stepPhys(el.dataset.physStep, el.dataset.direction === '-1' ? -1 : 1);
+        return;
+      }
+      if (el.dataset.limitStep) {
+        alarms.stepLimit(el.dataset.limitStep as keyof AlarmLimits, el.dataset.direction === '-1' ? -1 : 1);
         return;
       }
       if (ctx.locked && el.closest('#monitor') && !['mute', 'alarms', 'unlock', 'closeHold'].includes(el.dataset.action ?? '')) {
@@ -449,6 +491,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (el.id === 'quick-value') quick.typedQuick(el.value);
       if (el.id === 'quick-range') quick.slidQuick(Number(el.value));
       if (el.dataset.physRange) instructor.physRangeInput(el);
+      if (el.dataset.modeRange) modes.slideModeField(el);
       if (el.dataset.modeField) modes.readModeField(el);
       if (el.dataset.limit) alarms.readLimits();
       if (el.id === 'history-slider') plots.slideHistory(Number(el.value));
@@ -464,13 +507,17 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
           group.hidden = !!el.value && group.dataset.scenarioTopic !== el.value;
         $('#scenario-all .scenario-reference').hidden = !!el.value;
       }
-      if (el.id === 'numeric-density' && (el.value === '6' || el.value === '13')) ctx.setTileDensity(Number(el.value) as 6 | 13);
-      if (el.id === 'wave-window') plots.setWaveWindow(Number(el.value));
-      if (el.id === 'wave-style') plots.setWaveStyle(el.value as 'sweep' | 'scroll');
-      if (el.id === 'wave-scale') plots.setWaveScaleMode(el.value as 'auto' | 'fixed');
-      if (!ctx.fixtureId && el.id === 'wave-window') savePrefs({ waveWindow: el.value as '6' | '12' | '24' });
-      if (!ctx.fixtureId && el.id === 'wave-style') savePrefs({ waveStyle: el.value as 'sweep' | 'scroll' });
-      if (!ctx.fixtureId && el.id === 'wave-scale') savePrefs({ waveScale: el.value as 'auto' | 'fixed' });
+      if (el instanceof HTMLInputElement && el.type === 'radio' && el.name) {
+        const value = segmentedValue(el.name);
+        if (value !== null && el.name === 'numeric-density' && (value === '6' || value === '13'))
+          ctx.setTileDensity(Number(value) as 6 | 13);
+        if (value !== null && el.name === 'wave-window') plots.setWaveWindow(Number(value));
+        if (value !== null && el.name === 'wave-style') plots.setWaveStyle(value as 'sweep' | 'scroll');
+        if (value !== null && el.name === 'wave-scale') plots.setWaveScaleMode(value as 'auto' | 'fixed');
+        if (!ctx.fixtureId && value !== null && el.name === 'wave-window') savePrefs({ waveWindow: value as '6' | '12' | '24' });
+        if (!ctx.fixtureId && value !== null && el.name === 'wave-style') savePrefs({ waveStyle: value as 'sweep' | 'scroll' });
+        if (!ctx.fixtureId && value !== null && el.name === 'wave-scale') savePrefs({ waveScale: value as 'auto' | 'fixed' });
+      }
       if ((el as HTMLInputElement).dataset.modeField) modes.readModeField(el as HTMLInputElement);
     });
     $('#session-input').addEventListener('change', async (e) => {

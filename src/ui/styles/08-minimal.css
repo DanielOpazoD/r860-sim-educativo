@@ -164,23 +164,27 @@
   right: auto;
   left: 0;
   width: max-content;
-  min-width: 76px;
-  gap: 2px;
-  padding: 6px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  padding: 4px;
 }
 .speed-option {
-  width: 100%;
+  min-width: 40px;
+  min-height: 32px;
   padding: 6px 8px;
   border: 0;
-  border-radius: var(--shell-radius-sm);
+  border-radius: 4px;
   background: transparent;
   color: var(--shell-text);
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 .speed-option:hover,
 .speed-option[aria-checked='true'] {
-  background: var(--shell-raised);
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
 }
 .exam-switch {
   display: flex;
@@ -262,25 +266,80 @@
   background: var(--shell-surface);
   box-shadow: var(--shell-shadow);
 }
-.wave-options .inline-select {
+.wave-options .inline-segment {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.wave-options .inline-segment legend {
+  grid-column: 1 / -1;
   color: var(--shell-muted);
   font-size: 11px;
+  margin-bottom: 1px;
 }
-.wave-options .inline-select select {
-  width: 145px;
-  min-height: 30px;
-  padding: 4px 8px;
+.wave-options .inline-segment > label {
+  display: flex;
+  flex: 1 1 0;
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+}
+.wave-options .inline-segment input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.wave-options .inline-segment label > span {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 32px;
+  padding: 5px 8px;
   border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius-sm);
-  background: var(--shell-raised);
+  background: var(--shell-surface);
   color: var(--shell-text);
   font-size: 11px;
+  text-align: center;
+}
+.wave-options .inline-segment label:first-of-type > span {
+  border-radius: 6px 0 0 6px;
+}
+.wave-options .inline-segment label:last-of-type > span {
+  border-radius: 0 6px 6px 0;
+}
+.wave-options .inline-segment label + label > span {
+  margin-left: -1px;
+}
+.wave-options .inline-segment input:checked + span {
+  position: relative;
+  z-index: 1;
+  border-color: var(--shell-accent);
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+.wave-options .inline-segment input:focus-visible + span {
+  z-index: 2;
+  box-shadow: var(--shell-focus);
 }
 #density-field[hidden] {
   display: none;
+}
+#wave-style,
+#wave-scale,
+#numeric-density {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 .welcome-intro {
   margin-top: 0;
@@ -676,7 +735,7 @@
   }
 }
 #patient-profiles {
-  padding: 14px 0 6px;
+  padding: 0 0 10px;
 }
 #patient-profiles .small-section-title {
   margin: 0 0 8px;
@@ -689,12 +748,12 @@
 .profile-chip {
   display: flex;
   min-width: 0;
-  min-height: 48px;
+  min-height: 32px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: 4px;
-  padding: 6px;
+  padding: 6px 8px;
   border: 1px solid var(--shell-line);
   border-radius: var(--shell-radius-sm);
   background: var(--shell-raised);
@@ -706,11 +765,12 @@
   line-height: 1.2;
 }
 .profile-chip small {
-  color: var(--shell-dim);
-  font-size: 10.5px;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .profile-chip.active,
 .profile-chip[aria-pressed='true'] {
@@ -1111,6 +1171,200 @@
     padding: 0;
   }
 }
+
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) :is(.button, .primary-button, .secondary-button) {
+  min-height: 32px;
+  border-radius: 6px;
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button {
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button.subtle:not(.icon-only) {
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button.icon-only:not(.secondary-button) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--shell-muted);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button.secondary-button {
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button.subtle {
+  background: transparent;
+  border-color: transparent;
+  color: var(--shell-muted);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button:hover {
+  background: var(--shell-hover);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button[aria-pressed='true'] {
+  border-color: var(--shell-accent-soft);
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+.app-dialog .primary-button {
+  background: var(--shell-accent);
+  border: 1px solid var(--shell-accent);
+  border-radius: 6px;
+  color: var(--shell-accent-ink);
+  min-height: 32px;
+}
+.app-dialog .primary-button:hover {
+  filter: brightness(0.94);
+  background: var(--shell-accent);
+  border-color: var(--shell-accent);
+  color: var(--shell-accent-ink);
+}
+.app-dialog .secondary-button {
+  background: var(--shell-raised);
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  color: var(--shell-text);
+  min-height: 32px;
+}
+.app-dialog .secondary-button:hover {
+  background: var(--shell-hover);
+  border-color: var(--shell-line);
+}
+:is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette)
+  :is(.button, .primary-button, .secondary-button):disabled {
+  opacity: 0.62;
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
+  color: var(--shell-dim);
+  filter: grayscale(0.25);
+}
+.mode-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+.mode-selector {
+  min-width: 0;
+}
+.mode-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+.mode-option {
+  min-height: 32px;
+  border-radius: 0;
+  text-align: center;
+}
+.mode-option:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.mode-option:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.mode-option + .mode-option {
+  margin-left: -1px;
+}
+.mode-other-note {
+  margin-top: 8px;
+}
+.checkline input[type='checkbox'][role='switch'] {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  margin: 0 2px 0 0;
+  appearance: none;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+  background: var(--shell-raised);
+  accent-color: var(--shell-accent);
+  cursor: pointer;
+}
+.checkline input[type='checkbox'][role='switch']::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--shell-muted);
+  transition: transform 140ms ease;
+}
+.checkline input[type='checkbox'][role='switch']:checked {
+  border-color: var(--shell-accent);
+  background: var(--shell-accent);
+}
+.checkline input[type='checkbox'][role='switch']:checked::after {
+  transform: translateX(16px);
+  background: var(--shell-accent-ink);
+}
+.menuitem-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 32px;
+  height: 18px;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+  background: var(--shell-raised);
+}
+.menuitem-switch > span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--shell-muted);
+  transition: transform 140ms ease;
+}
+#sound-toggle[aria-checked='true'] .menuitem-switch {
+  border-color: var(--shell-accent);
+  background: var(--shell-accent);
+}
+#sound-toggle[aria-checked='true'] .menuitem-switch > span {
+  transform: translateX(14px);
+  background: var(--shell-accent-ink);
+}
+.contextual-field > .contextual-help {
+  display: none;
+  margin: 5px 0 0;
+  padding: 8px 10px;
+}
+.contextual-field:focus-within > .contextual-help {
+  display: block;
+}
+.contextual-field .contextual-help h3 {
+  margin-bottom: 4px;
+}
+.contextual-field .contextual-help p {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.phys-field-header .parameter-label {
+  min-width: 0;
+}
+.exam-switch {
+  border-radius: 6px;
+}
+
+@media (max-width: 700px), (pointer: coarse) {
+  :is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette)
+    :is(.button, .primary-button, .secondary-button, .mode-option, .speed-option) {
+    min-height: 44px;
+  }
+  .app-dialog .primary-button,
+  .app-dialog .secondary-button {
+    min-height: 44px;
+  }
+  .mode-list {
+    gap: 0;
+  }
+}
 .phys-group-title {
   margin: 16px 0 8px;
   color: var(--shell-muted);
@@ -1120,4 +1374,192 @@
 }
 .phys-group:first-child > .phys-group-title {
   margin-top: 0;
+}
+.step-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  background: var(--shell-raised);
+  color: var(--shell-text);
+  font-size: 16px;
+  line-height: 1;
+}
+.step-button:hover {
+  background: var(--shell-hover);
+  border-color: var(--shell-line);
+}
+.setting-input {
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  gap: 4px;
+}
+.setting-input input[type='number'] {
+  width: 100%;
+}
+.setting-input small {
+  right: 39px;
+}
+.setting-range {
+  width: 100%;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--shell-accent);
+  cursor: pointer;
+}
+.phys-value {
+  align-items: center;
+}
+.phys-value input {
+  width: 54px;
+}
+.phys-value > .step-button {
+  width: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  height: 30px;
+}
+.alarm-edit-grid .limit-input {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  gap: 4px;
+  align-items: center;
+}
+.alarm-edit-grid .limit-input input {
+  min-width: 0;
+}
+
+@media (max-width: 700px), (pointer: coarse) {
+  .step-button {
+    min-height: 44px;
+  }
+  .step-button,
+  .phys-value > .step-button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+  .setting-input {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+  .wave-options .inline-segment label > span {
+    min-height: 44px;
+  }
+  .alarm-edit-grid .limit-input {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+  }
+}
+
+.setting-input > select {
+  grid-column: 1 / -1;
+}
+.contextual-field {
+  position: relative;
+}
+.contextual-field > .contextual-help {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  width: max(100%, 230px);
+  max-width: calc(100vw - 64px);
+  margin: 4px 0 0;
+  box-shadow: var(--shell-shadow);
+}
+.limit-field > .contextual-help {
+  left: auto;
+  right: 0;
+}
+#instructor-patient {
+  padding: 12px;
+}
+#instructor-patient .phys-field {
+  margin: 0 0 8px;
+}
+#instructor-patient .phys-field-header {
+  gap: 8px;
+  margin-bottom: 0;
+}
+#instructor-patient .parameter-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+#instructor-patient .parameter-label > label {
+  max-width: none;
+  line-height: 1.25;
+}
+.phys-unit {
+  color: var(--shell-dim);
+  font-size: 10px;
+}
+#instructor-patient .phys-value {
+  gap: 0;
+  border: 1px solid var(--shell-line);
+  border-radius: var(--shell-radius-sm);
+}
+#instructor-patient .phys-value > .step-button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+}
+#instructor-patient .phys-value input {
+  width: 42px;
+  min-height: 32px;
+  padding: 2px 0;
+  border: 0;
+  text-align: center;
+  font-size: 14px;
+}
+#instructor-patient .phys-field input[type='range'] {
+  height: 24px;
+  margin: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-radius: 0;
+  background-clip: padding-box;
+  outline-offset: 0;
+}
+#instructor-patient .phys-range-labels {
+  display: none;
+}
+#instructor-patient > :is(.advanced-patient, .truth-details) {
+  margin: 0;
+}
+#instructor-patient > :is(.advanced-patient, .truth-details) > summary {
+  min-height: 32px;
+  padding: 8px 0;
+}
+@media (max-width: 700px), (pointer: coarse) {
+  .profile-chip {
+    min-height: 44px;
+  }
+  #instructor-patient .phys-value > .step-button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+  #instructor-patient .phys-value input {
+    min-height: 44px;
+  }
+  #instructor-patient .phys-field input[type='range'] {
+    height: 44px;
+    border-top-width: 20px;
+    border-bottom-width: 20px;
+  }
+  #instructor-patient > :is(.advanced-patient, .truth-details) > summary {
+    min-height: 44px;
+    padding: 14px 0;
+  }
 }

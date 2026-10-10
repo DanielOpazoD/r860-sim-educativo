@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectSafetyMark, frame, hidePanel, open, openMoreParams, showPanel } from './helpers';
 
+async function chooseRadio(page: Page, groupId: string, value: string) {
+  const radio = page.locator(`#${groupId} input[type="radio"][value="${value}"]`);
+  await radio.locator('xpath=..').click();
+  await expect(radio).toBeChecked();
+}
+
 test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
   test('escritorio agrupa las opciones en ⋯ y Audio alterna aria-checked', async ({ page, isMobile }) => {
     test.skip(isMobile, 'sólo escritorio');
@@ -82,7 +88,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     const button = page.locator('#wave-options-button');
     await page.click('#wave-options-button');
     await expect(page.locator('#wave-options')).toBeVisible();
-    await page.selectOption('#wave-window', '24');
+    await chooseRadio(page, 'wave-window', '24');
     await expect(button).toContainText('Pantalla');
     await page.keyboard.press('Escape');
     await expect(page.locator('#wave-options')).toBeHidden();
@@ -623,8 +629,8 @@ test.describe('CUR · medir sobre la curva congelada', () => {
     // de los del dibujo y el cursor caía unos 90 ms más allá. La ventana por omisión es 12 s en escritorio y 6 s en
     // teléfono, así que se fija: la cuentas del centro dependen de ella.
     await page.click('#wave-options-button');
-    await page.selectOption('#wave-window', '12');
-    await page.selectOption('#wave-style', 'scroll');
+    await chooseRadio(page, 'wave-window', '12');
+    await chooseRadio(page, 'wave-style', 'scroll');
     await page.click('#freeze-button');
     const lienzo = page.locator('#waves-canvas');
     const caja = (await lienzo.boundingBox())!;
@@ -761,11 +767,11 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   });
   test('la escala alterna entre automática y fija', async ({ page }) => {
     await open(page);
-    await expect(page.locator('#wave-scale')).toHaveValue('auto');
+    await expect(page.locator('#wave-scale input[value="auto"]')).toBeChecked();
     await page.click('#wave-options-button');
-    await page.selectOption('#wave-scale', 'fixed');
+    await chooseRadio(page, 'wave-scale', 'fixed');
     await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('fixed');
-    await page.selectOption('#wave-scale', 'auto');
+    await chooseRadio(page, 'wave-scale', 'auto');
     await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('auto');
   });
   test('los controles de tiempo caben sin desbordar el ancho del viewport', async ({ page }) => {
@@ -950,17 +956,19 @@ test.describe('DEN · densidad de la columna numérica', () => {
     await open(page);
     const density = page.locator('#numeric-density');
     const densityField = page.locator('#density-field');
-    expect(await density.evaluate((el) => el.tagName.toLowerCase())).toBe('select');
+    expect(await density.evaluate((el) => el.tagName.toLowerCase())).toBe('fieldset');
     expect(await density.evaluate((el) => el.closest('#wave-options'))).not.toBeNull();
     await page.click('#wave-options-button');
     await expect(density).toBeVisible();
-    await page.click('[data-view="loops"]');
+    await page.click('#wave-options-button');
+    await page.locator('.monitor-nav [data-view="loops"]').click();
     await expect(densityField).toHaveJSProperty('hidden', true);
-    await page.click('[data-view="waves"]');
+    await page.locator('.monitor-nav [data-view="waves"]').click();
     await expect(densityField).toHaveJSProperty('hidden', false);
     await page.click('#wave-options-button');
     await expect(density).toBeVisible();
-    await page.click('[data-view="data"]');
+    await page.click('#wave-options-button');
+    await page.locator('.monitor-nav [data-view="data"]').click();
     await page.click('#wave-options-button');
     await expect(densityField).toHaveJSProperty('hidden', true);
   });
@@ -970,9 +978,9 @@ test.describe('DEN · densidad de la columna numérica', () => {
     const visibles = () => page.locator('#numeric-grid .numeric:visible');
     await expect(visibles()).toHaveCount(13);
     await page.click('#wave-options-button');
-    await page.selectOption('#numeric-density', '6');
+    await chooseRadio(page, 'numeric-density', '6');
     await expect(visibles()).toHaveCount(6);
-    await expect(page.locator('#numeric-density')).toHaveValue('6');
+    await expect(page.locator('#numeric-density input[value="6"]')).toBeChecked();
     const rotulos = await visibles().locator('.numeric-label').allTextContents();
     // El orden es el de la rejilla completa (METRICS), con VTesp en su lugar habitual tras FR.
     expect(rotulos).toEqual(['Ppico', 'PEEPe', 'Pplat', 'FR', 'VTesp', 'FiO₂']);
@@ -982,11 +990,12 @@ test.describe('DEN · densidad de la columna numérica', () => {
     await page.reload();
     await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(6);
     await page.click('#wave-options-button');
-    await page.selectOption('#numeric-density', '13');
+    await chooseRadio(page, 'numeric-density', '13');
     await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(13);
-    await expect(page.locator('#numeric-density')).toHaveValue('13');
+    await expect(page.locator('#numeric-density input[value="13"]')).toBeChecked();
     // La tabla «Datos» completa no cambia: sigue con las veinte filas repartidas en dos tablas.
-    await page.click('[data-view="data"]');
+    await page.click('#wave-options-button');
+    await page.locator('.monitor-nav [data-view="data"]').click();
     await expect(page.locator('#data-table-body tr[data-row]')).toHaveCount(10);
     await expect(page.locator('#data-table-body-2 tr[data-row]')).toHaveCount(10);
   });
@@ -1113,12 +1122,12 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await page.locator('.monitor-nav [data-view="loops"]').click();
     await expect(page.locator('#view-loops')).toHaveClass(/active/);
     await page.click('#wave-options-button');
-    await page.selectOption('#wave-window', '24');
+    await chooseRadio(page, 'wave-window', '24');
     await page.reload();
     await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
     await expect(page.locator('#scenario-name')).toHaveText(scenarioName);
     await expect(page.locator('#view-loops')).toHaveClass(/active/);
-    await expect(page.locator('#wave-window')).toHaveValue('24');
+    await expect(page.locator('#wave-window input[value="24"]')).toBeChecked();
     await expect(page.locator('#toast-stack .toast').last()).toContainText(`Continúas en: ${scenarioName}`);
   });
 

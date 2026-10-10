@@ -56,13 +56,13 @@
   <div class="top-actions">
     <button class="button subtle palette-trigger" data-action="palette" aria-label="Buscar comandos" title="Buscar comandos (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><svg class="icon"><use href="#i-search"/></svg><span>Buscar</span><kbd class="palette-kbd">⌘K</kbd></button>
     <button class="button subtle" data-action="session" aria-label="Sesión" title="Sesión"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
-    <button class="button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel de entrenamiento" title="Ocultar panel de entrenamiento" aria-pressed="true"><svg class="icon"><use href="#i-graduation"/></svg></button>
+    <button class="button secondary-button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel de entrenamiento" title="Ocultar panel de entrenamiento" aria-pressed="true"><svg class="icon"><use href="#i-graduation"/></svg></button>
     <div class="more-wrap">
       <button class="button icon-only" id="more-button" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" aria-label="Más opciones" title="Más opciones"><svg class="icon"><use href="#i-more"/></svg></button>
       <div id="more-menu" class="wave-options more-menu" role="menu" hidden>
         <button role="menuitem" data-action="session" class="more-mobile-only"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
         <button role="menuitem" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Guía y alcance</span></button>
-        <button role="menuitemcheckbox" id="sound-toggle" data-action="sound" aria-checked="false"><svg class="icon"><use href="#i-muted"/></svg><span>Audio de alarmas</span></button>
+        <button role="menuitemcheckbox" id="sound-toggle" data-action="sound" aria-checked="false"><svg class="icon"><use href="#i-muted"/></svg><span>Audio de alarmas</span><span class="menuitem-switch" aria-hidden="true"><span></span></span></button>
         <button role="menuitem" data-action="fullscreen"><svg class="icon"><use href="#i-expand"/></svg><span>Pantalla completa</span></button>
       </div>
     </div>
@@ -166,11 +166,11 @@
         </div>
         <div class="time-group wave-options-wrap" role="group" aria-label="Pantalla">
           <button class="button small wave-options-button" id="wave-options-button" aria-haspopup="true" aria-expanded="false" aria-controls="wave-options" aria-label="Opciones de pantalla" title="Opciones de pantalla"><svg class="icon"><use href="#i-gear"/></svg><span>Pantalla</span><svg class="icon wave-options-chevron" aria-hidden="true"><use href="#i-chevron"/></svg></button>
-          <div id="wave-options" class="wave-options" role="group" aria-label="Opciones de pantalla" hidden>
-            <label class="inline-select"><span>Ventana</span><select id="wave-window"><option value="6">6 s</option><option value="12" selected>12 s</option><option value="24">24 s</option></select></label>
-            <label class="inline-select"><span>Trazado</span><select id="wave-style"><option value="sweep">Barrido</option><option value="scroll">Continuo</option></select></label>
-            <label class="inline-select"><span>Escala</span><select id="wave-scale"><option value="auto">Automática</option><option value="fixed">Fija</option></select></label>
-            <label class="inline-select" id="density-field"><span>Casillas</span><select id="numeric-density"><option value="13">13</option><option value="6">6 grandes</option></select></label>
+            <div id="wave-options" class="wave-options" role="group" aria-label="Opciones de pantalla" hidden>
+            <fieldset id="wave-window" class="inline-segment"><legend>Ventana</legend><label><input type="radio" name="wave-window" value="6"><span>6 s</span></label><label><input type="radio" name="wave-window" value="12" checked><span>12 s</span></label><label><input type="radio" name="wave-window" value="24"><span>24 s</span></label></fieldset>
+            <fieldset id="wave-style" class="inline-segment"><legend>Trazado</legend><label><input type="radio" name="wave-style" value="sweep" checked><span>Barrido</span></label><label><input type="radio" name="wave-style" value="scroll"><span>Continuo</span></label></fieldset>
+            <fieldset id="wave-scale" class="inline-segment"><legend>Escala</legend><label><input type="radio" name="wave-scale" value="auto" checked><span>Automática</span></label><label><input type="radio" name="wave-scale" value="fixed"><span>Fija</span></label></fieldset>
+            <div id="density-field"><fieldset id="numeric-density" class="inline-segment"><legend>Casillas</legend><label><input type="radio" name="numeric-density" value="13" checked><span>13</span></label><label><input type="radio" name="numeric-density" value="6"><span>6 grandes</span></label></fieldset></div>
           </div>
         </div>
       </div>
@@ -193,7 +193,7 @@
     </section>
     <section class="instructor-pane" id="instructor-learn">
       <div class="lesson-count" id="lesson-count">0 de 3 objetivos</div><h3 class="lesson-title" id="lesson-title"></h3><p class="lesson-text" id="lesson-text"></p><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa las curvas y el registro para explicar qué cambió.</div>
-      <button class="exam-switch" id="exam-toggle" data-action="exam" aria-pressed="false"><span class="exam-switch-track" aria-hidden="true"><span></span></span><span class="exam-switch-copy"><strong>Modo examen</strong><small>Las mediciones se ocultan hasta que escribes tu estimación</small></span></button>
+      <button class="exam-switch" id="exam-toggle" data-action="exam" role="switch" aria-checked="false" aria-pressed="false"><span class="exam-switch-track" aria-hidden="true"><span></span></span><span class="exam-switch-copy"><strong>Modo examen</strong><small>Las mediciones se ocultan hasta que escribes tu estimación</small></span></button>
       <details class="reflection" id="reflection"><summary id="reflection-question"></summary><p id="reflection-answer"></p></details>
       <button class="button full" data-action="debrief"><svg class="icon"><use href="#i-book"/></svg>Resumen de práctica</button><button class="button full subtle" data-action="scenarios">Elegir otro escenario<svg class="icon"><use href="#i-arrow"/></svg></button>
       <p class="truth-disclaimer">Objetivos de manejo del simulador; no califican seguridad clínica, competencia profesional ni aptitud de extubación.</p>

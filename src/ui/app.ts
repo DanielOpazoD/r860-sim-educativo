@@ -37,6 +37,7 @@ import { createViews, VIEWS } from './views';
 import { welcomeHTML } from './dialogs';
 import { loadPrefs, savePrefs } from './prefs';
 import { PATIENT_PROFILES, profileHint } from './patientProfiles';
+import { setSegmentedValue } from './segmented';
 
 const PHASE_TEXT: Record<string, string> = {
   inspFlow: 'Inspiración',
@@ -213,7 +214,7 @@ export function startApp(opts: AppOptions): void {
       localStorage.setItem('r860.tileDensity', String(d));
       const grid = $('#numeric-grid');
       grid.classList.toggle('six', d === 6);
-      ($('#numeric-density') as HTMLSelectElement).value = String(d);
+      setSegmentedValue('numeric-density', String(d));
       // La casilla con tabindex 0 puede quedar oculta: la entrada de Tab pasa a la primera visible.
       const visibles = [...grid.querySelectorAll<HTMLElement>('[data-metric]')].filter((x) => x.offsetParent !== null);
       if (visibles.length && !visibles.some((x) => x.tabIndex === 0)) {
@@ -233,6 +234,7 @@ export function startApp(opts: AppOptions): void {
       $('#monitor').classList.toggle('exam-on', on);
       const boton = $<HTMLButtonElement>('#exam-toggle');
       boton.classList.toggle('active', on);
+      boton.setAttribute('aria-checked', String(on));
       boton.setAttribute('aria-pressed', String(on));
       toast(on ? 'Modo examen: las mediciones se ocultan hasta que las estimas.' : 'Modo examen desactivado.');
       updateUI();
@@ -432,8 +434,10 @@ export function startApp(opts: AppOptions): void {
     }
     put('#speed-value', `${v}×`);
     $('#speed-button').classList.toggle('is-modified', v !== 1);
-    for (const option of options.querySelectorAll<HTMLButtonElement>('[data-speed]'))
+    for (const option of options.querySelectorAll<HTMLButtonElement>('[data-speed]')) {
       option.setAttribute('aria-checked', String(Number(option.dataset.speed) === v));
+      option.tabIndex = Number(option.dataset.speed) === v ? 0 : -1;
+    }
   }
 
   function startEngine(): void {
@@ -492,15 +496,15 @@ export function startApp(opts: AppOptions): void {
   fillStaticHelp();
   const waveWindow = prefs?.waveWindow ?? (isMobile() ? '6' : undefined);
   if (waveWindow) {
-    ($('#wave-window') as HTMLSelectElement).value = waveWindow;
+    setSegmentedValue('wave-window', waveWindow);
     plots.setWaveWindow(Number(waveWindow));
   }
   if (prefs?.waveStyle) {
-    ($('#wave-style') as HTMLSelectElement).value = prefs.waveStyle;
+    setSegmentedValue('wave-style', prefs.waveStyle);
     plots.setWaveStyle(prefs.waveStyle);
   }
   if (prefs?.waveScale) {
-    ($('#wave-scale') as HTMLSelectElement).value = prefs.waveScale;
+    setSegmentedValue('wave-scale', prefs.waveScale);
     plots.setWaveScaleMode(prefs.waveScale);
   }
   views.initMonitorScale();

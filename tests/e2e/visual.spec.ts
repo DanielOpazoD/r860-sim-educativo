@@ -77,6 +77,30 @@ test('VIS · el exterior usa tema claro y conserva el fondo del R860', async ({ 
   );
 });
 
+test('VIS · panel Paciente esencial compacto a 1440 px', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop-1440', 'sólo escritorio a 1440 px');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await open(page, { scenario: 'SC-02', instructor: 0 });
+  await showPanel(page, 'patient');
+
+  const pane = page.locator('#instructor-patient');
+  const profiles = page.locator('#patient-profiles .profile-chip');
+  await expect(pane).toBeVisible();
+  await expect(page.locator('.advanced-patient')).not.toHaveAttribute('open', '');
+  await expect(profiles).toHaveCount(6);
+  await expect(page.locator('#patient-controls [data-phys-number]')).toHaveCount(3);
+  await expect(page.locator('#patient-controls [data-phys-step]')).toHaveCount(6);
+  for (const profile of await profiles.all()) await expect(profile).toBeInViewport();
+
+  const geometry = await pane.evaluate((el) => {
+    const { height } = el.getBoundingClientRect();
+    return { height, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth };
+  });
+  expect(geometry.height).toBeLessThanOrEqual(510);
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth + 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
 test.describe('VIS · casillas del monitor sin desbordamiento', () => {
   test('no usa iconos informativos y sus descendientes caben', async ({ page }) => {
     await open(page, { scenario: 'SC-02', instructor: 0 });

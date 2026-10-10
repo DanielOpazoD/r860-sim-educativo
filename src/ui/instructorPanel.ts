@@ -9,7 +9,7 @@ import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
 import { $, $$, icon, put } from './dom';
 import type { HoldPanel } from './holdPanel';
-import { infoButton, infoPanel } from './helpPanels';
+import { contextualHelpPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
 import { matchesProfile, PATIENT_PROFILES, profileHint, profileState } from './patientProfiles';
 import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type PhysSpec } from './patientControls';
@@ -37,7 +37,8 @@ export interface InstructorPanel {
   /** Arrastre de un deslizador fisiológico: sincroniza la casilla numérica y el relleno. */
   physRangeInput(el: HTMLInputElement): void;
   /** Cambio confirmado de un control fisiológico (deslizador o número). */
-  physChange(el: HTMLInputElement | HTMLSelectElement): void;
+  physChange(el: HTMLInputElement | HTMLSelectElement): Promise<void>;
+  stepPhys(key: string, direction: 1 | -1): Promise<void>;
   /** Selects de presets fisiológicos (U-37): aplican los campos del preset elegido con setPatient. */
   presetChange(el: HTMLSelectElement): void;
 }
@@ -48,6 +49,7 @@ export function createInstructorPanel(
 ): InstructorPanel {
   let teacherVisible = deps.initialVisible;
   const eventUndo: Command[][] = [];
+  const physEditing = new Set<string>();
   let apneaApplied = false;
   let profileTruthJson: string | null = null;
 
@@ -80,7 +82,7 @@ export function createInstructorPanel(
       const n = $<HTMLInputElement>(`[data-phys-number="${k}"]`),
         r = $<HTMLInputElement>(`[data-phys-range="${k}"]`);
       const v = sp.get(fr);
-      if (document.activeElement !== n && document.activeElement !== r) {
+      if (!physEditing.has(k) && !n.closest('.phys-field')?.contains(document.activeElement)) {
         n.value = String(Math.round(v * 100) / 100);
         r.value = String(v);
       }
@@ -238,15 +240,15 @@ export function createInstructorPanel(
         <h3 class="small-section-title">Perfil del paciente</h3>
         <div class="profile-grid">${PATIENT_PROFILES.map(
           (profile) =>
-            `<button class="profile-chip" data-profile="${profile.id}" aria-pressed="false" ${ctx.fixtureId ? 'disabled' : ''}><b>${profile.label}</b><small>${profileHint(profile)}</small></button>`,
+            `<button class="profile-chip" data-profile="${profile.id}" aria-pressed="false" title="${profileHint(profile)}" ${ctx.fixtureId ? 'disabled' : ''}><b>${profile.label}</b><small>${profileHint(profile)}</small></button>`,
         ).join('')}</div>
         <p id="profile-status" class="profile-status" aria-live="polite">Personalizado</p>
       `;
       profileTruthJson = null;
-      $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
+      $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, contextualHelpPanel);
       $('#patient-extra-controls').innerHTML = PATIENT_GROUPS.map(
         (group) =>
-          `<section class="phys-group"><h4 class="phys-group-title">${group.title}</h4>${physHtml(group.keys, infoButton, infoPanel)}${group.presets ? presetsHtml(infoButton, infoPanel) : ''}${group.note ? `<p class="settings-annotation">${group.note}</p>` : ''}</section>`,
+          `<section class="phys-group"><h4 class="phys-group-title">${group.title}</h4>${physHtml(group.keys, contextualHelpPanel)}${group.presets ? presetsHtml(contextualHelpPanel) : ''}${group.note ? `<p class="settings-annotation">${group.note}</p>` : ''}</section>`,
       ).join('');
       const moreParams = $<HTMLDetailsElement>('.advanced-patient');
       moreParams.open = loadPrefs().patientMoreOpen ?? false;
@@ -315,15 +317,46 @@ export function createInstructorPanel(
       const sp = PHYS[k] as PhysSpec;
       el.style.setProperty('--fill', `${(100 * (Number(el.value) - sp.min)) / (sp.max - sp.min)}%`);
     },
-    physChange(el) {
+    async physChange(el) {
       const k = ((el as HTMLInputElement).dataset.physRange ?? (el as HTMLInputElement).dataset.physNumber) as string;
       const sp = PHYS[k] as PhysSpec;
+      const raw = el.value.trim();
+      if (!raw) {
+        el.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      const value = Number(raw);
+      const steps = (value - sp.min) / sp.step;
+      if (!Number.isFinite(value) || value < sp.min - 1e-9 || value > sp.max + 1e-9 || Math.abs(steps - Math.round(steps)) > 1e-6) {
+        el.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      el.removeAttribute('aria-invalid');
       const frame = ctx.frame;
-      if (frame)
-        void setPhys([sp.cmd(Number(el.value), frame)], null).then(() => {
-          el.blur();
-          if (ctx.frame) updateTeacher();
-        });
+      if (frame) {
+        await setPhys([sp.cmd(value, frame)], null);
+        el.blur();
+        if (ctx.frame) updateTeacher();
+      }
+    },
+    async stepPhys(k, direction) {
+      const input = $<HTMLInputElement>(`[data-phys-number="${k}"]`);
+      const range = $<HTMLInputElement>(`[data-phys-range="${k}"]`);
+      const sp = PHYS[k] as PhysSpec;
+      const raw = input.value.trim();
+      const current = Number(raw);
+      const next = raw && Number.isFinite(current) ? Math.min(sp.max, Math.max(sp.min, current + direction * sp.step)) : sp.min;
+      const value = Number((sp.min + Math.round((next - sp.min) / sp.step) * sp.step).toFixed(6));
+      input.value = String(value);
+      range.value = String(value);
+      range.style.setProperty('--fill', `${(100 * (value - sp.min)) / (sp.max - sp.min)}%`);
+      physEditing.add(k);
+      try {
+        await this.physChange(input);
+      } finally {
+        physEditing.delete(k);
+        if (ctx.frame) updateTeacher();
+      }
     },
     presetChange(el) {
       const frame = ctx.frame;
