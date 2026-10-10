@@ -80,6 +80,11 @@ test.describe('Controles exteriores coherentes', () => {
     await annotations.uncheck();
     await expect(page.locator('#wave-ref-button')).toBeDisabled();
     await expect(legend).toBeVisible();
+    const stressIndex = legend.locator('dl > div').filter({ hasText: 'Índice de estrés' });
+    await expect(stressIndex.locator('dd')).toHaveText(
+      'Forma de la curva de presión durante una inspiración a flujo constante. Con flujo constante el volumen entra a ritmo fijo, así que la forma de la presión frente al tiempo es la forma de la presión elástica frente al volumen dentro del volumen corriente.',
+    );
+    await expect(stressIndex.locator('dd')).not.toHaveText('Índice de estrés');
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -190,6 +195,28 @@ test.describe('Controles exteriores coherentes', () => {
       expect(box.height).toBeCloseTo(boxes[0]!.height, 0);
       expect(box.right).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth + 1));
       expect(box.scroll).toBeLessThanOrEqual(box.client + 1);
+    }
+    if (!isMobile) {
+      await page.setViewportSize({ width: 844, height: 400 });
+      await openPersonalization(page);
+      const dialog = page.locator('#wave-options');
+      const body = dialog.locator('.view-settings-body');
+      const before = await dialog.boundingBox();
+      expect(before).not.toBeNull();
+      await body.evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+      });
+      await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+      await page.locator('#view-tab-monitor').click();
+      await expect(body).toHaveJSProperty('scrollTop', 0);
+      await expect(page.locator('#wave-window')).toBeVisible();
+      await expect(page.locator('#wave-window label').first()).toBeVisible();
+      const after = await dialog.boundingBox();
+      expect(after).not.toBeNull();
+      expect(after!.x).toBeCloseTo(before!.x, 0);
+      expect(after!.y).toBeCloseTo(before!.y, 0);
+      expect(after!.width).toBeCloseTo(before!.width, 0);
+      expect(after!.height).toBeCloseTo(before!.height, 0);
     }
   });
 
@@ -343,7 +370,7 @@ test.describe('Controles exteriores coherentes', () => {
   });
 
   test('minRate respeta Off y su mínimo; switches y ayudas responden al teclado y al foco', async ({ page }) => {
-    await open(page, { speed: 4 });
+    await open(page, { speed: 1 });
     await page.locator('[data-action="modes"]').first().click();
     await page.locator('.mode-option[data-mode="CPAP_PS"]').click();
     const minRate = page.locator('[data-mode-field="minRate"]');
@@ -389,9 +416,27 @@ test.describe('Controles exteriores coherentes', () => {
     await page.keyboard.press('Home');
     await expect(page.locator('#wave-window input:checked')).toHaveValue('6');
     await openTimeControls(page);
+    const expectSpeed = async (speed: number) => {
+      const option = page.locator(`.speed-option[data-speed="${speed}"]`);
+      await expect(option).toBeFocused();
+      await expect(option).toHaveAttribute('aria-checked', 'true');
+      await expect.poll(() => page.evaluate(() => window.__r860.speed)).toBe(speed);
+    };
     await page.locator('.speed-option[data-speed="1"]').focus();
-    await page.keyboard.press('End');
-    await expect(page.locator('.speed-option[data-speed="4"]')).toBeFocused();
+    for (const [key, speed] of [
+      ['ArrowLeft', 0.5],
+      ['ArrowRight', 1],
+      ['ArrowDown', 2],
+      ['ArrowUp', 1],
+      ['Home', 0.25],
+      ['ArrowLeft', 4],
+      ['ArrowRight', 0.25],
+      ['End', 4],
+      ['Home', 0.25],
+    ] as const) {
+      await page.keyboard.press(key);
+      await expectSpeed(speed);
+    }
     await closePersonalization(page);
     await expect(page.locator('#speed-options')).toBeHidden();
     await expect(page.locator('#wave-options-button')).toBeFocused();
