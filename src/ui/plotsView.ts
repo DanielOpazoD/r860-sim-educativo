@@ -316,7 +316,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     const btn = $<HTMLButtonElement>('#wave-ref-button');
     btn.classList.add('active');
     btn.setAttribute('aria-pressed', 'true');
-    $('#wave-ref-clear').hidden = false;
+    btn.setAttribute('aria-label', 'Dejar de comparar la última respiración');
+    btn.title = 'Quita la respiración de referencia';
     dirty = true;
   }
   function resetWaveReferenceButton(): void {
@@ -324,7 +325,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     btn.classList.remove('active');
     btn.setAttribute('aria-pressed', 'false');
     (btn.querySelector('span') as HTMLElement).textContent = 'Comparar última respiración';
-    $('#wave-ref-clear').hidden = true;
+    btn.setAttribute('aria-label', 'Comparar última respiración');
+    btn.title = 'Superpone la última respiración completa para compararla con las siguientes';
   }
   return {
     get gaugePaw() {

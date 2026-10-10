@@ -53,12 +53,6 @@
   .top-actions [data-action='fullscreen'] {
     display: none;
   }
-  .speed-control select {
-    width: 49px;
-    font-size: 11px;
-    height: 32px;
-    padding: 4px;
-  }
   .workspace {
     padding: 18px 13px;
     gap: 22px;

@@ -61,16 +61,6 @@ export interface Actions {
   bind(): void;
 }
 
-export function syncWaveOptionsSummary(): void {
-  const summary = document.querySelector<HTMLElement>('#wave-options-summary');
-  if (!summary) return;
-  const values = ['wave-window', 'wave-style', 'wave-scale'].map((id) => {
-    const select = document.getElementById(id) as HTMLSelectElement | null;
-    return select?.selectedOptions[0]?.textContent?.trim() ?? '';
-  });
-  summary.textContent = values.filter(Boolean).join(' · ');
-}
-
 export function createActions(ctx: AppContext, fx: Features): Actions {
   const { quick, hold, modes, alarms, metrics, plots, instructor } = fx;
   const debriefInput = () => ({
@@ -195,9 +185,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       case 'freeze':
         ctx.toggleFreeze();
         break;
-      case 'density':
-        ctx.setTileDensity(ctx.tileDensity === 6 ? 13 : 6);
-        break;
       case 'sound':
         await alarms.toggleAudio();
         break;
@@ -308,10 +295,8 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         plots.clearLoopReference();
         break;
       case 'waveReference':
-        plots.saveWaveReference();
-        break;
-      case 'clearWaveRef':
-        plots.clearWaveReference();
+        if (plots.waveRefAt !== null) plots.clearWaveReference();
+        else plots.saveWaveReference();
         break;
       case 'exam':
         ctx.setExamMode(!ctx.examMode);
@@ -380,30 +365,41 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   }
 
   function bind(): void {
-    const waveOptionsButton = document.querySelector<HTMLButtonElement>('#wave-options-button');
-    const waveOptions = document.querySelector<HTMLDivElement>('#wave-options');
-    if (waveOptionsButton && waveOptions) {
-      const setWaveOptionsOpen = (open: boolean, returnFocus = false): void => {
-        waveOptions.hidden = !open;
-        waveOptionsButton.setAttribute('aria-expanded', String(open));
-        if (returnFocus) waveOptionsButton.focus();
-      };
-      waveOptionsButton.addEventListener('click', () => {
-        setWaveOptionsOpen(Boolean(waveOptions.hidden));
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !waveOptions.hidden) {
-          e.preventDefault();
-          setWaveOptionsOpen(false, true);
-        }
-      });
-      document.addEventListener('click', (e) => {
-        if (!waveOptions.hidden && !waveOptions.contains(e.target as Node) && !waveOptionsButton.contains(e.target as Node)) {
-          setWaveOptionsOpen(false);
-        }
+    const speedPopover = { button: $<HTMLButtonElement>('#speed-button'), panel: $('#speed-options') };
+    const waveOptionsPopover = { button: $<HTMLButtonElement>('#wave-options-button'), panel: $('#wave-options') };
+    const popovers = [speedPopover, waveOptionsPopover];
+    const setPopoverOpen = (popover: (typeof popovers)[number], open: boolean, returnFocus = false): void => {
+      popover.panel.hidden = !open;
+      popover.button.setAttribute('aria-expanded', String(open));
+      if (returnFocus) popover.button.focus();
+    };
+    for (const popover of popovers) {
+      popover.button.addEventListener('click', () => {
+        const open = popover.panel.hidden;
+        for (const other of popovers) setPopoverOpen(other, false);
+        if (open) setPopoverOpen(popover, true);
       });
     }
-    syncWaveOptionsSummary();
+    const speedOptions = $('#speed-options');
+    speedOptions.addEventListener('click', (e) => {
+      const option = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-speed]');
+      if (!option) return;
+      ctx.setSpeed(Number(option.dataset.speed));
+      setPopoverOpen(speedPopover, false, true);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const open = popovers.find((popover) => !popover.panel.hidden);
+      if (!open) return;
+      e.preventDefault();
+      setPopoverOpen(open, false, true);
+    });
+    document.addEventListener('click', (e) => {
+      const target = e.target as Node;
+      for (const popover of popovers) {
+        if (!popover.panel.hidden && !popover.panel.contains(target) && !popover.button.contains(target)) setPopoverOpen(popover, false);
+      }
+    });
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
         '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-profile],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
@@ -464,14 +460,13 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
           group.hidden = !!el.value && group.dataset.scenarioTopic !== el.value;
         $('#scenario-all .scenario-reference').hidden = !!el.value;
       }
-      if (el.id === 'sim-speed') ctx.setSpeed(Number(el.value));
+      if (el.id === 'numeric-density' && (el.value === '6' || el.value === '13')) ctx.setTileDensity(Number(el.value) as 6 | 13);
       if (el.id === 'wave-window') plots.setWaveWindow(Number(el.value));
       if (el.id === 'wave-style') plots.setWaveStyle(el.value as 'sweep' | 'scroll');
       if (el.id === 'wave-scale') plots.setWaveScaleMode(el.value as 'auto' | 'fixed');
       if (!ctx.fixtureId && el.id === 'wave-window') savePrefs({ waveWindow: el.value as '6' | '12' | '24' });
       if (!ctx.fixtureId && el.id === 'wave-style') savePrefs({ waveStyle: el.value as 'sweep' | 'scroll' });
       if (!ctx.fixtureId && el.id === 'wave-scale') savePrefs({ waveScale: el.value as 'auto' | 'fixed' });
-      if (['wave-window', 'wave-style', 'wave-scale'].includes(el.id)) syncWaveOptionsSummary();
       if ((el as HTMLInputElement).dataset.modeField) modes.readModeField(el as HTMLInputElement);
     });
     $('#session-input').addEventListener('change', async (e) => {

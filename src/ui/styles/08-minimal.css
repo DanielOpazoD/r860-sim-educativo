@@ -98,15 +98,135 @@
 .wave-options-wrap {
   position: relative;
 }
-.numeric-tools {
+.speed-wrap {
+  position: relative;
+}
+.signal-toolbar .time-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  min-width: 0;
+  gap: 8px;
 }
-.numeric-tools .exam-toggle[aria-pressed='true'] {
-  background: #173e3c;
+.signal-toolbar .time-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+.signal-toolbar .time-group + .time-group {
+  margin-left: 0;
+  padding-left: 8px;
+  border-left: 1px solid var(--shell-line);
+}
+.split-control-group {
+  height: 28px;
+  box-sizing: border-box;
+  overflow: visible;
+  border: 1px solid var(--shell-line);
+  border-radius: var(--shell-radius-sm);
+}
+.split-control-group #sim-pause,
+.split-control-group .speed-button {
+  height: 28px;
+  min-height: 28px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.split-control-group #sim-pause {
+  border-right: 1px solid var(--shell-line);
+  border-radius: var(--shell-radius-sm) 0 0 var(--shell-radius-sm);
+}
+.split-control-group .speed-button {
+  min-width: 48px;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 7px;
+}
+.speed-chevron {
+  width: 11px;
+  height: 11px;
+  color: var(--shell-dim);
+}
+.speed-button.is-modified {
+  color: var(--accent);
+}
+.wave-options.speed-options {
+  right: auto;
+  left: 0;
+  width: max-content;
+  min-width: 76px;
+  gap: 2px;
+  padding: 6px;
+}
+.speed-option {
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--shell-radius-sm);
+  background: transparent;
+  color: var(--shell-text);
+  text-align: left;
+  cursor: pointer;
+}
+.speed-option:hover,
+.speed-option[aria-checked='true'] {
+  background: var(--shell-raised);
+}
+.exam-switch {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--shell-line);
+  border-radius: var(--shell-radius);
+  background: var(--shell-surface);
+  color: var(--shell-text);
+  text-align: left;
+  cursor: pointer;
+}
+.exam-switch-track {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+  background: var(--shell-raised);
+}
+.exam-switch-track > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--shell-muted);
+  transition: transform 160ms ease;
+}
+.exam-switch.active .exam-switch-track {
   border-color: var(--accent);
-  color: #e1f4f2;
+  background: var(--accent);
+}
+.exam-switch.active .exam-switch-track > span {
+  transform: translateX(14px);
+  background: var(--shell-text);
+}
+.exam-switch-copy {
+  display: grid;
+  gap: 3px;
+}
+.exam-switch-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.exam-switch-copy small {
+  color: var(--shell-muted);
+  font-size: 10px;
+  line-height: 1.4;
 }
 .wave-options-button {
   white-space: nowrap;
@@ -150,6 +270,9 @@
   background: var(--shell-raised);
   color: var(--shell-text);
   font-size: 11px;
+}
+#density-field[hidden] {
+  display: none;
 }
 .welcome-intro {
   margin-top: 0;
@@ -264,24 +387,9 @@
   .signal-toolbar .button.small > span {
     white-space: nowrap;
   }
-  .signal-toolbar .inline-select select,
-  .signal-toolbar .speed-control select {
+  .signal-toolbar .inline-select select {
     height: 26px;
     min-height: 26px;
-  }
-  .signal-toolbar .speed-control select {
-    width: 64px;
-    min-width: 64px;
-    height: 28px;
-    min-height: 28px;
-    box-sizing: border-box;
-    padding: 0 20px 0 10px;
-    font-size: 12px;
-  }
-  .signal-toolbar .speed-control {
-    height: 28px;
-    min-height: 28px;
-    box-sizing: border-box;
   }
   .group-label {
     display: none;
@@ -333,9 +441,6 @@
   }
 }
 @media (min-width: 701px) and (max-width: 1500px) {
-  .signal-toolbar .simulation-clock {
-    display: none;
-  }
   .signal-toolbar .time-controls {
     min-width: 0;
     gap: 6px;
@@ -532,11 +637,15 @@
   font-size: 10px;
 }
 @media (max-width: 700px) {
-  .signal-toolbar .speed-control select {
-    width: 60px;
-    min-width: 60px;
-    padding: 0 20px 0 9px;
-    font-size: 12px;
+  .signal-toolbar .time-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .signal-toolbar .time-group + .time-group {
+    padding-left: 6px;
+  }
+  #speed-button {
+    padding-right: 6px;
   }
 }
 .palette-trigger {
