@@ -221,7 +221,7 @@ test.describe('Controles exteriores coherentes', () => {
   });
 
   test('las pestañas usan flechas/Home/End, el diálogo atrapa el foco y Escape lo cierra', async ({ page }) => {
-    await open(page, { speed: 1 });
+    await open(page);
     await openPersonalization(page);
     await expect(page.locator('#wave-options')).toHaveJSProperty('open', true);
     await expect(page.locator('#wave-options-button')).toHaveAttribute('aria-expanded', 'true');
@@ -370,7 +370,7 @@ test.describe('Controles exteriores coherentes', () => {
   });
 
   test('minRate respeta Off y su mínimo; switches y ayudas responden al teclado y al foco', async ({ page }) => {
-    await open(page, { speed: 4 });
+    await open(page, { speed: 1 });
     await page.locator('[data-action="modes"]').first().click();
     await page.locator('.mode-option[data-mode="CPAP_PS"]').click();
     const minRate = page.locator('[data-mode-field="minRate"]');
@@ -424,12 +424,15 @@ test.describe('Controles exteriores coherentes', () => {
     };
     await page.locator('.speed-option[data-speed="1"]').focus();
     for (const [key, speed] of [
-      ['ArrowLeft', 4],
+      ['ArrowLeft', 0.5],
       ['ArrowRight', 1],
       ['ArrowDown', 2],
       ['ArrowUp', 1],
+      ['Home', 0.25],
+      ['ArrowLeft', 4],
+      ['ArrowRight', 0.25],
       ['End', 4],
-      ['Home', 1],
+      ['Home', 0.25],
     ] as const) {
       await page.keyboard.press(key);
       await expectSpeed(speed);
