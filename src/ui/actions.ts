@@ -59,6 +59,16 @@ export interface Actions {
   bind(): void;
 }
 
+export function syncWaveOptionsSummary(): void {
+  const summary = document.querySelector<HTMLElement>('#wave-options-summary');
+  if (!summary) return;
+  const values = ['wave-window', 'wave-style', 'wave-scale'].map((id) => {
+    const select = document.getElementById(id) as HTMLSelectElement | null;
+    return select?.selectedOptions[0]?.textContent?.trim() ?? '';
+  });
+  summary.textContent = values.filter(Boolean).join(' · ');
+}
+
 export function createActions(ctx: AppContext, fx: Features): Actions {
   const { quick, hold, modes, alarms, metrics, plots, instructor } = fx;
   const debriefInput = () => ({
@@ -353,6 +363,30 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   }
 
   function bind(): void {
+    const waveOptionsButton = document.querySelector<HTMLButtonElement>('#wave-options-button');
+    const waveOptions = document.querySelector<HTMLDivElement>('#wave-options');
+    if (waveOptionsButton && waveOptions) {
+      const setWaveOptionsOpen = (open: boolean, returnFocus = false): void => {
+        waveOptions.hidden = !open;
+        waveOptionsButton.setAttribute('aria-expanded', String(open));
+        if (returnFocus) waveOptionsButton.focus();
+      };
+      waveOptionsButton.addEventListener('click', () => {
+        setWaveOptionsOpen(Boolean(waveOptions.hidden));
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !waveOptions.hidden) {
+          e.preventDefault();
+          setWaveOptionsOpen(false, true);
+        }
+      });
+      document.addEventListener('click', (e) => {
+        if (!waveOptions.hidden && !waveOptions.contains(e.target as Node) && !waveOptionsButton.contains(e.target as Node)) {
+          setWaveOptionsOpen(false);
+        }
+      });
+    }
+    syncWaveOptionsSummary();
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
         '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
@@ -413,6 +447,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (el.id === 'wave-window') plots.setWaveWindow(Number(el.value));
       if (el.id === 'wave-style') plots.setWaveStyle(el.value as 'sweep' | 'scroll');
       if (el.id === 'wave-scale') plots.setWaveScaleMode(el.value as 'auto' | 'fixed');
+      if (['wave-window', 'wave-style', 'wave-scale'].includes(el.id)) syncWaveOptionsSummary();
       if ((el as HTMLInputElement).dataset.modeField) modes.readModeField(el as HTMLInputElement);
     });
     $('#session-input').addEventListener('change', async (e) => {
