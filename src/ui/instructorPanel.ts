@@ -11,6 +11,7 @@ import { $, $$, icon, put } from './dom';
 import type { HoldPanel } from './holdPanel';
 import { infoButton, infoPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
+import { matchesProfile, PATIENT_PROFILES, profileHint, profileState } from './patientProfiles';
 import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type PhysSpec } from './patientControls';
 import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 import type { PlotsView } from './plotsView';
@@ -26,6 +27,7 @@ export interface InstructorPanel {
   updateTeacher(): void;
   setPhys(cmds: Command[], undo: Command[] | null): Promise<boolean>;
   fault(kind: string): Promise<void>;
+  applyProfile(id: string): Promise<void>;
   loadScenario(id: string): void;
   switchInstructor(tab: string): void;
   toggleTeacher(): void;
@@ -46,6 +48,7 @@ export function createInstructorPanel(
   let teacherVisible = deps.initialVisible;
   const eventUndo: Command[][] = [];
   let apneaApplied = false;
+  let profileTruthJson: string | null = null;
 
   function renderToggle(): void {
     $('#workspace').classList.toggle('teacher-hidden', !teacherVisible);
@@ -53,6 +56,20 @@ export function createInstructorPanel(
     tb.setAttribute('aria-pressed', String(teacherVisible));
     tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
     tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
+  }
+  function syncProfileButtons(patient: EngineFrame['truth']['patient'], effort: EngineFrame['truth']['effort']): void {
+    const json = JSON.stringify([patient, effort]);
+    if (json === profileTruthJson) return;
+    profileTruthJson = json;
+    let matched = false;
+    for (const profile of PATIENT_PROFILES) {
+      const selected = matchesProfile(patient, effort, profile);
+      const button = document.querySelector<HTMLButtonElement>(`#patient-profiles [data-profile="${profile.id}"]`);
+      button?.classList.toggle('active', selected);
+      button?.setAttribute('aria-pressed', String(selected));
+      matched ||= selected;
+    }
+    put('#profile-status', matched ? '' : 'Personalizado');
   }
   function updateTeacher(): void {
     const fr = ctx.frame as EngineFrame;
@@ -67,6 +84,7 @@ export function createInstructorPanel(
       r.style.setProperty('--fill', `${(100 * (Number(r.value) - sp.min)) / (sp.max - sp.min)}%`);
     }
     const p = fr.truth.patient;
+    syncProfileButtons(p, fr.truth.effort);
     syncPreset(
       $<HTMLSelectElement>('#preset-tissue'),
       TISSUE_PRESETS,
@@ -213,6 +231,15 @@ export function createInstructorPanel(
       return teacherVisible;
     },
     init() {
+      $('#patient-profiles').innerHTML = `
+        <h3 class="small-section-title">Perfil del paciente</h3>
+        <div class="profile-grid">${PATIENT_PROFILES.map(
+          (profile) =>
+            `<button class="profile-chip" data-profile="${profile.id}" aria-pressed="false" ${ctx.fixtureId ? 'disabled' : ''}><b>${profile.label}</b><small>${profileHint(profile)}</small></button>`,
+        ).join('')}</div>
+        <p id="profile-status" class="profile-status" aria-live="polite">Personalizado</p>
+      `;
+      profileTruthJson = null;
       $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
       $('#patient-extra-controls').innerHTML =
         // Los presets de referencia (U-37) van pegados a los deslizadores que rellenan: tras 'rohrer'.
@@ -231,6 +258,26 @@ export function createInstructorPanel(
     updateTeacher,
     setPhys,
     fault,
+    async applyProfile(id) {
+      if (ctx.fixtureId) return;
+      const frame = ctx.frame as EngineFrame | null;
+      const profile = PATIENT_PROFILES.find((item) => item.id === id);
+      if (!frame || !profile) return;
+      const next = profileState(profile);
+      const previousPatient = { ...frame.truth.patient };
+      const previousEffort = { ...frame.truth.effort };
+      const applied = await setPhys(
+        [
+          { type: 'setPatient', params: { ...next.patient }, replace: true },
+          { type: 'setEffort', params: { ...next.effort }, replace: true },
+        ],
+        [
+          { type: 'setPatient', params: previousPatient, replace: true },
+          { type: 'setEffort', params: previousEffort, replace: true },
+        ],
+      );
+      if (applied) ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
+    },
     loadScenario,
     switchInstructor,
     toggleTeacher() {
@@ -242,8 +289,8 @@ export function createInstructorPanel(
       const scenario = ctx.scenario;
       await setPhys(
         [
-          { type: 'setPatient', params: { ...scenario.patient } },
-          { type: 'setEffort', params: { ...scenario.effort } },
+          { type: 'setPatient', params: { ...scenario.patient }, replace: true },
+          { type: 'setEffort', params: { ...scenario.effort }, replace: true },
           { type: 'setSensors', params: { ...scenario.sensors } },
         ],
         null,

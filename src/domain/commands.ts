@@ -13,8 +13,8 @@ export type Command =
   | { type: 'increaseO2Stop' }
   | { type: 'acknowledgeAlarms'; id?: string }
   | { type: 'audioPause' }
-  | { type: 'setPatient'; params: Partial<PatientParams> }
-  | { type: 'setEffort'; params: Partial<EffortParams> }
+  | { type: 'setPatient'; params: Partial<PatientParams>; replace?: boolean }
+  | { type: 'setEffort'; params: Partial<EffortParams>; replace?: boolean }
   | { type: 'setSensors'; params: Partial<SensorParams> }
   | { type: 'setLungVolume'; vAbsL: number };
 

@@ -1,5 +1,5 @@
 import type { Command, CommandResult } from '../domain/commands';
-import type { Actor, AlarmLimits, SessionEvent, VcSettings, VentilationState } from '../domain/types';
+import type { Actor, AlarmLimits, EffortParams, PatientParams, SessionEvent, VcSettings, VentilationState } from '../domain/types';
 import type { ProfileSpec } from '../domain/profile';
 import {
   isOnGrid,
@@ -149,7 +149,7 @@ export const COMMAND_HANDLERS: Handlers = {
     return ok;
   },
   setPatient: (ctx, cmd, actor) => {
-    const p = { ...ctx.patient.params, ...cmd.params };
+    const p: PatientParams = cmd.replace ? ({ ...cmd.params } as PatientParams) : { ...ctx.patient.params, ...cmd.params };
     const pe = validatePatientParams(p);
     if (pe.length) return reject(`Parámetros de paciente inválidos: ${pe.join('; ')}`);
     ctx.patient.applyParams(p);
@@ -157,7 +157,7 @@ export const COMMAND_HANDLERS: Handlers = {
     return ok;
   },
   setEffort: (ctx, cmd, actor) => {
-    const e = { ...ctx.effort.params, ...cmd.params };
+    const e: EffortParams = cmd.replace ? ({ ...cmd.params } as EffortParams) : { ...ctx.effort.params, ...cmd.params };
     const ee = validateEffort(e);
     if (ee.length) return reject(ee.join('; '));
     ctx.effort.params = e;

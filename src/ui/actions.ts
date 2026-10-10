@@ -402,7 +402,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     syncWaveOptionsSummary();
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
-        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
+        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-profile],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode]',
       );
       if (!el) return;
       e.preventDefault();
@@ -417,6 +417,10 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         for (const button of document.querySelectorAll<HTMLElement>('[data-scenario-view]'))
           button.setAttribute('aria-pressed', String(button.dataset.scenarioView === el.dataset.scenarioView));
         $('#dialog-content').scrollTop = 0;
+        return;
+      }
+      if (el.dataset.profile) {
+        if (!(el as HTMLButtonElement).disabled) void instructor.applyProfile(el.dataset.profile);
         return;
       }
       if (ctx.locked && el.closest('#monitor') && !['mute', 'alarms', 'unlock', 'closeHold'].includes(el.dataset.action ?? '')) {

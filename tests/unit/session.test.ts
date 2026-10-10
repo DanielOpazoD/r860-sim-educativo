@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { exportSession, importSession, replaySession } from '../../src/history/session';
+import { findScenario } from '../../src/scenarios';
 import { benchSim, runUntilBreath, BENCH_PATIENT } from '../helpers';
 
 describe('TIM · reproducibilidad', () => {
@@ -42,6 +43,47 @@ describe('TIM · reproducibilidad', () => {
     expect(a.breaths.length).toBe(b.breaths.length);
     expect(a.breaths[3]!.pmean).toBe(b.breaths[3]!.pmean);
   });
+
+  it('setPatient y setEffort reemplazan mecánica opcional y se reproducen desde la sesión', () => {
+    const sc01 = findScenario('SC-01')!,
+      sc19 = findScenario('SC-19')!,
+      sc25 = findScenario('SC-25')!;
+    const sim = benchSim({
+      patient: {
+        ...BENCH_PATIENT,
+        sigmoid: { b: 1.6, c: 18, d: 5 },
+        recruit: { frac: 0.6, pOpen: 28, pClose: 9, tauOpenS: 0.6, tauCloseS: 8 },
+        second: { crs: 0.03, rInsp: 8, rExp: 8 },
+      },
+    });
+
+    expect(sim.command({ type: 'setPatient', params: { crs: 0.04 } }).accepted).toBe(true);
+    expect(sim.frame().truth.patient.sigmoid).toBeDefined();
+    expect(sim.command({ type: 'setPatient', params: { ...sc01.patient }, replace: true }).accepted).toBe(true);
+    expect(sim.frame().truth.patient.sigmoid).toBeUndefined();
+    expect(sim.frame().truth.patient.recruit).toBeUndefined();
+    expect(sim.frame().truth.patient.second).toBeUndefined();
+    expect(sim.command({ type: 'setEffort', params: { reverse: { amplitude: 8, delayS: 0.5 } } }).accepted).toBe(true);
+    expect(sim.frame().truth.effort.reverse).toBeDefined();
+    expect(sim.frame().truth.effort.enabled).toBe(false);
+    expect(sim.command({ type: 'setPatient', params: { ...sc25.patient }, replace: true }).accepted).toBe(true);
+    expect(sim.command({ type: 'setEffort', params: { ...sc19.effort }, replace: true }).accepted).toBe(true);
+    expect(sim.frame().truth.effort.reverse).toBeUndefined();
+    sim.run(1000);
+
+    const imported = importSession(JSON.stringify(exportSession(sim)));
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    const replay = replaySession(imported.session);
+    expect(replay.frame().truth.patient).toEqual(sim.frame().truth.patient);
+    expect(replay.frame().truth.effort).toEqual(sim.frame().truth.effort);
+  });
+
+  it('rechaza reemplazos parciales de paciente y esfuerzo', () => {
+    const sim = benchSim();
+    expect(sim.command({ type: 'setPatient', params: { crs: 0.03 }, replace: true }).accepted).toBe(false);
+    expect(sim.command({ type: 'setEffort', params: { enabled: true }, replace: true }).accepted).toBe(false);
+  });
 });
 
 describe('SEC-03 · importación robusta', () => {
@@ -83,6 +125,20 @@ describe('SEC-03 · importación robusta', () => {
     const r2 = importSession(JSON.stringify(nulos));
     expect(r2.ok).toBe(false);
     if (!r2.ok) expect(r2.errors.join(' ')).toMatch(/variabilidad|reverso/);
+  });
+
+  it('rechaza replace no booleano en comandos de sesión importados', () => {
+    const sim = benchSim();
+    runUntilBreath(sim, 1);
+    const bad = JSON.parse(JSON.stringify(exportSession(sim))) as { finalSimTimeMs: number; commands: unknown[] };
+    bad.commands.push({
+      simTimeMs: bad.finalSimTimeMs,
+      actor: 'instructor',
+      command: { type: 'setPatient', params: { ...BENCH_PATIENT }, replace: 'yes' },
+    });
+    const result = importSession(JSON.stringify(bad));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.join(' ')).toContain('replace debe ser booleano');
   });
 
   it('la reproducción hasta t no aplica comandos previstos para después de t', () => {
