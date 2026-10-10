@@ -367,7 +367,8 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   function bind(): void {
     const speedPopover = { button: $<HTMLButtonElement>('#speed-button'), panel: $('#speed-options') };
     const waveOptionsPopover = { button: $<HTMLButtonElement>('#wave-options-button'), panel: $('#wave-options') };
-    const popovers = [speedPopover, waveOptionsPopover];
+    const morePopover = { button: $<HTMLButtonElement>('#more-button'), panel: $('#more-menu') };
+    const popovers = [speedPopover, waveOptionsPopover, morePopover];
     const setPopoverOpen = (popover: (typeof popovers)[number], open: boolean, returnFocus = false): void => {
       popover.panel.hidden = !open;
       popover.button.setAttribute('aria-expanded', String(open));
@@ -386,6 +387,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (!option) return;
       ctx.setSpeed(Number(option.dataset.speed));
       setPopoverOpen(speedPopover, false, true);
+    });
+    morePopover.panel.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menuitemcheckbox"]')) setPopoverOpen(morePopover, false, true);
     });
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;

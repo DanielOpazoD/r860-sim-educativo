@@ -47,6 +47,7 @@
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01"/></symbol>
 <symbol id="i-graduation" viewBox="0 0 24 24"><path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11v5c0 2 3 3.5 6 3.5s6-1.5 6-3.5v-5"/><path d="M22 9v6"/></symbol>
 <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></symbol>
 </defs></svg>
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
@@ -54,12 +55,17 @@
   <button class="app-context" data-action="scenarios" aria-label="Cambiar escenario" title="Cambiar escenario"><span class="live-dot" id="live-dot"></span><span class="app-context-copy"><span id="scenario-name">Banco lineal pasivo</span><span class="app-context-separator" aria-hidden="true">·</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
   <div class="top-actions">
     <button class="button subtle palette-trigger" data-action="palette" aria-label="Buscar comandos" title="Buscar comandos (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><svg class="icon"><use href="#i-search"/></svg><span>Buscar</span><kbd class="palette-kbd">⌘K</kbd></button>
-    <button class="button subtle" data-action="help" aria-label="Guía" title="Guía"><svg class="icon"><use href="#i-help"/></svg><span>Guía</span></button>
     <button class="button subtle" data-action="session" aria-label="Sesión" title="Sesión"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
     <button class="button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel de entrenamiento" title="Ocultar panel de entrenamiento" aria-pressed="true"><svg class="icon"><use href="#i-graduation"/></svg></button>
-    <div class="toolbar-divider"></div>
-    <button class="button icon-only" id="sound-toggle" data-action="sound" aria-label="Activar audio de alarmas" title="Activar audio de alarmas" aria-pressed="false"><svg class="icon"><use href="#i-muted"/></svg></button>
-    <button class="button icon-only" data-action="fullscreen" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icon"><use href="#i-expand"/></svg></button>
+    <div class="more-wrap">
+      <button class="button icon-only" id="more-button" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" aria-label="Más opciones" title="Más opciones"><svg class="icon"><use href="#i-more"/></svg></button>
+      <div id="more-menu" class="wave-options more-menu" role="menu" hidden>
+        <button role="menuitem" data-action="session" class="more-mobile-only"><svg class="icon"><use href="#i-download"/></svg><span>Sesión</span></button>
+        <button role="menuitem" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Guía y alcance</span></button>
+        <button role="menuitemcheckbox" id="sound-toggle" data-action="sound" aria-checked="false"><svg class="icon"><use href="#i-muted"/></svg><span>Audio de alarmas</span></button>
+        <button role="menuitem" data-action="fullscreen"><svg class="icon"><use href="#i-expand"/></svg><span>Pantalla completa</span></button>
+      </div>
+    </div>
   </div>
 </header>
 <div class="global-notice" id="global-notice" hidden role="status"></div>

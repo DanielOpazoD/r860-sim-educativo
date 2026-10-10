@@ -17,11 +17,6 @@ const MODE_OPTIONS: [VentMode, string][] = [
   ['AC_PC', 'A/C PC'],
   ['CPAP_PS', 'CPAP/PS'],
 ];
-const OTHER_MODES: [string, string][] = [
-  ['A/C PRVC', 'No disponible: el algoritmo adaptativo del fabricante no está publicado'],
-  ['SIMV VC / PC', 'Próximamente'],
-  ['BiLevel / APRV / NIV', 'No disponible en este simulador'],
-];
 
 export interface ModeDialog {
   openModes(): void;
@@ -88,13 +83,10 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
       const why = on ? '' : 'Pendiente de banco de pruebas en este perfil';
       return `<button class="mode-option ${m === id ? 'selected' : ''}" data-mode="${id}" aria-pressed="${m === id}" ${m === id ? 'aria-current="true"' : ''} ${on ? '' : `disabled title="${esc(why)}"`}><b>${label}</b>${on ? '' : `<small>${esc(why)}</small>`}</button>`;
     }).join('');
-    const others = OTHER_MODES.map(
-      ([mm, why]) => `<button class="mode-option" disabled aria-pressed="false" title="${esc(why)}"><b>${mm}</b></button>`,
-    ).join('');
     ctx.dialog.open(
       'modes',
       'Modo y ajustes de ventilación',
-      `<div class="mode-layout"><nav class="mode-list" aria-label="Modos ventilatorios">${options}${others}</nav><div id="mode-fields">${modeFields()}</div></div>`,
+      `<div class="mode-layout"><nav class="mode-list" aria-label="Modos ventilatorios">${options}<p class="mode-other-note">Otros modos del R860 (PRVC, SIMV, BiLevel, APRV, NIV) no se simulan.</p></nav><div id="mode-fields">${modeFields()}</div></div>`,
       CANCEL_BTN + btn('Confirmar ajustes', 'confirmModes'),
       'wide',
     );

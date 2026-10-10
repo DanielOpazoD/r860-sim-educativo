@@ -46,13 +46,6 @@
     width: 17px;
     height: 17px;
   }
-  .top-actions .toolbar-divider {
-    margin: 0 3px;
-    height: 20px;
-  }
-  .top-actions [data-action='fullscreen'] {
-    display: none;
-  }
   .workspace {
     padding: 18px 13px;
     gap: 22px;
@@ -315,10 +308,10 @@
     padding: 9px 5px;
     min-height: 40px;
   }
-  .mode-extra-note {
+  .mode-other-note {
     grid-column: 1/-1;
     margin-top: 5px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .settings-grid {
     grid-template-columns: repeat(2, 1fr);
