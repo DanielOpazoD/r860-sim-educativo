@@ -436,14 +436,14 @@
   }
 }
 #patient-profiles {
-  padding: 12px 14px 8px;
+  padding: 14px 0 6px;
 }
 #patient-profiles .small-section-title {
   margin: 0 0 8px;
 }
 .profile-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 .profile-chip {
@@ -462,12 +462,12 @@
   text-align: left;
 }
 .profile-chip b {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.2;
 }
 .profile-chip small {
   color: #7c8993;
-  font-size: 9px;
+  font-size: 10.5px;
   line-height: 1.2;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -488,7 +488,10 @@
   font-size: 10px;
 }
 @media (max-width: 700px) {
-  .profile-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .signal-toolbar .speed-control select {
+    width: 60px;
+    min-width: 60px;
+    padding: 0 20px 0 9px;
+    font-size: 12px;
   }
 }
