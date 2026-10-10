@@ -168,12 +168,20 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
   });
   test('PRC-01 (UI) · bloqueo inspiratorio válido, con hora, que persiste al cerrar y reabrir el panel', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
+    const pplat = page.locator('#numeric-grid [data-metric="pplat"]');
+    await expect(pplat.locator('.numeric-value')).toHaveText('—');
+    await expect(pplat.locator('.numeric-age')).toHaveText('Requiere bloqueo');
+    await expect(pplat).toHaveAttribute('aria-label', 'Pplat: requiere un bloqueo inspiratorio. Información y medición');
     await page.click('[data-action="inspiratory"]');
     await expect(page.locator('#hold-panel')).toBeVisible();
     await page.click('#hold-run');
     await expect(page.locator('#hold-status')).toContainText(/Esperando|Oclusión|Medido/);
     await expect(page.locator('#hold-value')).toHaveText('15', { timeout: 20_000 });
     await expect(page.locator('#hold-second')).toHaveText('50');
+    await expect(pplat.locator('.numeric-value')).not.toHaveText('—');
+    await expect(pplat.locator('.numeric-age')).toContainText('Med.');
+    await expect(pplat).toHaveAttribute('title', 'Pplat: información y medición');
+    await expect(pplat).toHaveAttribute('aria-label', 'Pplat. Información y medición');
     const status = await page.locator('#hold-status').textContent();
     const wallTimeMs = (await frame(page)).procedure.last.inspHold?.wallTimeMs as number;
     const expectedDate = await page.evaluate((ms) => {
@@ -728,7 +736,7 @@ test.describe('EXM · modo examen', () => {
     await page.click('#exam-toggle');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(() => page.evaluate(() => window.__r860.exam.active)).toBe(true);
-    // Las casillas con dato muestran «?»; las sin medición conservan su motivo, nunca una cifra falsa.
+    // Las casillas con dato muestran «?»; las sin medición conservan el guion y explican el motivo debajo.
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
     await expect(page.locator('#app-dialog')).toBeVisible();
@@ -773,8 +781,7 @@ test.describe('EXM · modo examen', () => {
     await page.click('[data-view="teaching"]');
     await expect(page.locator('.edu-card').first().locator('header b')).toContainText('?');
     await expect(page.locator('.edu-card').first()).not.toContainText(/\d+ = /);
-    // El botón Examen vive en la columna numérica, no visible en el Resumen.
-    await page.click('[data-view="waves"]');
+    // El botón Examen vive en la barra de señal y está disponible desde cualquier vista.
     await page.click('#exam-toggle'); // al salir, la cifra y la sustitución vuelven
     await page.click('[data-view="teaching"]');
     await expect(page.locator('.edu-card').first().locator('header b')).not.toContainText('?');
@@ -794,6 +801,21 @@ test.describe('BLD · bucle docente con presión muscular', () => {
 });
 
 test.describe('DEN · densidad de la columna numérica', () => {
+  test('los controles quedan fuera del monitor y la densidad sólo aparece en Curvas', async ({ page }) => {
+    await open(page);
+    for (const id of ['numeric-density', 'exam-toggle']) {
+      const button = page.locator(`#${id}`);
+      expect(await button.evaluate((el) => el.closest('#monitor'))).toBeNull();
+      expect(await button.evaluate((el) => el.closest('.signal-toolbar'))).not.toBeNull();
+    }
+    const density = page.locator('#numeric-density');
+    await expect(density).toBeVisible();
+    await page.click('[data-view="loops"]');
+    await expect(density).toBeHidden();
+    await page.click('[data-view="waves"]');
+    await expect(density).toBeVisible();
+  });
+
   test('el alternador muestra 6 casillas grandes, persiste y vuelve a 13 sin romper la tabla', async ({ page }) => {
     await open(page);
     const visibles = () => page.locator('#numeric-grid .numeric:visible');

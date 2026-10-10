@@ -36,6 +36,10 @@ const EVENT_KIND: Record<string, string> = {
   mode: 'modo',
 };
 
+function setAttributeIfChanged(el: Element, name: string, value: string): void {
+  if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+}
+
 export interface MetricsView {
   /** Construye las rejillas de casillas (tabindex itinerante: una sola entrada por Tab). */
   init(): void;
@@ -79,7 +83,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
     init() {
       $('#numeric-grid').innerHTML = METRICS.map(
         (m, i) =>
-          `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value">—</strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span><span class="numeric-age"></span></button>`,
+          `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}<span class="numeric-info" aria-hidden="true">${icon('info')}</span></span><strong class="numeric-value"><span>—</span></strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span><span class="numeric-age"></span></button>`,
       ).join('');
       $('#big-metrics').innerHTML = BIG_METRICS.map(
         ([k, l, u], i) =>
@@ -90,22 +94,37 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       const fr = ctx.frame as EngineFrame;
       for (const m of METRICS) {
         const el = $(`#numeric-grid [data-metric="${m.key}"]`);
-        const valor = el.querySelector('.numeric-value') as HTMLElement;
+        const valor = el.querySelector('.numeric-value > span') as HTMLElement;
         const h = fr.procedure.last.inspHold;
-        // El guión sin explicación enseñaba que el dato faltaba, no por qué: el motivo ocupa el sitio de la cifra.
-        let motivo = '';
-        if (metricValue(fr, m) === null && fr.ventilation !== 'standby') {
-          const s = metricSample(fr, m.key);
-          const razon = humanReason(s?.reason);
-          if (m.source === 'hold' && !h) motivo = 'sin bloqueo';
-          else if (m.source === 'hold' && h && h.quality !== 'valid') motivo = 'bloqueo no válido';
-          else if (!razon) motivo = 'sin dato';
-          else motivo = razon.length > 16 ? razon.slice(0, 16) + '…' : razon;
+        const medido = metricValue(fr, m);
+        const sinDato = medido === null;
+        const muestra = metricSample(fr, m.key);
+        const razon = humanReason(muestra?.reason);
+        let motivoCompleto = '';
+        let motivoCorto = '';
+        if (sinDato && fr.ventilation !== 'standby') {
+          if (m.source === 'hold' && !h) {
+            motivoCompleto = 'requiere un bloqueo inspiratorio';
+            motivoCorto = 'Requiere bloqueo';
+          } else if (m.source === 'hold' && h && h.quality !== 'valid') {
+            motivoCompleto = razon || 'bloqueo no válido';
+            motivoCorto = 'Bloqueo no válido';
+          } else {
+            motivoCompleto = razon || 'sin dato';
+            motivoCorto = razon ? (razon.length > 16 ? `${razon.slice(0, 16)}…` : razon) : 'Sin dato';
+          }
+          valor.classList.add('sin-dato');
+          put(valor, '—');
+          const accesible = `${m.label}: ${motivoCompleto}. Información y medición`;
+          setAttributeIfChanged(el, 'title', accesible);
+          setAttributeIfChanged(el, 'aria-label', accesible);
+        } else {
+          valor.classList.remove('sin-dato');
+          put(valor, oculto(m.key) ? '?' : f(medido, m.decimals));
+          setAttributeIfChanged(el, 'title', `${m.label}: información y medición`);
+          setAttributeIfChanged(el, 'aria-label', `${m.label}. Información y medición`);
         }
-        if (motivo) valor.innerHTML = `<span class="sin-dato">${esc(motivo)}</span>`;
-        else if (oculto(m.key)) put(valor, '?');
-        else put(valor, f(value(m), m.decimals));
-        el.classList.toggle('exam-masked', !motivo && oculto(m.key));
+        el.classList.toggle('exam-masked', !sinDato && oculto(m.key));
         put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
@@ -118,11 +137,12 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         const est = examEstimates.get(m.key);
         put(
           el.querySelector('.numeric-age'),
-          est
-            ? `Est. ${f(est.guess, m.decimals)}`
-            : m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
-              ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
-              : '',
+          motivoCorto ||
+            (est
+              ? `Est. ${f(est.guess, m.decimals)}`
+              : m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null
+                ? `Med. ${clock((h.completedAtMs ?? 0) / 1000)}`
+                : ''),
         );
       }
       for (const e of $$('#big-metrics [data-metric]')) {
