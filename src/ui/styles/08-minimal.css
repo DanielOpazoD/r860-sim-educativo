@@ -206,6 +206,9 @@
     height: 26px;
     min-height: 26px;
   }
+  .signal-toolbar .speed-control select {
+    min-width: 58px;
+  }
   .group-label {
     display: none;
   }
