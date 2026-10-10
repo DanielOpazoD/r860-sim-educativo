@@ -8,6 +8,7 @@ export type Prefs = {
   waveStyle?: 'sweep' | 'scroll';
   waveScale?: 'auto' | 'fixed';
   instructorVisible?: boolean;
+  patientMoreOpen?: boolean;
   welcomed?: boolean;
 };
 
@@ -33,6 +34,7 @@ function normalize(value: unknown): Prefs {
       ? { waveScale: source.waveScale as Prefs['waveScale'] }
       : {}),
     ...(typeof source.instructorVisible === 'boolean' ? { instructorVisible: source.instructorVisible } : {}),
+    ...(typeof source.patientMoreOpen === 'boolean' ? { patientMoreOpen: source.patientMoreOpen } : {}),
     ...(typeof source.welcomed === 'boolean' ? { welcomed: source.welcomed } : {}),
   };
 }

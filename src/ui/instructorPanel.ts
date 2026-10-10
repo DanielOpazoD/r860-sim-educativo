@@ -12,11 +12,11 @@ import type { HoldPanel } from './holdPanel';
 import { infoButton, infoPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
 import { matchesProfile, PATIENT_PROFILES, profileHint, profileState } from './patientProfiles';
-import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type PhysSpec } from './patientControls';
+import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type PhysSpec } from './patientControls';
 import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
-import { savePrefs } from './prefs';
+import { loadPrefs, savePrefs } from './prefs';
 import { isMobile } from './labels';
 
 export interface InstructorPanel {
@@ -244,12 +244,13 @@ export function createInstructorPanel(
       `;
       profileTruthJson = null;
       $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, infoButton, infoPanel);
-      $('#patient-extra-controls').innerHTML =
-        // Los presets de referencia (U-37) van pegados a los deslizadores que rellenan: tras 'rohrer'.
-        physHtml(PATIENT_EXTRA.slice(0, PATIENT_EXTRA.indexOf('rohrer') + 1), infoButton, infoPanel) +
-        presetsHtml(infoButton, infoPanel) +
-        physHtml(PATIENT_EXTRA.slice(PATIENT_EXTRA.indexOf('rohrer') + 1), infoButton, infoPanel) +
-        `<p class="settings-annotation">La fuga se modela en la pieza en Y, lineal con la presión; sin compensación de fuga ni distensibilidad del circuito.</p>`;
+      $('#patient-extra-controls').innerHTML = PATIENT_GROUPS.map(
+        (group) =>
+          `<section class="phys-group"><h4 class="phys-group-title">${group.title}</h4>${physHtml(group.keys, infoButton, infoPanel)}${group.presets ? presetsHtml(infoButton, infoPanel) : ''}${group.note ? `<p class="settings-annotation">${group.note}</p>` : ''}</section>`,
+      ).join('');
+      const moreParams = $<HTMLDetailsElement>('.advanced-patient');
+      moreParams.open = loadPrefs().patientMoreOpen ?? false;
+      moreParams.addEventListener('toggle', () => savePrefs({ patientMoreOpen: moreParams.open }));
       $('#fault-grid').innerHTML = FAULTS.map(
         ([id, i, l, d, off]) =>
           `<button data-event="${id}" id="event-${id}" ${off ? 'disabled' : ''}>${icon(i)}<b>${l}</b><small>${d}</small></button>`,

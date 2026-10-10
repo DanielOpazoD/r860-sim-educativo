@@ -348,32 +348,37 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setSensors', params: { fio2Bias: v / 100 } }),
   },
 };
-export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort', 'effortExp'];
-export const PATIENT_EXTRA = [
-  'secondCrs',
-  'secondR',
-  'eflPcrit',
-  'airwayCollapse',
-  'sigmoidB',
-  'sigmoidC',
-  'sigmoidD',
-  'recruitFrac',
-  'recruitPOpen',
-  'recruitPClose',
-  'viscoelastic',
-  'viscTau',
-  'rohrer',
-  'expValve',
-  'leak',
-  'circuitCompliance',
-  'patientRR',
-  'muscleTi',
-  'effortVariability',
-  'reverseAmp',
-  'reverseDelay',
-  'o2Tau',
-  'o2Bias',
+export const PATIENT_MAIN = ['compliance', 'resistance', 'effort'];
+export const PATIENT_GROUPS: { title: string; keys: string[]; presets?: true; note?: string }[] = [
+  { title: 'Espiración', keys: ['expResistance', 'effortExp'] },
+  {
+    title: 'Pulmón',
+    keys: [
+      'secondCrs',
+      'secondR',
+      'eflPcrit',
+      'airwayCollapse',
+      'sigmoidB',
+      'sigmoidC',
+      'sigmoidD',
+      'recruitFrac',
+      'recruitPOpen',
+      'recruitPClose',
+      'viscoelastic',
+      'viscTau',
+      'rohrer',
+    ],
+    presets: true,
+  },
+  {
+    title: 'Circuito',
+    keys: ['expValve', 'leak', 'circuitCompliance'],
+    note: 'La fuga se modela en la pieza en Y, lineal con la presión; sin compensación de fuga ni distensibilidad del circuito.',
+  },
+  { title: 'Esfuerzo del paciente', keys: ['patientRR', 'muscleTi', 'effortVariability', 'reverseAmp', 'reverseDelay'] },
+  { title: 'Sensor de O₂', keys: ['o2Tau', 'o2Bias'] },
 ];
+export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
 /** Botones de eventos (pestaña «Eventos»): [id, icono, título, descripción, deshabilitado]. */
 export const FAULTS: [string, string, string, string, boolean][] = [
   ['resistance', 'wave', 'Resistencia ×2', 'Aumenta la carga resistiva', false],
