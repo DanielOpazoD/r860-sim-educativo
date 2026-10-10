@@ -41,7 +41,11 @@ declare global {
   }
 }
 
-export async function open(page: Page, params: Record<string, string | number> = {}): Promise<void> {
+export async function open(page: Page, params: Record<string, string | number> = {}, options: { firstRun?: boolean } = {}): Promise<void> {
+  if (!options.firstRun)
+    await page.addInitScript(() => {
+      if (!localStorage.getItem('r860.prefs')) localStorage.setItem('r860.prefs', JSON.stringify({ v: 1, welcomed: true }));
+    });
   const q = new URLSearchParams({ t0: T0, seed: '1', ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) });
   await page.goto(`/?${q.toString()}`);
   await page.waitForFunction(() => window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });

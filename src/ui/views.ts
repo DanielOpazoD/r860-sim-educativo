@@ -2,6 +2,7 @@
 import type { AppContext, ViewId } from './context';
 import { $, $$ } from './dom';
 import { isMobile } from './labels';
+import { savePrefs } from './prefs';
 
 export const VIEWS: ViewId[] = ['waves', 'basic', 'loops', 'data', 'trends', 'log', 'teaching'];
 
@@ -30,6 +31,7 @@ export function createViews(ctx: AppContext): Views {
       ctx.lesson.flags[v] = true;
       ctx.markDirty();
       ctx.updateUI();
+      if (!ctx.fixtureId) savePrefs({ view });
     },
     initMonitorScale() {
       const resize = (): void => {

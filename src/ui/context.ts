@@ -20,7 +20,7 @@ export interface CommandResult {
 /** Diálogo modal único (#app-dialog): quién lo abrió y avisos para que cada rasgo limpie su borrador al cerrarse. */
 export interface DialogHost {
   readonly kind: string;
-  open(kind: string, title: string, html: string, footer?: string, size?: string): void;
+  open(kind: string, title: string, html: string, footer?: string | null, size?: string): void;
   close(): void;
   onOpen(listener: () => void): void;
   onClose(listener: () => void): void;

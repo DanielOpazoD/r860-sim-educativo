@@ -20,6 +20,9 @@ export const menuHTML = (): string =>
       `<button class="menu-entry" data-action="${a}">${icon(i)}<span><b>${l}</b><small>${d}</small></span>${icon('arrow')}</button>`,
   ).join('')}</div>`;
 
+export const welcomeHTML = (): string =>
+  `<p class="welcome-intro">Un ventilador virtual para aprender mecánica respiratoria sin riesgo.</p><div class="scenario-grid welcome-choices"><button class="scenario-card welcome-choice" id="welcome-free" data-action="welcome-free"><h3>Explorar libremente</h3><p>Banco pasivo con todos los mandos a tu alcance.</p></button><button class="scenario-card welcome-choice" id="welcome-guided" data-action="welcome-guided"><h3>Práctica guiada</h3><p>Ocho prácticas cortas con objetivos claros.</p></button></div><p class="welcome-footnote">Simulador educativo: no es un equipo clínico ni usa datos de pacientes.</p>`;
+
 export const toolsHTML = (): string =>
   `<div class="tools-grid">${[
     ['inspiratory', 'Bloqueo inspiratorio', 'Mide Pplat y estima Cstat cuando la meseta es válida.'],
@@ -51,7 +54,7 @@ export function sessionHTML(scenarioName: string, simS: number, engineVersion: s
     )
     .join(
       '',
-    )}</div><div class="session-facts"><span>Escenario: <b>${esc(scenarioName)}</b></span><span>Tiempo: <b>${clock(simS)}</b></span><span>Motor ${engineVersion} · perfil ${profileVersion}</span></div>`;
+    )}</div><div class="session-facts"><span>Escenario: <b>${esc(scenarioName)}</b></span><span>Tiempo: <b>${clock(simS)}</b></span><span>Motor ${engineVersion} · perfil ${profileVersion}</span></div><button class="prefs-reset" data-action="resetPrefs">Restablecer preferencias</button>`;
 }
 
 export const patientHTML = (): string =>

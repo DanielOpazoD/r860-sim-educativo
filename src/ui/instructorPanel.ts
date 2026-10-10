@@ -15,6 +15,7 @@ import { FAULTS, PATIENT_EXTRA, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type 
 import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
+import { savePrefs } from './prefs';
 
 export interface InstructorPanel {
   readonly teacherVisible: boolean;
@@ -192,6 +193,7 @@ export function createInstructorPanel(
     const sc = findScenario(id);
     if (!sc) return;
     ctx.setScenario(sc);
+    if (!ctx.fixtureId) savePrefs({ lastScenario: sc.id });
     ctx.lesson.setSessionImported(false);
     ctx.dialog.close();
     deps.quick.cancelQuick();
@@ -234,6 +236,7 @@ export function createInstructorPanel(
     toggleTeacher() {
       teacherVisible = !teacherVisible;
       renderToggle();
+      if (!ctx.fixtureId) savePrefs({ instructorVisible: teacherVisible });
     },
     async resetPatient() {
       const scenario = ctx.scenario;

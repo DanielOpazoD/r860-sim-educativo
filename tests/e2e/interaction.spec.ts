@@ -883,3 +883,53 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
     await expect(page.locator('#truth-recruit')).not.toHaveText(/^0\s*%$/);
   });
 });
+
+test.describe('PREF · bienvenida y memoria de preferencias', () => {
+  test('la primera visita ofrece explorar o una práctica guiada; la bienvenida no se repite', async ({ page }) => {
+    await open(page, {}, { firstRun: true });
+    await expect(page.locator('#dialog-title')).toHaveText('Bienvenido a R860 Lab');
+    await expect(page.locator('#welcome-free')).toBeFocused();
+    await expect(page.locator('#dialog-content')).toContainText('Un ventilador virtual para aprender mecánica respiratoria sin riesgo.');
+    await page.click('#welcome-guided');
+    await expect(page.locator('#dialog-title')).toHaveText('Elige un escenario de entrenamiento');
+    await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
+    await page.reload();
+    await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
+    await expect(page.locator('#app-dialog')).toBeHidden();
+  });
+
+  test('restaura escenario, vista y ventana de curvas al recargar', async ({ page }) => {
+    await open(page);
+    await page.click('.app-context');
+    const card = page.locator('#scenario-start [data-scenario="SC-03"]');
+    const scenarioName = (await card.locator('h3').textContent())?.trim() ?? '';
+    await card.click();
+    await expect(page.locator('#scenario-name')).toHaveText(scenarioName);
+    await page.locator('.monitor-nav [data-view="loops"]').click();
+    await expect(page.locator('#view-loops')).toHaveClass(/active/);
+    await page.click('#wave-options-button');
+    await page.selectOption('#wave-window', '24');
+    await page.reload();
+    await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
+    await expect(page.locator('#scenario-name')).toHaveText(scenarioName);
+    await expect(page.locator('#view-loops')).toHaveClass(/active/);
+    await expect(page.locator('#wave-window')).toHaveValue('24');
+    await expect(page.locator('#toast-stack .toast').last()).toContainText(`Continúas en: ${scenarioName}`);
+  });
+
+  test('un escenario de la dirección tiene prioridad sobre el guardado', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('r860.prefs', JSON.stringify({ v: 1, lastScenario: 'SC-03', welcomed: true }));
+    });
+    await open(page, { scenario: 'SC-01' }, { firstRun: true });
+    await expect(page.locator('#scenario-name')).toHaveText('Banco lineal pasivo');
+  });
+
+  test('restablecer preferencias las borra y avisa que se aplicará al recargar', async ({ page }) => {
+    await open(page);
+    await page.click('.top-actions [data-action="session"]');
+    await page.click('#app-dialog [data-action="resetPrefs"]');
+    await expect(page.locator('#toast-stack .toast').last()).toHaveText('Preferencias restablecidas: se aplican al recargar');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBeNull();
+  });
+});

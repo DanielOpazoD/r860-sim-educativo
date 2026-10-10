@@ -37,6 +37,7 @@ import { toggleHelp } from './helpPanels';
 import type { HoldPanel } from './holdPanel';
 import type { InstructorPanel } from './instructorPanel';
 import { displaySetting, modeLabel, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL } from './labels';
+import { clearPrefs, savePrefs } from './prefs';
 import type { MetricsView } from './metricsView';
 import type { ModeDialog } from './modeDialog';
 import type { PlotsView } from './plotsView';
@@ -171,6 +172,13 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
           CANCEL_BTN,
           'wide',
         );
+        break;
+      case 'welcome-free':
+        ctx.dialog.close();
+        break;
+      case 'welcome-guided':
+        ctx.dialog.close();
+        await action('scenarios');
         break;
       case 'teacher':
         instructor.toggleTeacher();
@@ -322,6 +330,11 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
           'wide',
         );
         break;
+      case 'resetPrefs':
+        clearPrefs();
+        ctx.dialog.close();
+        ctx.toast('Preferencias restablecidas: se aplican al recargar');
+        break;
       case 'exportSession':
         await exportSession();
         break;
@@ -447,6 +460,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (el.id === 'wave-window') plots.setWaveWindow(Number(el.value));
       if (el.id === 'wave-style') plots.setWaveStyle(el.value as 'sweep' | 'scroll');
       if (el.id === 'wave-scale') plots.setWaveScaleMode(el.value as 'auto' | 'fixed');
+      if (!ctx.fixtureId && el.id === 'wave-window') savePrefs({ waveWindow: el.value as '6' | '12' | '24' });
+      if (!ctx.fixtureId && el.id === 'wave-style') savePrefs({ waveStyle: el.value as 'sweep' | 'scroll' });
+      if (!ctx.fixtureId && el.id === 'wave-scale') savePrefs({ waveScale: el.value as 'auto' | 'fixed' });
       if (['wave-window', 'wave-style', 'wave-scale'].includes(el.id)) syncWaveOptionsSummary();
       if ((el as HTMLInputElement).dataset.modeField) modes.readModeField(el as HTMLInputElement);
     });

@@ -130,6 +130,45 @@
   color: #e5edf5;
   font-size: 11px;
 }
+.welcome-intro {
+  margin-top: 0;
+}
+.welcome-choices {
+  margin: 18px 0;
+}
+.welcome-choice {
+  min-height: 145px;
+  padding: 18px;
+  cursor: pointer;
+}
+.welcome-choice h3 {
+  margin: 0 0 8px;
+}
+.welcome-choice p {
+  margin-bottom: 0;
+}
+.welcome-footnote {
+  margin-bottom: 0;
+  color: #77838e !important;
+  font-size: 11px !important;
+}
+.prefs-reset {
+  padding: 7px 0;
+  border: 0;
+  background: none;
+  color: #77838e;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.prefs-reset:hover {
+  color: #c2ccd5;
+}
+@media (max-width: 700px) {
+  .welcome-choices {
+    grid-template-columns: 1fr;
+  }
+}
 @media (min-width: 701px) {
   .app-top {
     height: 52px;
