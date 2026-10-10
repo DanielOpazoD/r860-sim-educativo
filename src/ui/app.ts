@@ -341,7 +341,14 @@ export function startApp(opts: AppOptions): void {
       `Sesión ${clock(fr.simTimeMs / 1000)} · ${speed}×${!running ? ' · pausada' : ''}${discontinuities.length ? ` · ${discontinuities.length} discontinuidad(es)` : ''}`,
     );
     $('#live-dot').classList.toggle('paused', !running);
-    $('#sim-pause').innerHTML = icon(running ? 'pause' : 'play') + `<span>${running ? 'Pausar' : 'Reanudar'}</span>`;
+    $('#sim-pause').innerHTML =
+      icon(running ? 'pause' : 'play') + `<span>${running ? 'Pausar' : 'Reanudar'}${speed !== 1 ? ` · ${speed}×` : ''}</span>`;
+    put(
+      '#view-active-state',
+      [plots.frozen ? 'Curvas congeladas' : '', plots.waveGuides && plots.waveRefAt !== null ? 'Referencia activa' : '']
+        .filter(Boolean)
+        .join(' · '),
+    );
     $('#sim-pause').setAttribute(
       'aria-label',
       running ? 'Pausar simulación' : `Reanudar simulación${pauseReason ? ' · ' + pauseReason : ''}`,
@@ -426,14 +433,13 @@ export function startApp(opts: AppOptions): void {
       const option = document.createElement('button');
       option.className = 'speed-option';
       option.type = 'button';
-      option.setAttribute('role', 'menuitemradio');
+      option.setAttribute('role', 'radio');
       option.setAttribute('aria-checked', 'false');
       option.dataset.speed = String(v);
       option.textContent = `${v}×`;
       options.append(option);
     }
     put('#speed-value', `${v}×`);
-    $('#speed-button').classList.toggle('is-modified', v !== 1);
     for (const option of options.querySelectorAll<HTMLButtonElement>('[data-speed]')) {
       option.setAttribute('aria-checked', String(Number(option.dataset.speed) === v));
       option.tabIndex = Number(option.dataset.speed) === v ? 0 : -1;
@@ -491,6 +497,12 @@ export function startApp(opts: AppOptions): void {
   }
 
   metrics.init();
+  $<HTMLInputElement>('#variable-descriptions').checked = prefs?.variableDescriptions ?? false;
+  $('#variable-legend').hidden = !(prefs?.variableDescriptions ?? false);
+  $<HTMLInputElement>('#wave-guides').checked = prefs?.waveGuides ?? true;
+  $<HTMLInputElement>('#wave-annotations').checked = prefs?.waveAnnotations ?? true;
+  plots.setWaveGuides(prefs?.waveGuides ?? true);
+  plots.setWaveAnnotations(prefs?.waveAnnotations ?? true);
   ctx.setTileDensity(tileDensity);
   instructor.init();
   fillStaticHelp();

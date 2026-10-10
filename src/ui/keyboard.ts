@@ -35,6 +35,11 @@ export function bindKeyboard(
   const { quick } = deps;
   document.addEventListener('keydown', (e) => {
     if (e.defaultPrevented) return;
+    const viewDialog = $<HTMLDialogElement>('#wave-options');
+    if (viewDialog.open) {
+      trapTab(e, viewDialog);
+      return;
+    }
     if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       if ($<HTMLDialogElement>('#app-dialog').open) ctx.dialog.close();

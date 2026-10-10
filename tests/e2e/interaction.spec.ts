@@ -1,5 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectSafetyMark, frame, hidePanel, open, openMoreParams, showPanel } from './helpers';
+import {
+  closePersonalization,
+  expectSafetyMark,
+  frame,
+  hidePanel,
+  open,
+  openMoreParams,
+  openPersonalization,
+  openPresentation,
+  openTimeControls,
+  showPanel,
+} from './helpers';
 
 async function chooseRadio(page: Page, groupId: string, value: string) {
   const radio = page.locator(`#${groupId} input[type="radio"][value="${value}"]`);
@@ -11,13 +22,15 @@ test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
   test('escritorio agrupa las opciones en ⋯ y Audio alterna aria-checked', async ({ page, isMobile }) => {
     test.skip(isMobile, 'sólo escritorio');
     await open(page, { instructor: 0 });
-    await expect(page.locator('.top-actions button:visible')).toHaveCount(4);
+    await expect(page.locator('.top-actions button:visible')).toHaveCount(3);
+    await expect(page.locator('.top-actions > [data-action="session"]')).toHaveCount(0);
 
     const button = page.locator('#more-button');
     const menu = page.locator('#more-menu');
     await button.click();
     await expect(menu).toBeVisible();
-    await expect(menu.locator('[role^="menuitem"]:visible')).toHaveCount(3);
+    await expect(menu.locator('[role^="menuitem"]:visible')).toHaveCount(4);
+    await expect(menu.locator('[data-action="session"]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
     await expect(button).toBeFocused();
@@ -83,15 +96,13 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await expect(page.locator('#app-dialog')).toBeVisible();
     await expect(page.locator('#scenario-start')).toBeVisible();
   });
-  test('el popover Pantalla cierra con Escape y devuelve el foco', async ({ page }) => {
+  test('el diálogo de personalización cierra con Escape y devuelve el foco', async ({ page }) => {
     await open(page);
     const button = page.locator('#wave-options-button');
-    await page.click('#wave-options-button');
-    await expect(page.locator('#wave-options')).toBeVisible();
+    await openPresentation(page);
     await chooseRadio(page, 'wave-window', '24');
-    await expect(button).toContainText('Pantalla');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#wave-options')).toBeHidden();
+    await expect(button).toContainText('Personalizar vista');
+    await closePersonalization(page);
     await expect(button).toBeFocused();
   });
   test('la versión vive en el panel docente y ya no existe el listón de seguridad', async ({ page }) => {
@@ -568,7 +579,9 @@ test.describe('CUR · medir sobre la curva congelada', () => {
     await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
       timeout: 40_000,
     });
-    await page.click('#freeze-button');
+    await openTimeControls(page);
+    await page.locator('#freeze-button').click();
+    await closePersonalization(page);
     await expect(page.locator('#signal-inspector')).toBeVisible();
   }
   /** Mueve un deslizador como lo haría el usuario: valor nuevo y evento `input`. */
@@ -628,10 +641,12 @@ test.describe('CUR · medir sobre la curva congelada', () => {
     // En continuo el centro del área de trazado es «final − ventana/2». La conversión anterior usaba márgenes distintos
     // de los del dibujo y el cursor caía unos 90 ms más allá. La ventana por omisión es 12 s en escritorio y 6 s en
     // teléfono, así que se fija: la cuentas del centro dependen de ella.
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await chooseRadio(page, 'wave-window', '12');
     await chooseRadio(page, 'wave-style', 'scroll');
+    await openTimeControls(page);
     await page.click('#freeze-button');
+    await closePersonalization(page);
     const lienzo = page.locator('#waves-canvas');
     const caja = (await lienzo.boundingBox())!;
     const escala = caja.width / 608;
@@ -728,47 +743,49 @@ test.describe('DESC · desconexión del circuito', () => {
 test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   test('Pausar, velocidad y Congelar viven en .signal-toolbar y no se confunden', async ({ page }) => {
     await open(page, { speed: 4 });
-    for (const id of ['#sim-pause', '#speed-button', '#freeze-button']) await expect(page.locator(`.signal-toolbar ${id}`)).toBeVisible();
+    await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(2);
+    await expect(page.locator('#sim-pause')).toBeVisible();
+    await expect(page.locator('#wave-options-button')).toBeVisible();
+    await openTimeControls(page);
+    await expect(page.locator('#freeze-button')).toBeVisible();
+    await expect(page.locator('#speed-options')).toHaveAttribute('role', 'radiogroup');
+    await expect(page.locator('#speed-options [role="radio"]')).toHaveCount(5);
     await page.click('#freeze-button');
     await expect(page.locator('#freeze-button')).toHaveClass(/active/);
     await expect(page.locator('#frozen-ribbon')).toBeVisible();
     await expect(page.locator('#sim-pause')).toContainText('Pausar'); // congelar no detiene la simulación
+    await closePersonalization(page);
     await page.click('#sim-pause');
-    await expect(page.locator('#sim-pause')).toContainText('Reanudar');
+    await expect(page.locator('#sim-pause')).toContainText('Reanudar · 4×');
     await page.click('#sim-pause');
-    await expect(page.locator('#sim-pause')).toContainText('Pausar');
+    await expect(page.locator('#sim-pause')).toContainText('Pausar · 4×');
   });
   test('la velocidad se actualiza desde el menú y Escape devuelve el foco', async ({ page }) => {
     await open(page);
-    const button = page.locator('#speed-button');
-    await button.click();
-    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await openTimeControls(page);
     await page.locator('#speed-options [data-speed="2"]').click();
     await expect.poll(() => page.evaluate(() => window.__r860.speed)).toBe(2);
-    await expect(button).toContainText('2×');
-    await expect(button).toHaveClass(/is-modified/);
+    await expect(page.locator('#speed-value')).toHaveText('2×');
     await expect(page.locator('#speed-options [data-speed="2"]')).toHaveAttribute('aria-checked', 'true');
-    await expect(page.locator('#speed-options')).toBeHidden();
-    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#speed-options')).toBeVisible();
     await expect(page.locator('#simulation-clock')).toContainText('2×');
-    await button.click();
     await page.locator('#speed-options [data-speed="4"]').focus();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#speed-options')).toBeHidden();
-    await expect(button).toBeFocused();
-    await button.click();
+    await closePersonalization(page);
+    await expect(page.locator('#wave-options-button')).toBeFocused();
+    await openTimeControls(page);
     await page.locator('#freeze-button').click();
-    await expect(page.locator('#speed-options')).toBeHidden();
+    await expect(page.locator('#freeze-button')).toHaveClass(/active/);
   });
-  test('una velocidad personalizada de la URL aparece en el menú', async ({ page }) => {
+  test('una velocidad personalizada de la URL aparece en Revisar curvas y tiempo', async ({ page }) => {
     await open(page, { speed: 3 });
-    await expect(page.locator('#speed-button')).toContainText('3×');
+    await openTimeControls(page);
+    await expect(page.locator('#speed-value')).toHaveText('3×');
     await expect(page.locator('#speed-options [data-speed="3"]')).toHaveAttribute('aria-checked', 'true');
   });
   test('la escala alterna entre automática y fija', async ({ page }) => {
     await open(page);
     await expect(page.locator('#wave-scale input[value="auto"]')).toBeChecked();
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await chooseRadio(page, 'wave-scale', 'fixed');
     await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('fixed');
     await chooseRadio(page, 'wave-scale', 'auto');
@@ -776,7 +793,7 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   });
   test('los controles de tiempo caben sin desbordar el ancho del viewport', async ({ page }) => {
     await open(page);
-    for (const id of ['#sim-pause', '#speed-button', '#freeze-button']) await expect(page.locator(id)).toBeVisible();
+    await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(2);
     const d = await page.locator('.signal-toolbar').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
     expect(d.scroll).toBeLessThanOrEqual(d.client + 1);
   });
@@ -803,12 +820,14 @@ test.describe('CUR · comparación antes/después', () => {
   test('Comparar última respiración dibuja el ciclo previo atenuado bajo la traza actual', async ({ page }) => {
     await open(page, { speed: 4 });
     await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(2);
+    await openPersonalization(page);
     await page.click('#wave-ref-button');
     await expect(page.locator('#wave-ref-button')).toHaveClass(/active/);
     await expect(page.locator('#wave-ref-button')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#wave-ref-button')).toContainText('Comparar última respiración');
+    await expect(page.locator('#wave-ref-button')).toContainText('Dejar de comparar');
     await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
     await expect(page.locator('#wave-ref-clear')).toHaveCount(0);
+    await closePersonalization(page);
     // Para que el fantasma no quede escondido bajo una curva idéntica, suben PEEP y Vt: la referencia queda
     // con la línea de base y el volumen viejos bajo la traza nueva — la separación es el punto didáctico.
     const bc0 = (await frame(page)).breathCount;
@@ -821,8 +840,10 @@ test.describe('CUR · comparación antes/después', () => {
     await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(bc0 + 2);
     // Con la traza congelada el dibujo es estático: los únicos píxeles que cambian al quitar la referencia son
     // los del fantasma. La línea base se toma tras el primer repintado congelado.
+    await openTimeControls(page);
     await page.click('#freeze-button');
     await expect(page.locator('#frozen-ribbon')).toBeVisible();
+    await closePersonalization(page);
     await page.waitForTimeout(300);
     await page.evaluate(() => {
       const c = document.querySelector<HTMLCanvasElement>('#waves-canvas')!;
@@ -836,16 +857,29 @@ test.describe('CUR · comparación antes/después', () => {
         const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
         const a = (window as unknown as { __r860shot: number[] }).__r860shot;
         let n = 0;
-        for (let i = 0; i < d.length; i += 4)
-          if (Math.abs(d[i]! - a[i]!) > 12 || Math.abs(d[i + 1]! - a[i + 1]!) > 12 || Math.abs(d[i + 2]! - a[i + 2]!) > 12) n++;
+        for (let i = 0; i < d.length; i += 4) if (d[i] !== a[i] || d[i + 1] !== a[i + 1] || d[i + 2] !== a[i + 2]) n++;
         return n;
       });
-    await page.click('#wave-ref-button');
-    await expect(page.locator('#wave-ref-button')).toContainText('Comparar última respiración');
-    await expect(page.locator('#wave-ref-button')).not.toHaveClass(/active/);
-    await expect(page.locator('#wave-ref-button')).toHaveAttribute('aria-pressed', 'false');
-    await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).toBeNull();
+    await openPersonalization(page);
+    await page.locator('#wave-guides').uncheck();
+    await expect(page.locator('#wave-ref-button')).toBeDisabled();
+    await closePersonalization(page);
     await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
+    expect(await page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
+    await openPersonalization(page);
+    await page.locator('#wave-guides').check();
+    await expect(page.locator('#wave-ref-button')).toBeEnabled();
+    await closePersonalization(page);
+    await expect.poll(cambiados, { timeout: 10_000 }).toBe(0);
+
+    await openPersonalization(page);
+    await page.locator('#wave-annotations').uncheck();
+    await closePersonalization(page);
+    await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
+    await openPersonalization(page);
+    await page.locator('#wave-annotations').check();
+    await closePersonalization(page);
+    await expect.poll(cambiados, { timeout: 10_000 }).toBe(0);
   });
 });
 
@@ -958,26 +992,27 @@ test.describe('DEN · densidad de la columna numérica', () => {
     const densityField = page.locator('#density-field');
     expect(await density.evaluate((el) => el.tagName.toLowerCase())).toBe('fieldset');
     expect(await density.evaluate((el) => el.closest('#wave-options'))).not.toBeNull();
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await expect(density).toBeVisible();
-    await page.click('#wave-options-button');
+    await closePersonalization(page);
     await page.locator('.monitor-nav [data-view="loops"]').click();
     await expect(densityField).toHaveJSProperty('hidden', true);
     await page.locator('.monitor-nav [data-view="waves"]').click();
     await expect(densityField).toHaveJSProperty('hidden', false);
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await expect(density).toBeVisible();
-    await page.click('#wave-options-button');
+    await closePersonalization(page);
     await page.locator('.monitor-nav [data-view="data"]').click();
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await expect(densityField).toHaveJSProperty('hidden', true);
+    await closePersonalization(page);
   });
 
   test('la selección de 6 casillas grandes persiste y vuelve a 13 sin romper la tabla', async ({ page }) => {
     await open(page);
     const visibles = () => page.locator('#numeric-grid .numeric:visible');
     await expect(visibles()).toHaveCount(13);
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await chooseRadio(page, 'numeric-density', '6');
     await expect(visibles()).toHaveCount(6);
     await expect(page.locator('#numeric-density input[value="6"]')).toBeChecked();
@@ -989,12 +1024,12 @@ test.describe('DEN · densidad de la columna numérica', () => {
     // La preferencia persiste entre recargas.
     await page.reload();
     await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(6);
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await chooseRadio(page, 'numeric-density', '13');
     await expect(page.locator('#numeric-grid .numeric:visible')).toHaveCount(13);
     await expect(page.locator('#numeric-density input[value="13"]')).toBeChecked();
     // La tabla «Datos» completa no cambia: sigue con las veinte filas repartidas en dos tablas.
-    await page.click('#wave-options-button');
+    await closePersonalization(page);
     await page.locator('.monitor-nav [data-view="data"]').click();
     await expect(page.locator('#data-table-body tr[data-row]')).toHaveCount(10);
     await expect(page.locator('#data-table-body-2 tr[data-row]')).toHaveCount(10);
@@ -1121,7 +1156,7 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await expect(page.locator('#scenario-name')).toHaveText(scenarioName);
     await page.locator('.monitor-nav [data-view="loops"]').click();
     await expect(page.locator('#view-loops')).toHaveClass(/active/);
-    await page.click('#wave-options-button');
+    await openPresentation(page);
     await chooseRadio(page, 'wave-window', '24');
     await page.reload();
     await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });

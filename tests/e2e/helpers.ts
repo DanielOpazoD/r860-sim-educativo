@@ -65,6 +65,33 @@ export async function openMoreParams(page: Page): Promise<void> {
   const details = page.locator('.advanced-patient');
   if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) await details.locator('summary').click();
 }
+async function selectViewTab(page: Page, tabName: 'aids' | 'monitor' | 'time'): Promise<void> {
+  const dialog = page.locator('#wave-options');
+  if (!(await dialog.evaluate((el) => (el as HTMLDialogElement).open))) await page.locator('#wave-options-button').click();
+  await expect(dialog).toBeVisible();
+  const tab = page.locator(`#view-tab-${tabName}`);
+  if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator(`#${tabName === 'monitor' ? 'view-presentation' : `view-${tabName}`}`)).toBeVisible();
+}
+export async function openPersonalization(page: Page): Promise<void> {
+  await selectViewTab(page, 'aids');
+}
+export async function openPresentation(page: Page): Promise<void> {
+  await selectViewTab(page, 'monitor');
+}
+export async function openTimeControls(page: Page): Promise<void> {
+  await selectViewTab(page, 'time');
+}
+export async function closePersonalization(page: Page): Promise<void> {
+  const dialog = page.locator('#wave-options');
+  if (!(await dialog.evaluate((el) => (el as HTMLDialogElement).open))) return;
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  const button = page.locator('#wave-options-button');
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(button).toBeFocused();
+}
 export async function hidePanel(page: Page): Promise<void> {
   const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
   if (mobile && (await page.locator('#panel-button').getAttribute('aria-pressed')) === 'true') {
