@@ -86,7 +86,8 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       $('#variable-legend').innerHTML =
         '<h2>Variables del monitor</h2><dl>' +
         METRICS.map(
-          (m) => `<div><dt>${esc(m.label)}</dt><dd>${esc(helpEntry(METRIC_HELP[m.key] ?? '')?.title ?? m.label)}</dd></div>`,
+          (m) =>
+            `<div><dt>${esc(m.label)}</dt><dd>${esc(helpEntry(METRIC_HELP[m.key] ?? '')?.text[0] ?? 'Descripción no disponible.')}</dd></div>`,
         ).join('') +
         '</dl>';
       $('#numeric-grid').innerHTML = METRICS.map(

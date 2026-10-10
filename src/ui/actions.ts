@@ -380,6 +380,8 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     $('#view-options-close').addEventListener('click', () => viewDialog.close());
     const viewTabs = [...viewDialog.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
     const selectViewTab = (tab: HTMLButtonElement): void => {
+      const selectedTab = viewTabs.find((item) => item.getAttribute('aria-selected') === 'true');
+      if (selectedTab !== tab) viewDialog.querySelector<HTMLElement>('.view-settings-body')!.scrollTop = 0;
       for (const item of viewTabs) {
         const selected = item === tab;
         item.setAttribute('aria-selected', String(selected));
@@ -439,6 +441,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (!next) return;
       e.preventDefault();
       next.focus();
+      next.click();
     });
     morePopover.panel.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menuitemcheckbox"]')) setPopoverOpen(morePopover, false, true);
