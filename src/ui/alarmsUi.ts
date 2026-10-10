@@ -7,14 +7,16 @@ import { AlarmAudio } from './audio';
 import type { AppContext } from './context';
 import { $, $$, btn, esc, icon, put } from './dom';
 import { clock, unitText } from './format';
-import { infoButton, infoPanel } from './helpPanels';
+import { contextualHelpPanel, infoButton, infoPanel } from './helpPanels';
 import { alarmBandLabel, CHANNEL, joinSentences, learnerText, PRIORITY } from './humanize';
+import { stepInputValue } from './numericSteps';
 
 export interface AlarmsUi {
   updateAlarm(): void;
   alarms(): void;
   alarmSetup(): void;
   readLimits(): string[];
+  stepLimit(key: keyof AlarmLimits, direction: 1 | -1): void;
   confirmLimits(): Promise<void>;
   toggleAudio(): Promise<void>;
 }
@@ -106,7 +108,8 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
       if (!k) return `<span class="settings-annotation">Pmáx ${ctx.frame?.settings.pmax}</span>`;
       const r = ctx.profile.alarmLimitRules[k];
       const v = limitsDraft![k];
-      return `<input class="form-control" type="number" data-limit="${k}" value="${v === 'off' ? '' : (v as number) * r.displayFactor}" placeholder="Off" step="${Math.min(...r.domain.map((s) => s.step))}" aria-label="${label} ${which}">`;
+      const id = `help-limit-${k}`;
+      return `<div class="limit-field contextual-field"><div class="limit-input"><button class="step-button" type="button" data-limit-step="${k}" data-direction="-1" aria-label="Disminuir ${label} ${which}" aria-describedby="${id}">−</button><input class="form-control" type="number" data-limit="${k}" value="${v === 'off' ? '' : (v as number) * r.displayFactor}" placeholder="Off" step="${Math.min(...r.domain.map((s) => s.step))}" aria-label="${label} ${which}" aria-describedby="${id}"><button class="step-button" type="button" data-limit-step="${k}" data-direction="1" aria-label="Aumentar ${label} ${which}" aria-describedby="${id}">+</button></div>${contextualHelpPanel('procedure.alarms', id)}</div>`;
     };
     ctx.dialog.open(
       'alarmSetup',
@@ -123,20 +126,31 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
       const r = ctx.profile.alarmLimitRules[k];
       const raw = el.value.trim();
       if (raw === '') {
+        el.removeAttribute('aria-invalid');
         limitsDraft[k] = 'off';
         continue;
       }
       const v = Number(raw);
-      if (!Number.isFinite(v) || !isOnGrid(r, v))
+      if (!Number.isFinite(v) || !isOnGrid(r, v)) {
+        el.setAttribute('aria-invalid', 'true');
         errors.push(
           `${r.label}: ${raw} no es un valor admitido; el más cercano es ${nearestGridValue(r, Number.isFinite(v) ? v : 0)} ${unitText(r.displayUnit)}.`,
         );
-      else (limitsDraft as unknown as Record<string, unknown>)[k] = v / r.displayFactor;
+      } else {
+        el.removeAttribute('aria-invalid');
+        (limitsDraft as unknown as Record<string, unknown>)[k] = v / r.displayFactor;
+      }
     }
     put('#limits-error', joinSentences(errors));
     const b = document.querySelector<HTMLButtonElement>('[data-action="confirmLimits"]');
     if (b) b.disabled = errors.length > 0;
     return errors;
+  }
+  function stepLimit(k: keyof AlarmLimits, direction: 1 | -1): void {
+    const input = document.querySelector<HTMLInputElement>(`[data-limit="${k}"]`);
+    if (!input) return;
+    input.value = stepInputValue(ctx.profile.alarmLimitRules[k], input.value, direction);
+    readLimits();
   }
   async function confirmLimits(): Promise<void> {
     const errs = readLimits();
@@ -168,5 +182,5 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     $('#sound-toggle').setAttribute('aria-checked', String(audio.enabled));
     if (ctx.frame) updateAlarm();
   }
-  return { updateAlarm, alarms, alarmSetup, readLimits, confirmLimits, toggleAudio };
+  return { updateAlarm, alarms, alarmSetup, readLimits, stepLimit, confirmLimits, toggleAudio };
 }

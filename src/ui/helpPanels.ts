@@ -14,6 +14,8 @@ export function infoButton(key: string, id: string): string {
 }
 export const infoPanel = (key: string, id: string): string =>
   `<div id="${esc(id)}" class="parameter-help" hidden>${helpContent(key)}</div>`;
+export const contextualHelpPanel = (key: string, id: string): string =>
+  `<div id="${esc(id)}" class="parameter-help contextual-help" role="note">${helpContent(key)}</div>`;
 /** Pliega todos los paneles abiertos; devuelve true si había alguno. */
 export function collapseHelp(): boolean {
   let any = false;

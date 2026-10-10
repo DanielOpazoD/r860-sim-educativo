@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectSafetyMark, frame, open, screenshot } from './helpers';
+import { expectSafetyMark, frame, open, screenshot, showPanel } from './helpers';
 
 test.describe('NAV móvil · opciones de cabecera', () => {
   test('la cabecera muestra Buscar y ⋯; el menú añade Sesión', async ({ page, isMobile }) => {
@@ -100,12 +100,12 @@ test.describe('Ventana de curvas por omisión según el ancho del viewport', () 
   test('móvil (< 700 px): la ventana arranca en 6 s', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'sólo proyecto móvil');
     await open(page, { instructor: 0 });
-    await expect(page.locator('#wave-window')).toHaveValue('6');
+    await expect(page.locator('#wave-window input[value="6"]')).toBeChecked();
   });
   test('escritorio: la ventana arranca en 12 s', async ({ page, isMobile }) => {
     test.skip(isMobile, 'sólo proyectos de escritorio');
     await open(page, { instructor: 0 });
-    await expect(page.locator('#wave-window')).toHaveValue('12');
+    await expect(page.locator('#wave-window input[value="12"]')).toBeChecked();
   });
 });
 
@@ -212,6 +212,23 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await expect(panel).toBeHidden();
     await expect(button).toBeFocused();
     await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBe(preferences);
+  });
+
+  test('Paciente conserva targets táctiles y la hoja permite llegar a Restablecer mecánica', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page, { scenario: 'SC-02' });
+    await showPanel(page, 'patient');
+
+    await expect(page.locator('.advanced-patient')).not.toHaveAttribute('open', '');
+    const targets = page.locator('#patient-profiles .profile-chip, #patient-controls [data-phys-step]');
+    await expect(targets).toHaveCount(12);
+    const heights = await targets.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+    expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
+
+    const sheet = page.locator('#instructor');
+    await sheet.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    await expect(page.locator('#instructor-patient [data-action="resetPatient"]')).toBeInViewport();
+    expect(await sheet.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 1)).toBe(true);
   });
 
   test('la hoja vuelve a la columna del panel al ensanchar el viewport', async ({ page }) => {
