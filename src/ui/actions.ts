@@ -52,6 +52,7 @@ export interface Features {
   metrics: MetricsView;
   plots: PlotsView;
   instructor: InstructorPanel;
+  openPalette(): void;
 }
 
 export interface Actions {
@@ -151,6 +152,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
 
   async function action(a: string): Promise<void> {
     switch (a) {
+      case 'palette':
+        fx.openPalette();
+        break;
       case 'home':
         ctx.dialog.close();
         ctx.switchView('waves');
