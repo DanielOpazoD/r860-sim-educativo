@@ -106,6 +106,9 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
       const medición = await page.evaluate(() => {
         const bisel = document.querySelector('.bezel-bottom')!.getBoundingClientRect();
         const perilla = document.querySelector('#trim-knob')!.getBoundingClientRect();
+        const pantalla = document.querySelector('#screen-window')!.getBoundingClientRect();
+        const transform = document.querySelector<HTMLElement>('#monitor')!.style.transform;
+        const escalaMonitor = Number(transform.match(/^scale\(([^)]+)\)$/)?.[1]);
         const barraEl = document.querySelector('.mobile-toolbar')!;
         const barra = barraEl.getBoundingClientRect();
         const teclas = [...document.querySelectorAll('.bezel-bottom .hard-key')].map((el) => {
@@ -116,6 +119,8 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
           innerWidth,
           clientWidth: document.documentElement.clientWidth,
           scrollWidth: document.documentElement.scrollWidth,
+          screenWidth: pantalla.width,
+          monitorScale: escalaMonitor,
           biselRight: bisel.right,
           perillaRight: perilla.right,
           barraRight: barra.right,
@@ -127,6 +132,8 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
       });
       expect(medición.scrollWidth).toBeLessThanOrEqual(medición.clientWidth);
       expect(medición.innerWidth).toBe(medición.clientWidth);
+      expect(medición.screenWidth).toBeGreaterThanOrEqual(medición.innerWidth - 24);
+      if (medición.innerWidth === 360) expect(medición.monitorScale).toBeGreaterThanOrEqual(0.55);
       expect(medición.perillaRight).toBeLessThanOrEqual(medición.biselRight - 6);
       expect(medición.barraRight).toBeLessThanOrEqual(medición.clientWidth);
       if (medición.barraScrollWidth > medición.barraClientWidth) expect(['auto', 'scroll']).toContain(medición.barraOverflowX);

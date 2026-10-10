@@ -682,8 +682,43 @@
     letter-spacing: 1px;
   }
 }
-@media (max-width: 380px) {
+@media (max-width: 359px) {
   .bezel-signature {
     display: none;
+  }
+}
+@media (max-width: 700px) {
+  .workspace {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .device-shell {
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 12px 12px 18px 18px;
+  }
+  .screen-window {
+    border-width: 0;
+    box-shadow:
+      inset 0 0 0 1px #182731,
+      0 -2px 2px #a6b9c033,
+      inset 0 0 10px #0009,
+      0 1px 2px #c9dbe533;
+  }
+  .monitor {
+    width: 610px;
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+  .bezel-top {
+    height: 24px;
+  }
+  .bezel-model {
+    font-size: 11px;
+  }
+  .signal-toolbar,
+  #instructor {
+    margin-left: 0;
+    margin-right: 0;
   }
 }
