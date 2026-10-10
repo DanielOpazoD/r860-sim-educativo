@@ -3,6 +3,133 @@
   --device-chrome: 232px;
   --device-max: min(100%, max(640px, calc((100vh - var(--device-chrome)) * 1.524)));
 }
+.app-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 480px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #e5edf5;
+  text-align: left;
+}
+.app-context:hover {
+  background: #141414;
+}
+.app-context-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+#scenario-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #e5edf5;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-context-separator {
+  flex: none;
+  color: #46505a;
+  font-size: 11px;
+}
+.app-context #scenario-sub {
+  margin: 0;
+  overflow: hidden;
+  color: #7b8792;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-context > .live-dot {
+  display: inline-block;
+  flex: none;
+}
+.app-context > .icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: #65717c;
+}
+.instructor-about {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 14px 10px;
+  border-top: 1px solid #1c1c1c;
+  color: #5d6f80;
+  font-size: 11px;
+}
+.instructor-about .version {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.instructor-about button {
+  flex: none;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: #7a8a98;
+  font-size: 11px;
+  text-decoration: underline;
+}
+.wave-options-wrap {
+  position: relative;
+}
+.wave-options-button {
+  white-space: nowrap;
+}
+.signal-toolbar .wave-options-button > .icon {
+  width: 14px;
+  height: 14px;
+}
+.signal-toolbar .wave-options-button .wave-options-chevron {
+  width: 12px;
+  height: 12px;
+  color: #82909d;
+}
+.wave-options {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  display: grid;
+  width: min(300px, calc(100vw - 24px));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  background: #0d0d0d;
+  box-shadow: 0 12px 32px #000a;
+}
+.wave-options .inline-select {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  color: #9aa4ae;
+  font-size: 11px;
+}
+.wave-options .inline-select select {
+  width: 145px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid #303030;
+  border-radius: 6px;
+  background: #141414;
+  color: #e5edf5;
+  font-size: 11px;
+}
 @media (min-width: 701px) {
   .app-top {
     height: 52px;
@@ -79,28 +206,18 @@
     height: 26px;
     min-height: 26px;
   }
+  .signal-toolbar .speed-control select {
+    width: 64px;
+    min-width: 64px;
+    padding: 0 20px 0 10px;
+    font-size: 12px;
+  }
   .group-label {
     display: none;
   }
   .time-group + .time-group {
-    border-left: 0;
-    padding-left: 0;
-  }
-  .safety-strip {
-    justify-content: space-between;
-    padding: 4px 20px;
-    margin-top: 4px;
-    min-height: 24px;
-  }
-  .scenario-tag {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 10px;
-    color: #637e94;
-  }
-  #scenario-name {
-    color: #9fb3c6;
+    border-left: 1px solid #262626;
+    padding-left: 10px;
   }
   .stage-sub {
     margin-left: 0;
@@ -145,21 +262,32 @@
   }
 }
 @media (min-width: 701px) and (max-width: 1500px) {
-  #sim-pause > span,
-  #freeze-button > span,
   .signal-toolbar .simulation-clock {
     display: none;
-  }
-  .signal-toolbar .inline-select {
-    gap: 0;
-    font-size: 0;
-  }
-  .signal-toolbar .inline-select select {
-    font-size: 10px;
   }
   .signal-toolbar .time-controls {
     min-width: 0;
     gap: 6px;
+  }
+}
+@media (max-width: 700px) {
+  .app-context {
+    max-width: none;
+    gap: 6px;
+    padding: 7px 4px;
+  }
+  .app-context-copy {
+    flex: 1;
+  }
+  #scenario-name {
+    font-size: 12px;
+  }
+  .app-context-separator,
+  .app-context #scenario-sub {
+    display: none;
+  }
+  .top-actions {
+    flex: none;
   }
 }
 @media (min-width: 1700px) {

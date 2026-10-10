@@ -14,7 +14,7 @@ import { frameFromFixture, PHOTO_FIXTURES } from '../fixtures/photoFixtures';
 import type { ProfileSpec } from '../domain/profile';
 import { defaultInit } from '../profiles';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
-import { createActions } from './actions';
+import { createActions, syncWaveOptionsSummary } from './actions';
 import { createAlarmsUi } from './alarmsUi';
 import type { Actor, AppContext, CommandResult, FixtureId } from './context';
 import { createDialogHost } from './dialogHost';
@@ -394,6 +394,7 @@ export function startApp(opts: AppOptions): void {
   if (isMobile()) {
     ($('#wave-window') as HTMLSelectElement).value = '6';
     plots.setWaveWindow(6);
+    syncWaveOptionsSummary();
   }
   views.initMonitorScale();
   instructor.initChrome();

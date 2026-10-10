@@ -4,7 +4,7 @@ import { expectSafetyMark, frame, open } from './helpers';
 test.describe('INT · selección, edición, confirmación y cancelación', () => {
   test('el selector comienza con ocho prácticas y mantiene el catálogo completo filtrable', async ({ page }) => {
     await open(page, { instructor: 0 });
-    await page.click('[data-action="scenarios"]');
+    await page.click('.app-context');
     await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
     await expect(page.locator('#scenario-all')).toBeHidden();
     await page.click('[data-scenario-view="all"]');
@@ -16,10 +16,33 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
   test('el selector móvil muestra una sola columna legible', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page, { instructor: 0 });
-    await page.click('[data-action="scenarios"]');
+    await page.click('.app-context');
     const columns = await page.locator('#scenario-start .scenario-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns);
     expect(columns.split(' ')).toHaveLength(1);
     await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
+  });
+  test('el contexto del encabezado muestra el escenario y abre el selector', async ({ page }) => {
+    await open(page, { instructor: 0 });
+    await expect(page.locator('.app-context #scenario-name')).not.toBeEmpty();
+    await page.click('.app-context');
+    await expect(page.locator('#app-dialog')).toBeVisible();
+    await expect(page.locator('#scenario-start')).toBeVisible();
+  });
+  test('los ajustes de curvas resumen los valores y cierran con Escape devolviendo el foco', async ({ page }) => {
+    await open(page);
+    const button = page.locator('#wave-options-button');
+    await page.click('#wave-options-button');
+    await expect(page.locator('#wave-options')).toBeVisible();
+    await page.selectOption('#wave-window', '24');
+    await expect(button).toContainText('24 s');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#wave-options')).toBeHidden();
+    await expect(button).toBeFocused();
+  });
+  test('la versión vive en el panel docente y ya no existe el listón de seguridad', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('.safety-strip')).toHaveCount(0);
+    await expect(page.locator('#version-tag').locator('xpath=..')).toHaveClass(/instructor-about/);
   });
   test('INT-01 · seleccionar PEEP y girar sin confirmar no cambia ajustes ni motor', async ({ page }) => {
     await open(page, { autopause: 4000, speed: 4, instructor: 0 });
@@ -513,6 +536,7 @@ test.describe('CUR · medir sobre la curva congelada', () => {
     // En continuo el centro del área de trazado es «final − ventana/2». La conversión anterior usaba márgenes distintos
     // de los del dibujo y el cursor caía unos 90 ms más allá. La ventana por omisión es 12 s en escritorio y 6 s en
     // teléfono, así que se fija: la cuentas del centro dependen de ella.
+    await page.click('#wave-options-button');
     await page.selectOption('#wave-window', '12');
     await page.selectOption('#wave-style', 'scroll');
     await page.click('#freeze-button');
@@ -620,6 +644,7 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   test('la escala alterna entre automática y fija', async ({ page }) => {
     await open(page);
     await expect(page.locator('#wave-scale')).toHaveValue('auto');
+    await page.click('#wave-options-button');
     await page.selectOption('#wave-scale', 'fixed');
     await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('fixed');
     await page.selectOption('#wave-scale', 'auto');
