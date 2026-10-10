@@ -2,11 +2,11 @@
 /* ---- Pasada de diseño (06-09-2026): escala tipográfica 10/11/12/13/15, espaciado de 8 px, radios de 8 px. ---- */
 .stage-sub {
   font-size: 11px;
-  color: #8ca3b9;
+  color: var(--shell-muted);
 }
 .instructor {
   margin-top: 0;
-  border-radius: 10px;
+  border-radius: var(--shell-radius);
 }
 .instructor-header {
   padding: 12px 16px 10px;
@@ -206,6 +206,7 @@
 
 /* Teclas de ajuste: seis en PC, siete en VC (Plimit visible junto a Pmáx). */
 .quick-controls {
+  --nkeys: 6;
   grid-template-columns: 150px repeat(var(--nkeys, 6), 1fr) 100px 46px;
 }
 .quick-controls .quick-key b {

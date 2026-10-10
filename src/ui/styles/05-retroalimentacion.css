@@ -124,33 +124,33 @@
   --line: #262626;
 }
 body {
-  background: #000000;
+  background: var(--shell-bg);
 }
 .app-top {
-  background: #000000e6;
-  border-bottom-color: #262626;
+  background: color-mix(in srgb, var(--shell-bg) 90%, transparent);
+  border-bottom-color: var(--shell-line);
 }
 .instructor {
-  background: #0a0a0a;
-  border-color: #262626;
+  background: var(--shell-surface);
+  border-color: var(--shell-line);
 }
 .instructor-header {
-  background: linear-gradient(120deg, #141414, #0d0d0d);
+  background: linear-gradient(120deg, var(--shell-raised), var(--shell-surface));
 }
 .app-dialog {
-  background: #0d0d0d;
-  border-color: #333333;
+  background: var(--shell-surface);
+  border-color: var(--shell-line);
 }
 .toast {
-  background: #141414;
+  background: var(--shell-raised);
   border-color: #4a4a4a;
 }
 .safety-strip {
-  background: #000000;
+  background: var(--shell-bg);
 }
 .mobile-toolbar {
-  background: #000000f2;
-  border-top-color: #262626;
+  background: color-mix(in srgb, var(--shell-bg) 95%, transparent);
+  border-top-color: var(--shell-line);
 }
 
 /* ---- Diálogos compactos (06-09-2026): menos padding, tipografía más pequeña, ancho contenido. ---- */
