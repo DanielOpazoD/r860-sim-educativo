@@ -60,7 +60,7 @@ test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', ()
     expect((await frame(page)).alarmBar.color).toBe('red');
     const recorte = await page.$eval('#alarm-label', (e) => e.scrollHeight - e.clientHeight);
     expect(recorte).toBeLessThanOrEqual(1);
-    await page.locator('.mobile-toolbar [data-view="basic"]').tap();
+    await page.locator('#monitor .nav-key[data-view="basic"]').tap();
     const grandes = await page.$$eval('#big-metrics .big-numeric', (els) =>
       els.map((e) => e.getBoundingClientRect()).map((r) => ({ x: r.x, right: r.right })),
     );
@@ -71,7 +71,7 @@ test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', ()
       expect(g.right).toBeLessThanOrEqual(ancho + 1);
     }
     await screenshot(page, info, 'vis-09-mobile-basic', { view: 'basic', scenario: 'SC-09' });
-    await page.locator('.mobile-toolbar [data-view="loops"]').tap();
+    await page.locator('#monitor .nav-key[data-view="loops"]').tap();
     const bucles = await page.$$eval('#view-loops canvas', (els) =>
       els.map((e) => e.getBoundingClientRect()).map((r) => ({ top: r.top, right: r.right })),
     );
@@ -109,7 +109,7 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
         const pantalla = document.querySelector('#screen-window')!.getBoundingClientRect();
         const transform = document.querySelector<HTMLElement>('#monitor')!.style.transform;
         const escalaMonitor = Number(transform.match(/^scale\(([^)]+)\)$/)?.[1]);
-        const barraEl = document.querySelector('.mobile-toolbar')!;
+        const barraEl = document.querySelector('.signal-toolbar')!;
         const barra = barraEl.getBoundingClientRect();
         const teclas = [...document.querySelectorAll('.bezel-bottom .hard-key')].map((el) => {
           const { width, height } = el.getBoundingClientRect();
@@ -126,7 +126,7 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
           barraRight: barra.right,
           barraClientWidth: barraEl.clientWidth,
           barraScrollWidth: barraEl.scrollWidth,
-          barraOverflowX: getComputedStyle(barraEl).overflowX,
+          barraHeight: barra.height,
           teclas,
         };
       });
@@ -136,7 +136,8 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
       if (medición.innerWidth === 360) expect(medición.monitorScale).toBeGreaterThanOrEqual(0.55);
       expect(medición.perillaRight).toBeLessThanOrEqual(medición.biselRight - 6);
       expect(medición.barraRight).toBeLessThanOrEqual(medición.clientWidth);
-      if (medición.barraScrollWidth > medición.barraClientWidth) expect(['auto', 'scroll']).toContain(medición.barraOverflowX);
+      expect(medición.barraScrollWidth).toBeLessThanOrEqual(medición.barraClientWidth + 1);
+      expect(medición.barraHeight).toBeLessThan(60);
       expect(medición.teclas.every(({ width, height }) => width >= 30 && height >= 30)).toBe(true);
     };
 
@@ -155,12 +156,73 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
       await page.keyboard.press('Escape');
       await expect(page.locator('#app-dialog')).toBeHidden();
 
-      for (const botón of await page.locator('.mobile-toolbar [data-view]').all()) {
+      for (const botón of await page.locator('#monitor .nav-key[data-view]').all()) {
         const vista = await botón.getAttribute('data-view');
         await botón.tap();
         await expect.poll(() => page.evaluate(() => window.__r860.view)).toBe(vista);
         await comprobarGeometríaMóvil();
       }
     }
+  });
+
+  test('elimina la barra redundante y arranca con el panel cerrado y compacto', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await open(page, { scenario: 'SC-02' });
+    await expect(page.locator('.mobile-toolbar')).toHaveCount(0);
+    await expect(page.locator('#panel-button')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#instructor')).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1100);
+  });
+
+  test('la hoja del panel docente abre, cierra con el botón o Escape y devuelve el foco', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await open(page, { scenario: 'SC-02' });
+    const preferences = await page.evaluate(() => localStorage.getItem('r860.prefs'));
+    const alto = page.viewportSize()!.height;
+    const panel = page.locator('#instructor');
+    const button = page.locator('#panel-button');
+    await button.click();
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(button).toHaveClass(/active/);
+    await expect(panel).toBeVisible();
+    await expect(page.locator('[data-instructor="patient"]')).toBeFocused();
+    expect((await panel.boundingBox())!.y).toBeGreaterThanOrEqual(alto * 0.25);
+    await page.locator('#instructor-close').click();
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(button).not.toHaveClass(/active/);
+    await expect(panel).toBeHidden();
+    await expect(button).toBeFocused();
+    await button.click();
+    await page.keyboard.press('Escape');
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(panel).toBeHidden();
+    await expect(button).toBeFocused();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBe(preferences);
+  });
+
+  test('la hoja vuelve a la columna del panel al ensanchar el viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page, { scenario: 'SC-02' });
+    const panel = page.locator('#instructor');
+    await page.locator('#panel-button').click();
+    await expect(panel).toHaveCSS('position', 'fixed');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(panel).toBeVisible();
+    await expect(panel).toHaveCSS('position', 'static');
+    await expect(page.locator('#instructor-close')).toBeHidden();
+  });
+
+  test('el popover Pantalla abierto cabe en el viewport a 360 px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await open(page, { scenario: 'SC-02', instructor: 0 });
+    await page.locator('#wave-options-button').click();
+    await expect(page.locator('#wave-options')).toBeVisible();
+    const bounds = await page.locator('#wave-options').evaluate((el) => {
+      const { top, right, bottom } = el.getBoundingClientRect();
+      return { top, right, bottom };
+    });
+    expect(bounds.top).toBeGreaterThanOrEqual(0);
+    expect(bounds.right).toBeLessThanOrEqual(360);
+    expect(bounds.bottom).toBeLessThanOrEqual(780);
   });
 });

@@ -268,7 +268,7 @@ export function startApp(opts: AppOptions): void {
     hold,
     metrics,
     plots,
-    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : (prefs?.instructorVisible ?? true),
+    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : isMobile() ? false : (prefs?.instructorVisible ?? true),
   });
   let openPalette = (): void => {};
   const actions = createActions(ctx, { quick, hold, modes, alarms, metrics, plots, instructor, openPalette: () => openPalette() });

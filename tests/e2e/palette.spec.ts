@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { open } from './helpers';
+import { open, showPanel } from './helpers';
 
 test.describe('Paleta de comandos', () => {
   test('Ctrl+K abre la paleta y permite aplicar un perfil', async ({ page, isMobile }) => {
@@ -14,7 +14,10 @@ test.describe('Paleta de comandos', () => {
     await expect(page.getByRole('option', { name: 'Perfil: Pulmón rígido' })).toBeVisible();
     await input.press('Enter');
     await expect(dialog).not.toBeVisible();
-    if (!isMobile) await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('25');
+    if (!isMobile) {
+      await showPanel(page, 'patient');
+      await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('25');
+    }
   });
 
   test('filtra vistas y ejecuta la selección con las flechas', async ({ page }) => {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectSafetyMark, frame, open } from './helpers';
+import { expectSafetyMark, frame, hidePanel, open, showPanel } from './helpers';
 
 test.describe('INT · selección, edición, confirmación y cancelación', () => {
   test('el selector comienza con ocho prácticas y mantiene el catálogo completo filtrable', async ({ page }) => {
@@ -263,10 +263,11 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     // VMesp bajos. Si se activaron después del reconocimiento, la banda queda gris; bajo mucha carga pueden haber
     // quedado reconocidas en el mismo lote y pasar directamente a verde. La segunda oclusión de abajo fija de forma
     // determinista el contrato «resuelta sin reconocer».
-    await page.click('[data-instructor="patient"]'); // la pestaña que se abre es «Paciente»
+    await showPanel(page, 'patient');
     await page.fill('[data-phys-number="resistance"]', '10');
     await page.locator('[data-phys-number="resistance"]').press('Enter');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
+    await hidePanel(page);
     // VMesp bajo se resuelve con la ventana de ocho respiraciones (32 s simulados): bajo carga, a 4× no bastan 20 s de reloj.
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color !== 'red', null, {
       timeout: 45_000,
@@ -280,7 +281,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       timeout: 20_000,
     });
     // Nueva oclusión sin reconocer y resolución: banda gris (resuelta, pendiente de reconocer) hasta reconocer.
-    await page.click('[data-instructor="events"]');
+    await showPanel(page, 'events');
     await page.click('[data-event="obstruction"]');
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 20_000,
@@ -290,6 +291,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       timeout: 20_000,
     });
     await expect(page.locator('#alarm-label')).toHaveText('Alarmas resueltas');
+    await hidePanel(page);
     await page.click('[data-action="alarms"]');
     await expect(page.locator('#live-alarms')).toContainText('PENDIENTE DE RECONOCER');
     await page.click('[data-action="acknowledge"]');
@@ -302,12 +304,13 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 30_000,
     });
-    await page.click('[data-instructor="learn"]');
+    await showPanel(page, 'learn');
     await expect(page.locator('#lesson-tasks')).toContainText('Restablece la mecánica');
+    await hidePanel(page);
     await page.click('[data-action="alarms"]');
     await page.click('[data-action="acknowledge"]');
     await page.keyboard.press('Escape');
-    await page.click('[data-instructor="patient"]');
+    await showPanel(page, 'patient');
     await page.click('[data-action="resetPatient"]');
     await page.waitForFunction(
       () => (window.__r860.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp === 10,
@@ -316,11 +319,13 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       timeout: 45_000,
     });
     if ((await frame(page)).alarmBar.color === 'grey') {
+      await hidePanel(page);
       await page.click('[data-action="alarms"]');
       await page.click('[data-action="acknowledge"]');
       await page.keyboard.press('Escape');
     }
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
+    await showPanel(page, 'learn');
     await expect(page.locator('[data-instructor="learn"]')).toContainText('3/3');
   });
   test('SEC-01/02 · sin tráfico externo; marca de simulación discreta presente en todas las vistas y en el bisel', async ({ page }) => {
@@ -579,6 +584,7 @@ test.describe('LEC · la lección responde', () => {
   test('lo que ya se cumple al abrir se marca sin aviso', async ({ page }) => {
     // SC-13: el primer objetivo es observar el VT inicial, y ya está cumplido con el primer cuadro.
     await open(page, { scenario: 'SC-13', speed: 4 });
+    await showPanel(page, 'learn');
     await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 1/3');
     await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(1);
     // Sin reintentos: un aviso dura 4 s y `toHaveCount(0)` esperaría a que se fuera solo.
@@ -592,7 +598,7 @@ test.describe('LEC · la lección responde', () => {
     // Con la resistencia en 25, el objetivo «duplica la resistencia» de SC-01 se cumpliría con el primer cuadro de la
     // sesión reproducida: sin la guarda aparecería marcado aunque nadie lo hubiera hecho en esa sesión.
     await open(page, { speed: 4 });
-    await page.click('[data-instructor="patient"]');
+    await showPanel(page, 'patient');
     await page.fill('[data-phys-number="resistance"]', '25');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
     await page.waitForFunction(
@@ -610,6 +616,7 @@ test.describe('LEC · la lección responde', () => {
     await descarga.saveAs(ruta);
     await page.keyboard.press('Escape');
     await page.setInputFiles('#session-input', ruta);
+    await showPanel(page, 'learn');
     await expect(page.locator('#lesson-count')).toHaveText('Sesión importada: sus objetivos no se evalúan', { timeout: 15_000 });
     await page.waitForTimeout(1500);
     await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(0);
@@ -622,13 +629,14 @@ test.describe('DESC · desconexión del circuito', () => {
     page,
   }) => {
     await open(page, { scenario: 'SC-23', speed: 4 });
-    await page.click('[data-instructor="events"]');
+    await showPanel(page, 'events');
     await page.click('[data-event="disconnect"]');
     await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Paciente desconectado', { timeout: 20_000 });
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);
     await expect.poll(async () => (await frame(page)).metrics.vte?.value ?? 1, { timeout: 15_000 }).toBeLessThan(0.01);
     await page.click('[data-action="undoEvent"]');
     await expect(page.locator('#alarm-label')).toHaveText('Alarmas resueltas', { timeout: 20_000 });
+    await hidePanel(page);
     await page.click('[data-action="alarms"]');
     await page.click('[data-action="acknowledge"]');
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
@@ -698,7 +706,7 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
     const count = await page
       .locator('.signal-toolbar button:visible, .signal-toolbar select:visible, .signal-toolbar input:visible')
       .count();
-    expect(count).toBeLessThanOrEqual(5);
+    expect(count).toBeLessThanOrEqual(await page.evaluate(() => (matchMedia('(max-width:700px)').matches ? 6 : 5)));
   });
 });
 
@@ -765,7 +773,7 @@ test.describe('CUR · comparación antes/después', () => {
 test.describe('EXM · modo examen', () => {
   test('los valores medidos se ocultan hasta que el alumno los estima', async ({ page }) => {
     await open(page, { speed: 4 });
-    await page.click('[data-instructor="learn"]');
+    await showPanel(page, 'learn');
     await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
@@ -775,6 +783,7 @@ test.describe('EXM · modo examen', () => {
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#exam-toggle')).toHaveClass(/active/);
     await expect.poll(() => page.evaluate(() => window.__r860.exam.active)).toBe(true);
+    await hidePanel(page);
     // Las casillas con dato muestran «?»; las sin medición conservan el guion y explican el motivo debajo.
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
@@ -795,11 +804,15 @@ test.describe('EXM · modo examen', () => {
     await expect(filaVte).toContainText('?');
     await page.click('[data-view="waves"]');
     // Al apagar el modo examen todo vuelve; al encenderlo de nuevo la estimación ya hecha sigue visible.
+    await showPanel(page, 'learn');
     await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await page.click('#exam-toggle');
+    await hidePanel(page);
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).not.toHaveText('?');
+    await showPanel(page, 'learn');
     await page.click('#exam-toggle');
+    await hidePanel(page);
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('?');
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
   });
@@ -807,10 +820,11 @@ test.describe('EXM · modo examen', () => {
   test('el campo vacío no vale como cero y el Resumen no revela las cifras tapadas', async ({ page }) => {
     // Auditoría: `Number('')` aceptaba el vacío como 0, y la pestaña Resumen mostraba lo que la columna tapaba.
     await open(page, { speed: 4 });
-    await page.click('[data-instructor="learn"]');
+    await showPanel(page, 'learn');
     await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     await page.click('#exam-toggle');
+    await hidePanel(page);
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
@@ -824,8 +838,10 @@ test.describe('EXM · modo examen', () => {
     await expect(page.locator('.edu-card').first().locator('header b')).toContainText('?');
     await expect(page.locator('.edu-card').first()).not.toContainText(/\d+ = /);
     // El control Examen vive en Entrenar y puede alternarse con cualquier vista del monitor.
+    await showPanel(page, 'learn');
     await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
     await page.click('#exam-toggle'); // al salir, la cifra y la sustitución vuelven
+    await hidePanel(page);
     await page.click('[data-view="teaching"]');
     await expect(page.locator('.edu-card').first().locator('header b')).not.toContainText('?');
   });
@@ -837,7 +853,7 @@ test.describe('EXM · ubicación del modo examen', () => {
     const button = page.locator('#exam-toggle');
     expect(await button.evaluate((el) => el.closest('#instructor-learn'))).not.toBeNull();
     expect(await button.evaluate((el) => el.closest('.signal-toolbar'))).toBeNull();
-    await page.click('[data-instructor="learn"]');
+    await showPanel(page, 'learn');
     await button.scrollIntoViewIfNeeded();
     await expect(button).toContainText('Modo examen');
     await expect(button).toContainText('Las mediciones se ocultan hasta que escribes tu estimación');
@@ -847,7 +863,7 @@ test.describe('EXM · ubicación del modo examen', () => {
 test.describe('BLD · bucle docente con presión muscular', () => {
   test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
     await open(page, { scenario: 'SC-19' });
-    await page.click('[data-instructor="patient"]'); // el panel abre en «Paciente»
+    await showPanel(page, 'patient');
     await page.locator('#truth-details summary').click();
     const canvas = page.locator('#muscle-loop-canvas');
     await expect(canvas).toBeVisible();
@@ -906,7 +922,7 @@ test.describe('DEN · densidad de la columna numérica', () => {
 test.describe('RT · disparo reverso (SC-24)', () => {
   test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
     await open(page, { scenario: 'SC-24' });
-    await page.click('[data-instructor="patient"]');
+    await showPanel(page, 'patient');
     await page.locator('.advanced-patient summary').click();
     await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
     await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
@@ -916,7 +932,7 @@ test.describe('RT · disparo reverso (SC-24)', () => {
 test.describe('PRE · presets de mecánica del paciente', () => {
   test('«TET 7,0 mm» fija el deslizador K₂ a 9,2 y moverlo a mano deja «Personalizado»', async ({ page }) => {
     await open(page);
-    await page.click('[data-instructor="patient"]');
+    await showPanel(page, 'patient');
     await page.locator('.advanced-patient summary').click();
     const tubo = page.locator('#preset-tube');
     await expect(tubo).toHaveValue('none');
@@ -948,11 +964,12 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
 
   test('subir PEEP por encima de la apertura recluta; bajarla por encima del cierre lo conserva', async ({ page }) => {
     await open(page, { scenario: 'SC-25', speed: 8 });
-    await page.click('[data-instructor="patient"]');
+    await showPanel(page, 'patient');
     await page.locator('#truth-details summary').click();
     // La celda del modelo aparece sólo con reclutamiento configurado, y arranca en 0 % (PEEP 5, picos ~22 < pOpen 28).
     await expect(page.locator('#truth-recruit-cell')).toBeVisible();
     expect(await reclutado(page)).toBeLessThan(0.05);
+    await hidePanel(page);
     // PEEP 20: los picos inspiratorios (~37) superan pOpen y la fracción abierta sube respiración a respiración.
     await ponerPeep(page, 20);
     await page.waitForFunction(() => (window.__r860.frame as unknown as { truth: { recruited: number } }).truth.recruited > 0.9, null, {
@@ -1024,8 +1041,8 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
 test.describe('PAT · perfiles del paciente', () => {
   test('aplica, deshace y restablece mecánica con perfiles completos', async ({ page }) => {
     await open(page, { scenario: 'SC-01' });
+    await showPanel(page, 'patient');
     await expect(page.locator('#patient-profiles')).toBeVisible();
-    await page.click('[data-instructor="patient"]');
     const programmedSettings = (await frame(page)).settings;
 
     const healthy = page.locator('#patient-profiles [data-profile="healthy"]');
@@ -1049,13 +1066,13 @@ test.describe('PAT · perfiles del paciente', () => {
     await expect(page.locator('.profile-chip[aria-pressed="true"]')).toHaveCount(0);
     await expect(page.locator('#profile-status')).toHaveText('Personalizado');
 
-    await page.click('[data-instructor="events"]');
+    await showPanel(page, 'events');
     await page.click('#undo-event');
     await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('50');
     await expect(healthy).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#profile-status')).toHaveText('');
 
-    await page.click('[data-instructor="patient"]');
+    await showPanel(page, 'patient');
     await page.locator('#patient-profiles [data-profile="recruitable"]').click();
     await expect(page.locator('#patient-profiles [data-profile="recruitable"]')).toHaveAttribute('aria-pressed', 'true');
     await page.click('[data-action="resetPatient"]');

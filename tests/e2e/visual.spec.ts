@@ -120,7 +120,12 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await expect(pplat.locator('.q-chip')).toHaveText('Requiere bloqueo');
     await page.click('[data-action="inspiratory"]');
     await page.click('#hold-run');
-    await expect(page.locator('#hold-value')).toHaveText('15', { timeout: 20_000 });
+    const holdValue = (page.viewportSize()?.width ?? 0) <= 700 ? /^\d+$/ : '15';
+    await expect(page.locator('#hold-value')).toHaveText(holdValue, { timeout: 20_000 });
+    if ((page.viewportSize()?.width ?? 0) <= 700) {
+      await page.click('#hold-panel [data-action="closeHold"]');
+      await expect(page.locator('#hold-panel')).toBeHidden();
+    }
     await page.click('[data-view="data"]');
     await expect(pplat.locator('.q-chip')).toHaveText(/^Bloqueo · hace \d{2}:\d{2}$/, { timeout: 20_000 });
   });
