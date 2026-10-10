@@ -18,6 +18,12 @@ async function chooseRadio(page: Page, groupId: string, value: string) {
   await expect(radio).toBeChecked();
 }
 
+async function chooseRadio(page: Page, groupId: string, value: string) {
+  const radio = page.locator(`#${groupId} input[type="radio"][value="${value}"]`);
+  await radio.locator('xpath=..').click();
+  await expect(radio).toBeChecked();
+}
+
 test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
   test('escritorio agrupa las opciones en ⋯ y Audio alterna aria-checked', async ({ page, isMobile }) => {
     test.skip(isMobile, 'sólo escritorio');

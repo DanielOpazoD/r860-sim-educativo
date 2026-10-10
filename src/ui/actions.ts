@@ -440,6 +440,21 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       e.preventDefault();
       next.focus();
     });
+    speedOptions.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+      const options = [...speedOptions.querySelectorAll<HTMLButtonElement>('[data-speed]:not(:disabled)')];
+      const current = options.indexOf(document.activeElement as HTMLButtonElement);
+      const index =
+        e.key === 'Home'
+          ? 0
+          : e.key === 'End'
+            ? options.length - 1
+            : (current + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1) + options.length) % options.length;
+      const next = options[index];
+      if (!next) return;
+      e.preventDefault();
+      next.focus();
+    });
     morePopover.panel.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menuitemcheckbox"]')) setPopoverOpen(morePopover, false, true);
     });
