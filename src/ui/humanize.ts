@@ -32,6 +32,16 @@ const REASONS: Record<string, string> = {
   enCurso: 'en curso',
   twoCompartments: 'aprox.: dos unidades en paralelo, no equivale a un solo compartimento',
   fixture: 'transcripción de fotografía',
+  presionRecortadaPorElTecho: 'inspiración recortada por Pmáx/Plimit: la curva no es interpretable',
+  esfuerzoDuranteLaRampa: 'esfuerzo durante la rampa: el índice no se puede interpretar',
+  inicio: 'inicio de la ventilación',
+  valorNoFinito: 'resultado no finito',
+  sensorNoFinito: 'lectura del sensor no finita',
+  sinDato: 'sin dato',
+  user: 'por acción del usuario',
+  timeout: 'se agotó el tiempo de edición',
+  locked: 'otro control mantiene la edición bloqueada',
+  reselect: 'se eligió otro control',
 };
 export function humanReason(reason: string | null | undefined): string {
   if (!reason) return '';
@@ -147,8 +157,37 @@ const ACTOR: Record<string, string> = {
   system: 'sistema',
 };
 
+const PATIENT_FIELD_LABEL: Record<string, string> = {
+  crs: 'distensibilidad',
+  rInsp: 'resistencia inspiratoria',
+  rinsp: 'resistencia inspiratoria',
+  raw: 'resistencia inspiratoria',
+  rExp: 'resistencia espiratoria',
+  rexp: 'resistencia espiratoria',
+  r2: 'resistencia de Rohrer (K₂)',
+  eVisc: 'relajación viscoelástica',
+  tauViscS: 'constante viscoelástica (τ₂)',
+  sigmoid: 'curva P-V',
+  recruit: 'reclutamiento alveolar',
+  efl: 'limitación al flujo espiratorio',
+  rExpVolumeDep: 'estrechamiento al vaciarse',
+  second: 'segunda unidad alveolar',
+  p0: 'presión de referencia',
+  rExpValve: 'resistencia de rama espiratoria',
+  leakLpmAt10: 'fuga en la Y',
+  circuitComplianceLPerCmH2O: 'compliance del circuito',
+  disconnected: 'circuito desconectado',
+  expValveOpenMs: 'apertura de la válvula espiratoria',
+};
+
+function patientFields(patient: unknown): string {
+  if (!patient || typeof patient !== 'object') return 'otros parámetros';
+  const labels = Object.keys(patient).map((key) => PATIENT_FIELD_LABEL[key] ?? 'otros parámetros');
+  return [...new Set(labels)].join(', ') || 'otros parámetros';
+}
+
 /** Frase legible para el registro de eventos. */
-export function eventSentence(e: SessionEvent): string {
+function eventSentenceBody(e: SessionEvent): string {
   const p = (e.payload ?? {}) as Record<string, unknown>;
   const who = ACTOR[e.actor] ?? e.actor;
   switch (e.kind) {
@@ -197,23 +236,30 @@ export function eventSentence(e: SessionEvent): string {
       return p.ventilation === 'standby' ? `${who} pasó a espera` : 'Ventilación iniciada';
     case 'scenario':
       if (p.scenarioId) return `Escenario cargado: ${String(p.name)}`;
-      if (p.patient) return `${who} cambió la mecánica (${Object.keys(p.patient as object).join(', ')})`;
+      if (p.patient) return `${who} cambió la mecánica (${patientFields(p.patient)})`;
       if (p.effort) return `${who} cambió el esfuerzo`;
       if (p.sensors) return `${who} cambió el sensor de O₂`;
       return 'Escenario';
-    case 'pause':
-      return p.paused ? `Simulación pausada${p.reason ? ' (' + String(p.reason) + ')' : ''}` : 'Simulación reanudada';
+    case 'pause': {
+      const rawReason = typeof p.reason === 'string' ? p.reason : '';
+      const reason = rawReason === 'user' ? '' : humanReason(rawReason);
+      return p.paused ? `Simulación pausada${reason ? ` (${reason})` : ''}` : 'Simulación reanudada';
+    }
     case 'audio':
       return `Pausa de audio ${Math.round(Number(p.pauseMs ?? 0) / 1000)} s`;
     case 'discontinuity':
       return `Tiempo descartado: ${Math.round((p.droppedMs as number) ?? 0)} ms`;
     case 'rejected':
-      return `Orden rechazada (${String(p.command)}): ${learnerText(String(p.reason))}`;
+      return `Orden rechazada: ${learnerText(String(p.reason))}`;
     case 'mode':
       return 'Cambio de modo';
     default:
       return e.kind;
   }
+}
+
+export function eventSentence(e: SessionEvent): string {
+  return eventSentenceBody(e).replace(/^./u, (first) => first.toLocaleUpperCase('es'));
 }
 
 /**
