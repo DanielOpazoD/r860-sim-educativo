@@ -162,10 +162,10 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       case 'scenarios':
         ctx.dialog.open(
           'scenarios',
-          'Elige un escenario de entrenamiento',
-          scenariosHTML(SCENARIOS, ctx.scenario.id, modeLabel),
-          CANCEL_BTN,
-          'wide',
+          'Escenarios y paciente',
+          scenariosHTML(SCENARIOS, ctx.scenario.id, modeLabel, Boolean(ctx.fixtureId)),
+          CLOSE_BTN,
+          'scenario-dialog',
         );
         break;
       case 'welcome-free':
@@ -478,9 +478,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         return;
       }
       if (el.dataset.scenarioView) {
-        const start = el.dataset.scenarioView === 'start';
-        $('#scenario-start').hidden = !start;
-        $('#scenario-all').hidden = start;
+        for (const view of ['start', 'all', 'profiles'])
+          $('#scenario-' + view).hidden = view !== el.dataset.scenarioView;
+        $('#scenario-scope').hidden = el.dataset.scenarioView === 'profiles';
         for (const button of document.querySelectorAll<HTMLElement>('[data-scenario-view]'))
           button.setAttribute('aria-pressed', String(button.dataset.scenarioView === el.dataset.scenarioView));
         $('#dialog-content').scrollTop = 0;

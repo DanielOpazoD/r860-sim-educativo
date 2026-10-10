@@ -238,6 +238,7 @@ export function createInstructorPanel(
     init() {
       $('#patient-profiles').innerHTML = `
         <h3 class="small-section-title">Perfil del paciente</h3>
+        <p class="profile-scope">Cambia mecánica y esfuerzo. Conserva los ajustes del ventilador.</p>
         <div class="profile-grid">${PATIENT_PROFILES.map(
           (profile) =>
             `<button class="profile-chip" data-profile="${profile.id}" aria-pressed="false" title="${profileHint(profile)}" ${ctx.fixtureId ? 'disabled' : ''}><b>${profile.label}</b><small>${profileHint(profile)}</small></button>`,
@@ -282,7 +283,10 @@ export function createInstructorPanel(
           { type: 'setEffort', params: previousEffort, replace: true },
         ],
       );
-      if (applied) ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
+      if (applied) {
+        if (ctx.dialog.kind === 'scenarios') ctx.dialog.close();
+        ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
+      }
     },
     loadScenario,
     switchInstructor,
