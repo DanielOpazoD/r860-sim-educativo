@@ -4,9 +4,9 @@
   position: sticky;
   top: 0;
   z-index: 600;
-  background: #5b2b2b;
-  color: #ffe1e1;
-  border-bottom: 1px solid #a05050;
+  background: var(--shell-danger-soft);
+  color: var(--shell-danger);
+  border-bottom: 1px solid var(--shell-danger);
   padding: 10px 24px;
   font-size: 13px;
   line-height: 1.5;
@@ -45,7 +45,7 @@
   color: #ffd98a;
 }
 .mode-error.warn {
-  color: #ffd98a;
+  color: var(--shell-warning);
 }
 @media (max-width: 700px), (pointer: coarse) and (max-width: 900px) {
   .hold-panel.mobile-hold {
@@ -61,21 +61,26 @@
     min-height: 44px;
   }
 }
-/* Tema de página: negro fijo por decisión del usuario (06-09-2026); el tema claro se retiró. */
 /* ---- Ajuste a pantallas bajas (MacBook Air 13): el equipo se encoge para que quepa entero sin desplazar. ---- */
 .device-shell {
   margin: 0 auto;
   max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
 }
-/* ---- Tema de página negro: el cromo de la app en negro puro; el monitor del equipo conserva su azul. ---- */
+/* Exterior claro; la carcasa y la pantalla azul del R860 conservan sus colores. */
 :root {
-  --bg: #000000;
-  --surface: #0a0a0a;
-  --surface2: #121212;
-  --line: #262626;
+  --bg: var(--shell-bg);
+  --surface: var(--shell-surface);
+  --surface2: var(--shell-raised);
+  --line: var(--shell-line);
+}
+:is(.app-top, .instructor, .signal-toolbar, .more-menu, .command-palette, .app-dialog, .toast, .safety-strip) {
+  --text: var(--shell-text);
+  --muted: var(--shell-muted);
+  --dim: var(--shell-dim);
 }
 body {
   background: var(--shell-bg);
+  color: var(--shell-text);
 }
 .app-top {
   background: color-mix(in srgb, var(--shell-bg) 90%, transparent);
@@ -91,10 +96,30 @@ body {
 .app-dialog {
   background: var(--shell-surface);
   border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+.app-dialog .primary-button {
+  background: var(--shell-accent);
+  border-color: var(--shell-accent);
+  color: var(--shell-accent-ink);
+}
+.app-dialog .primary-button:hover {
+  background: var(--shell-accent-soft);
+  border-color: var(--shell-accent);
+  color: var(--shell-accent);
+}
+.app-dialog .secondary-button {
+  background: var(--shell-surface);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+}
+.app-dialog .secondary-button:hover {
+  background: var(--shell-hover);
+  border-color: var(--shell-line);
 }
 .toast {
   background: var(--shell-raised);
-  border-color: #4a4a4a;
+  border-color: var(--shell-line);
 }
 .safety-strip {
   background: var(--shell-bg);
@@ -219,7 +244,7 @@ body {
   align-items: baseline;
   gap: 8px;
   font-size: 11px;
-  color: #8fb0c9;
+  color: var(--shell-muted);
 }
 .scenario-card > div small {
   font-size: 10px;
@@ -228,12 +253,12 @@ body {
 /* Datos del modelo (panel docente) plegados por omisión. */
 .truth-details {
   margin: 8px 0 10px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--shell-line);
 }
 .truth-details > summary {
   cursor: pointer;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--shell-muted);
   padding: 8px 0;
   list-style: none;
   display: flex;
@@ -251,5 +276,5 @@ body {
   display: none;
 }
 #teacher-toggle[aria-pressed='true'] {
-  color: var(--accent);
+  color: var(--shell-accent);
 }

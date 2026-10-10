@@ -67,14 +67,14 @@
   .mobile-hint {
     display: block;
     font-size: var(--type-2xs);
-    color: #6386a0;
+    color: var(--shell-muted);
     margin: 7px 2px 10px;
     line-height: 1.5;
   }
   .device-scroll {
     overflow-x: auto;
     scrollbar-width: thin;
-    scrollbar-color: #435e75 #152334;
+    scrollbar-color: var(--shell-dim) var(--shell-bg);
     padding-bottom: 12px;
     border-radius: 15px;
     overscroll-behavior-x: contain;
@@ -482,38 +482,38 @@
 }
 .teacher-event {
   padding: 9px 0;
-  border-bottom: 1px solid #2e455a;
+  border-bottom: 1px solid var(--shell-line);
   display: grid;
   grid-template-columns: 38px 1fr;
   gap: 9px;
   line-height: 1.6;
 }
 .teacher-event time {
-  color: #7596ad;
+  color: var(--shell-dim);
   font-variant-numeric: tabular-nums;
 }
 .teacher-event span {
-  color: #afc7d7;
+  color: var(--shell-muted);
 }
 .hold-status.invalid {
   color: #ffdda5;
 }
 .fault-grid button.active {
-  border-color: #d1aa5f;
-  background: #443b29;
+  border-color: var(--shell-warning);
+  background: var(--shell-warning-soft);
 }
 .check-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 0;
-  border-bottom: 1px solid #385568;
+  border-bottom: 1px solid var(--shell-line);
 }
 .check-item.pass {
-  color: #b3ddcb;
+  color: var(--shell-accent);
 }
 .check-item.fail {
-  color: #f0b79f;
+  color: var(--shell-danger);
 }
 .check-item span {
   margin-left: auto;
@@ -526,7 +526,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  color: #9bd9ed;
+  color: var(--shell-accent);
 }
 .source-entry .icon {
   width: 15px;
@@ -541,12 +541,12 @@
 .info-table td,
 .info-table th {
   padding: 11px 9px;
-  border-bottom: 1px solid #3d5469;
+  border-bottom: 1px solid var(--shell-line);
   vertical-align: top;
   text-align: left;
 }
 .info-table th {
-  color: #adc9dc;
+  color: var(--shell-muted);
 }
 .help-list > div {
   margin: 20px 0;
@@ -707,7 +707,7 @@
 }
 .setting-field > .parameter-label > label {
   font-size: 11px;
-  color: #a7c4d6;
+  color: var(--shell-muted);
   line-height: 1.4;
 }
 .setting-field > .parameter-help {
@@ -801,17 +801,17 @@
   cursor: pointer;
 }
 .metric-name .icon {
-  color: #86b6c4;
+  color: var(--shell-muted);
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
 }
 .metric-name:hover {
-  color: #d4f5ed;
+  color: var(--shell-accent);
 }
 .measurement-summary {
   padding: 2px 0 20px;
-  border-bottom: 1px solid #426078;
+  border-bottom: 1px solid var(--shell-line);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -819,17 +819,17 @@
 .measurement-summary strong {
   font-size: 38px;
   font-weight: 650;
-  color: #e5f7ff;
+  color: var(--shell-text);
   line-height: 1.2;
 }
 .measurement-summary strong small {
   font-size: 12px;
-  color: #92b0c5;
+  color: var(--shell-muted);
   font-weight: 400;
 }
 .measurement-summary > span {
   font-size: 11px;
-  color: #8eabbf;
+  color: var(--shell-muted);
   line-height: 1.6;
 }
 .measurement-explanation {
