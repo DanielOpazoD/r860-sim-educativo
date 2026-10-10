@@ -329,6 +329,10 @@
   .top-actions {
     flex: none;
   }
+  .top-actions [data-action='help'],
+  .top-actions [data-action='session'] {
+    display: none;
+  }
 }
 @media (min-width: 1700px) {
   .workspace {
@@ -547,6 +551,10 @@
 }
 #palette-input::placeholder {
   color: #7c8993;
+}
+#palette-input::-webkit-search-cancel-button {
+  appearance: none;
+  -webkit-appearance: none;
 }
 #palette-list {
   max-height: min(52vh, 420px);

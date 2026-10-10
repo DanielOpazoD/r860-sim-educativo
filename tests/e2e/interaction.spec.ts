@@ -594,7 +594,9 @@ test.describe('LEC · la lección responde', () => {
     );
     // El objetivo sí se cumple en la sesión original; se espera a que su aviso se retire para no confundirlo después.
     await expect(page.locator('#toast-stack .toast', { hasText: 'Objetivo' })).toHaveCount(0, { timeout: 10_000 });
-    await page.click('[data-action="session"]');
+    await page.locator('.palette-trigger').click();
+    await page.locator('#palette-input').fill('Sesión y archivos');
+    await page.locator('#palette-input').press('Enter');
     const [descarga] = await Promise.all([page.waitForEvent('download'), page.click('[data-action="exportSession"]')]);
     const ruta = info.outputPath('sesion.json');
     await descarga.saveAs(ruta);
@@ -927,7 +929,9 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
 
   test('restablecer preferencias las borra y avisa que se aplicará al recargar', async ({ page }) => {
     await open(page);
-    await page.click('.top-actions [data-action="session"]');
+    await page.locator('.palette-trigger').click();
+    await page.locator('#palette-input').fill('Sesión y archivos');
+    await page.locator('#palette-input').press('Enter');
     await page.click('#app-dialog [data-action="resetPrefs"]');
     await expect(page.locator('#toast-stack .toast').last()).toHaveText('Preferencias restablecidas: se aplican al recargar');
     await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBeNull();
