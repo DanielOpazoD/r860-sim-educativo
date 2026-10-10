@@ -174,6 +174,8 @@ export function importSession(text: string): ImportResult {
         errors.push(`commands[${i}]: changes ausente`);
       else if (['setPatient', 'setEffort', 'setSensors'].includes(cmd.type) && (!cmd.params || typeof cmd.params !== 'object'))
         errors.push(`commands[${i}]: params ausente`);
+      else if (['setPatient', 'setEffort'].includes(cmd.type) && cmd.replace !== undefined && typeof cmd.replace !== 'boolean')
+        errors.push(`commands[${i}]: replace debe ser booleano`);
       else if (cmd.type === 'requestHold' && (typeof cmd.durationS !== 'number' || !['inspHold', 'expHold'].includes(String(cmd.kind))))
         errors.push(`commands[${i}]: bloqueo inválido`);
       if (!['learner', 'instructor', 'scenario', 'system', 'controller'].includes(String(e.actor)))

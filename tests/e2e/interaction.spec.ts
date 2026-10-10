@@ -933,3 +933,59 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBeNull();
   });
 });
+
+test.describe('PAT · perfiles del paciente', () => {
+  test('aplica, deshace y restablece mecánica con perfiles completos', async ({ page }) => {
+    await open(page, { scenario: 'SC-01' });
+    await expect(page.locator('#patient-profiles')).toBeVisible();
+    await page.click('[data-instructor="patient"]');
+    const programmedSettings = (await frame(page)).settings;
+
+    const healthy = page.locator('#patient-profiles [data-profile="healthy"]');
+    const stiff = page.locator('#patient-profiles [data-profile="stiff"]');
+    await expect(healthy).toHaveAttribute('aria-pressed', 'true');
+    await stiff.click();
+    await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('25');
+    await expect(stiff).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#profile-status')).toHaveText('');
+    await expect(page.locator('#toast-stack .toast').last()).toHaveText(
+      'Perfil aplicado: Pulmón rígido. La programación del ventilador no cambia.',
+    );
+    expect((await frame(page)).settings).toEqual(programmedSettings);
+
+    const compliance = page.locator('[data-phys-number="compliance"]');
+    await compliance.fill('40');
+    await compliance.dispatchEvent('change');
+    await expect
+      .poll(() => page.evaluate(() => (window.__r860.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000))
+      .toBe(40);
+    await expect(page.locator('.profile-chip[aria-pressed="true"]')).toHaveCount(0);
+    await expect(page.locator('#profile-status')).toHaveText('Personalizado');
+
+    await page.click('[data-instructor="events"]');
+    await page.click('#undo-event');
+    await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('50');
+    await expect(healthy).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#profile-status')).toHaveText('');
+
+    await page.click('[data-instructor="patient"]');
+    await page.locator('#patient-profiles [data-profile="recruitable"]').click();
+    await expect(page.locator('#patient-profiles [data-profile="recruitable"]')).toHaveAttribute('aria-pressed', 'true');
+    await page.click('[data-action="resetPatient"]');
+    await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('50');
+    await expect(healthy).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#profile-status')).toHaveText('');
+    const resetPatient = await page.evaluate(
+      () =>
+        (
+          window.__r860.frame as unknown as {
+            truth: { patient: { crs: number; recruit?: unknown; sigmoid?: unknown; second?: unknown } };
+          }
+        ).truth.patient,
+    );
+    expect(resetPatient.crs).toBe(0.05);
+    expect(resetPatient.recruit).toBeUndefined();
+    expect(resetPatient.sigmoid).toBeUndefined();
+    expect(resetPatient.second).toBeUndefined();
+  });
+});

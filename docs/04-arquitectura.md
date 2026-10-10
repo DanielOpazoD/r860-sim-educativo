@@ -21,7 +21,7 @@ domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui
 | `history` | Exportación, importación validada y reproducción de sesiones | `domain`, `engine`, `profiles` | app, ui |
 | `app` | Protocolo del Worker, anfitrión, cliente, máquina de estados de edición | `domain`, `engine`, `profiles`, `scenarios`, `history` | ui |
 | `render` | Dibujo en canvas (curvas, bucles, manómetro, tendencias) | `domain` | engine, app, ui |
-| `ui` | Composición de la interfaz, diálogos, editor, panel docente | todo lo anterior | — |
+| `ui` | Composición de la interfaz, diálogos, editor, panel docente y perfiles de paciente basados en escenarios | todo lo anterior | — |
 | `workers` | Punto de entrada del Worker | `app` | — |
 
 **Qué cuenta como alcanzar una capa.** Los `import type` no cuentan: desaparecen al compilar y no acoplan comportamiento. Sí cuentan las cuatro formas que dejan una dependencia en tiempo de ejecución, y el verificador comprueba las cuatro: `import x from '…'`, `export … from '…'` (re-exportar acopla igual, y además propaga el módulo a quien importe éste), `import '…'` (sólo por efecto secundario) y `await import('…')` (diferida, pero la misma dependencia). Las tres últimas se añadieron después de que una revisión adversarial burlara el verificador colocando `export * from '../ui/format'` dentro de `domain`: pasaba lint, tipos y la puerta de capas. El verificador prohíbe además importar dos veces el mismo módulo desde un archivo.
