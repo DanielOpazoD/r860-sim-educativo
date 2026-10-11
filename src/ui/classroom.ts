@@ -4,6 +4,22 @@ import { debriefHTML } from './dialogs';
 import { $, $$, esc, put } from './dom';
 
 const SECTIONS = ['lesson', 'theory', 'questions', 'exam', 'results', 'library'] as const;
+const HEADINGS: Record<Section, { kicker: string; title: string; lead: string }> = {
+  lesson: {
+    kicker: 'R860 LAB · APRENDIZAJE',
+    title: 'Comprender. Practicar. Reflexionar.',
+    lead: 'Un espacio para aprender, conectado con tu simulación.',
+  },
+  theory: { kicker: 'FUNDAMENTOS', title: 'Las presiones que mides y lo que significan', lead: '' },
+  questions: { kicker: 'REFLEXIÓN', title: 'Observa y explica', lead: '' },
+  exam: { kicker: 'EXAMEN', title: 'Primero estima. Después compara.', lead: '' },
+  results: { kicker: 'RESULTADOS', title: 'Resumen de tu práctica', lead: '' },
+  library: {
+    kicker: 'BIBLIOTECA',
+    title: 'Casos para practicar',
+    lead: 'Elegir un caso prepara paciente, ajustes iniciales y objetivos nuevos.',
+  },
+};
 type Section = (typeof SECTIONS)[number];
 
 export interface Classroom {
@@ -29,12 +45,21 @@ export function createClassroom(
     const cases = SCENARIOS.filter(
       (sc) => sc.id !== 'SC-P' && `${sc.name} ${sc.category ?? ''} ${sc.id}`.toLocaleLowerCase().includes(query),
     );
-    $('#aula-library-list').innerHTML = cases
+    const groups = new Map<string, typeof cases>();
+    for (const sc of cases) {
+      const key = sc.category ?? 'Práctica';
+      groups.set(key, [...(groups.get(key) ?? []), sc]);
+    }
+    $('#aula-library-list').innerHTML = [...groups]
       .map(
-        (sc) => `<button class="aula-case" data-aula-case="${esc(sc.id)}">
-          <span class="aula-kicker">${esc(sc.category ?? 'Práctica')} · ${esc(sc.id)}</span>
-          <strong>${esc(sc.name)}</strong><span>${esc(sc.description)}</span>
-          <small>${sc.id === ctx.scenario.id ? 'Caso actual · volver a la lección' : 'Preparar este caso →'}</small></button>`,
+        ([category, items]) =>
+          `<section class="aula-group"><h3 class="aula-kicker">${esc(category)} · ${items.length}</h3><div class="aula-library-list">${items
+            .map(
+              (sc) => `<button class="aula-case${sc.id === ctx.scenario.id ? ' current' : ''}" data-aula-case="${esc(sc.id)}">
+          <span class="aula-kicker">${esc(sc.id)}${sc.id === ctx.scenario.id ? ' · Caso actual' : ''}</span>
+          <strong>${esc(sc.name)}</strong><span>${esc(sc.description)}</span></button>`,
+            )
+            .join('')}</div></section>`,
       )
       .join('');
     $('#aula-library-empty').hidden = cases.length > 0;
@@ -94,6 +119,12 @@ export function createClassroom(
       else button.removeAttribute('aria-current');
     }
     for (const id of SECTIONS) $(`#aula-${id}`).hidden = id !== next;
+    const heading = HEADINGS[next];
+    put('#classroom-kicker', heading.kicker);
+    put('#classroom-title', heading.title);
+    put('#classroom-lead', heading.lead);
+    $('#classroom-lead').hidden = !heading.lead;
+    $('#classroom').classList.toggle('compact', next !== 'lesson');
     if (next === 'theory') ctx.lesson.flags.teaching = true;
     if (next === 'library') library();
     resultsSignature = '';
