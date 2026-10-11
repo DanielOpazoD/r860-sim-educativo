@@ -133,7 +133,8 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     await expect(page.locator('#numeric-grid [data-metric="rr"] .numeric-value')).toHaveText('15');
     // Sin bloqueo inspiratorio la Pplat no existe: el guion y el motivo ocupan líneas distintas.
     await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('—');
-    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-age')).toHaveText('Requiere bloqueo');
+    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-age')).toHaveText('Haz un bloqueo inspiratorio');
+    for (const key of ['cstat', 'driving']) await expect(page.locator(`#numeric-grid [data-metric="${key}"] .numeric-age`)).toBeEmpty();
     await expect(page.locator('#numeric-grid [data-metric="pplat"]')).toHaveAttribute(
       'aria-label',
       'Pplat: requiere un bloqueo inspiratorio. Información y medición',

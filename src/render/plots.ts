@@ -1,5 +1,5 @@
 import { formatNumber as format } from '../domain/units';
-import { PLOT_TEXT_COLORS } from './plotColors';
+import { PLOT_TEXT_COLORS, PLOT_TYPE } from './plotColors';
 /**
  * Renderizado exclusivamente visual (canvas). Nunca modifica el estado de la simulación.
  * Estilo de curvas, bucles, manómetro, tendencias y esfuerzo derivado de «R860 Lab» v1.1 (src/plots.js, MIT 2026),
@@ -476,11 +476,11 @@ export function drawWave(
       ctx.setLineDash([4, 4]);
       if (peep > 0) {
         line(ctx, left, yf(peep), w - right, yf(peep), '#ffd66e99', 0.9);
-        text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, 9, '#ffd66e99', 'right');
+        text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaPeep, 'right');
       }
       if (typeof options.pmax === 'number' && Number.isFinite(options.pmax) && options.pmax > sp.min && options.pmax < sp.max) {
         line(ctx, left, yf(options.pmax), w - right, yf(options.pmax), '#ff7b7bb0', 0.9);
-        text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, 9, '#ff7b7bb0', 'right');
+        text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.marcaPpico, 'right');
       }
       ctx.restore();
       // Cada disparo detectado por el sensor queda marcado en el borde inferior; no distingue esfuerzo de autodisparo por fuga.
@@ -546,8 +546,8 @@ export function drawWave(
       ctx.stroke();
       ctx.restore();
       if (i === 0) {
-        text(ctx, 'Antes', left + 5, ytop + 10, 8, '#edc87e');
-        text(ctx, 'Después', left + 39, ytop + 10, 8, sp.color);
+        text(ctx, 'Antes', left + 5, ytop + 11, PLOT_TYPE.nota, PLOT_TEXT_COLORS.antes);
+        text(ctx, 'Después', left + 44, ytop + 11, PLOT_TYPE.nota, sp.color);
       }
     }
     for (const seg of segments) {
@@ -570,17 +570,22 @@ export function drawWave(
         ctx.restore();
         if (i === 0) {
           const labelY = marker.kind === 'start' ? ytop + 10 : marker.kind === 'cycle' ? ybottom - 16 : ybottom - 5;
-          text(ctx, marker.label, x + 3, labelY, 8, '#c4e5f2');
+          text(ctx, marker.label, x + 3, labelY, PLOT_TYPE.nota, PLOT_TEXT_COLORS.anotacion);
         }
       } else if (i === 0) {
         const value = marker.value ?? sp.min;
         const y = marker.kind === 'effort' ? ybottom - 4 : yf(value);
-        const markerColor = marker.kind === 'pplat' ? '#ffe49a' : marker.kind === 'ppeak' ? '#ffb0aa' : '#d6b7ff';
+        const markerColor =
+          marker.kind === 'pplat'
+            ? PLOT_TEXT_COLORS.marcaPplat
+            : marker.kind === 'ppeak'
+              ? PLOT_TEXT_COLORS.marcaPpico
+              : PLOT_TEXT_COLORS.marcaEsfuerzo;
         ctx.fillStyle = markerColor;
         ctx.beginPath();
         ctx.arc(x, y, 2.8, 0, Math.PI * 2);
         ctx.fill();
-        text(ctx, marker.label, x + 4, Math.max(ytop + 8, y - 4), 8, markerColor);
+        text(ctx, marker.label, x + 4, Math.max(ytop + 10, y - 4), PLOT_TYPE.nota, markerColor);
       }
     }
     if (style === 'sweep' && !options.frozen) {
@@ -600,12 +605,12 @@ export function drawWave(
     if (typeof options.cursorTime === 'number' && Number.isFinite(options.cursorTime)) {
       const x = xfn(options.cursorTime);
       line(ctx, x, ytop, x, ybottom, '#ffffffd0', 0.8);
-      if (i === 0) text(ctx, 'A', x + 3, ytop + 10, 8, '#ffffffd0', 'left', '600');
+      if (i === 0) text(ctx, 'A', x + 3, ytop + 11, PLOT_TYPE.nota, '#ffffff', 'left', '600');
     }
     if (typeof options.cursorTimeB === 'number' && Number.isFinite(options.cursorTimeB)) {
       const x = xfn(options.cursorTimeB);
       line(ctx, x, ytop, x, ybottom, '#ffe49ad0', 0.8);
-      if (i === 0) text(ctx, 'B', x + 3, ytop + 10, 8, '#ffe49ad0', 'left', '600');
+      if (i === 0) text(ctx, 'B', x + 3, ytop + 11, PLOT_TYPE.nota, PLOT_TEXT_COLORS.marcaPplat, 'left', '600');
     }
     ctx.restore();
     if (i === specs.length - 1)
@@ -741,7 +746,7 @@ export function drawLoop(
     line(ctx, xf(peep), top, xf(peep), bottom, '#ffd66e99', 0.9);
     ctx.restore();
     line(ctx, xf(peep), bottom, xf(peep), bottom + 5, '#ffd66e', 1);
-    text(ctx, 'PEEP', xf(peep) + 3, top + 10, 9, '#ffd66e', 'left');
+    text(ctx, 'PEEP', xf(peep) + 3, top + 10, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaPeep, 'left');
   }
   // La VT sólo es consigna en VC; en PC/PS es resultado, no ajuste.
   if (options.vtMark && vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
@@ -749,14 +754,14 @@ export function drawLoop(
     ctx.setLineDash([3, 3]);
     line(ctx, left, yf(vtMl), w - right, yf(vtMl), '#9fd7ff99', 0.9);
     ctx.restore();
-    text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, 9, '#9fd7ff', 'right');
+    text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaVt, 'right');
   }
   if (options.vtMark && vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
     line(ctx, xf(vtMl), top, xf(vtMl), bottom, '#9fd7ff99', 0.9);
     ctx.restore();
-    text(ctx, 'VT', xf(vtMl) + 3, top + 10, 9, '#9fd7ff', 'left');
+    text(ctx, 'VT', xf(vtMl) + 3, top + 10, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaVt, 'left');
   }
   path(ref, reference ? '#edc87ecc' : '#b7c4d466', true);
   path(current, '#9bf4de', false);
@@ -980,7 +985,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
       xf = (t: number): number => left + ((t - start) / span) * pw,
       yf = (v: number): number => bottom - (v / sp.max) * ph;
     text(ctx, sp.label, left, i * row + 16, 12, '#bce5fa');
-    text(ctx, sp.unit, left - 9, i * row + 16, 9, '#8dbddf', 'right');
+    text(ctx, sp.unit, left - 9, i * row + 16, PLOT_TYPE.unidad, PLOT_TEXT_COLORS.tickTendencias, 'right');
     for (let k = 0; k <= 4; k++) {
       const y = yf((k * sp.max) / 4);
       line(ctx, left, y, w - right, y, '#78b8da3d');
