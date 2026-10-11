@@ -1,9 +1,19 @@
 import { defineConfig } from 'vite';
+import { ENGINE_VERSION } from './src/engine/version.ts';
+import pkg from './package.json' with { type: 'json' };
+
+if (pkg.version !== ENGINE_VERSION) throw new Error('La versión del paquete debe coincidir con ENGINE_VERSION.');
 
 // Simulador EDUCATIVO · NO USO CLÍNICO. Sin backend, sin dependencias en tiempo de ejecución.
 export default defineConfig({
   base: './',
-  build: { target: 'es2022', sourcemap: true },
+  plugins: [
+    {
+      name: 'engine-version-html',
+      transformIndexHtml: (html) => html.replaceAll('%ENGINE_VERSION%', ENGINE_VERSION),
+    },
+  ],
+  build: { target: 'es2022', sourcemap: false },
   worker: { format: 'es' },
   server: { port: 5173, strictPort: true },
   preview: { port: 4173, strictPort: true },
