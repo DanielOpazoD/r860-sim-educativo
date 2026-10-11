@@ -58,8 +58,8 @@ export function createInstructorPanel(
     for (const tb of [$<HTMLButtonElement>('#teacher-toggle'), $<HTMLButtonElement>('#panel-button')]) {
       tb.setAttribute('aria-pressed', String(teacherVisible));
       tb.classList.toggle('active', teacherVisible);
-      tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
-      tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} panel de entrenamiento`);
+      tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} paciente y eventos`);
+      tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} paciente y eventos`);
     }
   }
   function syncProfileButtons(patient: EngineFrame['truth']['patient'], effort: EngineFrame['truth']['effort']): void {
@@ -199,7 +199,7 @@ export function createInstructorPanel(
       e.classList.toggle('active', on);
       e.setAttribute('aria-selected', String(on));
     }
-    for (const id of ['patient', 'learn', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
+    for (const id of ['patient', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
   }
   /** Select de preset reflejando el estado: preset coincidente (tolerancia 1e-6) o «Personalizado», con su nota. */
   function syncPreset<T extends { id: string }>(

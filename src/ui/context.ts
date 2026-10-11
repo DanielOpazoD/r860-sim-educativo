@@ -28,6 +28,7 @@ export interface DialogHost {
 
 /** Seguimiento de objetivos de la lección: banderas que los rasgos marcan y evaluación por cuadro. */
 export interface LessonTracker {
+  readonly sessionImported: boolean;
   readonly flags: Record<string, unknown>;
   readonly done: Set<string>;
   reset(): void;

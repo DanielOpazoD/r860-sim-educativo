@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { frame, open, showPanel } from './helpers';
+import { frame, open, openAula, openSimulator, showPanel } from './helpers';
 
 type FrameLike = {
   settings: { mode: string; psupport: number };
@@ -50,9 +50,11 @@ test.describe('CPAP/PS', () => {
   test('SC-19: apnea provocada → alarma alta y respaldo; al deshacerla el paciente vuelve y la alarma se resuelve', async ({ page }) => {
     await open(page, { scenario: 'SC-19', speed: 4 });
     await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
-    await expect(page.locator('[data-instructor="learn"]')).toHaveText(/Entrenar · [01]\/3/);
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText(/[01] de 3 objetivos/);
     await expect.poll(async () => (await frame(page)).metrics.rrSpont?.value ?? 0, { timeout: 30_000 }).toBeGreaterThan(10);
     // Apnea desde el panel docente: el esfuerzo se apaga; a los 20 s de tiempo simulado, alarma y respaldo.
+    await openSimulator(page);
     await showPanel(page, 'events');
     await page.click('[data-event="apnea"]');
     await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Apnea', { timeout: 30_000 });
@@ -68,6 +70,7 @@ test.describe('CPAP/PS', () => {
       .poll(async () => (await frame(page)).alarms.find((a) => a.id === 'apnea')?.conditionActive, { timeout: 30_000 })
       .toBe(false);
     await expect(page.locator('#alarm-label')).toHaveText('Alarmas resueltas');
-    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 2/3', { timeout: 15_000 });
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('2 de 3 objetivos', { timeout: 15_000 });
   });
 });
