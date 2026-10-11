@@ -25,10 +25,18 @@ export function createDialogHost(): DialogHost & { bind(): void } {
     const top = Math.max(rect.top, viewportTop);
     const bottom = Math.min(rect.bottom, viewportBottom);
     const dialog = $('#app-dialog');
-    dialog.style.left = `${rect.left}px`;
-    dialog.style.top = `${top}px`;
-    dialog.style.width = `${rect.width}px`;
-    dialog.style.height = `${Math.max(0, bottom - top)}px`;
+    const next = { left: rect.left, top, width: rect.width, height: Math.max(0, bottom - top) };
+    for (const [property, value] of Object.entries(next)) {
+      const px = `${value}px`;
+      if (dialog.style.getPropertyValue(property) !== px) dialog.style.setProperty(property, px);
+    }
+  };
+  // Los eventos de resize/scroll no cubren los desplazamientos de maquetación (cabecera que envuelve, monitor
+  // reescalado): mientras un diálogo del equipo está abierto se sigue el monitor fotograma a fotograma.
+  let tracking = 0;
+  const track = (): void => {
+    positionDeviceDialog();
+    tracking = DEVICE_DIALOGS.has(kind) ? requestAnimationFrame(track) : 0;
   };
   return {
     get kind() {
@@ -47,6 +55,7 @@ export function createDialogHost(): DialogHost & { bind(): void } {
       $('#dialog-footer').innerHTML = footer === null ? '' : footer || CLOSE_BTN;
       if (enteringDevice) $('.monitor-body').scrollIntoView({ block: 'center', behavior: 'instant' });
       positionDeviceDialog();
+      if (device && !tracking) tracking = requestAnimationFrame(track);
       if (!d.open) d.showModal();
       for (const l of openListeners) l();
     },

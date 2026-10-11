@@ -291,7 +291,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await open(page, { speed: 4, instructor: 0 });
     const pplat = page.locator('#numeric-grid [data-metric="pplat"]');
     await expect(pplat.locator('.numeric-value')).toHaveText('—');
-    await expect(pplat.locator('.numeric-age')).toHaveText('Requiere bloqueo');
+    await expect(pplat.locator('.numeric-age')).toHaveText('Haz un bloqueo inspiratorio');
     await expect(pplat).toHaveAttribute('aria-label', 'Pplat: requiere un bloqueo inspiratorio. Información y medición');
     await page.click('[data-action="inspiratory"]');
     await expect(page.locator('#hold-panel')).toBeVisible();

@@ -24,6 +24,9 @@ import {
   veredictoEstimacion,
 } from './metricsTable';
 
+/** Casilla que lleva la única pista de bloqueo (la primera que depende de él). */
+const HOLD_HINT_KEY = METRICS.find((m) => m.source === 'hold')?.key;
+
 const EVENT_KIND: Record<string, string> = {
   setting: 'ajuste',
   alarm: 'alarma',
@@ -114,7 +117,8 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         if (sinDato && fr.ventilation !== 'standby') {
           if (m.source === 'hold' && !h) {
             motivoCompleto = 'requiere un bloqueo inspiratorio';
-            motivoCorto = 'Requiere bloqueo';
+            // Una sola pista para las tres casillas que dependen del bloqueo: va en la primera (Pplat).
+            motivoCorto = m.key === HOLD_HINT_KEY ? 'Haz un bloqueo inspiratorio' : '';
           } else if (m.source === 'hold' && h && h.quality !== 'valid') {
             motivoCompleto = razon || 'bloqueo no válido';
             motivoCorto = 'Bloqueo no válido';
