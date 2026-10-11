@@ -3,7 +3,7 @@ import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
 import { CANCEL_BTN, CLOSE_BTN } from './dialogHost';
-import { $, $$, btn, esc, icon, put } from './dom';
+import { $, $$, btn, element, esc, icon, iconNode, put } from './dom';
 import { clock } from './format';
 import { helpContent, helpEntry, infoButton, infoPanel } from './helpPanels';
 import { eventSentence, humanReason, learnerText } from './humanize';
@@ -68,9 +68,9 @@ export interface MetricsView {
  * Celda de valor de la tabla. El dato ausente se marca como ausencia y no como un número: un guión del tamaño de la
  * cifra se leía como una regla o como una muestra de leyenda.
  */
-function celdaValor(texto: string, unidad: string): string {
-  if (texto === '—') return `<span class="sin-dato">—</span>`;
-  return `${esc(texto)}${unidad ? `<small>${esc(unidad)}</small>` : ''}`;
+function celdaValor(texto: string, unidad: string): (Node | string)[] {
+  if (texto === '—') return [element('span', 'sin-dato', '—')];
+  return [texto, ...(unidad ? [element('small', '', unidad)] : [])];
 }
 
 export function createMetricsView(ctx: AppContext): MetricsView {
@@ -164,32 +164,35 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         put(e.querySelector('.numeric-limits'), limitPair(fr, spec.key));
       }
       if (ctx.view === 'data') {
-        const fila = (key: string): string => {
+        const fila = (key: string): HTMLTableRowElement[] => {
           const m = ALL_METRICS.find((candidate) => candidate.key === key);
-          if (!m) return '';
+          if (!m) return [];
           const est = examEstimates.get(m.key);
           const status = metricStatus(ctx.frame, m);
           const valor = oculto(m.key) && value(m) !== null ? '?' : f(value(m), m.decimals);
-          const estado =
-            `<span class="q-chip q-${status.tone}">${esc(status.label)}</span>` +
-            (status.source ? `<span class="q-src">${esc(status.source)}</span>` : '');
-          return (
-            `<tr data-row="${esc(m.key)}"><td><button class="metric-name" data-metric="${esc(m.key)}">${esc(m.label)}${icon('info')}</button></td>` +
-            `<td>${celdaValor(valor, m.unit)}</td>` +
-            `<td class="metric-status" title="${esc(status.detail)}">${
-              est ? `<span class="q-estimate">${esc(`Estimaste ${f(est.guess, m.decimals)} · `)}</span>` : ''
-            }${estado}</td></tr>`
+          const name = element('button', 'metric-name', m.label, iconNode('info'));
+          name.dataset.metric = m.key;
+          const cell = element(
+            'td',
+            'metric-status',
+            ...(est ? [element('span', 'q-estimate', `Estimaste ${f(est.guess, m.decimals)} · `)] : []),
+            element('span', `q-chip q-${status.tone}`, status.label),
+            ...(status.source ? [element('span', 'q-src', status.source)] : []),
           );
+          cell.title = status.detail;
+          const row = element('tr', '', element('td', '', name), element('td', '', ...celdaValor(valor, m.unit)), cell);
+          row.dataset.row = m.key;
+          return [row];
         };
-        const grupos = (items: (typeof DATA_TABLE_GROUPS)[number]): string =>
-          items
-            .map(
-              (group) =>
-                `<tr class="group-row"><th colspan="3" scope="colgroup">${esc(group.title)}</th></tr>${group.keys.map(fila).join('')}`,
-            )
-            .join('');
-        $('#data-table-body').innerHTML = grupos(DATA_TABLE_GROUPS[0]!);
-        $('#data-table-body-2').innerHTML = grupos(DATA_TABLE_GROUPS[1]!);
+        const grupos = (items: (typeof DATA_TABLE_GROUPS)[number]): HTMLTableRowElement[] =>
+          items.flatMap((group) => {
+            const heading = element('th', '', group.title);
+            heading.colSpan = 3;
+            heading.scope = 'colgroup';
+            return [element('tr', 'group-row', heading), ...group.keys.flatMap(fila)];
+          });
+        $('#data-table-body').replaceChildren(...grupos(DATA_TABLE_GROUPS[0]!));
+        $('#data-table-body-2').replaceChildren(...grupos(DATA_TABLE_GROUPS[1]!));
       }
     },
     updateLogs() {
@@ -199,21 +202,31 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       if (sig === logSignature) return;
       logSignature = sig;
       const events = [...fr.eventsTail].reverse();
-      $('#device-event-log').innerHTML = events
-        .map(
-          (e) =>
-            `<div class="event-log-row ${e.kind === 'alarm' ? 'alert-event' : ''}"><time>${clock(e.simTimeMs / 1000)}</time><span>${esc(EVENT_KIND[e.kind] ?? e.kind)}</span><span>${esc(learnerText(eventSentence(e)))}</span></div>`,
-        )
-        .join('');
+      $('#device-event-log').replaceChildren(
+        ...events.map((e) =>
+          element(
+            'div',
+            `event-log-row ${e.kind === 'alarm' ? 'alert-event' : ''}`,
+            element('time', '', clock(e.simTimeMs / 1000)),
+            element('span', '', EVENT_KIND[e.kind] ?? e.kind),
+            element('span', '', learnerText(eventSentence(e))),
+          ),
+        ),
+      );
       put('#log-count', `${events.length} eventos visibles`);
-      $('#teacher-log').innerHTML = events
-        .filter((e) => e.kind !== 'breath')
-        .slice(0, 8)
-        .map(
-          (e) =>
-            `<div class="teacher-event"><time>${clock(e.simTimeMs / 1000)}</time><span>${esc(learnerText(eventSentence(e)))}</span></div>`,
-        )
-        .join('');
+      $('#teacher-log').replaceChildren(
+        ...events
+          .filter((e) => e.kind !== 'breath')
+          .slice(0, 8)
+          .map((e) =>
+            element(
+              'div',
+              'teacher-event',
+              element('time', '', clock(e.simTimeMs / 1000)),
+              element('span', '', learnerText(eventSentence(e))),
+            ),
+          ),
+      );
     },
     resetLog() {
       logSignature = '';
@@ -238,7 +251,9 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           CANCEL_BTN + btn('Comprobar', 'examSubmit', 'primary-button'),
           'compact',
         );
-        setTimeout(() => $('#exam-estimate-input').focus(), 0);
+        setTimeout(() => {
+          if (ctx.dialog.kind === 'examEstimate') document.querySelector<HTMLElement>('#exam-estimate-input')?.focus();
+        }, 0);
         return;
       }
       this.mechanics(metric);

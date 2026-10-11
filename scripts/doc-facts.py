@@ -68,9 +68,9 @@ ETIQUETA_MODO = {'AC_VC': 'A/C VC', 'AC_PC': 'A/C PC', 'CPAP_PS': 'CPAP/PS'}
 modos = [ETIQUETA_MODO.get(m, m) for m in re.findall(r"'([A-Z_]+)'", re.search(r'enabledModes:\s*\[([^\]]*)\]', perfil).group(1))]
 
 
-# --- cobertura: total y excluyendo la capa que sólo ejercita Playwright ---------------------------------------------
+# --- cobertura: total, interfaz y resto -----------------------------------------------------------------------------
 CLAVES = ('lines', 'branches', 'functions', 'statements')
-SOLO_E2E = re.compile(r'/src/(ui|render)/|/src/main\.ts$')
+INTERFAZ = re.compile(r'/src/(ui|render)/|/src/main\.ts$')
 
 
 def porcentajes(predicado):
@@ -85,8 +85,8 @@ def porcentajes(predicado):
 
 
 todo = porcentajes(lambda r: True)
-sin_interfaz = porcentajes(lambda r: not SOLO_E2E.search(r))
-archivos_e2e = sum(1 for r in cov if r != 'total' and SOLO_E2E.search(r))
+sin_interfaz = porcentajes(lambda r: not INTERFAZ.search(r))
+ui = porcentajes(lambda r: '/src/ui/' in r)
 
 # --- recuentos de pruebas -------------------------------------------------------------------------------------------
 unit_total = vit['numTotalTests']
@@ -127,11 +127,13 @@ HECHOS = {
         f'líneas {num(todo["lines"])} % · ramas {num(todo["branches"])} % · funciones {num(todo["functions"])} % · '
         f'sentencias {num(todo["statements"])} %. Los umbrales de `vitest.config.ts` '
         f'({umbrales["lines"]} · {umbrales["branches"]} · {umbrales["functions"]} · {umbrales["statements"]}) van por '
-        f'debajo de lo medido para que la integración continua falle ante una regresión y pase hoy. La cifra global es '
-        f'baja porque los {archivos_e2e} archivos de `src/ui/`, `src/render/` y `main.ts` sólo los ejercita Playwright y '
-        f'aquí figuran con 0 %; excluyendo esa capa la cobertura es líneas {num(sin_interfaz["lines"])} % · ramas '
+        f'debajo de lo medido para que la integración continua falle ante una regresión y pase hoy. En `src/ui/`, '
+        f'las pruebas unitarias y DOM cubren líneas {num(ui["lines"])} % · ramas {num(ui["branches"])} % · '
+        f'funciones {num(ui["functions"])} % · sentencias {num(ui["statements"])} %. Playwright verifica además los '
+        f'flujos completos, pero no aporta a estos porcentajes. Excluyendo `src/ui/`, `src/render/` y `main.ts`, '
+        f'la cobertura es líneas {num(sin_interfaz["lines"])} % · ramas '
         f'{num(sin_interfaz["branches"])} % · funciones {num(sin_interfaz["functions"])} % · sentencias '
-        f'{num(sin_interfaz["statements"])} %. Ninguna de las dos cifras se presenta como fidelidad frente al equipo: '
+        f'{num(sin_interfaz["statements"])} %. Ninguna cifra se presenta como fidelidad frente al equipo: '
         f'miden qué parte del código ejecuta la suite, no cuánto se parece el simulador a un R860.'
     ),
 }

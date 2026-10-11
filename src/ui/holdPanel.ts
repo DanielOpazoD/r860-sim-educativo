@@ -5,7 +5,7 @@ import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
 import { $, put } from './dom';
 import { wallDate } from './format';
-import { collapseHelp, helpContent } from './helpPanels';
+import { collapseHelp, helpNodes } from './helpPanels';
 import { humanReason, learnerText } from './humanize';
 import { isMobile } from './labels';
 import type { PuntoTitulacion } from './teaching';
@@ -51,9 +51,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     lastHoldToastId = fr?.procedure.last[holdType]?.procedureId ?? null;
     const sel = $<HTMLSelectElement>('#hold-duration');
     const cur = sel.value;
-    sel.innerHTML = gridValues(holdRule(holdType))
-      .map((v) => `<option value="${v}" ${v === (Number(cur) || 3) ? 'selected' : ''}>${v} s</option>`)
-      .join('');
+    sel.replaceChildren(...gridValues(holdRule(holdType)).map((v) => new Option(`${v} s`, String(v), false, v === (Number(cur) || 3))));
     $('#hold-panel').hidden = false;
     placeHoldPanel();
     updateHold();
@@ -78,7 +76,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     const helpBtn = $('#hold-help-button');
     if (helpBtn.dataset.helpKey !== key) {
       helpBtn.dataset.helpKey = key;
-      $('#hold-help').innerHTML = helpContent(key);
+      $('#hold-help').replaceChildren(...helpNodes(key));
       $('#hold-help').hidden = true;
       helpBtn.setAttribute('aria-expanded', 'false');
     }

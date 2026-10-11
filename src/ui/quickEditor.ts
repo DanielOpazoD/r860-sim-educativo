@@ -9,9 +9,9 @@ import { gridValues, isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
-import { $, icon, put } from './dom';
+import { $, element, icon, put } from './dom';
 import { ieText, unitText } from './format';
-import { collapseHelp, helpContent } from './helpPanels';
+import { collapseHelp, helpNodes } from './helpPanels';
 import { joinSentences } from './humanize';
 import { displaySetting, HELP_KEY, isMobile, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL, textoRespaldo } from './labels';
 
@@ -143,7 +143,9 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
     const b = $('#quick-help-button');
     b.dataset.helpKey = HELP_KEY[k];
     b.setAttribute('aria-expanded', 'false');
-    $('#quick-explanation').innerHTML = helpContent(HELP_KEY[k]) + '<p id="quick-timing" class="help-timing"></p>';
+    const timing = element('p', 'help-timing');
+    timing.id = 'quick-timing';
+    $('#quick-explanation').replaceChildren(...helpNodes(HELP_KEY[k]), timing);
     $('#quick-explanation').hidden = true;
     placeQuickEditor();
     $('#quick-editor').hidden = false;

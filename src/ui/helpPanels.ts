@@ -1,8 +1,18 @@
 /** Paneles de ayuda contextual (botón «i» + panel plegable) sobre el catálogo estático de HELP. */
-import { $$, esc, icon } from './dom';
+import { $$, element, esc, icon } from './dom';
 import { HELP, type HelpEntry } from './help';
 
 export const helpEntry = (key: string): HelpEntry | null => HELP[key] ?? null;
+export function helpNodes(key: string): HTMLElement[] {
+  const h = helpEntry(key);
+  return h
+    ? [
+        element('h3', '', h.title),
+        ...h.text.map((text) => element('p', '', text)),
+        ...(h.equation ? [element('div', 'help-equation', h.equation)] : []),
+      ]
+    : [];
+}
 export function helpContent(key: string): string {
   const h = helpEntry(key);
   if (!h) return '';
@@ -39,6 +49,6 @@ export function toggleHelp(button: HTMLElement): void {
 export function fillStaticHelp(): void {
   for (const b of $$('[data-help-key]')) {
     const panel = document.getElementById(b.dataset.helpTarget as string);
-    if (panel && !panel.innerHTML.trim()) panel.innerHTML = helpContent(b.dataset.helpKey as string);
+    if (panel && !panel.hasChildNodes()) panel.replaceChildren(...helpNodes(b.dataset.helpKey as string));
   }
 }

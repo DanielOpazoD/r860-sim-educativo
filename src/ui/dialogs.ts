@@ -1,7 +1,7 @@
 /** Plantillas HTML de los diálogos (puras: reciben datos, devuelven texto). El estado y la apertura viven en app.ts. */
 import type { EngineFrame } from '../engine/simulator';
 import type { LessonTask, Scenario } from '../scenarios';
-import { esc, icon } from './dom';
+import { element, esc, icon, iconNode } from './dom';
 import { clock } from './format';
 import { modeLabel as etiquetaModo } from './labels';
 import { PATIENT_PROFILES, profileHint } from './patientProfiles';
@@ -121,15 +121,32 @@ export interface DebriefInput {
   simS: number;
   breathCount: number;
 }
-export function debriefHTML(d: DebriefInput): string {
-  return `<div class="debrief-stat-grid"><div><b>${d.done.size}/${d.tasks.length}</b><span>Objetivos de interfaz</span></div><div><b>${clock(d.simS)}</b><span>Tiempo simulado</span></div><div><b>${d.breathCount}</b><span>Ciclos completos</span></div></div><h3>${esc(d.scenario.lesson?.title ?? d.scenario.name)}</h3><div class="lesson-tasks">${d.tasks
-    .map(
-      (x) =>
-        `<div class="task ${d.done.has(x.id) ? 'complete' : ''}"><span class="task-check">${icon(d.done.has(x.id) ? 'check' : 'minus')}</span><span>${esc(x.text)}</span></div>`,
-    )
-    .join(
-      '',
-    )}</div><div class="info-box"><b>${esc(d.scenario.question ?? '')}</b><p>${esc(d.scenario.answer ?? '')}</p></div><div class="notice-box">Este resumen registra acciones del simulador; no puntúa seguridad clínica ni acredita competencia.</div>`;
+export function debriefNodes(d: DebriefInput): HTMLElement[] {
+  const stat = (value: string, label: string): HTMLElement => element('div', '', element('b', '', value), element('span', '', label));
+  return [
+    element(
+      'div',
+      'debrief-stat-grid',
+      stat(`${d.done.size}/${d.tasks.length}`, 'Objetivos de interfaz'),
+      stat(clock(d.simS), 'Tiempo simulado'),
+      stat(String(d.breathCount), 'Ciclos completos'),
+    ),
+    element('h3', '', d.scenario.lesson?.title ?? d.scenario.name),
+    element(
+      'div',
+      'lesson-tasks',
+      ...d.tasks.map((task) =>
+        element(
+          'div',
+          `task ${d.done.has(task.id) ? 'complete' : ''}`,
+          element('span', 'task-check', iconNode(d.done.has(task.id) ? 'check' : 'minus')),
+          element('span', '', task.text),
+        ),
+      ),
+    ),
+    element('div', 'info-box', element('b', '', d.scenario.question ?? ''), element('p', '', d.scenario.answer ?? '')),
+    element('div', 'notice-box', 'Este resumen registra acciones del simulador; no puntúa seguridad clínica ni acredita competencia.'),
+  ];
 }
 export function debriefText(d: DebriefInput, fr: EngineFrame): string {
   return `R860 LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nTiempo simulado: ${clock(d.simS)}\nModo: ${etiquetaModo(fr.settings.mode)}\nObjetivos de interfaz: ${d.done.size}/${d.tasks.length}\n\n${d.tasks.map((x) => `${d.done.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;

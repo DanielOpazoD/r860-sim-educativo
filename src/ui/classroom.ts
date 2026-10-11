@@ -1,7 +1,7 @@
 import { SCENARIOS } from '../scenarios';
 import type { AppContext } from './context';
-import { debriefHTML } from './dialogs';
-import { $, $$, esc, put } from './dom';
+import { debriefNodes } from './dialogs';
+import { $, $$, element, put } from './dom';
 
 const SECTIONS = ['lesson', 'theory', 'questions', 'exam', 'results', 'library'] as const;
 const HEADINGS: Record<Section, { kicker: string; title: string; lead: string }> = {
@@ -50,18 +50,30 @@ export function createClassroom(
       const key = sc.category ?? 'Práctica';
       groups.set(key, [...(groups.get(key) ?? []), sc]);
     }
-    $('#aula-library-list').innerHTML = [...groups]
-      .map(
-        ([category, items]) =>
-          `<section class="aula-group"><h3 class="aula-kicker">${esc(category)} · ${items.length}</h3><div class="aula-library-list">${items
-            .map(
-              (sc) => `<button class="aula-case${sc.id === ctx.scenario.id ? ' current' : ''}" data-aula-case="${esc(sc.id)}">
-          <span class="aula-kicker">${esc(sc.id)}${sc.id === ctx.scenario.id ? ' · Caso actual' : ''}</span>
-          <strong>${esc(sc.name)}</strong><span>${esc(sc.description)}</span></button>`,
-            )
-            .join('')}</div></section>`,
-      )
-      .join('');
+    $('#aula-library-list').replaceChildren(
+      ...[...groups].map(([category, items]) =>
+        element(
+          'section',
+          'aula-group',
+          element('h3', 'aula-kicker', `${category} · ${items.length}`),
+          element(
+            'div',
+            'aula-library-list',
+            ...items.map((sc) => {
+              const button = element(
+                'button',
+                `aula-case${sc.id === ctx.scenario.id ? ' current' : ''}`,
+                element('span', 'aula-kicker', `${sc.id}${sc.id === ctx.scenario.id ? ' · Caso actual' : ''}`),
+                element('strong', '', sc.name),
+                element('span', '', sc.description),
+              );
+              button.dataset.aulaCase = sc.id;
+              return button;
+            }),
+          ),
+        ),
+      ),
+    );
     $('#aula-library-empty').hidden = cases.length > 0;
   }
 
@@ -91,15 +103,25 @@ export function createClassroom(
       const signature = JSON.stringify([scenarioId, [...ctx.lesson.done], ctx.lesson.sessionImported, deps.estimateCount()]);
       if (signature !== resultsSignature) {
         resultsSignature = signature;
-        $('#aula-results-body').innerHTML = ctx.lesson.sessionImported
-          ? '<p>Sesión importada: no está vinculada a los objetivos de este caso. Elige un caso de la biblioteca para iniciar una práctica evaluable.</p>'
-          : debriefHTML({
-              scenario: ctx.scenario,
-              tasks,
-              done: ctx.lesson.done,
-              simS: ctx.simS(),
-              breathCount: ctx.frame?.breathCount ?? 0,
-            }) + `<p>${deps.estimateCount()} mediciones estimadas en el escenario actual.</p>`;
+        $('#aula-results-body').replaceChildren(
+          ...(ctx.lesson.sessionImported
+            ? [
+                element(
+                  'p',
+                  '',
+                  'Sesión importada: no está vinculada a los objetivos de este caso. Elige un caso de la biblioteca para iniciar una práctica evaluable.',
+                ),
+              ]
+            : debriefNodes({
+                scenario: ctx.scenario,
+                tasks,
+                done: ctx.lesson.done,
+                simS: ctx.simS(),
+                breathCount: ctx.frame?.breathCount ?? 0,
+              })),
+        );
+        if (!ctx.lesson.sessionImported)
+          $('#aula-results-body').append(element('p', '', `${deps.estimateCount()} mediciones estimadas en el escenario actual.`));
       }
     }
   }
