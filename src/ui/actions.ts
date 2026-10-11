@@ -481,8 +481,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         return;
       }
       if (el.dataset.scenarioView) {
-        for (const view of ['start', 'all', 'profiles'])
-          $('#scenario-' + view).hidden = view !== el.dataset.scenarioView;
+        for (const view of ['start', 'all', 'profiles']) $('#scenario-' + view).hidden = view !== el.dataset.scenarioView;
         $('#scenario-scope').hidden = el.dataset.scenarioView === 'profiles';
         for (const button of document.querySelectorAll<HTMLElement>('[data-scenario-view]'))
           button.setAttribute('aria-pressed', String(button.dataset.scenarioView === el.dataset.scenarioView));

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { PATIENT_PROFILES, profileState } from '../../src/ui/patientProfiles';
 import {
   closePersonalization,
   expectSafetyMark,
@@ -73,13 +74,36 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
   test('el selector comienza con ocho prácticas y mantiene el catálogo completo filtrable', async ({ page }) => {
     await open(page, { instructor: 0 });
     await page.click('.app-context');
+    await expect(page.locator('[data-scenario-view]')).toHaveCount(3);
+    await expect(page.locator('[data-scenario-view="start"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#scenario-scope')).toHaveText(
+      'Cada escenario reinicia la práctica con paciente, ventilador y objetivos preparados.',
+    );
     await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
     await expect(page.locator('#scenario-all')).toBeHidden();
+    await page.click('[data-scenario-view="profiles"]');
+    await expect(page.locator('[data-scenario-view="profiles"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#scenario-profiles')).toBeVisible();
+    await expect(page.locator('#scenario-start')).toBeHidden();
+    await expect(page.locator('#scenario-all')).toBeHidden();
+    await expect(page.locator('#scenario-scope')).toBeHidden();
     await page.click('[data-scenario-view="all"]');
+    await expect(page.locator('[data-scenario-view="all"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#scenario-all')).toBeVisible();
+    await expect(page.locator('#scenario-start')).toBeHidden();
+    await expect(page.locator('#scenario-profiles')).toBeHidden();
     await expect(page.locator('#scenario-all .scenario-card')).toHaveCount(22);
     await page.selectOption('#scenario-topic', 'Circuito');
     await expect(page.locator('#scenario-all .scenario-group:visible .scenario-card')).toHaveCount(2);
     await expect(page.locator('#scenario-all .scenario-reference')).toBeHidden();
+  });
+  test('el catálogo conserva dos columnas en escritorio', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'sólo escritorio');
+    await open(page, { instructor: 0 });
+    await page.click('.app-context');
+    await page.click('[data-scenario-view="profiles"]');
+    const columns = await page.locator('#scenario-profiles .scenario-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns);
+    expect(columns.split(' ')).toHaveLength(2);
   });
   test('el selector móvil muestra una sola columna legible', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -88,6 +112,35 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     const columns = await page.locator('#scenario-start .scenario-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns);
     expect(columns.split(' ')).toHaveLength(1);
     await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
+  });
+  test('el diálogo de escenarios mantiene su caja, desplaza el cuerpo y ofrece Cerrar', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 400 });
+    await open(page, { instructor: 0 });
+    await page.click('.app-context');
+    const dialog = page.locator('#app-dialog');
+    const body = page.locator('#dialog-content');
+    const boxes: { width: number; height: number }[] = [];
+    for (const view of ['start', 'all', 'profiles']) {
+      await page.locator(`[data-scenario-view="${view}"]`).click();
+      const box = await dialog.boundingBox();
+      expect(box).not.toBeNull();
+      boxes.push({ width: box!.width, height: box!.height });
+    }
+    for (const box of boxes) {
+      expect(box.width).toBeCloseTo(boxes[0]!.width, 0);
+      expect(box.height).toBeCloseTo(boxes[0]!.height, 0);
+    }
+    await page.locator('[data-scenario-view="start"]').click();
+    await body.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    await page.locator('[data-scenario-view="profiles"]').click();
+    await expect(body).toHaveJSProperty('scrollTop', 0);
+    const close = page.getByRole('button', { name: 'Cerrar', exact: true });
+    await expect(close).toBeVisible();
+    await close.click();
+    await expect(dialog).toBeHidden();
   });
   test('el contexto del encabezado muestra el escenario y abre el selector', async ({ page }) => {
     await open(page, { instructor: 0 });
@@ -1140,7 +1193,7 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await expect(page.locator('#welcome-free')).toBeFocused();
     await expect(page.locator('#dialog-content')).toContainText('Un ventilador virtual para aprender mecánica respiratoria sin riesgo.');
     await page.click('#welcome-guided');
-    await expect(page.locator('#dialog-title')).toHaveText('Elige un escenario de entrenamiento');
+    await expect(page.locator('#dialog-title')).toHaveText('Escenarios y paciente');
     await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
     await page.reload();
     await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
@@ -1186,6 +1239,83 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
 });
 
 test.describe('PAT · perfiles del paciente', () => {
+  test('aplicar un perfil desde el catálogo cierra el diálogo y conserva sesión, tiempo y lección', async ({ page }) => {
+    await open(page, { scenario: 'SC-01', speed: 4 });
+    await page.click('[data-action="inspiratory"]');
+    await page.click('#hold-run');
+    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 1/3', { timeout: 25_000 });
+    await page.locator('#sim-pause').click();
+    await expect.poll(() => page.evaluate(() => window.__r860.running)).toBe(false);
+    const before = await page.evaluate(() => {
+      const current = window.__r860.frame as unknown as {
+        simTimeMs: number;
+        settings: unknown;
+        truth: { patient: unknown; effort: unknown };
+      };
+      return {
+        simTimeMs: current.simTimeMs,
+        settings: current.settings,
+        scenario: document.querySelector('#scenario-name')?.textContent,
+        lessonTitle: document.querySelector('#lesson-title')?.textContent,
+        lessonCount: document.querySelector('#lesson-count')?.textContent,
+        lessonTasks: [...document.querySelectorAll('#lesson-tasks .task')].map((task) => ({
+          text: task.textContent,
+          complete: task.classList.contains('complete'),
+        })),
+        lessonFlags: (window.__r860 as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
+      };
+    });
+    const profile = PATIENT_PROFILES.find((item) => item.id === 'stiff')!;
+    const expected = JSON.parse(JSON.stringify(profileState(profile))) as { patient: unknown; effort: unknown };
+    await page.click('.app-context');
+    await page.click('[data-scenario-view="profiles"]');
+    await page.locator('#scenario-profiles [data-profile="stiff"]').click();
+    await expect(page.locator('#app-dialog')).toBeHidden();
+    await expect(page.locator('#toast-stack .toast').last()).toContainText('Perfil aplicado: Pulmón rígido');
+    const after = await page.evaluate(() => {
+      const current = window.__r860.frame as unknown as {
+        simTimeMs: number;
+        settings: unknown;
+        truth: { patient: unknown; effort: unknown };
+      };
+      return {
+        simTimeMs: current.simTimeMs,
+        settings: current.settings,
+        patient: current.truth.patient,
+        effort: current.truth.effort,
+        scenario: document.querySelector('#scenario-name')?.textContent,
+        lessonTitle: document.querySelector('#lesson-title')?.textContent,
+        lessonCount: document.querySelector('#lesson-count')?.textContent,
+        lessonTasks: [...document.querySelectorAll('#lesson-tasks .task')].map((task) => ({
+          text: task.textContent,
+          complete: task.classList.contains('complete'),
+        })),
+        lessonFlags: (window.__r860 as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
+      };
+    });
+    expect(after.patient).toEqual(expected.patient);
+    expect(after.effort).toEqual(expected.effort);
+    expect(after.settings).toEqual(before.settings);
+    expect(after.scenario).toBe(before.scenario);
+    expect(after.simTimeMs).toBe(before.simTimeMs);
+    expect(after.lessonTitle).toBe(before.lessonTitle);
+    expect(after.lessonCount).toBe(before.lessonCount);
+    expect(after.lessonTasks).toEqual(before.lessonTasks);
+    expect(after.lessonFlags).toEqual(before.lessonFlags);
+  });
+
+  test('los perfiles están deshabilitados en una referencia fotográfica', async ({ page }) => {
+    await open(page, { fixture: 'P1' });
+    await expect(page.locator('#scenario-name')).toContainText('Referencia fotográfica P1');
+    await page.click('.app-context');
+    await expect(page.locator('#app-dialog')).toBeVisible();
+    await page.click('[data-scenario-view="profiles"]');
+    const profiles = page.locator('#scenario-profiles [data-profile]');
+    await expect(profiles).toHaveCount(PATIENT_PROFILES.length);
+    await expect(page.locator('#scenario-profiles [data-profile]:disabled')).toHaveCount(PATIENT_PROFILES.length);
+    await expect(page.locator('#scenario-profiles')).toContainText('Los perfiles están bloqueados en la referencia fotográfica.');
+  });
+
   test('aplica, deshace y restablece mecánica con perfiles completos', async ({ page }) => {
     await open(page, { scenario: 'SC-01' });
     await showPanel(page, 'patient');

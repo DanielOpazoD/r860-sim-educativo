@@ -238,7 +238,6 @@ export function createInstructorPanel(
     init() {
       $('#patient-profiles').innerHTML = `
         <h3 class="small-section-title">Perfil del paciente</h3>
-        <p class="profile-scope">Cambia mecánica y esfuerzo. Conserva los ajustes del ventilador.</p>
         <div class="profile-grid">${PATIENT_PROFILES.map(
           (profile) =>
             `<button class="profile-chip" data-profile="${profile.id}" aria-pressed="false" title="${profileHint(profile)}" ${ctx.fixtureId ? 'disabled' : ''}><b>${profile.label}</b><small>${profileHint(profile)}</small></button>`,

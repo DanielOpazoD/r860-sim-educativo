@@ -104,10 +104,14 @@ export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabe
     .join('')}<section class="scenario-group scenario-reference"><h3>Referencia visual</h3><div class="scenario-grid">${scenarios
     .filter((s) => s.id === 'SC-P')
     .map(card)
-    .join('')}</div></section></section><section id="scenario-profiles" hidden><p class="scenario-intro">El perfil cambia la mecánica y el esfuerzo del paciente. Conserva la programación del ventilador y la práctica actual.</p><div class="scenario-grid">${PATIENT_PROFILES.map(
+    .join(
+      '',
+    )}</div></section></section><section id="scenario-profiles" hidden><p class="scenario-intro">El perfil cambia la mecánica y el esfuerzo del paciente. Conserva la programación del ventilador y la práctica actual.</p><div class="scenario-grid">${PATIENT_PROFILES.map(
     (profile) =>
       `<button class="scenario-card patient-choice" data-profile="${profile.id}" ${fixture ? 'disabled' : ''}><h3>${esc(profile.label)}</h3><p>${esc(profileHint(profile))}</p><footer>Aplicar perfil ${icon('arrow')}</footer></button>`,
-  ).join('')}</div>${fixture ? '<p class="scenario-intro">Los perfiles están bloqueados en la referencia fotográfica.</p>' : ''}</section></div>`;
+  ).join(
+    '',
+  )}</div>${fixture ? '<p class="scenario-intro">Los perfiles están bloqueados en la referencia fotográfica.</p>' : ''}</section></div>`;
 }
 
 export interface DebriefInput {

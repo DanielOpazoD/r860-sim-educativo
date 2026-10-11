@@ -744,12 +744,6 @@
   align-items: center;
   justify-content: space-between;
 }
-.profile-scope {
-  color: var(--shell-muted);
-  font-size: 11px;
-  line-height: 1.4;
-  margin: 0 0 8px;
-}
 @media (min-width: 701px) and (max-width: 900px) {
   .scenario-picker .scenario-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
