@@ -289,3 +289,49 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await closePersonalization(page);
   });
 });
+
+test.describe('NAV móvil · la barra de señal vive en la cabecera fija', () => {
+  test.skip(({ isMobile }) => !isMobile, 'sólo proyecto móvil');
+
+  test('nada flota sobre los ajustes: Pausar y Personalizar quedan en la cabecera, siempre a la vista', async ({ page }) => {
+    await open(page, { instructor: 0 });
+    const toolbar = page.locator('.app-top .signal-toolbar');
+    await expect(toolbar).toBeVisible();
+    await expect(page.locator('#scenario-name')).toBeVisible();
+    await expect(page.locator('#scenario-name')).not.toBeEmpty();
+
+    const medición = await page.evaluate(() => {
+      const barra = document.querySelector('.signal-toolbar')!.getBoundingClientRect();
+      const ajustes = [...document.querySelectorAll<HTMLElement>('#monitor button')].filter((el) =>
+        /Pmáx|PEEP|Modo actual/.test(el.textContent ?? ''),
+      );
+      const solapes = ajustes.filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.left < barra.right && r.right > barra.left && r.top < barra.bottom && r.bottom > barra.top;
+      });
+      const exteriores = [...document.querySelectorAll<HTMLElement>('.app-top button, .app-top a')].filter(
+        (el) => el.offsetParent !== null,
+      );
+      const pequeños = exteriores.filter((el) => el.getBoundingClientRect().height < 44 || el.getBoundingClientRect().width < 44);
+      return {
+        posicion: getComputedStyle(document.querySelector('.signal-toolbar')!).position,
+        solapes: solapes.length,
+        pequeños: pequeños.map((el) => el.id || el.className),
+      };
+    });
+    expect(medición.posicion).toBe('static');
+    expect(medición.solapes).toBe(0);
+    expect(medición.pequeños).toEqual([]);
+
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    await expect(page.locator('#sim-pause')).toBeInViewport();
+    await expect(page.locator('#wave-options-button')).toBeInViewport();
+    await page.locator('#sim-pause').click();
+    await expect(page.locator('#sim-pause')).toContainText('Reanudar');
+
+    await page.click('#space-classroom');
+    await expect(toolbar).toBeHidden();
+    await page.click('#space-simulator');
+    await expect(toolbar).toBeVisible();
+  });
+});
