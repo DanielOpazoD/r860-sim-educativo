@@ -55,7 +55,11 @@ export function createClassroom(
     $('#practice-card').hidden = !practicing;
     $('#practice-stop').hidden = !practicing;
     put('#practice-progress', `${ctx.lesson.done.size}/${tasks.length} · ${next ? 'Práctica activa' : 'Práctica completada'}`);
-    put('#practice-objective', next?.text ?? 'Has completado los objetivos. Revisa tus resultados en el Aula.');
+    put('#practice-objective', next?.text ?? 'Objetivos completados. Revisa qué cambió en tus resultados.');
+    const link = $<HTMLButtonElement>('#practice-link');
+    link.textContent = next ? 'Ver lección' : 'Ver resultados';
+    link.dataset.action = next ? 'classroom' : 'debrief';
+    $('#practice-card').classList.toggle('complete', !next);
     for (const button of $$<HTMLButtonElement>('[data-action="practice"]'))
       button.disabled = ctx.lesson.sessionImported || !!ctx.fixtureId || !tasks.length;
     if (!$('#classroom').hidden && section === 'results') {

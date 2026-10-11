@@ -56,6 +56,28 @@ test.describe('AULA · aprendizaje fuera del monitor', () => {
     await expect(page.locator('#practice-progress')).toHaveText('1/3 · Práctica activa');
   });
 
+  test('la práctica flota junto al R860: el monitor no se desplaza ni aparece scroll en escritorio', async ({ page }) => {
+    await open(page, { scenario: 'SC-01', speed: 4 });
+    const before = await page.locator('#monitor').boundingBox();
+    await openAula(page, 'lesson');
+    await page.click('[data-action="practice"]');
+    await expect(page.locator('#practice-card')).toBeVisible();
+    await expect(page.locator('#practice-link')).toHaveText('Ver lección');
+    const vp = page.viewportSize();
+    if (vp && vp.width > 700) {
+      await expect
+        .poll(async () => {
+          const box = await page.locator('#monitor').boundingBox();
+          return box && box.height > 0 ? box : null;
+        })
+        .toEqual(before);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+      await expect(page.locator('#sim-pause')).toBeInViewport();
+    }
+    await page.click('[data-action="stopPractice"]');
+    await expect(page.locator('#practice-card')).toBeHidden();
+  });
+
   test('las notas sobreviven al cambio de espacio y elegir el caso actual no reinicia la sesión', async ({ page }) => {
     await open(page, { scenario: 'SC-01', speed: 4 });
     await openAula(page, 'questions');
