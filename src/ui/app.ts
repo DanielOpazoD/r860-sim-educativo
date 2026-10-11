@@ -18,6 +18,7 @@ import { createActions } from './actions';
 import { createClassroom } from './classroom';
 import { createAlarmsUi } from './alarmsUi';
 import { createCommandPalette, type PaletteCommand } from './commandPalette';
+import { PALETTE_COMMANDS, shortcutLabel } from './commands';
 import type { Actor, AppContext, CommandResult, FixtureId } from './context';
 import { createDialogHost } from './dialogHost';
 import { $, icon, put } from './dom';
@@ -26,7 +27,7 @@ import { fillStaticHelp } from './helpPanels';
 import { createHoldPanel } from './holdPanel';
 import { learnerText } from './humanize';
 import { createInstructorPanel } from './instructorPanel';
-import { bindKeyboard, SHORTCUTS } from './keyboard';
+import { bindKeyboard } from './keyboard';
 import { isMobile, MODE_LABEL } from './labels';
 import { createLessonTracker } from './lessonTracker';
 import { createMetricsView } from './metricsView';
@@ -53,28 +54,6 @@ const PHASE_TEXT: Record<string, string> = {
 };
 /** Plazo para recibir el primer cuadro del motor antes de avisar (ms). */
 const FIRST_FRAME_TIMEOUT_MS = 5000;
-const PALETTE_ACTIONS = [
-  { id: 'pause', label: 'Pausar o reanudar', keywords: 'detener parar play pausa continuar' },
-  { id: 'freeze', label: 'Congelar curvas', keywords: 'congelar inmovilizar ondas' },
-  { id: 'snapshot', label: 'Captura del monitor', keywords: 'foto png imagen captura pantalla' },
-  { id: 'alarms', label: 'Alarmas activas', keywords: 'alarmas alertas límites' },
-  { id: 'home', label: 'Volver al inicio del monitor', keywords: 'inicio casa principal' },
-  { id: 'help', label: 'Guía y alcance', keywords: 'ayuda información instrucciones' },
-  { id: 'fullscreen', label: 'Pantalla completa', keywords: 'completa maximizar' },
-  { id: 'modes', label: 'Modo y ajustes del ventilador', keywords: 'modo ventilación parámetros configuración' },
-  { id: 'scenarios', label: 'Elegir escenario', keywords: 'caso práctica simulación' },
-  { id: 'inspiratory', label: 'Bloqueo inspiratorio', keywords: 'pausa pplat meseta' },
-  { id: 'expiratory', label: 'Bloqueo espiratorio', keywords: 'autopeep peep intrinseca' },
-  { id: 'exam', label: 'Modo examen', keywords: 'evaluación estimaciones' },
-  { id: 'session', label: 'Sesión y archivos', keywords: 'guardar importar exportar' },
-  { id: 'exportSession', label: 'Exportar sesión', keywords: 'json archivo descargar' },
-  { id: 'debrief', label: 'Resumen para el debriefing', keywords: 'resumen práctica informe' },
-  { id: 'classroom', label: 'Abrir el Aula', keywords: 'entrenamiento lección educación fundamentos' },
-  { id: 'teacher', label: 'Mostrar u ocultar paciente y eventos', keywords: 'fisiología instructor' },
-  { id: 'sound', label: 'Audio de alarmas', keywords: 'sonido silenciar mute' },
-  { id: 'resetPatient', label: 'Restablecer mecánica', keywords: 'reiniciar paciente valores' },
-  { id: 'resetPrefs', label: 'Restablecer preferencias', keywords: 'borrar ajustes configuración' },
-];
 const VIEW_LABELS: Record<string, string> = {
   waves: 'Curvas y datos',
   basic: 'Datos grandes',
@@ -84,12 +63,6 @@ const VIEW_LABELS: Record<string, string> = {
   log: 'Registro de eventos',
   teaching: 'Fundamentos',
 };
-
-function paletteShortcut(action: string): string | undefined {
-  const key = Object.keys(SHORTCUTS).find((candidate) => SHORTCUTS[candidate] === action);
-  if (key === undefined) return undefined;
-  return key === ' ' ? 'Espacio' : key.toUpperCase();
-}
 
 export interface AppOptions {
   params: URLSearchParams;
@@ -300,10 +273,10 @@ export function startApp(opts: AppOptions): void {
   });
   const palette = createCommandPalette(() => {
     const commands: PaletteCommand[] = [
-      ...PALETTE_ACTIONS.map((item) => ({
+      ...PALETTE_COMMANDS.map((item) => ({
         ...item,
         group: 'Acciones' as const,
-        shortcut: paletteShortcut(item.id),
+        shortcut: shortcutLabel(item.id),
         run: () => actions.action(item.id).catch((error: Error) => ctx.notice(error.message)),
       })),
       ...VIEWS.map((id) => ({
@@ -334,8 +307,8 @@ export function startApp(opts: AppOptions): void {
     return commands;
   });
   openPalette = () => palette.open();
-  const shortcutLabel = document.querySelector<HTMLElement>('.palette-kbd');
-  if (shortcutLabel) shortcutLabel.textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
+  const paletteKbd = document.querySelector<HTMLElement>('.palette-kbd');
+  if (paletteKbd) paletteKbd.textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
   function showWelcome(): void {
     welcomeOpen = true;
     dialog.open('welcome', 'Bienvenido a R860 Lab', welcomeHTML(), null, 'compact');

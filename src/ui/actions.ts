@@ -20,6 +20,7 @@ import {
   standbyHTML,
   toolsHTML,
 } from './dialogs';
+import { type CommandId, isCommandId } from './commands';
 import { $, btn } from './dom';
 import {
   csvBlob,
@@ -142,236 +143,144 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   }
   const openHelp = (tab: string): void => ctx.dialog.open('help', 'Guía del simulador', helpHTML(tab), CLOSE_BTN, 'wide');
 
-  async function action(a: string): Promise<void> {
-    switch (a) {
-      case 'classroom':
-        fx.classroom.open();
-        break;
-      case 'simulator':
-        fx.classroom.simulator();
-        break;
-      case 'practice':
-        fx.classroom.practice();
-        break;
-      case 'stopPractice':
-        fx.classroom.stopPractice();
-        break;
-      case 'palette':
-        fx.openPalette();
-        break;
-      case 'home':
-        ctx.dialog.close();
-        ctx.switchView('waves');
-        break;
-      case 'menu':
-        ctx.dialog.open('menu', 'Menú', menuHTML());
-        break;
-      case 'modes':
-        modes.openModes();
-        break;
-      case 'confirmModes':
-        await modes.confirmModes();
-        break;
-      case 'scenarios':
-        ctx.dialog.open(
-          'scenarios',
-          'Escenarios y paciente',
-          scenariosHTML(SCENARIOS, ctx.scenario.id, modeLabel, Boolean(ctx.fixtureId)),
-          CLOSE_BTN,
-          'scenario-dialog',
-        );
-        break;
-      case 'welcome-free':
-        ctx.dialog.close();
-        break;
-      case 'welcome-guided':
-        ctx.dialog.close();
-        await action('scenarios');
-        break;
-      case 'teacher':
-        fx.classroom.simulator();
-        instructor.toggleTeacher();
-        break;
-      case 'pause':
-        if (ctx.running) ctx.client.pause('usuario');
-        else ctx.client.resume();
-        $('#global-notice').hidden = true;
-        break;
-      case 'freeze':
-        ctx.toggleFreeze();
-        break;
-      case 'sound':
-        await alarms.toggleAudio();
-        break;
-      case 'fullscreen':
-        try {
-          if (document.fullscreenElement) await document.exitFullscreen();
-          else await document.documentElement.requestFullscreen();
-        } catch {
-          ctx.toast('No se pudo activar pantalla completa.', true);
-        }
-        break;
-      case 'alarms':
-        alarms.alarms();
-        break;
-      case 'alarmSetup':
-        alarms.alarmSetup();
-        break;
-      case 'confirmLimits':
-        await alarms.confirmLimits();
-        break;
-      case 'mute':
-        await ctx.send({ type: 'audioPause' });
-        break;
-      case 'acknowledge':
-        await ctx.send({ type: 'acknowledgeAlarms' });
-        break;
-      case 'inspiratory':
-        hold.openHold('inspHold');
-        break;
-      case 'expiratory':
-        hold.openHold('expHold');
-        break;
-      case 'closeHold':
-        if (ctx.frame?.procedure.hold) await ctx.send({ type: 'cancelProcedure' });
-        hold.closeHoldPanel();
-        break;
-      case 'runHold':
-        await hold.runHold();
-        break;
-      case 'cancelHold':
-        await hold.cancelHold();
-        break;
-      case 'manual': {
-        await ctx.send({ type: 'manualBreath' });
-        ctx.dialog.close();
-        break;
+  const handlers: Record<CommandId, () => void | Promise<unknown>> = {
+    classroom: () => fx.classroom.open(),
+    simulator: () => fx.classroom.simulator(),
+    practice: () => fx.classroom.practice(),
+    stopPractice: () => fx.classroom.stopPractice(),
+    palette: () => fx.openPalette(),
+    home: () => {
+      ctx.dialog.close();
+      ctx.switchView('waves');
+    },
+    menu: () => ctx.dialog.open('menu', 'Menú', menuHTML()),
+    modes: () => modes.openModes(),
+    confirmModes: () => modes.confirmModes(),
+    scenarios: () => {
+      ctx.dialog.open(
+        'scenarios',
+        'Escenarios y paciente',
+        scenariosHTML(SCENARIOS, ctx.scenario.id, modeLabel, Boolean(ctx.fixtureId)),
+        CLOSE_BTN,
+        'scenario-dialog',
+      );
+    },
+    'welcome-free': () => ctx.dialog.close(),
+    'welcome-guided': async () => {
+      ctx.dialog.close();
+      await action('scenarios');
+    },
+    teacher: () => {
+      fx.classroom.simulator();
+      instructor.toggleTeacher();
+    },
+    pause: () => {
+      if (ctx.running) ctx.client.pause('usuario');
+      else ctx.client.resume();
+      $('#global-notice').hidden = true;
+    },
+    freeze: () => ctx.toggleFreeze(),
+    sound: () => alarms.toggleAudio(),
+    fullscreen: async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch {
+        ctx.toast('No se pudo activar pantalla completa.', true);
       }
-      case 'oxygen':
-        oxygenDialog();
-        break;
-      case 'startOxygen':
-        await ctx.send({ type: 'increaseO2Start' });
-        ctx.dialog.close();
-        break;
-      case 'stopOxygen':
-        await ctx.send({ type: 'increaseO2Stop' });
-        ctx.dialog.close();
-        break;
-      case 'cancelEdit':
-        quick.cancelQuick();
-        break;
-      case 'confirmEdit':
-        quick.confirmQuick();
-        break;
-      case 'editMinus':
-        quick.stepQuick(-1);
-        break;
-      case 'editPlus':
-        quick.stepQuick(1);
-        break;
-      case 'knob':
-        if (quick.edit.state.kind !== 'idle') quick.confirmQuick();
-        else ctx.toast('Selecciona primero un parámetro de la barra inferior.');
-        break;
-      case 'lock':
-        ctx.setLocked(!ctx.locked);
-        break;
-      case 'unlock':
-        ctx.setLocked(false);
-        break;
-      case 'standby':
-        standbyDialog();
-        break;
-      case 'confirmStandby':
-        await ctx.send({ type: 'enterStandby' });
-        ctx.dialog.close();
-        break;
-      case 'startVentilation':
-        await ctx.send({ type: 'startVentilation' });
-        ctx.dialog.close();
-        break;
-      case 'powerInfo':
-        ctx.dialog.open('power', 'Entorno de simulación', powerHTML(), '', 'compact');
-        break;
-      case 'patient':
-        ctx.dialog.open('patient', 'Paciente virtual · adulto', patientHTML(), CLOSE_BTN, 'compact');
-        break;
-      case 'resetPatient':
-        await instructor.resetPatient();
-        break;
-      case 'undoEvent':
-        await instructor.undoEvent();
-        break;
-      case 'loopReference':
-        plots.saveLoopReference();
-        break;
-      case 'clearLoop':
-        plots.clearLoopReference();
-        break;
-      case 'waveReference':
-        if (plots.waveRefAt !== null) plots.clearWaveReference();
-        else plots.saveWaveReference();
-        break;
-      case 'exam':
-        ctx.setExamMode(!ctx.examMode);
-        break;
-      case 'examSubmit':
-        metrics.submitEstimate();
-        break;
-      case 'tools':
-        ctx.dialog.open('tools', 'Mecánica y procedimientos', toolsHTML());
-        break;
-      case 'mechanics':
-        metrics.mechanics();
-        break;
-      case 'session':
-        ctx.dialog.open(
-          'session',
-          'Sesión y exportaciones',
-          sessionHTML(ctx.scenario.name, ctx.simS(), ENGINE_VERSION, ctx.profile.profileVersion),
-          CLOSE_BTN,
-          'wide',
-        );
-        break;
-      case 'resetPrefs':
-        clearPrefs();
-        ctx.dialog.close();
-        ctx.toast('Preferencias restablecidas: se aplican al recargar');
-        break;
-      case 'exportSession':
-        await exportSession();
-        break;
-      case 'importSession':
-        $('#session-input').click();
-        break;
-      case 'csv':
-        exportCSV(false);
-        break;
-      case 'signalCSV':
-        exportCSV(true);
-        break;
-      case 'snapshot':
-        snapshot();
-        break;
-      case 'debrief':
-        fx.classroom.open('results');
-        break;
-      case 'exportDebrief':
-        if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `R860_practica_${stamp()}.txt`);
-        break;
-      case 'help':
-        openHelp('start');
-        break;
-      case 'model':
-        openHelp('model');
-        break;
-      case 'closeDialog':
-        ctx.dialog.close();
-        break;
-      default:
-        ctx.toast('Acción no disponible en esta versión.', true);
+    },
+    alarms: () => alarms.alarms(),
+    alarmSetup: () => alarms.alarmSetup(),
+    confirmLimits: () => alarms.confirmLimits(),
+    mute: () => ctx.send({ type: 'audioPause' }),
+    acknowledge: () => ctx.send({ type: 'acknowledgeAlarms' }),
+    inspiratory: () => hold.openHold('inspHold'),
+    expiratory: () => hold.openHold('expHold'),
+    closeHold: async () => {
+      if (ctx.frame?.procedure.hold) await ctx.send({ type: 'cancelProcedure' });
+      hold.closeHoldPanel();
+    },
+    runHold: () => hold.runHold(),
+    cancelHold: () => hold.cancelHold(),
+    manual: async () => {
+      await ctx.send({ type: 'manualBreath' });
+      ctx.dialog.close();
+    },
+    oxygen: () => oxygenDialog(),
+    startOxygen: async () => {
+      await ctx.send({ type: 'increaseO2Start' });
+      ctx.dialog.close();
+    },
+    stopOxygen: async () => {
+      await ctx.send({ type: 'increaseO2Stop' });
+      ctx.dialog.close();
+    },
+    cancelEdit: () => quick.cancelQuick(),
+    confirmEdit: () => quick.confirmQuick(),
+    editMinus: () => quick.stepQuick(-1),
+    editPlus: () => quick.stepQuick(1),
+    knob: () => {
+      if (quick.edit.state.kind !== 'idle') quick.confirmQuick();
+      else ctx.toast('Selecciona primero un parámetro de la barra inferior.');
+    },
+    lock: () => ctx.setLocked(!ctx.locked),
+    unlock: () => ctx.setLocked(false),
+    standby: () => standbyDialog(),
+    confirmStandby: async () => {
+      await ctx.send({ type: 'enterStandby' });
+      ctx.dialog.close();
+    },
+    startVentilation: async () => {
+      await ctx.send({ type: 'startVentilation' });
+      ctx.dialog.close();
+    },
+    powerInfo: () => ctx.dialog.open('power', 'Entorno de simulación', powerHTML(), '', 'compact'),
+    patient: () => ctx.dialog.open('patient', 'Paciente virtual · adulto', patientHTML(), CLOSE_BTN, 'compact'),
+    resetPatient: () => instructor.resetPatient(),
+    undoEvent: () => instructor.undoEvent(),
+    loopReference: () => plots.saveLoopReference(),
+    clearLoop: () => plots.clearLoopReference(),
+    waveReference: () => {
+      if (plots.waveRefAt !== null) plots.clearWaveReference();
+      else plots.saveWaveReference();
+    },
+    exam: () => ctx.setExamMode(!ctx.examMode),
+    examSubmit: () => metrics.submitEstimate(),
+    tools: () => ctx.dialog.open('tools', 'Mecánica y procedimientos', toolsHTML()),
+    mechanics: () => metrics.mechanics(),
+    session: () => {
+      ctx.dialog.open(
+        'session',
+        'Sesión y exportaciones',
+        sessionHTML(ctx.scenario.name, ctx.simS(), ENGINE_VERSION, ctx.profile.profileVersion),
+        CLOSE_BTN,
+        'wide',
+      );
+    },
+    resetPrefs: () => {
+      clearPrefs();
+      ctx.dialog.close();
+      ctx.toast('Preferencias restablecidas: se aplican al recargar');
+    },
+    exportSession: () => exportSession(),
+    importSession: () => $('#session-input').click(),
+    csv: () => exportCSV(false),
+    signalCSV: () => exportCSV(true),
+    snapshot: () => snapshot(),
+    debrief: () => fx.classroom.open('results'),
+    exportDebrief: () => {
+      if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `R860_practica_${stamp()}.txt`);
+    },
+    help: () => openHelp('start'),
+    model: () => openHelp('model'),
+    closeDialog: () => ctx.dialog.close(),
+  };
+  async function action(a: string): Promise<void> {
+    if (!isCommandId(a)) {
+      ctx.toast('Acción no disponible en esta versión.', true);
+      return;
     }
+    await handlers[a]();
   }
 
   function bind(): void {
