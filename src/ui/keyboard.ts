@@ -1,4 +1,5 @@
 /** Teclado: Escape de fuera hacia dentro (diálogo → ayuda → editor), Tab atrapado en el editor, flechas en rejillas, atajos. */
+import { SHORTCUTS } from './commands';
 import type { AppContext } from './context';
 import { $, trapTab } from './dom';
 import { collapseHelp } from './helpPanels';
@@ -25,8 +26,6 @@ export function roveGrid(e: KeyboardEvent, t: HTMLElement): boolean {
   e.preventDefault();
   return true;
 }
-
-export const SHORTCUTS: Record<string, string> = { ' ': 'pause', c: 'freeze', f: 'snapshot', a: 'alarms', h: 'home', '?': 'help' };
 
 export function bindKeyboard(
   ctx: AppContext,
@@ -78,9 +77,10 @@ export function bindKeyboard(
     if (t.dataset.metric && roveGrid(e, t)) return;
     if (t.closest('input,select,textarea,button,summary,a') || $<HTMLDialogElement>('#app-dialog').open) return;
     const key = e.key.toLowerCase();
-    if (SHORTCUTS[key]) {
+    const command = SHORTCUTS[key];
+    if (command) {
       e.preventDefault();
-      void deps.action(SHORTCUTS[key] as string);
+      void deps.action(command);
     }
   });
 }
