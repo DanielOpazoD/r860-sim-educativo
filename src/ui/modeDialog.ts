@@ -51,7 +51,7 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const display = typeof v === 'number' ? v * rule.displayFactor : '';
     const rangeMax = values.length - 1 + (rule.allowOff ? 1 : 0);
     const rangeValue = v === 'off' ? ruleRangeIndex(rule, 'off') : typeof v === 'number' ? ruleRangeIndex(rule, v * rule.displayFactor) : 0;
-    return `<div class="setting-field contextual-field"><div class="parameter-label"><label for="setting-${k}">${QUICK_LABEL[k]}</label></div><div class="setting-input"><button class="step-button" type="button" data-mode-step="${k}" data-direction="-1" aria-label="Disminuir ${QUICK_LABEL[k]}" aria-describedby="${id}">−</button><input id="setting-${k}" type="number" data-mode-field="${k}" aria-describedby="${id}" value="${display}" min="${rule.allowOff ? 0 : min}" max="${max}" step="${step}" placeholder="${rule.allowOff ? 'Off' : ''}"><button class="step-button" type="button" data-mode-step="${k}" data-direction="1" aria-label="Aumentar ${QUICK_LABEL[k]}" aria-describedby="${id}">+</button><small>${unitText(rule.displayUnit)}</small></div><input class="setting-range" type="range" data-mode-range="${k}" min="0" max="${rangeMax}" value="${rangeValue}" aria-label="Deslizador ${QUICK_LABEL[k]}" aria-describedby="${id}">${contextualHelpPanel(HELP_KEY[k], id)}</div>`;
+    return `<div class="setting-field contextual-field"><div class="parameter-label"><label for="setting-${k}">${QUICK_LABEL[k]}</label><small>${unitText(rule.displayUnit)}</small></div><div class="setting-input"><button class="step-button" type="button" data-mode-step="${k}" data-direction="-1" aria-label="Disminuir ${QUICK_LABEL[k]}" aria-describedby="${id}">−</button><input id="setting-${k}" type="number" data-mode-field="${k}" aria-describedby="${id}" value="${display}" min="${rule.allowOff ? 0 : min}" max="${max}" step="${step}" placeholder="${rule.allowOff ? 'Off' : ''}"><button class="step-button" type="button" data-mode-step="${k}" data-direction="1" aria-label="Aumentar ${QUICK_LABEL[k]}" aria-describedby="${id}">+</button></div><input class="setting-range" type="range" data-mode-range="${k}" min="0" max="${rangeMax}" value="${rangeValue}" aria-label="Deslizador ${QUICK_LABEL[k]}" aria-describedby="${id}">${contextualHelpPanel(HELP_KEY[k], id)}</div>`;
   }
   function modeFields(): string {
     const s = modeDraft as VcSettings;
@@ -72,7 +72,7 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const respaldo = ps
       ? `<div class="settings-subtitle">Respaldo</div>${fieldHTML('minRate', s)}${fieldHTML('backupPinsp', s)}${fieldHTML('backupTinspS', s)}${fieldHTML('apneaTimeS', s)}`
       : '';
-    return `<div class="mode-description"><div class="parameter-label"><h3>${title}</h3></div><p class="settings-annotation">${desc}</p></div><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${sync}${respaldo}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
+    return `<details class="mode-explanation"><summary>${title}</summary><p>${desc}</p><p class="mode-other-note">Otros modos del R860 (PRVC, SIMV, BiLevel, APRV, NIV) no se simulan.</p></details><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${sync}${respaldo}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
   }
   function openModes(): void {
     if (!ctx.frame) return;
@@ -91,7 +91,7 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     ctx.dialog.open(
       'modes',
       'Modo y ajustes de ventilación',
-      `<div class="mode-layout"><div class="mode-selector"><nav class="mode-list" aria-label="Modos ventilatorios">${options}</nav><p class="mode-other-note">Otros modos del R860 (PRVC, SIMV, BiLevel, APRV, NIV) no se simulan.</p></div><div id="mode-fields">${modeFields()}</div></div>`,
+      `<div class="mode-layout"><div class="mode-selector"><nav class="mode-list" aria-label="Modos ventilatorios">${options}</nav></div><div id="mode-fields">${modeFields()}</div></div>`,
       CANCEL_BTN + btn('Confirmar ajustes', 'confirmModes'),
       'wide',
     );
