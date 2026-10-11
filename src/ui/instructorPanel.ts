@@ -7,7 +7,7 @@ import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
 import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
-import { $, $$, icon, put } from './dom';
+import { $, $$, element, esc, iconNode, put } from './dom';
 import type { HoldPanel } from './holdPanel';
 import { contextualHelpPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
@@ -236,27 +236,43 @@ export function createInstructorPanel(
       return teacherVisible;
     },
     init() {
-      $('#patient-profiles').innerHTML = `
-        <h3 class="small-section-title">Perfil del paciente</h3>
-        <div class="profile-grid">${PATIENT_PROFILES.map(
-          (profile) =>
-            `<button class="profile-chip" data-profile="${profile.id}" aria-pressed="false" title="${profileHint(profile)}" ${ctx.fixtureId ? 'disabled' : ''}><b>${profile.label}</b><small>${profileHint(profile)}</small></button>`,
-        ).join('')}</div>
-        <p id="profile-status" class="profile-status" aria-live="polite">Personalizado</p>
-      `;
+      const status = element('p', 'profile-status', 'Personalizado');
+      status.id = 'profile-status';
+      status.setAttribute('aria-live', 'polite');
+      $('#patient-profiles').replaceChildren(
+        element('h3', 'small-section-title', 'Perfil del paciente'),
+        element(
+          'div',
+          'profile-grid',
+          ...PATIENT_PROFILES.map((profile) => {
+            const button = element('button', 'profile-chip', element('b', '', profile.label), element('small', '', profileHint(profile)));
+            button.dataset.profile = profile.id;
+            button.setAttribute('aria-pressed', 'false');
+            button.title = profileHint(profile);
+            button.disabled = !!ctx.fixtureId;
+            return button;
+          }),
+        ),
+        status,
+      );
       profileTruthJson = null;
       $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, contextualHelpPanel);
       $('#patient-extra-controls').innerHTML = PATIENT_GROUPS.map(
         (group) =>
-          `<section class="phys-group"><h4 class="phys-group-title">${group.title}</h4>${physHtml(group.keys, contextualHelpPanel)}${group.presets ? presetsHtml(contextualHelpPanel) : ''}${group.note ? `<p class="settings-annotation">${group.note}</p>` : ''}</section>`,
+          `<section class="phys-group"><h4 class="phys-group-title">${esc(group.title)}</h4>${physHtml(group.keys, contextualHelpPanel)}${group.presets ? presetsHtml(contextualHelpPanel) : ''}${group.note ? `<p class="settings-annotation">${esc(group.note)}</p>` : ''}</section>`,
       ).join('');
       const moreParams = $<HTMLDetailsElement>('.advanced-patient');
       moreParams.open = loadPrefs().patientMoreOpen ?? false;
       moreParams.addEventListener('toggle', () => savePrefs({ patientMoreOpen: moreParams.open }));
-      $('#fault-grid').innerHTML = FAULTS.map(
-        ([id, i, l, d, off]) =>
-          `<button data-event="${id}" id="event-${id}" ${off ? 'disabled' : ''}>${icon(i)}<b>${l}</b><small>${d}</small></button>`,
-      ).join('');
+      $('#fault-grid').replaceChildren(
+        ...FAULTS.map(([id, i, label, description, off]) => {
+          const button = element('button', '', iconNode(i), element('b', '', label), element('small', '', description));
+          button.dataset.event = id;
+          button.id = `event-${id}`;
+          button.disabled = !!off;
+          return button;
+        }),
+      );
     },
     initChrome() {
       renderToggle();

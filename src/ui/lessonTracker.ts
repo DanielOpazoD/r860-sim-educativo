@@ -1,6 +1,6 @@
 /** Estado de la lección (objetivos cumplidos, banderas y marcas de tiempo), su pintado en Aula y sus avisos. */
 import type { AppContext, LessonTracker } from './context';
-import { $, esc, icon, put } from './dom';
+import { $, element, iconNode, put } from './dom';
 import { avisoDeObjetivo, nextCompletedTask, tareasCumplidasAlAbrir } from './lesson';
 
 export function createLessonTracker(ctx: AppContext): LessonTracker {
@@ -23,12 +23,16 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
     put('#reflection-answer', scenario.answer ?? scenario.observe);
     const tasks = l?.tasks ?? [];
     put('#lesson-count', sessionImported ? 'Sesión importada: sus objetivos no se evalúan' : `${done.size} de ${tasks.length} objetivos`);
-    $('#lesson-tasks').innerHTML = tasks
-      .map(
-        (task, i) =>
-          `<div class="task ${done.has(task.id) ? 'complete' : ''}"><span class="task-check">${done.has(task.id) ? icon('check') : i + 1}</span><span>${esc(task.text)}</span></div>`,
-      )
-      .join('');
+    $('#lesson-tasks').replaceChildren(
+      ...tasks.map((task, i) =>
+        element(
+          'div',
+          `task ${done.has(task.id) ? 'complete' : ''}`,
+          element('span', 'task-check', done.has(task.id) ? iconNode('check') : String(i + 1)),
+          element('span', '', task.text),
+        ),
+      ),
+    );
     $('#lesson-feedback').hidden = tasks.length === 0 || done.size !== tasks.length;
   }
   // La primera perturbación programada del escenario fija el «antes» aunque la mecánica todavía no haya cambiado.

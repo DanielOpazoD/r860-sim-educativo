@@ -13,13 +13,34 @@ export const $ = <T extends HTMLElement = HTMLElement>(s: string): T => {
 export const $$ = <T extends HTMLElement = HTMLElement>(s: string): T[] => [...document.querySelectorAll<T>(s)];
 export const esc = (v: unknown): string =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
-export const icon = (n: string): string => `<svg class="icon" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+export const icon = (n: string): string => `<svg class="icon" aria-hidden="true"><use href="#i-${esc(n)}"/></svg>`;
+export function element<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className = '',
+  ...children: (Node | string)[]
+): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  node.className = className;
+  node.append(...children);
+  return node;
+}
+
+export function iconNode(name: string): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'icon');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS(svg.namespaceURI, 'use');
+  use.setAttribute('href', `#i-${name}`);
+  svg.append(use);
+  return svg;
+}
+
 export const put = (sel: string | Element | null, v: string): void => {
   const e = typeof sel === 'string' ? $(sel) : sel;
   if (e && e.textContent !== v) e.textContent = v;
 };
 export const btn = (label: string, action: string, cls = 'primary-button'): string =>
-  `<button class="${cls}" data-action="${action}">${label}</button>`;
+  `<button class="${esc(cls)}" data-action="${esc(action)}">${esc(label)}</button>`;
 
 const FOCUSABLE =
   'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])';
