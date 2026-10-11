@@ -1,6 +1,6 @@
 {
   "name": "r860-sim-educativo",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "R860 Lab · Simulador EDUCATIVO web inspirado en GE Healthcare CARESCAPE R860. NO USO CLÍNICO.",
   "type": "module",
@@ -31,7 +31,7 @@
     "oxlint": "^1.81.0",
     "prettier": "^3.9.6",
     "typescript": "7.0.2",
-    "vite": "8.2.2",
+    "vite": "8.3.2",
     "vitest": "5.0.0"
   }
 }

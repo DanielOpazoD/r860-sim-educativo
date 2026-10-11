@@ -1,7 +1,7 @@
-import { SCENARIOS } from '../scenarios';
 import type { AppContext } from './context';
 import { debriefNodes } from './dialogs';
 import { $, $$, element, put } from './dom';
+import { createLazyView } from './lazyView';
 
 const SECTIONS = ['lesson', 'theory', 'questions', 'exam', 'results', 'library'] as const;
 const HEADINGS: Record<Section, { kicker: string; title: string; lead: string }> = {
@@ -39,45 +39,19 @@ export function createClassroom(
   let practicing = false;
   let scenarioId = ctx.scenario.id;
   let resultsSignature = '';
-
-  function library(): void {
-    const query = $<HTMLInputElement>('#aula-search').value.trim().toLocaleLowerCase();
-    const cases = SCENARIOS.filter(
-      (sc) => sc.id !== 'SC-P' && `${sc.name} ${sc.category ?? ''} ${sc.id}`.toLocaleLowerCase().includes(query),
-    );
-    const groups = new Map<string, typeof cases>();
-    for (const sc of cases) {
-      const key = sc.category ?? 'Práctica';
-      groups.set(key, [...(groups.get(key) ?? []), sc]);
-    }
-    $('#aula-library-list').replaceChildren(
-      ...[...groups].map(([category, items]) =>
-        element(
-          'section',
-          'aula-group',
-          element('h3', 'aula-kicker', `${category} · ${items.length}`),
-          element(
-            'div',
-            'aula-library-list',
-            ...items.map((sc) => {
-              const button = element(
-                'button',
-                `aula-case${sc.id === ctx.scenario.id ? ' current' : ''}`,
-                element('span', 'aula-kicker', `${sc.id}${sc.id === ctx.scenario.id ? ' · Caso actual' : ''}`),
-                element('strong', '', sc.name),
-                element('span', '', sc.description),
-              );
-              button.dataset.aulaCase = sc.id;
-              return button;
-            }),
-          ),
-        ),
-      ),
-    );
-    $('#aula-library-empty').hidden = cases.length > 0;
-  }
+  const theory = createLazyView(
+    $('#aula-theory'),
+    () => !$('#classroom').hidden && section === 'theory',
+    async () => (await import('./teachingView')).createTeachingView(ctx),
+  );
+  const library = createLazyView(
+    $('#aula-library'),
+    () => !$('#classroom').hidden && section === 'library',
+    async () => (await import('./libraryView')).createLibraryView(ctx),
+  );
 
   function render(): void {
+    theory.render();
     if (scenarioId !== ctx.scenario.id) {
       scenarioId = ctx.scenario.id;
       practicing = false;
@@ -148,7 +122,8 @@ export function createClassroom(
     $('#classroom-lead').hidden = !heading.lead;
     $('#classroom').classList.toggle('compact', next !== 'lesson');
     if (next === 'theory') ctx.lesson.flags.teaching = true;
-    if (next === 'library') library();
+    if (next === 'theory') void theory.open();
+    if (next === 'library') void library.open();
     resultsSignature = '';
     render();
     ctx.updateUI();
@@ -181,7 +156,7 @@ export function createClassroom(
           open('lesson');
         }
       });
-      $('#aula-search').addEventListener('input', library);
+      $('#aula-search').addEventListener('input', () => library.render());
     },
     open,
     simulator,

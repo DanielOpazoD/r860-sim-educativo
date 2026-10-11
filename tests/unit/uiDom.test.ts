@@ -8,7 +8,6 @@ import { createQuickEditor } from '../../src/ui/quickEditor';
 import { createHoldPanel } from '../../src/ui/holdPanel';
 import { createModeDialog } from '../../src/ui/modeDialog';
 import { createAlarmsUi } from '../../src/ui/alarmsUi';
-import { createTeachingView } from '../../src/ui/teachingView';
 import { SCENARIOS } from '../../src/scenarios';
 
 const hostile = '<img src=x onerror="alert(1)"> & \' " >';
@@ -30,7 +29,7 @@ describe('Aula y texto recibido', () => {
     expect(node.querySelector('use')?.getAttribute('href')).toBe('#i-check');
   });
 
-  it('busca y selecciona casos, preservando IDs, categorías y descripciones literales', () => {
+  it('busca y selecciona casos, preservando IDs, categorías y descripciones literales', async () => {
     const { ctx } = harness;
     const scenario = { ...ctx.scenario, id: hostile, name: hostile, category: hostile, description: hostile };
     SCENARIOS.push(scenario);
@@ -42,6 +41,7 @@ describe('Aula y texto recibido', () => {
       const search = $<HTMLInputElement>('#aula-search');
       search.value = hostile;
       search.dispatchEvent(new Event('input'));
+      await vi.waitFor(() => expect(document.querySelector('.aula-case')).not.toBeNull());
       const card = $<HTMLButtonElement>('.aula-case');
       expect(card.dataset.aulaCase).toBe(hostile);
       expect(card.querySelector('strong')?.textContent).toBe(hostile);
@@ -233,22 +233,20 @@ describe('edición, medición y navegación de diálogos', () => {
     expect($('#device-event-log').firstElementChild).toBe(first);
   });
 
-  it('abre fundamentos con diagramas SVG y cambia de tema sin perder ocultación de examen', () => {
+  it('abre fundamentos con diagramas SVG y cambia de tema sin perder ocultación de examen', async () => {
     const { ctx, sim } = harness;
     while (sim.simTimeMs < 12_000) sim.step();
     ctx.frame = sim.frame();
     const classroom = createClassroom(ctx, { cancelQuick: vi.fn(), loadScenario: vi.fn(), estimateCount: () => 0 });
     classroom.init();
     classroom.open('theory');
-    const teaching = createTeachingView(ctx);
-    teaching.render();
-    expect($('#teaching-body').querySelector('svg')).not.toBeNull();
+    await vi.waitFor(() => expect($('#teaching-body').querySelector('svg')).not.toBeNull());
     $<HTMLButtonElement>('[data-edu-tab="proteccion"]').click();
     expect(ctx.lesson.flags['edu-proteccion']).toBe(true);
     expect($('#teaching-body').textContent).toContain('Potencia mecánica');
     ctx.examMode = true;
     ctx.examMasked = () => true;
-    teaching.render();
+    classroom.render();
     expect($('#teaching-body').textContent).toContain('?');
   });
 });
