@@ -9,11 +9,6 @@
   }
 }
 @media (max-width: 700px) {
-  .app-top {
-    height: 64px;
-    padding: 0 15px;
-    gap: 12px;
-  }
   .wordmark {
     gap: 6px;
   }
@@ -26,7 +21,7 @@
     letter-spacing: -1px;
   }
   .wordmark strong span {
-    font-size: 11px;
+    font-size: var(--type-xs);
     letter-spacing: 1.5px;
     margin-left: 6px;
   }
@@ -34,10 +29,8 @@
     gap: 2px;
   }
   .top-actions .button {
-    padding: 7px;
-    min-width: 31px;
     min-height: 32px;
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
   .top-actions .button > span {
     display: none;
@@ -57,65 +50,22 @@
     margin-left: 13px;
     margin-top: -3px;
   }
-  .text-button {
-    font-size: var(--type-2xs);
-  }
-  .text-button .icon {
-    width: 13px;
-    height: 13px;
-  }
-  .mobile-hint {
-    display: block;
-    font-size: var(--type-2xs);
-    color: var(--shell-muted);
-    margin: 7px 2px 10px;
-    line-height: 1.5;
-  }
   .device-scroll {
     overflow-x: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--shell-dim) var(--shell-bg);
-    padding-bottom: 12px;
     border-radius: 15px;
-    overscroll-behavior-x: contain;
-  }
-  .device-shell {
-    min-width: 710px;
-    border-radius: 16px 16px 27px 27px;
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-  .bezel-model {
-    font-size: 11px;
   }
   .bezel-model > span {
     font-size: 6px;
-  }
-  .bezel-top {
-    height: 32px;
-  }
-  .bezel-bottom {
-    height: 73px;
-  }
-  .hard-keys {
-    gap: 14px;
   }
   .hard-key {
     width: 35px;
     height: 34px;
     padding: 7px;
   }
-  .bezel-signature {
-    font-size: 20px;
-  }
-  .trim-knob {
-    width: 53px;
-    height: 53px;
-  }
   .signal-toolbar {
     margin-top: 12px;
-    flex-wrap: wrap;
-    gap: 11px;
   }
   .time-controls {
     gap: 9px;
@@ -127,26 +77,10 @@
     padding-left: 0;
   }
   .signal-toolbar .button {
-    font-size: 10px;
+    font-size: var(--type-2xs);
     padding: 8px;
   }
-  .inline-select {
-    font-size: var(--type-2xs);
-  }
-  .inline-select select {
-    font-size: var(--type-2xs);
-    padding: 4px 5px;
-  }
   .simulation-clock {
-    font-size: 10px;
-  }
-  .stage-footnote {
-    font-size: var(--type-2xs);
-    align-items: flex-start;
-    line-height: 1.8;
-    margin-top: 14px;
-  }
-  .stage-footnote button {
     font-size: var(--type-2xs);
   }
   .instructor {
@@ -158,23 +92,14 @@
   .instructor-pane {
     padding: 20px;
   }
-  .instructor-header {
-    padding: 18px 20px;
-  }
-  .instructor-header h2 {
-    font-size: 17px;
-  }
   .instructor-tabs button {
-    font-size: 12px;
-  }
-  .model-note {
-    font-size: 11px;
+    font-size: var(--type-sm);
   }
   .phys-field {
     margin-bottom: 26px;
   }
   .phys-field-header label {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .phys-value input {
     font-size: 18px;
@@ -197,28 +122,27 @@
     gap: 21px 20px;
   }
   .truth-grid span {
-    font-size: 10px;
+    font-size: var(--type-2xs);
   }
   .truth-grid b {
     font-size: 26px;
   }
   .truth-grid b small {
-    font-size: 10px;
+    font-size: var(--type-2xs);
   }
   .advanced-patient summary {
-    font-size: 11px;
+    font-size: var(--type-xs);
     padding: 15px 0;
   }
   .mini-muscle > div {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
   .mini-muscle b {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
-  .instructor-pane#instructor-learn .lesson-text,
   .task,
   .reflection {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .fault-grid {
     grid-template-columns: 1fr 1fr;
@@ -256,20 +180,17 @@
     padding: 13px 18px;
     gap: 9px;
   }
-  .dialog-footer .footer-info {
-    font-size: var(--type-2xs);
-  }
   .primary-button,
   .secondary-button {
-    font-size: 11px;
+    font-size: var(--type-xs);
     padding: 10px 13px;
   }
   .dialog-content p {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .dialog-content .notice-box,
   .dialog-content .info-box {
-    font-size: 11px;
+    font-size: var(--type-xs);
     padding: 13px;
   }
   .menu-grid,
@@ -288,10 +209,7 @@
     font-size: var(--type-2xs);
   }
   .scenario-card p {
-    font-size: 12px;
-  }
-  .scenario-card .scenario-details {
-    font-size: 10px;
+    font-size: var(--type-sm);
   }
   .mode-layout {
     grid-template-columns: 1fr;
@@ -304,73 +222,70 @@
   }
   .mode-option {
     text-align: center;
-    font-size: 10px;
+    font-size: var(--type-2xs);
     padding: 9px 5px;
     min-height: 40px;
   }
   .mode-other-note {
     grid-column: 1/-1;
     margin-top: 5px;
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .settings-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 14px;
   }
-  .mode-description {
-    font-size: 11px;
-  }
   .setting-field > span {
-    font-size: 10px;
+    font-size: var(--type-2xs);
   }
   .setting-field input {
-    font-size: 20px;
+    font-size: var(--type-xl);
     padding: 10px 30px 10px 10px;
   }
   .setting-field small {
     font-size: var(--type-2xs);
   }
   .settings-annotation {
-    font-size: 10px;
+    font-size: var(--type-2xs);
   }
   .mode-timing {
-    font-size: 10px;
+    font-size: var(--type-2xs);
     gap: 10px;
   }
   .info-table {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
   .info-table th,
   .info-table td {
     padding: 9px 6px;
   }
   .help-tabs button {
-    font-size: 10px;
+    font-size: var(--type-2xs);
     padding: 9px 11px;
   }
   .tools-grid {
     grid-template-columns: 1fr;
   }
   .source-entry a {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .source-entry p {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
   .alarm-edit-grid {
     gap: 11px;
-    font-size: 11px;
+    font-size: var(--type-xs);
     grid-template-columns: 1.15fr 1fr 1fr;
   }
   .alarm-edit-grid > label {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
   .alarm-row {
     padding: 12px;
     gap: 9px;
   }
   .alarm-row b {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .alarm-priority {
     font-size: var(--type-2xs);
@@ -386,17 +301,14 @@
   .debrief-stat-grid strong {
     font-size: 23px;
   }
-  .form-row {
-    gap: 12px;
-  }
   .menu-entry {
     padding: 17px;
   }
   .menu-entry b {
-    font-size: 13px;
+    font-size: var(--type-md);
   }
   .menu-entry small {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
   .toast-stack {
     top: auto;
@@ -406,7 +318,7 @@
     max-width: calc(100vw - 28px);
   }
   .toast {
-    font-size: 11px;
+    font-size: var(--type-xs);
     padding: 11px 14px;
   }
   .app-dialog.wide,
@@ -429,8 +341,6 @@
   .app-top,
   .instructor,
   .signal-toolbar,
-  .stage-footnote,
-  .text-button,
   .safety-strip,
   .app-dialog,
   .toast-stack {
@@ -445,9 +355,6 @@
   }
   .device-scroll {
     overflow: visible;
-  }
-  .bezel-tag {
-    color: #111;
   }
   .monitor,
   .device-shell {
@@ -502,23 +409,6 @@
   border-color: var(--shell-warning);
   background: var(--shell-warning-soft);
 }
-.check-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--shell-line);
-}
-.check-item.pass {
-  color: var(--shell-accent);
-}
-.check-item.fail {
-  color: var(--shell-danger);
-}
-.check-item span {
-  margin-left: auto;
-  font-size: 12px;
-}
 .alarm-edit-grid input {
   min-width: 0;
 }
@@ -535,7 +425,7 @@
 .info-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--type-sm);
   line-height: 1.6;
 }
 .info-table td,
@@ -649,7 +539,7 @@
 }
 .parameter-help h3,
 .dialog-content .parameter-help h3 {
-  font-size: 12px;
+  font-size: var(--type-sm);
   font-weight: 650;
   line-height: 1.5;
   color: #d8eaf3;
@@ -657,7 +547,7 @@
 }
 .parameter-help p,
 .dialog-content .parameter-help p {
-  font-size: 12px;
+  font-size: var(--type-sm);
   line-height: 1.65;
   color: #b5ccdc;
   margin: 7px 0;
@@ -670,7 +560,7 @@
   border-top: 1px solid #7aa6bf3b;
   margin-top: 10px;
   color: #bbe4dd;
-  font-size: 11px;
+  font-size: var(--type-xs);
   line-height: 1.7;
 }
 .help-timing:empty {
@@ -689,10 +579,10 @@
   scrollbar-width: thin;
 }
 .quick-editor .parameter-help h3 {
-  font-size: 12px;
+  font-size: var(--type-sm);
 }
 .quick-editor .parameter-help p {
-  font-size: 11px;
+  font-size: var(--type-xs);
   line-height: 1.65;
 }
 .quick-editor .knob-hint {
@@ -706,7 +596,6 @@
   gap: 3px;
 }
 .setting-field > .parameter-label > label {
-  font-size: 11px;
   color: var(--shell-muted);
   line-height: 1.4;
 }
@@ -717,16 +606,6 @@
 }
 .settings-grid > .full-span {
   grid-column: 1/-1;
-}
-.mode-description > .parameter-label {
-  justify-content: space-between;
-}
-.mode-description > .parameter-label h3 {
-  margin: 0;
-  font-size: 15px;
-}
-.mode-description > .parameter-help {
-  margin-top: 12px;
 }
 .phys-field-header > .parameter-label {
   flex: 1;
@@ -744,15 +623,15 @@
   padding: 5px;
 }
 .phys-field .parameter-help {
-  font-size: 11px;
+  font-size: var(--type-xs);
   margin-top: 12px;
   padding: 11px 12px;
 }
 .phys-field .parameter-help p {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .phys-field .parameter-help h3 {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .truth-grid .truth-label {
   display: flex;
@@ -777,10 +656,10 @@
   margin-top: 12px;
 }
 .truth-help-panels .parameter-help {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .truth-help-panels .parameter-help p {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .numeric:hover .numeric-label,
 .numeric:focus-visible .numeric-label,
@@ -823,12 +702,12 @@
   line-height: 1.2;
 }
 .measurement-summary strong small {
-  font-size: 12px;
+  font-size: var(--type-sm);
   color: var(--shell-muted);
   font-weight: 400;
 }
 .measurement-summary > span {
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--shell-muted);
   line-height: 1.6;
 }
@@ -839,7 +718,7 @@
   display: none;
 }
 .measurement-explanation .help-equation {
-  font-size: 13px;
+  font-size: var(--type-md);
 }
 .context-help-row {
   display: flex;
@@ -847,7 +726,7 @@
   gap: 8px;
   justify-content: space-between;
   color: #93b1c5;
-  font-size: 12px;
+  font-size: var(--type-sm);
   margin-bottom: 12px;
 }
 .hold-title b {
@@ -873,7 +752,7 @@
 }
 .hold-panel > .parameter-help h3,
 .hold-panel > .parameter-help p {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .hold-panel.is-occluding {
   border-color: #abf1df;
@@ -905,10 +784,10 @@
   }
   .parameter-help p,
   .dialog-content .parameter-help p {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
   .setting-field > .parameter-label > label {
-    font-size: 10px;
+    font-size: var(--type-2xs);
   }
   .setting-field > .parameter-label > .info-button {
     width: 24px;
@@ -921,7 +800,7 @@
     height: 28px;
   }
   .truth-help-panels .parameter-help p {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
 }
 /* Edición legible fuera del monitor escalado en pantallas estrechas. */
@@ -938,15 +817,13 @@
   transform: translate(-50%, -50%);
   width: min(405px, calc(100vw - 24px));
   max-height: calc(100dvh - 32px);
-  z-index: 100;
   padding: 20px;
-  box-shadow: 0 8px 65px #000b;
 }
 #quick-editor.mobile-editor .parameter-help {
   max-height: min(250px, 36dvh);
 }
 #quick-editor.mobile-editor .parameter-help p {
-  font-size: 13px;
+  font-size: var(--type-md);
   line-height: 1.65;
 }
 #quick-editor.mobile-editor .parameter-help h3 {
@@ -954,7 +831,7 @@
 }
 #quick-editor.mobile-editor .primary-button,
 #quick-editor.mobile-editor .secondary-button {
-  font-size: 13px;
+  font-size: var(--type-md);
   min-height: 40px;
 }
 #quick-editor.mobile-editor .info-button {
@@ -1005,14 +882,14 @@
   justify-self: end;
   align-self: end;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--type-sm);
 }
 .monitor .big-numeric .numeric-limits {
   grid-column: 2;
   grid-row: 2;
   align-self: end;
   margin: 0 0 8px 0;
-  font-size: 13px;
+  font-size: var(--type-md);
   color: #98dcff;
   white-space: pre-line;
   line-height: 1.15;
@@ -1025,14 +902,10 @@
 /* [adaptado] Ventana de bloqueo fuera del monitor escalado en móvil. */
 .hold-panel.mobile-hold {
   position: fixed;
-  left: 8px;
-  right: 8px;
   bottom: 8px;
   top: auto;
-  width: auto;
   max-width: none;
-  z-index: 60;
-  font-size: 15px;
+  font-size: var(--type-lg);
   transform: none;
 }
 .hold-panel.mobile-hold .hold-panel-body {
