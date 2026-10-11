@@ -7,7 +7,8 @@
   flex-shrink: 0;
 }
 .space-nav button,
-.aula-nav button {
+.aula-nav button,
+.classroom .edu-tabs .device-small {
   border: 0;
   background: transparent;
   color: var(--shell-muted);
@@ -16,7 +17,8 @@
   font-size: 13px;
 }
 .space-nav [aria-current],
-.aula-nav [aria-current] {
+.aula-nav [aria-current],
+.classroom .edu-tabs .chosen {
   background: white;
   color: var(--shell-text);
   box-shadow: 0 1px 4px #18344215;
@@ -72,6 +74,16 @@
   flex: 1;
   padding: 9px 13px;
   white-space: nowrap;
+}
+.classroom.compact .aula-heading {
+  margin-bottom: 20px;
+}
+.classroom.compact .aula-heading h1 {
+  font-size: clamp(20px, 2.2vw, 26px);
+  margin: 6px 0 0;
+}
+.classroom.compact .aula-nav {
+  margin-bottom: 24px;
 }
 .aula-lesson-layout {
   display: grid;
@@ -185,45 +197,78 @@
 }
 .aula-library-heading {
   display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
+  justify-content: flex-end;
+  margin-bottom: 20px;
 }
 .aula-library-heading label {
   font-size: 12px;
-  min-width: 240px;
+  min-width: 280px;
+}
+.aula-library {
+  column-count: 3;
+  column-gap: 20px;
+}
+.aula-group {
+  break-inside: avoid;
+  margin-bottom: 20px;
+}
+.aula-group h3 {
+  margin: 0 0 8px;
 }
 .aula-library-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 8px;
 }
 .aula-case {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'kicker arrow'
+    'name arrow'
+    'text arrow';
+  column-gap: 12px;
   background: white;
   border: 1px solid var(--shell-line);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 12px 14px;
   text-align: left;
   color: var(--shell-text);
+}
+.aula-case::after {
+  content: '→';
+  grid-area: arrow;
+  align-self: center;
+  color: var(--shell-muted);
 }
 .aula-case:hover {
   border-color: var(--shell-accent);
 }
+.aula-case:hover::after,
+.aula-case.current .aula-kicker {
+  color: var(--shell-accent);
+}
+.aula-case.current {
+  border-color: var(--shell-accent);
+}
+.aula-case .aula-kicker {
+  grid-area: kicker;
+}
 .aula-case strong {
-  font-size: 16px;
+  grid-area: name;
+  font-size: 14px;
   font-weight: 600;
+  margin-top: 2px;
 }
 .aula-case > span:not(.aula-kicker) {
-  font-size: 13px;
+  grid-area: text;
+  font-size: 12.5px;
+  line-height: 1.5;
   color: var(--shell-muted);
-}
-.aula-case small {
-  color: var(--shell-accent);
-  margin-top: auto;
-  padding-top: 10px;
+  margin-top: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .aula-footer {
   border-top: 1px solid var(--shell-line);
@@ -295,16 +340,12 @@
 .classroom .device-view-header h2 {
   color: var(--shell-text);
 }
-.classroom .edu-tabs .device-small {
-  background: white;
-  color: var(--shell-muted);
+.classroom .edu-tabs {
+  display: inline-flex;
+  padding: 3px;
   border: 1px solid var(--shell-line);
-  font-size: 13px;
-  padding: 9px 14px;
-}
-.classroom .edu-tabs .chosen {
-  background: var(--shell-accent);
-  color: white;
+  border-radius: 9px;
+  background: var(--shell-raised);
 }
 .classroom .edu-body {
   overflow: visible;
@@ -332,8 +373,10 @@
 }
 .classroom .edu-formula {
   color: var(--shell-text);
-  background: var(--shell-raised);
-  padding: 10px;
+  background: white;
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 10px 12px;
   margin: 8px 0;
 }
 .classroom .edu-nota,
@@ -361,8 +404,8 @@
   .app-context {
     flex-basis: 30%;
   }
-  .aula-library-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .aula-library {
+    column-count: 2;
   }
 }
 @media (max-width: 700px) {
@@ -385,8 +428,10 @@
     display: block;
     margin-top: 16px;
   }
+  .aula-library {
+    column-count: 1;
+  }
   .aula-lesson-layout,
-  .aula-library-list,
   .classroom .edu-cards {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -400,7 +445,7 @@
   }
   .aula-library-heading label {
     display: block;
-    margin-top: 20px;
+    min-width: 0;
   }
   .practice-card {
     position: static;
