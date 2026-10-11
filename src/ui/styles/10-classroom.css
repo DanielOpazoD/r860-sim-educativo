@@ -14,7 +14,7 @@
   color: var(--shell-muted);
   padding: 6px 12px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--type-md);
 }
 .space-nav [aria-current],
 .aula-nav [aria-current],
@@ -38,7 +38,7 @@
   margin-bottom: 28px;
 }
 .aula-kicker {
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: 600;
   letter-spacing: 0.07em;
   color: var(--shell-muted);
@@ -56,7 +56,7 @@
   margin: 8px 0;
 }
 .aula-session {
-  font-size: 12px;
+  font-size: var(--type-sm);
   white-space: nowrap;
   color: var(--shell-muted);
 }
@@ -100,7 +100,7 @@
 }
 .classroom .lesson-text,
 .aula-reading > p {
-  font-size: 15px;
+  font-size: var(--type-lg);
   line-height: 1.75;
   color: var(--shell-muted);
   margin-bottom: 24px;
@@ -118,7 +118,7 @@
 }
 .aula-caption {
   color: var(--shell-muted);
-  font-size: 12px;
+  font-size: var(--type-sm);
   line-height: 1.6;
   margin: 14px 0;
 }
@@ -130,7 +130,7 @@
 }
 .classroom .lesson-count {
   color: var(--shell-accent);
-  font-size: 12px;
+  font-size: var(--type-sm);
   margin-bottom: 18px;
 }
 .classroom .task {
@@ -201,7 +201,7 @@
   margin-bottom: 20px;
 }
 .aula-library-heading label {
-  font-size: 12px;
+  font-size: var(--type-sm);
   min-width: 280px;
 }
 .aula-library {
@@ -275,11 +275,11 @@
   padding-top: 18px;
   margin-top: 44px;
   color: var(--shell-muted);
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .aula-export {
   color: var(--shell-muted);
-  font-size: 13px;
+  font-size: var(--type-md);
   margin-top: 24px;
 }
 .aula-export button {
@@ -310,7 +310,7 @@
 }
 .practice-card p {
   grid-area: objective;
-  font-size: 13px;
+  font-size: var(--type-md);
   line-height: 1.35;
   margin: 2px 0 0;
 }
@@ -385,7 +385,7 @@
 .classroom .edu-bloque p,
 .classroom .edu-card header b small {
   color: var(--shell-muted);
-  font-size: 13px;
+  font-size: var(--type-md);
   line-height: 1.6;
 }
 .classroom .edu-falta {
@@ -415,10 +415,6 @@
   .space-nav button,
   .aula-nav button {
     min-height: 40px;
-  }
-  .app-top .app-context {
-    order: 5;
-    flex-basis: 100%;
   }
   .aula-heading,
   .aula-library-heading {
@@ -455,7 +451,7 @@
     box-shadow: none;
   }
   .practice-card p {
-    font-size: 12px;
+    font-size: var(--type-sm);
   }
 }
 
@@ -492,6 +488,7 @@
     justify-content: center;
   }
   .app-top .app-context {
+    flex-basis: 100%;
     order: 5;
     flex: 1 1 160px;
     min-height: 44px;
@@ -517,7 +514,7 @@
   .app-top .signal-toolbar .button.small {
     height: 44px;
     padding: 0 12px;
-    font-size: 13px;
+    font-size: var(--type-md);
   }
   .app-top .signal-toolbar .wave-options-button {
     width: 44px;

@@ -8,7 +8,7 @@
   color: var(--shell-danger);
   border-bottom: 1px solid var(--shell-danger);
   padding: 10px 24px;
-  font-size: 13px;
+  font-size: var(--type-md);
   line-height: 1.5;
 }
 .hold-buttons {
@@ -25,7 +25,7 @@
   border: 1px solid #b85c5c;
   border-radius: 6px;
   padding: 6px 9px;
-  font-size: 12px;
+  font-size: var(--type-sm);
   cursor: pointer;
   min-height: 34px;
 }
@@ -34,7 +34,7 @@
   height: 14px;
 }
 .edit-countdown {
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: #ffd98a;
   margin-right: auto;
 }
@@ -67,12 +67,6 @@
   max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
 }
 /* Exterior claro; la carcasa y la pantalla azul del R860 conservan sus colores. */
-:root {
-  --bg: var(--shell-bg);
-  --surface: var(--shell-surface);
-  --surface2: var(--shell-raised);
-  --line: var(--shell-line);
-}
 :is(.app-top, .instructor, .signal-toolbar, .more-menu, .command-palette, .app-dialog, .toast, .safety-strip) {
   --text: var(--shell-text);
   --muted: var(--shell-muted);
@@ -90,42 +84,23 @@ body {
   background: var(--shell-surface);
   border-color: var(--shell-line);
 }
-.instructor-header {
-  background: linear-gradient(120deg, var(--shell-raised), var(--shell-surface));
-}
 .app-dialog {
   background: var(--shell-surface);
   border-color: var(--shell-line);
-  color: var(--shell-text);
 }
 .app-dialog .primary-button {
-  background: var(--shell-accent);
   border-color: var(--shell-accent);
-  color: var(--shell-accent-ink);
-}
-.app-dialog .primary-button:hover {
-  background: var(--shell-accent-soft);
-  border-color: var(--shell-accent);
-  color: var(--shell-accent);
 }
 .app-dialog .secondary-button {
-  background: var(--shell-surface);
-  border-color: var(--shell-line);
-  color: var(--shell-text);
-}
-.app-dialog .secondary-button:hover {
-  background: var(--shell-hover);
   border-color: var(--shell-line);
 }
 .toast {
   background: var(--shell-raised);
   border-color: var(--shell-line);
 }
-.safety-strip {
-  background: var(--shell-bg);
-}
 /* ---- Diálogos compactos (06-09-2026): menos padding, tipografía más pequeña, ancho contenido. ---- */
 .app-dialog {
+  color: var(--shell-text);
   width: min(820px, calc(100vw - 38px));
 }
 .app-dialog.wide {
@@ -135,18 +110,19 @@ body {
   padding: 12px 18px 10px;
 }
 .dialog-header h2 {
-  font-size: 15px;
+  font-size: var(--type-lg);
 }
 .dialog-content {
+  overscroll-behavior: contain;
   padding: 12px 18px;
   max-height: calc(92vh - 120px);
 }
 .dialog-content p {
-  font-size: 12px;
+  font-size: var(--type-sm);
   line-height: 1.5;
 }
 .dialog-content h3 {
-  font-size: 13px;
+  font-size: var(--type-md);
 }
 .dialog-footer {
   padding: 8px 18px;
@@ -154,60 +130,53 @@ body {
 .primary-button,
 .secondary-button {
   padding: 7px 12px;
-  font-size: 12px;
+  font-size: var(--type-sm);
 }
 .scenario-card {
   padding: 10px 12px;
 }
 .scenario-card h3 {
-  font-size: 13px;
+  font-size: var(--type-md);
   margin: 6px 0 8px;
 }
-.scenario-card .scenario-details,
 .scenario-card footer {
   padding-top: 6px;
-  font-size: 10px;
+  font-size: var(--type-2xs);
 }
-.scenario-grid,
-.scenarios-grid {
+.scenario-grid {
   gap: 8px;
-}
-.mode-layout {
-  grid-template-columns: 150px 1fr;
-  gap: 14px;
 }
 .mode-option {
   padding: 8px 10px;
 }
 .settings-grid {
   gap: 10px;
-  margin-top: 10px;
 }
-.settings-annotation,
-.mode-description p {
-  font-size: 11px;
+.settings-annotation {
+  font-size: var(--type-xs);
   line-height: 1.45;
 }
 .parameter-help p,
 .dialog-content .parameter-help p,
 .help-equation {
-  font-size: 11px;
+  font-size: var(--type-xs);
   line-height: 1.45;
 }
 .dialog-content table,
 .dialog-content .data-table {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .dialog-content .alarm-row b {
-  font-size: 12px;
+  font-size: var(--type-sm);
 }
 .dialog-content .alarm-row p,
 .dialog-content .alarm-row small {
-  font-size: 10px;
+  font-size: var(--type-2xs);
 }
 .safety-strip {
+  background: var(--shell-bg);
   padding: 4px 16px;
-  font-size: 10px;
+  font-size: var(--type-2xs);
   justify-content: flex-end;
   gap: 14px;
 }
@@ -219,19 +188,20 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .settings-grid {
+  margin-top: 10px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .setting-field input,
 .setting-field select {
-  font-size: 15px;
+  font-size: var(--type-lg);
   height: 36px;
   padding: 4px 8px;
 }
 .setting-field > .parameter-label > label {
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .mode-option b {
-  font-size: 12px;
+  font-size: var(--type-sm);
 }
 .mode-option small {
   display: none;
@@ -243,11 +213,11 @@ body {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--shell-muted);
 }
 .scenario-card > div small {
-  font-size: 10px;
+  font-size: var(--type-2xs);
   opacity: 0.8;
 }
 /* Datos del modelo (panel docente) plegados por omisión. */
@@ -257,7 +227,7 @@ body {
 }
 .truth-details > summary {
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--shell-muted);
   padding: 8px 0;
   list-style: none;
@@ -267,7 +237,7 @@ body {
 }
 .truth-details > summary::before {
   content: '▸';
-  font-size: 10px;
+  font-size: var(--type-2xs);
 }
 .truth-details[open] > summary::before {
   content: '▾';
