@@ -544,6 +544,15 @@ export function startApp(opts: AppOptions): void {
     plots.setWaveScaleMode(prefs.waveScale);
   }
   views.initMonitorScale();
+  const toolbar = $('.signal-toolbar');
+  const toolbarHome = { parent: toolbar.parentElement, next: toolbar.nextElementSibling };
+  const dockToolbar = (mobile: boolean): void => {
+    if (mobile) $('.app-top').append(toolbar);
+    else toolbarHome.parent?.insertBefore(toolbar, toolbarHome.next);
+  };
+  const mobileQuery = window.matchMedia('(max-width:700px)');
+  dockToolbar(mobileQuery.matches);
+  mobileQuery.addEventListener('change', (e) => dockToolbar(e.matches));
   instructor.initChrome();
   classroom.init();
   versionTag();

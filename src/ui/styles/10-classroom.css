@@ -458,3 +458,89 @@
     font-size: 12px;
   }
 }
+
+/* ---------- Móvil: cabecera fija en dos filas; la barra de señal se acopla a ella en vez de flotar ---------- */
+@media (max-width: 700px) {
+  .app-top {
+    position: sticky;
+    top: 0;
+    z-index: 210;
+    height: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    padding: 4px 12px;
+    background: var(--shell-bg);
+  }
+  .wordmark strong {
+    display: none;
+  }
+  .top-actions {
+    margin-left: auto;
+  }
+  .space-nav button,
+  .top-actions .button,
+  .app-top .signal-toolbar .button.small {
+    min-height: 44px;
+  }
+  .top-actions .button {
+    min-width: 44px;
+  }
+  .wordmark {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .app-top .app-context {
+    order: 5;
+    flex: 1 1 160px;
+    min-height: 44px;
+    margin: 0 0 0 -8px;
+    padding: 4px 8px;
+  }
+  .top-actions #panel-button > span {
+    display: inline;
+  }
+  .app-top .signal-toolbar {
+    order: 6;
+    position: static;
+    flex: none;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .app-top .signal-toolbar .button.small {
+    height: 44px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .app-top .signal-toolbar .wave-options-button {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .app-top .signal-toolbar .wave-options-button > span {
+    display: none;
+  }
+  .app-top .signal-toolbar .wave-options-button > .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .app-top #speed-options {
+    top: calc(100% + 6px);
+    bottom: auto;
+    right: 0;
+    left: auto;
+  }
+  body:has(#workspace[hidden]) .app-top .signal-toolbar {
+    display: none;
+  }
+  .workspace {
+    padding-bottom: 12px;
+  }
+}
