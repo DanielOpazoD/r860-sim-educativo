@@ -51,7 +51,20 @@ export async function open(page: Page, params: Record<string, string | number> =
   await page.goto(`/?${q.toString()}`);
   await page.waitForFunction(() => window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
 }
-export async function showPanel(page: Page, tab?: 'patient' | 'events' | 'learn'): Promise<void> {
+export type AulaSection = 'lesson' | 'theory' | 'questions' | 'exam' | 'results' | 'library';
+export async function openAula(page: Page, section: AulaSection = 'lesson'): Promise<void> {
+  const classroom = page.locator('#classroom');
+  if (!(await classroom.isVisible())) await page.locator('#space-classroom').click();
+  const tab = page.locator(`[data-aula-section="${section}"]`);
+  if ((await tab.getAttribute('aria-current')) !== 'page') await tab.click();
+  await expect(classroom).toBeVisible();
+  await expect(page.locator(`#aula-${section}`)).toBeVisible();
+}
+export async function openSimulator(page: Page): Promise<void> {
+  if (await page.locator('#classroom').isVisible()) await page.locator('#space-simulator').click();
+  await expect(page.locator('#workspace')).toBeVisible();
+}
+export async function showPanel(page: Page, tab?: 'patient' | 'events'): Promise<void> {
   const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
   if (mobile) {
     const button = page.locator('#panel-button');

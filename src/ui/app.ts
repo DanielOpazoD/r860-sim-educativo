@@ -15,6 +15,7 @@ import type { ProfileSpec } from '../domain/profile';
 import { defaultInit } from '../profiles';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
 import { createActions } from './actions';
+import { createClassroom } from './classroom';
 import { createAlarmsUi } from './alarmsUi';
 import { createCommandPalette, type PaletteCommand } from './commandPalette';
 import type { Actor, AppContext, CommandResult, FixtureId } from './context';
@@ -68,7 +69,8 @@ const PALETTE_ACTIONS = [
   { id: 'session', label: 'Sesión y archivos', keywords: 'guardar importar exportar' },
   { id: 'exportSession', label: 'Exportar sesión', keywords: 'json archivo descargar' },
   { id: 'debrief', label: 'Resumen para el debriefing', keywords: 'resumen práctica informe' },
-  { id: 'teacher', label: 'Mostrar u ocultar panel docente', keywords: 'entrenamiento instructor' },
+  { id: 'classroom', label: 'Abrir el Aula', keywords: 'entrenamiento lección educación fundamentos' },
+  { id: 'teacher', label: 'Mostrar u ocultar paciente y eventos', keywords: 'fisiología instructor' },
   { id: 'sound', label: 'Audio de alarmas', keywords: 'sonido silenciar mute' },
   { id: 'resetPatient', label: 'Restablecer mecánica', keywords: 'reiniciar paciente valores' },
   { id: 'resetPrefs', label: 'Restablecer preferencias', keywords: 'borrar ajustes configuración' },
@@ -80,7 +82,7 @@ const VIEW_LABELS: Record<string, string> = {
   data: 'Tabla de mediciones',
   trends: 'Tendencias',
   log: 'Registro de eventos',
-  teaching: 'Resumen docente',
+  teaching: 'Fundamentos',
 };
 
 function paletteShortcut(action: string): string | undefined {
@@ -201,7 +203,13 @@ export function startApp(opts: AppOptions): void {
     get view() {
       return views.view;
     },
-    switchView: (v) => views.switchView(v),
+    switchView: (v) => {
+      if (v === 'teaching') classroom.open('theory');
+      else {
+        classroom.simulator();
+        views.switchView(v);
+      }
+    },
     get frozen() {
       return plots.frozen;
     },
@@ -271,10 +279,25 @@ export function startApp(opts: AppOptions): void {
     hold,
     metrics,
     plots,
-    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : isMobile() ? false : (prefs?.instructorVisible ?? true),
+    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : isMobile() ? false : (prefs?.instructorVisible ?? false),
+  });
+  const classroom = createClassroom(ctx, {
+    cancelQuick: () => quick.cancelQuick(),
+    loadScenario: (id) => instructor.loadScenario(id),
+    estimateCount: () => metrics.examEstimateCount,
   });
   let openPalette = (): void => {};
-  const actions = createActions(ctx, { quick, hold, modes, alarms, metrics, plots, instructor, openPalette: () => openPalette() });
+  const actions = createActions(ctx, {
+    quick,
+    hold,
+    modes,
+    alarms,
+    metrics,
+    plots,
+    instructor,
+    classroom,
+    openPalette: () => openPalette(),
+  });
   const palette = createCommandPalette(() => {
     const commands: PaletteCommand[] = [
       ...PALETTE_ACTIONS.map((item) => ({
@@ -287,7 +310,7 @@ export function startApp(opts: AppOptions): void {
         id: `view-${id}`,
         group: 'Vistas' as const,
         label: VIEW_LABELS[id] ?? id,
-        run: () => views.switchView(id),
+        run: () => ctx.switchView(id),
       })),
       ...SCENARIOS.map((scenarioItem) => ({
         id: `scenario-${scenarioItem.id}`,
@@ -366,6 +389,7 @@ export function startApp(opts: AppOptions): void {
     metrics.updateLogs();
     teaching.render();
     lesson.evaluate();
+    classroom.render();
   }
   function ingest(
     fr: EngineFrame,
@@ -521,6 +545,7 @@ export function startApp(opts: AppOptions): void {
   }
   views.initMonitorScale();
   instructor.initChrome();
+  classroom.init();
   versionTag();
   dialog.bind();
   actions.bind();
@@ -537,7 +562,7 @@ export function startApp(opts: AppOptions): void {
     const fx = params.get('fixture');
     if (fx === 'P1' || fx === 'P3') setTimeout(() => showFixture(fx), 80);
     const v = params.get('view') ?? prefs?.view;
-    if (v) views.switchView(v);
+    if (v) ctx.switchView(v);
     if (!params.has('scenario') && !params.has('fixture') && prefs?.welcomed && scenario.id !== 'SC-01')
       toast(`Continúas en: ${scenario.name}`);
     if (!params.has('scenario') && !params.has('fixture') && !params.has('view') && !prefs?.welcomed) showWelcome();

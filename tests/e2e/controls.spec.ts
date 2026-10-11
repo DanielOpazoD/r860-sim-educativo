@@ -5,8 +5,10 @@ import {
   frame,
   hidePanel,
   open,
+  openAula,
   openPersonalization,
   openPresentation,
+  openSimulator,
   openTimeControls,
   showPanel,
 } from './helpers';
@@ -397,13 +399,14 @@ test.describe('Controles exteriores coherentes', () => {
     await expect(pressureSwitch).toBeChecked();
     await page.locator('#app-dialog [data-action="closeDialog"].secondary-button').click();
 
-    await showPanel(page, 'learn');
+    await openAula(page, 'exam');
     await page.locator('#exam-toggle').focus();
     await page.keyboard.press('Space');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('role', 'switch');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
 
+    await openSimulator(page);
     await showPanel(page, 'patient');
     const patientField = page.locator('[data-phys-number="compliance"]');
     const helpId = await patientField.getAttribute('aria-describedby');

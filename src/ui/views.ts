@@ -4,7 +4,7 @@ import { $, $$ } from './dom';
 import { isMobile } from './labels';
 import { savePrefs } from './prefs';
 
-export const VIEWS: ViewId[] = ['waves', 'basic', 'loops', 'data', 'trends', 'log', 'teaching'];
+export const VIEWS: ViewId[] = ['waves', 'basic', 'loops', 'data', 'trends', 'log'];
 
 export interface Views {
   readonly view: ViewId;

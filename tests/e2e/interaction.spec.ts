@@ -6,9 +6,11 @@ import {
   frame,
   hidePanel,
   open,
+  openAula,
   openMoreParams,
   openPersonalization,
   openPresentation,
+  openSimulator,
   openTimeControls,
   showPanel,
 } from './helpers';
@@ -423,9 +425,9 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 30_000,
     });
-    await showPanel(page, 'learn');
+    await openAula(page, 'lesson');
     await expect(page.locator('#lesson-tasks')).toContainText('Restablece la mecánica');
-    await hidePanel(page);
+    await openSimulator(page);
     await page.click('[data-action="alarms"]');
     await page.click('[data-action="acknowledge"]');
     await page.keyboard.press('Escape');
@@ -444,8 +446,8 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       await page.keyboard.press('Escape');
     }
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
-    await showPanel(page, 'learn');
-    await expect(page.locator('[data-instructor="learn"]')).toContainText('3/3');
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('3 de 3 objetivos');
   });
   test('SEC-01/02 · sin tráfico externo; marca de simulación discreta presente en todas las vistas y en el bisel', async ({ page }) => {
     const external: string[] = [];
@@ -506,7 +508,7 @@ test.describe('CFG · contrato de estado del ajuste', () => {
 test.describe('EDU · pestaña Resumen', () => {
   test('cada tarjeta deja como máximo un párrafo visible fuera de «Por qué»', async ({ page }) => {
     await open(page, { scenario: 'SC-02', instructor: 0 });
-    await page.click('.monitor-nav [data-view="teaching"]');
+    await openAula(page, 'theory');
     const visibleParagraphs = async (): Promise<number[]> =>
       page
         .locator('.edu-card, .edu-bloque')
@@ -530,13 +532,14 @@ test.describe('EDU · pestaña Resumen', () => {
 
   test('sin bloqueo no inventa números; con bloqueo enseña la cuenta con los del monitor', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
-    await page.click('.monitor-nav [data-view="teaching"]');
+    await openAula(page, 'theory');
     await expect(page.locator('#view-teaching')).toBeVisible();
     // La Ppico se lee siempre; la meseta y sus derivados exigen ocluir, y la pestaña lo dice en vez de rellenar.
     await expect(page.locator('.edu-card').first()).toContainText('Presión pico');
     await expect(page.locator('.edu-falta').first()).toContainText('bloqueo inspiratorio');
     await expect(page.locator('.edu-sub')).toHaveCount(0);
 
+    await openSimulator(page);
     await page.click('[data-action="inspiratory"]');
     await page.click('[data-action="runHold"]');
     await page.waitForFunction(
@@ -546,7 +549,7 @@ test.describe('EDU · pestaña Resumen', () => {
     );
     await page.click('[data-action="closeHold"]');
     // El bloqueo lleva el monitor a las curvas, que es lo que se quiere ver durante la maniobra: se vuelve al resumen.
-    await page.click('.monitor-nav [data-view="teaching"]');
+    await openAula(page, 'theory');
     // Las cuatro tarjetas con su sustitución, y el número de la meseta es el mismo que publicó el bloqueo.
     await expect(page.locator('.edu-card')).toHaveCount(4);
     await expect(page.locator('.edu-formula b')).toHaveCount(4);
@@ -568,13 +571,14 @@ test.describe('EDU · pestaña Resumen', () => {
 
   test('la pantalla de protección lee el índice de estrés y construye la titulación con lo medido', async ({ page }) => {
     await open(page, { scenario: 'SC-15', speed: 8, instructor: 0 });
-    await page.click('.monitor-nav [data-view="teaching"]');
+    await openAula(page, 'theory');
     await page.click('[data-edu-tab="proteccion"]');
     // El índice se lee del ciclo actual; la titulación empieza vacía y dice cuántos puntos faltan.
     await expect(page.locator('.edu-siluetas .activa')).toHaveCount(1);
     await expect(page.locator('.edu-falta')).toContainText('0 de los 2 puntos');
 
     for (const peep of [8, 14]) {
+      await openSimulator(page);
       await page.click('.monitor-nav [data-view="waves"]');
       // Hay que esperar a un bloqueo DISTINTO del anterior: el previo ya era válido y satisfacía la condición al
       // instante, así que la prueba cerraba el panel antes de que el nuevo terminara. De ahí venía su intermitencia.
@@ -614,8 +618,9 @@ test.describe('EDU · pestaña Resumen', () => {
         { timeout: 40_000 },
       );
       await page.click('[data-action="closeHold"]');
+      await openAula(page, 'theory');
     }
-    await page.click('.monitor-nav [data-view="teaching"]');
+    await openAula(page, 'theory');
     await page.click('[data-edu-tab="proteccion"]');
     // Dos mediciones propias: la curva aparece con sus dos puntos y ninguno inventado.
     await expect(page.locator('.edu-titulacion')).toBeVisible({ timeout: 15_000 });
@@ -712,27 +717,27 @@ test.describe('CUR · medir sobre la curva congelada', () => {
 });
 
 test.describe('LEC · la lección responde', () => {
-  test('la pestaña de la lección es secundaria, cuenta lo hecho y avisa al cumplir un objetivo', async ({ page }) => {
+  test('la lección cuenta lo hecho y avisa al cumplir un objetivo durante la práctica', async ({ page }) => {
     await open(page, { speed: 4 });
-    const pestana = page.locator('[data-instructor="learn"]');
-    await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(pestana).toHaveAttribute('aria-selected', 'false');
-    await expect(pestana).toHaveText('Entrenar · 0/3');
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('0 de 3 objetivos');
     // SC-01: el primer objetivo es un bloqueo inspiratorio válido.
+    await page.click('[data-action="practice"]');
     await page.click('[data-action="inspiratory"]');
     await page.click('#hold-run');
     const avisos = page.locator('#toast-stack .toast');
     await expect(avisos.filter({ hasText: 'Objetivo 1 de 3 cumplido' })).toBeVisible({ timeout: 25_000 });
     // El aviso del objetivo convive con el del resultado del bloqueo que lo cumplió.
     await expect(avisos.filter({ hasText: 'Bloqueo medido' })).toBeVisible();
-    await expect(pestana).toHaveText('Entrenar · 1/3');
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos');
   });
 
   test('lo que ya se cumple al abrir se marca sin aviso', async ({ page }) => {
     // SC-13: el primer objetivo es observar el VT inicial, y ya está cumplido con el primer cuadro.
     await open(page, { scenario: 'SC-13', speed: 4 });
-    await showPanel(page, 'learn');
-    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 1/3');
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos');
     await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(1);
     // Sin reintentos: un aviso dura 4 s y `toHaveCount(0)` esperaría a que se fuera solo.
     const avisos = page.locator('#toast-stack .toast', { hasText: 'Objetivo' });
@@ -763,11 +768,13 @@ test.describe('LEC · la lección responde', () => {
     await descarga.saveAs(ruta);
     await page.keyboard.press('Escape');
     await page.setInputFiles('#session-input', ruta);
-    await showPanel(page, 'learn');
+    await openAula(page, 'lesson');
     await expect(page.locator('#lesson-count')).toHaveText('Sesión importada: sus objetivos no se evalúan', { timeout: 15_000 });
     await page.waitForTimeout(1500);
     await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(0);
     expect(await page.locator('#toast-stack .toast', { hasText: 'Objetivo' }).count()).toBe(0);
+    await expect(page.locator('[data-action="practice"]')).toBeDisabled();
+    await expect(page.locator('#practice-card')).toBeHidden();
   });
 });
 
@@ -789,7 +796,8 @@ test.describe('DESC · desconexión del circuito', () => {
     await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
     await page.keyboard.press('Escape');
     await expect(page.locator('#alarm-label')).toHaveText('Sin alarmas');
-    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 3/3', { timeout: 10_000 });
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('3 de 3 objetivos', { timeout: 10_000 });
   });
 });
 
@@ -939,8 +947,7 @@ test.describe('CUR · comparación antes/después', () => {
 test.describe('EXM · modo examen', () => {
   test('los valores medidos se ocultan hasta que el alumno los estima', async ({ page }) => {
     await open(page, { speed: 4 });
-    await showPanel(page, 'learn');
-    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
+    await openAula(page, 'exam');
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
     const real = (await frame(page)).metrics.ppeak!.value;
@@ -949,7 +956,7 @@ test.describe('EXM · modo examen', () => {
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#exam-toggle')).toHaveClass(/active/);
     await expect.poll(() => page.evaluate(() => window.__r860.exam.active)).toBe(true);
-    await hidePanel(page);
+    await openSimulator(page);
     // Las casillas con dato muestran «?»; las sin medición conservan el guion y explican el motivo debajo.
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
@@ -970,15 +977,16 @@ test.describe('EXM · modo examen', () => {
     await expect(filaVte).toContainText('?');
     await page.click('[data-view="waves"]');
     // Al apagar el modo examen todo vuelve; al encenderlo de nuevo la estimación ya hecha sigue visible.
-    await showPanel(page, 'learn');
-    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
+    await openAula(page, 'questions');
+    await openAula(page, 'exam');
+    await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-checked', 'true');
     await page.click('#exam-toggle');
-    await hidePanel(page);
+    await openSimulator(page);
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).not.toHaveText('?');
-    await showPanel(page, 'learn');
+    await openAula(page, 'exam');
     await page.click('#exam-toggle');
-    await hidePanel(page);
+    await openSimulator(page);
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('?');
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
   });
@@ -986,11 +994,10 @@ test.describe('EXM · modo examen', () => {
   test('el campo vacío no vale como cero y el Resumen no revela las cifras tapadas', async ({ page }) => {
     // Auditoría: `Number('')` aceptaba el vacío como 0, y la pestaña Resumen mostraba lo que la columna tapaba.
     await open(page, { speed: 4 });
-    await showPanel(page, 'learn');
-    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
+    await openAula(page, 'exam');
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     await page.click('#exam-toggle');
-    await hidePanel(page);
+    await openSimulator(page);
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
@@ -1000,27 +1007,25 @@ test.describe('EXM · modo examen', () => {
     await expect.poll(() => page.evaluate(() => window.__r860.exam.estimates)).toBe(0);
     await page.click('[data-action="closeDialog"]');
     // El Resumen no filtra lo que la columna tapa: ni el valor de la tarjeta ni la fórmula sustituida.
-    await page.click('[data-view="teaching"]');
+    await openAula(page, 'theory');
     await expect(page.locator('.edu-card').first().locator('header b')).toContainText('?');
     await expect(page.locator('.edu-card').first()).not.toContainText(/\d+ = /);
     // El control Examen vive en Entrenar y puede alternarse con cualquier vista del monitor.
-    await showPanel(page, 'learn');
-    await page.locator('#exam-toggle').scrollIntoViewIfNeeded();
+    await openAula(page, 'exam');
     await page.click('#exam-toggle'); // al salir, la cifra y la sustitución vuelven
-    await hidePanel(page);
-    await page.click('[data-view="teaching"]');
+    await openAula(page, 'theory');
     await expect(page.locator('.edu-card').first().locator('header b')).not.toContainText('?');
   });
 });
 
 test.describe('EXM · ubicación del modo examen', () => {
-  test('el interruptor vive en Entrenar y no en la barra de señal', async ({ page }) => {
+  test('el interruptor vive en Examen y no en el monitor', async ({ page }) => {
     await open(page);
     const button = page.locator('#exam-toggle');
-    expect(await button.evaluate((el) => el.closest('#instructor-learn'))).not.toBeNull();
+    expect(await button.evaluate((el) => el.closest('#aula-exam'))).not.toBeNull();
+    await expect(page.locator('#workspace #exam-toggle')).toHaveCount(0);
     expect(await button.evaluate((el) => el.closest('.signal-toolbar'))).toBeNull();
-    await showPanel(page, 'learn');
-    await button.scrollIntoViewIfNeeded();
+    await openAula(page, 'exam');
     await expect(button).toContainText('Modo examen');
     await expect(button).toContainText('Las mediciones se ocultan hasta que escribes tu estimación');
   });
@@ -1243,7 +1248,9 @@ test.describe('PAT · perfiles del paciente', () => {
     await open(page, { scenario: 'SC-01', speed: 4 });
     await page.click('[data-action="inspiratory"]');
     await page.click('#hold-run');
-    await expect(page.locator('[data-instructor="learn"]')).toHaveText('Entrenar · 1/3', { timeout: 25_000 });
+    await openAula(page, 'lesson');
+    await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos', { timeout: 25_000 });
+    await openSimulator(page);
     await page.locator('#sim-pause').click();
     await expect.poll(() => page.evaluate(() => window.__r860.running)).toBe(false);
     const before = await page.evaluate(() => {

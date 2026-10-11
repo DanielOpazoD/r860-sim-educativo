@@ -1,4 +1,4 @@
-/** Estado de la lección (objetivos cumplidos, banderas y marcas de tiempo), su pintado en el panel docente y sus avisos. */
+/** Estado de la lección (objetivos cumplidos, banderas y marcas de tiempo), su pintado en Aula y sus avisos. */
 import type { AppContext, LessonTracker } from './context';
 import { $, esc, icon, put } from './dom';
 import { avisoDeObjetivo, nextCompletedTask, tareasCumplidasAlAbrir } from './lesson';
@@ -23,8 +23,6 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
     put('#reflection-answer', scenario.answer ?? scenario.observe);
     const tasks = l?.tasks ?? [];
     put('#lesson-count', sessionImported ? 'Sesión importada: sus objetivos no se evalúan' : `${done.size} de ${tasks.length} objetivos`);
-    // La pestaña dice cuánto falta sin tener que abrirla.
-    put('#learn-tab-label', tasks.length && !sessionImported ? `Entrenar · ${done.size}/${tasks.length}` : 'Entrenar');
     $('#lesson-tasks').innerHTML = tasks
       .map(
         (task, i) =>
@@ -39,6 +37,9 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
     return ps.length ? Math.min(...ps.map((p) => p.atSimTimeMs)) : undefined;
   };
   return {
+    get sessionImported() {
+      return sessionImported;
+    },
     flags,
     done,
     reset() {

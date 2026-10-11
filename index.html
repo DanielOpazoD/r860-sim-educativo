@@ -52,11 +52,12 @@
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
   <a class="wordmark" href="#" data-action="home" aria-label="R860 Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>R860<span>LAB</span></strong></a>
+  <nav class="space-nav" aria-label="Espacios de trabajo"><button id="space-simulator" data-action="simulator" aria-current="page">Simulador</button><button id="space-classroom" data-action="classroom">Aula</button></nav>
   <button class="app-context" data-action="scenarios" aria-label="Cambiar escenario" title="Cambiar escenario"><span class="live-dot" id="live-dot"></span><span class="app-context-copy"><span id="scenario-name">Banco lineal pasivo</span><span class="app-context-separator" aria-hidden="true">·</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
   <div class="top-actions">
     <button class="button subtle palette-trigger" data-action="palette" aria-label="Buscar comandos" title="Buscar comandos (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><svg class="icon"><use href="#i-search"/></svg><span>Buscar</span><kbd class="palette-kbd">⌘K</kbd></button>
-    <button class="button secondary-button icon-only" id="teacher-toggle" data-action="teacher" aria-label="Ocultar panel de entrenamiento" title="Ocultar panel de entrenamiento" aria-pressed="true"><svg class="icon"><use href="#i-graduation"/></svg></button>
-    <button class="button secondary-button icon-only" id="panel-button" data-action="teacher" aria-label="Abrir panel" aria-controls="instructor" aria-pressed="false"><svg class="icon"><use href="#i-graduation"/></svg></button>
+    <button class="button secondary-button" id="teacher-toggle" data-action="teacher" aria-label="Mostrar paciente y eventos" title="Mostrar paciente y eventos" aria-pressed="false"><svg class="icon"><use href="#i-person"/></svg><span>Paciente</span></button>
+    <button class="button secondary-button" id="panel-button" data-action="teacher" aria-label="Mostrar paciente y eventos" aria-controls="instructor" aria-pressed="false"><span>Paciente</span></button>
     <div class="more-wrap">
       <button class="button icon-only" id="more-button" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" aria-label="Más opciones" title="Más opciones"><svg class="icon"><use href="#i-more"/></svg></button>
       <div id="more-menu" class="wave-options more-menu" role="menu" hidden>
@@ -72,6 +73,7 @@
 <div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
   <section class="stage" aria-label="Ventilador virtual">
+    <section id="practice-card" class="practice-card" aria-label="Práctica activa" hidden><div><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p></div><button class="button secondary-button" data-action="classroom">Ver lección</button></section>
     <div class="device-scroll"><div class="device-shell" id="device-shell">
       <div class="bezel-top"><span class="bezel-model">CARESCAPE <b>R860</b></span><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
@@ -125,7 +127,6 @@
             <button class="nav-key chosen" data-view="waves" title="Curvas y datos" aria-label="Curvas y datos"><svg class="icon"><use href="#i-wave"/></svg></button>
             <button class="nav-key" data-view="loops" title="Bucles" aria-label="Bucles"><svg class="icon"><use href="#i-loop"/></svg></button>
             <button class="nav-key" data-view="data" title="Tabla de mediciones" aria-label="Tabla de mediciones"><svg class="icon"><use href="#i-table"/></svg></button>
-            <button class="nav-key" data-view="teaching" title="Resumen docente" aria-label="Resumen docente"><svg class="icon"><use href="#i-book"/></svg></button>
             <button class="nav-key" data-view="log" title="Registro de eventos" aria-label="Registro de eventos"><svg class="icon"><use href="#i-list"/></svg></button>
             <div class="nav-divider"></div>
             <button class="nav-key" data-action="tools" title="Mecánica y procedimientos" aria-label="Mecánica y procedimientos"><svg class="icon"><use href="#i-lung"/></svg></button>
@@ -197,7 +198,7 @@
     <div class="signal-inspector" id="signal-inspector" hidden><span id="inspector-label">Mueve los cursores A y B para medir la señal.</span><small class="inspector-hint">Ti/Δt mide la separación entre cursores. Para τesp, coloca A y B sobre la caída del flujo espiratorio.</small><label class="inspector-field"><span>Cursor A</span><input type="range" min="0" max="1000" value="350" id="cursor-slider" aria-label="Cursor A de medición sobre la curva congelada"></label><label class="inspector-field"><span>Cursor B</span><input type="range" min="0" max="1000" value="650" id="cursor-b-slider" aria-label="Cursor B de medición sobre la curva congelada"></label><label class="inspector-field"><span>Historia</span><input type="range" min="0" max="1000" value="1000" id="history-slider" aria-label="Revisar curvas anteriores"></label></div>
   </section>
 <aside class="instructor" id="instructor" aria-label="Panel docente">
-    <div class="instructor-tabs" role="tablist" aria-label="Panel docente"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button><button role="tab" aria-selected="false" data-instructor="learn"><svg class="icon"><use href="#i-graduation"/></svg><span id="learn-tab-label">Entrenar</span></button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div class="instructor-tabs" role="tablist" aria-label="Paciente y eventos"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
     <section class="instructor-pane active" id="instructor-patient">
       <div id="patient-profiles"></div>
       <div id="patient-controls"></div>
@@ -208,16 +209,40 @@
       </details>
       <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
     </section>
-    <section class="instructor-pane" id="instructor-learn">
-      <div class="lesson-count" id="lesson-count">0 de 3 objetivos</div><h3 class="lesson-title" id="lesson-title"></h3><p class="lesson-text" id="lesson-text"></p><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa las curvas y el registro para explicar qué cambió.</div>
-      <button class="exam-switch" id="exam-toggle" data-action="exam" role="switch" aria-checked="false" aria-pressed="false"><span class="exam-switch-track" aria-hidden="true"><span></span></span><span class="exam-switch-copy"><strong>Modo examen</strong><small>Las mediciones se ocultan hasta que escribes tu estimación</small></span></button>
-      <details class="reflection" id="reflection"><summary id="reflection-question"></summary><p id="reflection-answer"></p></details>
-      <button class="button full" data-action="debrief"><svg class="icon"><use href="#i-book"/></svg>Resumen de práctica</button><button class="button full subtle" data-action="scenarios">Elegir otro escenario<svg class="icon"><use href="#i-arrow"/></svg></button>
-      <p class="truth-disclaimer">Objetivos de manejo del simulador; no califican seguridad clínica, competencia profesional ni aptitud de extubación.</p>
-    </section>
     <section class="instructor-pane" id="instructor-events"><p class="lesson-text">Introduce cambios durante la ventilación. Cada acción queda en el registro y puede revertirse.</p><div class="fault-grid" id="fault-grid"></div><button class="button full" data-action="undoEvent" id="undo-event"><svg class="icon"><use href="#i-history"/></svg>Deshacer último evento</button><h3 class="small-section-title">Últimos eventos</h3><div class="teacher-log" id="teacher-log"></div></section>
     <div class="instructor-about"><span class="version" id="version-tag">v0.3.0 · Offline</span><button data-action="model">Acerca del simulador</button></div>
   </aside>
+</main>
+<main id="classroom" class="classroom" aria-labelledby="classroom-title" hidden>
+  <header class="aula-heading"><div><p class="aula-kicker">R860 LAB · APRENDIZAJE</p><h1 id="classroom-title" tabindex="-1">Comprender. Practicar. Reflexionar.</h1><p>Un espacio para aprender, conectado con tu simulación.</p></div><span id="classroom-session" class="aula-session"></span></header>
+  <nav class="aula-nav" aria-label="Secciones del Aula">
+    <button data-aula-section="lesson" aria-current="page">Lección</button>
+    <button data-aula-section="theory">Fundamentos</button>
+    <button data-aula-section="questions">Reflexión</button>
+    <button data-aula-section="exam">Examen</button>
+    <button data-aula-section="results">Resultados</button>
+    <button data-aula-section="library">Biblioteca</button>
+  </nav>
+  <section id="aula-lesson" class="aula-pane">
+    <div class="aula-lesson-layout"><article class="aula-intro"><p id="aula-scenario" class="aula-kicker"></p><h2 class="lesson-title" id="lesson-title"></h2><p class="lesson-text" id="lesson-text"></p><button class="primary-button" data-action="practice">Practicar en el simulador <span aria-hidden="true">→</span></button><p class="aula-caption">El objetivo actual te acompaña junto al ventilador. Los avances se comprueban automáticamente.</p><button id="practice-stop" class="button subtle" data-action="stopPractice" hidden>Terminar práctica guiada</button></article><article class="aula-paper"><div class="lesson-count" id="lesson-count">0 objetivos</div><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa los resultados y explica qué cambió.</div></article></div>
+  </section>
+  <section id="aula-theory" class="aula-pane" hidden>
+    <div id="aula-theory-host"></div>
+    <button class="button secondary-button" data-action="simulator">Volver al ventilador</button>
+  </section>
+  <section id="aula-questions" class="aula-pane aula-reading" hidden>
+    <p class="aula-kicker">OBSERVA Y EXPLICA</p><h2 id="reflection-question"></h2>
+    <label for="reflection-notes">Tu interpretación</label><textarea id="reflection-notes" rows="5" placeholder="¿Qué cambió en las curvas? ¿Cómo lo explicarías?"></textarea><p class="aula-caption">Tus notas se conservan al navegar; se borran al cambiar de caso o recargar.</p>
+    <details class="reflection" id="reflection"><summary>Comparar con la explicación</summary><p id="reflection-answer"></p></details>
+  </section>
+  <section id="aula-exam" class="aula-pane aula-reading" hidden>
+    <p class="aula-kicker">ESTIMACIÓN DE MEDICIONES</p><h2>Primero estima. Después compara.</h2><p>Activa el examen y vuelve al ventilador. Pulsa una medición oculta para estimarla y conocer la diferencia con el valor registrado.</p>
+    <button class="exam-switch" id="exam-toggle" data-action="exam" role="switch" aria-checked="false" aria-pressed="false"><span class="exam-switch-track" aria-hidden="true"><span></span></span><span class="exam-switch-copy"><strong>Modo examen</strong><small>Las mediciones se ocultan hasta que escribes tu estimación</small></span></button>
+    <button class="primary-button" data-action="simulator">Ir al ventilador <span aria-hidden="true">→</span></button>
+  </section>
+  <section id="aula-results" class="aula-pane aula-reading" hidden><h2>Resumen de tu práctica</h2><div id="aula-results-body"></div><details class="aula-export"><summary>Guardar el resumen</summary><button class="button secondary-button" data-action="exportDebrief">Descargar texto</button></details></section>
+  <section id="aula-library" class="aula-pane" hidden><div class="aula-library-heading"><div><h2>Biblioteca de casos</h2><p>Elegir un caso prepara paciente, ajustes iniciales y objetivos nuevos.</p></div><label>Buscar caso<input id="aula-search" type="search" placeholder="Tema o nombre…" /></label></div><div id="aula-library-list" class="aula-library-list"></div><p id="aula-library-empty" hidden>No hay casos que coincidan con tu búsqueda.</p></section>
+  <footer class="aula-footer">Simulación educativa · Los objetivos de manejo no acreditan competencia clínica.</footer>
 </main>
 <dialog id="command-palette" class="command-palette" aria-label="Paleta de comandos">
   <div class="palette-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="palette-input" type="search" role="combobox" aria-controls="palette-list" aria-expanded="true" placeholder="Buscar acción, vista, escenario o perfil…" autocomplete="off"></div>

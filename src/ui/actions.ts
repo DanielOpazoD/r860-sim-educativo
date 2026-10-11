@@ -6,9 +6,9 @@ import { ENGINE_VERSION } from '../engine/version';
 import { SCENARIOS } from '../scenarios';
 import type { AlarmsUi } from './alarmsUi';
 import type { AppContext } from './context';
+import type { Classroom } from './classroom';
 import { CANCEL_BTN, CLOSE_BTN } from './dialogHost';
 import {
-  debriefHTML,
   debriefText,
   helpHTML,
   menuHTML,
@@ -46,6 +46,7 @@ import type { AlarmLimits, SettingsKey, VentMode } from '../domain/types';
 import { segmentedValue } from './segmented';
 
 export interface Features {
+  classroom: Classroom;
   quick: QuickEditor;
   hold: HoldPanel;
   modes: ModeDialog;
@@ -143,6 +144,18 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
 
   async function action(a: string): Promise<void> {
     switch (a) {
+      case 'classroom':
+        fx.classroom.open();
+        break;
+      case 'simulator':
+        fx.classroom.simulator();
+        break;
+      case 'practice':
+        fx.classroom.practice();
+        break;
+      case 'stopPractice':
+        fx.classroom.stopPractice();
+        break;
       case 'palette':
         fx.openPalette();
         break;
@@ -176,6 +189,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         await action('scenarios');
         break;
       case 'teacher':
+        fx.classroom.simulator();
         instructor.toggleTeacher();
         break;
       case 'pause':
@@ -341,12 +355,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         snapshot();
         break;
       case 'debrief':
-        ctx.dialog.open(
-          'debrief',
-          'Resumen de práctica',
-          debriefHTML(debriefInput()),
-          CLOSE_BTN + btn('Guardar resumen TXT', 'exportDebrief'),
-        );
+        fx.classroom.open('results');
         break;
       case 'exportDebrief':
         if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `R860_practica_${stamp()}.txt`);
