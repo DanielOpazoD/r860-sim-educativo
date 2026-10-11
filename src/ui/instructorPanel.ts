@@ -282,7 +282,10 @@ export function createInstructorPanel(
           { type: 'setEffort', params: previousEffort, replace: true },
         ],
       );
-      if (applied) ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
+      if (applied) {
+        if (ctx.dialog.kind === 'scenarios') ctx.dialog.close();
+        ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
+      }
     },
     loadScenario,
     switchInstructor,

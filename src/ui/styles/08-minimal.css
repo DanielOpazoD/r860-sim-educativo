@@ -630,19 +630,20 @@
 }
 .scenario-picker-tabs {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--shell-surface);
-  padding-bottom: 12px;
+  padding-bottom: 10px;
 }
 .scenario-picker-tabs button {
   background: transparent;
   border: 1px solid var(--shell-line);
   border-radius: var(--shell-radius-sm);
   color: var(--shell-muted);
-  padding: 8px 14px;
+  padding: 8px 10px;
+  font-size: 12px;
 }
 .scenario-picker-tabs button[aria-pressed='true'] {
   background: var(--shell-accent-soft);
@@ -651,7 +652,9 @@
 }
 .scenario-intro {
   color: var(--shell-muted);
-  margin: 2px 0 16px;
+  margin: 2px 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 .scenario-filter {
   display: flex;
@@ -676,11 +679,12 @@
   margin: 0 0 10px;
 }
 .scenario-picker .scenario-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 .scenario-picker .scenario-card {
-  min-height: 140px;
-  padding: 14px;
+  min-height: 0;
+  padding: 10px 12px;
   background: var(--shell-surface);
   border-color: var(--shell-line);
 }
@@ -693,21 +697,52 @@
   font-size: 11px;
 }
 .scenario-picker .scenario-card h3 {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.3;
-  margin: 7px 0;
+  margin: 0 0 5px;
 }
 .scenario-picker .scenario-card p {
   flex: 1;
   color: var(--shell-muted);
   font-size: 11px;
   line-height: 1.45;
-  margin: 0 0 10px;
+  margin: 0 0 6px;
 }
 .scenario-picker .scenario-card footer {
   color: var(--shell-dim);
-  border-top: 1px solid var(--shell-line);
+  border-top: 0;
+  padding: 0;
+  margin: 0;
   width: 100%;
+}
+.app-dialog.scenario-dialog {
+  width: min(640px, calc(100vw - 24px));
+  height: min(580px, calc(100dvh - 32px));
+  max-height: none;
+}
+.app-dialog.scenario-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.scenario-dialog #dialog-title {
+  font-size: 18px;
+}
+.scenario-dialog #dialog-content {
+  padding: 14px 18px;
+  min-height: 0;
+  max-height: none;
+  flex: 1;
+}
+.scenario-dialog .dialog-header,
+.scenario-dialog #dialog-footer {
+  padding: 12px 18px;
+  flex-shrink: 0;
+  min-height: 0;
+}
+.patient-choice footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 @media (min-width: 701px) and (max-width: 900px) {
   .scenario-picker .scenario-grid {

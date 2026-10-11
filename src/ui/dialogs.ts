@@ -4,6 +4,7 @@ import type { LessonTask, Scenario } from '../scenarios';
 import { esc, icon } from './dom';
 import { clock } from './format';
 import { modeLabel as etiquetaModo } from './labels';
+import { PATIENT_PROFILES, profileHint } from './patientProfiles';
 
 export const MENU_ENTRIES: [string, string, string, string][] = [
   ['modes', 'wave', 'Modo y ajustes', 'Volumen, límites de presión y sincronización'],
@@ -70,7 +71,7 @@ export function oxygenHTML(o2: EngineFrame['procedure']['o2'] | undefined, simTi
 export const powerHTML = (): string =>
   `<div class="info-box">Ejecución local en tu navegador. Sin conexión a un ventilador, red hospitalaria, USB ni puertos físicos.</div><p>Este icono conserva la referencia visual de alimentación. No simula baterías, consumo eléctrico ni autonomía.</p>`;
 
-export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabel: (mode: string) => string): string {
+export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabel: (mode: string) => string, fixture = false): string {
   const summaries: Record<string, string> = {
     'SC-01': 'Cambia la resistencia y compara presión pico y meseta.',
     'SC-02': 'A los 20 s baja la distensibilidad: sube la presión para el mismo volumen.',
@@ -83,10 +84,10 @@ export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabe
   };
   const recommended = Object.keys(summaries);
   const card = (s: Scenario): string =>
-    `<button class="scenario-card ${currentId === s.id ? 'selected' : ''}" data-scenario="${esc(s.id)}" ${currentId === s.id ? 'aria-current="true"' : ''}><span class="scenario-card-category">${esc(s.category ?? 'Escenario')}</span><h3>${esc(s.name)}</h3><p>${esc(summaries[s.id] ?? s.observe)}</p><footer>${esc(modeLabel(String(s.settings?.mode ?? 'AC_VC')))} · Nivel ${s.level ?? 1}</footer></button>`;
+    `<button class="scenario-card ${currentId === s.id ? 'selected' : ''}" data-scenario="${esc(s.id)}" ${currentId === s.id ? 'aria-current="true"' : ''}><h3>${esc(s.name)}</h3><p>${esc(summaries[s.id] ?? s.observe)}</p><footer>${esc(modeLabel(String(s.settings?.mode ?? 'AC_VC')))} · Nivel ${s.level ?? 1}${currentId === s.id ? ' · Actual' : ''}</footer></button>`;
   const cases = scenarios.filter((s) => s.id !== 'SC-P');
   const categories = [...new Set(cases.map((s) => s.category ?? 'Escenario'))].sort((a, b) => a.localeCompare(b, 'es'));
-  return `<div class="scenario-picker"><div class="scenario-picker-tabs" role="group" aria-label="Catálogo de escenarios"><button data-scenario-view="start" aria-controls="scenario-start" aria-pressed="true">Empezar</button><button data-scenario-view="all" aria-controls="scenario-all" aria-pressed="false">Explorar todos</button></div><section id="scenario-start"><p class="scenario-intro">Ocho prácticas para empezar. El resto sigue disponible en «Explorar todos».</p><div class="scenario-grid">${recommended
+  return `<div class="scenario-picker"><div class="scenario-picker-tabs" role="group" aria-label="Escenarios y paciente"><button data-scenario-view="start" aria-controls="scenario-start" aria-pressed="true">Empezar</button><button data-scenario-view="all" aria-controls="scenario-all" aria-pressed="false">Explorar todos</button><button data-scenario-view="profiles" aria-controls="scenario-profiles" aria-pressed="false">Solo paciente</button></div><p id="scenario-scope" class="scenario-intro">Cada escenario reinicia la práctica con paciente, ventilador y objetivos preparados.</p><section id="scenario-start"><div class="scenario-grid">${recommended
     .map((id) => scenarios.find((s) => s.id === id))
     .filter((s): s is Scenario => !!s)
     .map(card)
@@ -103,7 +104,14 @@ export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabe
     .join('')}<section class="scenario-group scenario-reference"><h3>Referencia visual</h3><div class="scenario-grid">${scenarios
     .filter((s) => s.id === 'SC-P')
     .map(card)
-    .join('')}</div></section></section></div>`;
+    .join(
+      '',
+    )}</div></section></section><section id="scenario-profiles" hidden><p class="scenario-intro">El perfil cambia la mecánica y el esfuerzo del paciente. Conserva la programación del ventilador y la práctica actual.</p><div class="scenario-grid">${PATIENT_PROFILES.map(
+    (profile) =>
+      `<button class="scenario-card patient-choice" data-profile="${profile.id}" ${fixture ? 'disabled' : ''}><h3>${esc(profile.label)}</h3><p>${esc(profileHint(profile))}</p><footer>Aplicar perfil ${icon('arrow')}</footer></button>`,
+  ).join(
+    '',
+  )}</div>${fixture ? '<p class="scenario-intro">Los perfiles están bloqueados en la referencia fotográfica.</p>' : ''}</section></div>`;
 }
 
 export interface DebriefInput {
