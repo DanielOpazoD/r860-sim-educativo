@@ -3,21 +3,22 @@ import { expect, test } from '@playwright/test';
 import { frame, hidePanel, open, showPanel } from './helpers';
 
 test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo bajo el equipo', () => {
-  test('el panel abre en Explorar (perfiles, mecánica y eventos) en escritorio y cerrado en móvil; Casos tiene la lista', async ({
+  test('el panel abre en Paciente (perfiles, mecánica y eventos) en escritorio y cerrado en móvil; Casos tiene la lista', async ({
     page,
   }, info) => {
     await open(page);
     if (info.project.name === 'mobile') await expect(page.locator('#workspace')).toHaveClass(/teacher-hidden/);
     else {
       await expect(page.locator('#workspace')).not.toHaveClass(/teacher-hidden/);
-      await expect(page.locator('[data-instructor="patient"]')).toHaveText('Explorar');
+      await expect(page.locator('[data-instructor="patient"]')).toHaveText('Paciente');
       await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
       await expect(page.locator('#patient-profiles [data-profile]').first()).toBeVisible();
       await expect(page.locator('#fault-grid [data-event]')).toHaveCount(6);
       await expect(page.locator('#undo-event')).toBeVisible();
       // La gasometría es del modelo, no una medición del equipo: está en el panel, rotulada, y nunca en el monitor.
       await expect(page.locator('#case-gas .gas-tag')).toHaveText('modelo');
-      await expect(page.locator('#case-gas thead')).toContainText('Inicio');
+      await expect(page.locator('#case-gas')).toContainText('inicio');
+      await expect(page.locator('#case-gas')).not.toContainText('Tiende');
       await page.click('[data-instructor="case"]');
       await expect(page.locator('#instructor-case [data-case-id]')).toHaveCount(8);
       await expect(page.locator('#instructor-case [data-case-id]').first()).toBeVisible();
@@ -46,14 +47,13 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await page.click('[data-case-option="r"]');
     await expect(entregar).toBeEnabled();
 
-    // La mecánica del paciente es lo que se diagnostica: Explorar sólo muestra el aviso (y la salida del caso) hasta entregar.
-    await expect(page.locator('#instructor')).toHaveClass(/case-locked/);
+    // El panel Paciente sigue operativo durante el caso: una línea recuerda que cambiarlo altera el caso.
     await page.click('[data-instructor="patient"]');
     await expect(page.locator('#case-lock-note')).toBeVisible();
     await expect(page.locator('#case-lock-note [data-action="freeExplore"]')).toBeVisible();
-    await expect(page.locator('#instructor-patient')).toBeHidden();
+    await expect(page.locator('#patient-controls [data-phys-number="resistance"]')).toBeVisible();
+    await expect(page.locator('#fault-grid [data-event]').first()).toBeVisible();
     await page.click('[data-instructor="case"]');
-    await expect(page.locator('#case-lock-note')).toBeHidden();
     // Antes de entregar, el desarrollo no adelanta la respuesta.
     await expect(page.locator('#learn-case-body')).toContainText('Se revela al entregar');
     await expect(page.locator('#learn-case-body .case-reveal')).toHaveCount(0);
@@ -69,7 +69,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await entregar.click();
 
     await expect(page.locator('#instructor-case .case-criteria')).toContainText('Caso resuelto');
-    await expect(page.locator('#instructor')).not.toHaveClass(/case-locked/);
+    await expect(page.locator('#case-lock-note')).toBeHidden();
     await expect(page.locator('#learn-case .case-verdict')).toHaveText('Caso resuelto');
     await expect(page.locator('#learn-case .case-truth')).toContainText('30 / 20');
     await page.locator('#instructor-case [data-action="caseDevelopment"]').click();
@@ -138,12 +138,12 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     expect(text).toContain('AJUSTES');
   });
 
-  test('«Salir del caso» vuelve al banco pasivo con Explorar abierto', async ({ page }) => {
+  test('«Salir del caso» vuelve al banco pasivo con el panel Paciente abierto', async ({ page }) => {
     await open(page, { scenario: 'CC-02', paused: 1 });
     await showPanel(page, 'patient');
     await page.locator('#case-lock-note [data-action="freeExplore"]').click();
     await expect(page.locator('#scenario-name')).toHaveText('Banco lineal pasivo');
-    await expect(page.locator('#instructor')).not.toHaveClass(/case-locked/);
+    await expect(page.locator('#case-lock-note')).toBeHidden();
     await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#fault-grid [data-event]').first()).toBeVisible();
   });

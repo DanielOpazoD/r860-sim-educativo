@@ -379,7 +379,7 @@ export const PATIENT_GROUPS: { title: string; keys: string[]; presets?: true; no
   { title: 'Sensor de O₂', keys: ['o2Tau', 'o2Bias'] },
 ];
 export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
-/** Eventos del panel Explorar: [id, icono, rótulo breve, descripción (en la ayuda emergente), deshabilitado]. */
+/** Eventos del panel Paciente: [id, icono, rótulo breve, descripción (en la ayuda emergente), deshabilitado]. */
 export const FAULTS: [string, string, string, string, boolean][] = [
   ['resistance', 'wave', 'R × 2', 'Duplica la resistencia: más carga resistiva', false],
   ['compliance', 'lung', 'C ÷ 2', 'Divide la distensibilidad: más carga elástica', false],

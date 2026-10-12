@@ -31,7 +31,7 @@ export interface InstructorPanel {
   applyProfile(id: string): Promise<void>;
   loadScenario(id: string): void;
   switchInstructor(tab: string): void;
-  /** Muestra el panel lateral en la pestaña pedida (Explorar o Casos). */
+  /** Muestra el panel lateral en la pestaña pedida (Paciente o Casos). */
   showPanel(tab: 'patient' | 'case'): void;
   toggleTeacher(): void;
   resetPatient(): Promise<void>;

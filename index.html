@@ -73,12 +73,13 @@
 <div class="global-notice" id="global-notice" hidden role="status"></div>
 <div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
-  <aside class="instructor" id="instructor" aria-label="Panel lateral: explorar y casos">
+  <aside class="instructor" id="instructor" aria-label="Panel lateral: paciente y casos">
     <div class="instructor-head">
-      <div class="instructor-tabs" role="tablist" aria-label="Explorar y casos"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Explorar</button><button role="tab" aria-selected="false" data-instructor="case">Casos</button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
+      <div class="instructor-tabs" role="tablist" aria-label="Paciente y casos"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="case">Casos</button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
       <div class="case-gas-host" id="case-gas" aria-live="off"></div>
     </div>
     <section class="instructor-pane active" id="instructor-patient">
+      <p class="case-note" id="case-lock-note" hidden>Caso en curso: cambiar el paciente altera el caso. <button class="case-link" data-action="freeExplore">Salir del caso</button></p>
       <div id="patient-profiles"></div>
       <div id="patient-controls"></div>
       <section class="event-section" aria-labelledby="events-title"><div class="event-head"><h3 class="small-section-title" id="events-title">Eventos</h3><button class="event-undo" data-action="undoEvent" id="undo-event" title="Deshace el último evento, perfil o cambio de mecánica"><svg class="icon"><use href="#i-history"/></svg>Deshacer</button></div><div class="fault-grid" id="fault-grid"></div></section>
@@ -90,7 +91,6 @@
       <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
     </section>
     <section class="instructor-pane" id="instructor-case"></section>
-    <div class="case-lock-note" id="case-lock-note" hidden><p>Caso clínico en curso: la mecánica del paciente y los eventos se revelan al entregar.</p><button class="case-link" data-action="freeExplore">Salir del caso y explorar libremente</button></div>
     
     <div class="instructor-about"><span class="version" id="version-tag">v%ENGINE_VERSION% · Offline</span><button data-action="model">Acerca del simulador</button></div>
   </aside>

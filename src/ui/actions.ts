@@ -156,7 +156,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     confirmModes: () => modes.confirmModes(),
     // Los casos se eligen en el panel lateral; los escenarios guiados antiguos quedan como datos para futuros casos.
     scenarios: () => chooseCase(),
-    // Salir de un caso es volver al banco pasivo, con el panel Explorar a mano.
+    // Salir de un caso es volver al banco pasivo, con el panel Paciente a mano.
     freeExplore: () => {
       instructor.loadScenario('SC-01');
       instructor.showPanel('patient');

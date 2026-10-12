@@ -1207,7 +1207,7 @@
     },
     {
       "id": "E-096",
-      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen en el panel lateral, bajo sus pestañas —al inicio, ahora y hacia dónde tienden con la ventilación actual, con la trayectoria de la PaCO₂ y la marca del último cambio— y en Aula · Fundamentos · Ventilación, siempre rotuladas «modelo». Sin avisos dinámicos ni etiquetas de acidemia o alcalemia: los números bastan.",
+      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen en el panel lateral, bajo sus pestañas, en dos líneas —PaCO₂ y pH de ahora con su valor al inicio, y la trayectoria de la PaCO₂ con la marca del último cambio— y en Aula · Fundamentos · Ventilación, siempre rotuladas «modelo». Sin avisos dinámicos ni etiquetas de acidemia o alcalemia: los números bastan.",
       "status": "P (decisión de presentación para no atribuir al equipo una medición que no hace)",
       "source": "—",
       "locator": "—",
@@ -1220,7 +1220,7 @@
     },
     {
       "id": "E-097",
-      "claim": "Caso clínico: escenario sintético con viñeta, pregunta y criterios de RESULTADO evaluados al entregar (varias soluciones válidas), no de acciones. Mientras no se entrega, la mecánica del paciente no se muestra (la pestaña Explorar sólo avisa y ofrece salir del caso); al entregar se revelan el veredicto por criterio, la verdad del modelo y la explicación. Cada caso lleva referencias temáticas visibles, abiertas y leídas en PubMed (registro en docs/08-casos-clinicos.md); los números de su viñeta salen del motor con esa mecánica y una prueba lo comprueba.",
+      "claim": "Caso clínico: escenario sintético con viñeta, pregunta y criterios de RESULTADO evaluados al entregar (varias soluciones válidas), no de acciones. El panel Paciente sigue operativo durante el caso, a discreción (una línea avisa que cambiarlo altera el caso); al entregar se revelan el veredicto por criterio, la verdad del modelo y la explicación. Cada caso lleva referencias temáticas visibles, abiertas y leídas en PubMed (registro en docs/08-casos-clinicos.md); los números de su viñeta salen del motor con esa mecánica y una prueba lo comprueba.",
       "status": "P (formato docente; los umbrales clínicos de cada criterio citan su fuente en el caso)",
       "source": "—",
       "locator": "—",

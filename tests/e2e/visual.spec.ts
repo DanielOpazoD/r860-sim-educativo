@@ -77,7 +77,7 @@ test('VIS · el exterior usa tema claro y conserva el fondo del equipo', async (
   );
 });
 
-test('VIS · panel Explorar compacto a 1440 px: gases, perfiles, mecánica y eventos sin desplazarse', async ({ page }, info) => {
+test('VIS · panel Paciente compacto a 1440 px: gases, perfiles, mecánica y eventos sin desplazarse', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop-1440', 'sólo escritorio a 1440 px');
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page, { scenario: 'SC-02', instructor: 0 });
@@ -92,7 +92,7 @@ test('VIS · panel Explorar compacto a 1440 px: gases, perfiles, mecánica y eve
   await expect(page.locator('#patient-controls [data-phys-step]')).toHaveCount(6);
   for (const profile of await profiles.all()) await expect(profile).toBeInViewport();
   for (const event of await page.locator('#fault-grid [data-event]').all()) await expect(event).toBeInViewport();
-  await expect(page.locator('#case-gas .gas-table')).toBeInViewport();
+  await expect(page.locator('#case-gas .gas-card')).toBeInViewport();
 
   const geometry = await pane.evaluate((el) => {
     const { height } = el.getBoundingClientRect();

@@ -51,7 +51,7 @@ export function createCaseSpace(
     if (scenarioId !== ctx.scenario.id) {
       scenarioId = ctx.scenario.id;
       listing = !ctx.scenario.clinical;
-      // Un caso abre en su pestaña; sin caso, el panel vuelve a Explorar.
+      // Un caso abre en su pestaña; sin caso, el panel vuelve a Paciente.
       deps.switchTab(ctx.scenario.clinical ? 'case' : 'patient');
       $<HTMLTextAreaElement>('#reflection-notes').value = '';
       $<HTMLDetailsElement>('#reflection').open = false;
@@ -59,10 +59,8 @@ export function createCaseSpace(
     const clinical = ctx.scenario.clinical;
     const answer = caseAnswer();
     const result = caseResult();
-    // Mientras el caso no se entrega, la mecánica del paciente no se muestra: es lo que se diagnostica.
-    const oculto = !!clinical && !result;
-    $('#instructor').classList.toggle('case-locked', oculto);
-    $('#case-lock-note').hidden = !oculto;
+    // El panel Paciente queda siempre a mano; durante un caso sin entregar, una línea recuerda que cambiarlo altera el caso.
+    $('#case-lock-note').hidden = !clinical || !!result;
     gas.render();
     const firma = JSON.stringify([ctx.scenario.id, listing, answer, result?.atSimMs ?? null, ctx.lesson.sessionImported]);
     if (firma === paneSignature) return;
