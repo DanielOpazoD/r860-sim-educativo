@@ -98,5 +98,18 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
       sessionImported = value;
       render();
     },
+    context() {
+      const frame = ctx.frame;
+      if (!frame || ctx.fixtureId || sessionImported) return null;
+      return {
+        frame,
+        scenarioId: ctx.scenario.id,
+        lessonStartMs,
+        patientChangeMs,
+        settingsChangeMs,
+        perturbationMs: perturbacionMs(),
+        flags,
+      };
+    },
   };
 }

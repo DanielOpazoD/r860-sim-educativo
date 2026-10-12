@@ -1,4 +1,5 @@
 import type { AlarmLimits, EffortParams, PatientParams, SensorParams, VcSettings } from '../domain/types';
+import { CLINICAL_CASES } from './cases';
 
 /**
  * Escenarios SINTÉTICOS (P · dossier §25). Son casos de prueba y de docencia, no pacientes ni configuraciones de tratamiento.
@@ -23,6 +24,48 @@ export interface Lesson {
   tasks: LessonTask[];
 }
 
+/** Referencia temática de un caso: abierta y leída al citarla (registro en docs/08-casos-clinicos.md). */
+export interface CaseReference {
+  /** Cita corta visible junto al caso, p. ej. «ARDSNet, N Engl J Med 2000». */
+  short: string;
+  /** Cita completa. */
+  citation: string;
+  url: string;
+}
+export interface CaseCriterion {
+  id: string;
+  text: string;
+  /** Nombre de la prueba en CASE_TESTS (ui/caseEvaluation.ts) o «lesson:<prueba>» de LESSON_TESTS. */
+  test: string;
+  /** Parámetros numéricos de la prueba (umbrales, peso predicho…). */
+  params?: Record<string, number>;
+}
+export interface CaseOption {
+  id: string;
+  text: string;
+  correct: boolean;
+  /** Por qué es o no es la respuesta: se muestra al entregar. */
+  why: string;
+}
+/**
+ * Caso clínico (P): una pregunta con viñeta que se resuelve en el ventilador y se entrega para evaluarla. Los criterios
+ * miden resultados sobre el cuadro (varias soluciones válidas), no clics; la mecánica del paciente queda oculta hasta
+ * entregar.
+ */
+export interface ClinicalCase {
+  /** Tema visible en el catálogo y en el caso. */
+  theme: string;
+  vignette: string;
+  question: string;
+  /** `ajuste`: se resuelve cambiando el ventilador; `diagnostico`: se elige una opción tras inspeccionar. */
+  kind: 'ajuste' | 'diagnostico';
+  options?: CaseOption[];
+  criteria: CaseCriterion[];
+  /** Explicación que se revela al entregar. */
+  reveal: string;
+  references: CaseReference[];
+}
+
 export interface Scenario {
   id: string;
   name: string;
@@ -32,6 +75,8 @@ export interface Scenario {
   category?: string;
   level?: 1 | 2 | 3;
   lesson?: Lesson;
+  /** Presente sólo en los casos clínicos (Casos · Casos clínicos); excluye el escenario de las prácticas guiadas. */
+  clinical?: ClinicalCase;
   question?: string;
   answer?: string;
   patient: PatientParams;
@@ -884,7 +929,12 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'SC-23': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
   'SC-25': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 28], maxVolume: [490, 510] } },
   'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-115, -90], maxVolume: [280, 290] } },
+  // Casos clínicos: Ppico = PEEP + R·Q + VT/C con la mecánica de cada caso.
+  'CC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [27, 30], peakInspFlow: [27, 31], maxVolume: [440, 460] } },
 };
+
+// Los casos clínicos son escenarios con bloque `clinical`: comparten la carga y el motor, no el catálogo guiado.
+SCENARIOS.push(...CLINICAL_CASES);
 
 export function findScenario(id: string): Scenario | undefined {
   return SCENARIOS.find((s) => s.id === id);

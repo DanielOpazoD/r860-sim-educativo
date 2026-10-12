@@ -73,7 +73,7 @@
 <div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
   <section class="stage" aria-label="Ventilador virtual">
-    <aside id="practice-card" class="practice-card" role="status" aria-label="Práctica activa" hidden><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p><div class="practice-actions"><button class="button subtle" id="practice-link" data-action="caseObjectives">Ver objetivos</button><button class="button icon-only subtle" data-action="stopPractice" aria-label="Terminar práctica guiada" title="Terminar práctica guiada"><svg class="icon"><use href="#i-close"/></svg></button></div></aside>
+    <aside id="practice-card" class="practice-card" role="status" aria-label="Práctica activa" hidden><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p><div class="practice-actions"><button class="button subtle" id="practice-submit" data-action="submitCase" hidden>Entregar</button><button class="button subtle" id="practice-link" data-action="caseObjectives">Ver objetivos</button><button class="button icon-only subtle" data-action="stopPractice" aria-label="Terminar práctica guiada" title="Terminar práctica guiada"><svg class="icon"><use href="#i-close"/></svg></button></div></aside>
     <div class="device-scroll"><div class="device-shell" id="device-shell">
       <div class="bezel-top"><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
@@ -199,6 +199,7 @@
   </section>
 <aside class="instructor" id="instructor" aria-label="Panel docente">
     <div class="instructor-tabs" role="tablist" aria-label="Paciente y eventos"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <p class="case-lock-note" id="case-lock-note" hidden>Caso clínico en curso: la mecánica del paciente y sus eventos se revelan al entregar.</p>
     <section class="instructor-pane active" id="instructor-patient">
       <div id="patient-profiles"></div>
       <div id="patient-controls"></div>
@@ -224,7 +225,8 @@
     <button data-aula-section="results" data-space="casos">Resultados</button>
   </nav>
   <section id="aula-lesson" class="aula-pane">
-    <div class="aula-lesson-layout"><article class="aula-intro"><p id="aula-scenario" class="aula-kicker"></p><h2 class="lesson-title" id="lesson-title"></h2><p class="lesson-text" id="lesson-text"></p><p class="notice-box" id="lesson-caution"></p><button class="primary-button" data-action="practice">Practicar en el simulador <span aria-hidden="true">→</span></button><p class="aula-caption">El objetivo actual te acompaña junto al ventilador. Los avances se comprueban automáticamente.</p><button id="practice-stop" class="button subtle" data-action="stopPractice" hidden>Terminar práctica guiada</button></article><article class="aula-paper"><div class="lesson-count" id="lesson-count">0 objetivos</div><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa los resultados y explica qué cambió.</div></article></div>
+    <div id="aula-case" class="aula-lesson-layout" hidden></div>
+    <div id="aula-guided" class="aula-lesson-layout"><article class="aula-intro"><p id="aula-scenario" class="aula-kicker"></p><h2 class="lesson-title" id="lesson-title"></h2><p class="lesson-text" id="lesson-text"></p><p class="notice-box" id="lesson-caution"></p><button class="primary-button" data-action="practice">Practicar en el simulador <span aria-hidden="true">→</span></button><p class="aula-caption">El objetivo actual te acompaña junto al ventilador. Los avances se comprueban automáticamente.</p><button id="practice-stop" class="button subtle" data-action="stopPractice" hidden>Terminar práctica guiada</button></article><article class="aula-paper"><div class="lesson-count" id="lesson-count">0 objetivos</div><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa los resultados y explica qué cambió.</div></article></div>
   </section>
   <section id="aula-theory" class="aula-pane" hidden>
     <div id="aula-theory-host"></div>
@@ -241,7 +243,7 @@
     <button class="primary-button" data-action="simulator">Ir al ventilador <span aria-hidden="true">→</span></button>
   </section>
   <section id="aula-results" class="aula-pane aula-reading" hidden><div id="aula-results-body"></div><details class="aula-export"><summary>Guardar el resumen</summary><button class="button secondary-button" data-action="exportDebrief">Descargar texto</button></details></section>
-  <section id="aula-library" class="aula-pane" hidden><div class="aula-library-heading"><label>Buscar caso<input id="aula-search" type="search" placeholder="Tema, nombre o código…" /></label></div><div id="aula-library-list" class="aula-library"></div><p id="aula-library-empty" hidden>No hay casos que coincidan con tu búsqueda.</p></section>
+  <section id="aula-library" class="aula-pane" hidden><div class="aula-library-heading"><label>Buscar caso<input id="aula-search" type="search" placeholder="Tema, nombre o código…" /></label></div><div id="aula-library-list" class="aula-catalog"></div><p id="aula-library-empty" hidden>No hay casos que coincidan con tu búsqueda.</p></section>
   <footer class="aula-footer">Simulación educativa · Los objetivos de manejo no acreditan competencia clínica.</footer>
 </main>
 <dialog id="command-palette" class="command-palette" aria-label="Paleta de comandos">

@@ -56,6 +56,12 @@ interface AlveolarBreath {
 
 /** Ventana de las respiraciones con que se informa la V̇A del último minuto (s). */
 const VA_WINDOW_S = 60;
+/**
+ * Con PaCO₂ inicial de equilibrio, éste se fija con la ventilación de los primeros segundos y no sólo con la primera
+ * respiración: si hay atrapamiento, el volumen espirado tarda varios ciclos en estabilizarse y la primera respiración
+ * daba un equilibrio que no era el de la ventilación programada (P).
+ */
+export const EQUILIBRIUM_WINDOW_S = 20;
 
 export interface GasState {
   paco2: number;
@@ -79,7 +85,7 @@ export class GasExchange {
   paco2: number;
   private breaths: AlveolarBreath[] = [];
   private lastVdVt: number | null = null;
-  /** Con PaCO₂ inicial 'equilibrium' la primera respiración completa fija el equilibrio de esa ventilación. */
+  /** Con PaCO₂ inicial 'equilibrium', las respiraciones de los primeros EQUILIBRIUM_WINDOW_S fijan el equilibrio. */
   private pendingEquilibrium: boolean;
 
   constructor(initialPaco2: number | 'equilibrium' = 'equilibrium') {
@@ -99,8 +105,10 @@ export class GasExchange {
     this.breaths.push({ startS: endS - durationS, endS, vaL });
     while (this.breaths.length && this.breaths[0]!.endS < endS - VA_WINDOW_S) this.breaths.shift();
     if (this.pendingEquilibrium) {
-      this.pendingEquilibrium = false;
-      const target = durationS > 0 ? steadyPaco2(p.vco2MlMin, (vaL * 60) / durationS) : null;
+      if (endS >= EQUILIBRIUM_WINDOW_S) this.pendingEquilibrium = false;
+      // La V̇A de todas las respiraciones hasta ahora (la primera, si es la única): el equilibrio de lo programado.
+      const va = this.breaths.length > 1 ? this.vaLMin(endS) : durationS > 0 ? (vaL * 60) / durationS : null;
+      const target = va === null ? null : steadyPaco2(p.vco2MlMin, va);
       if (target !== null) {
         this.paco2 = target;
         return;

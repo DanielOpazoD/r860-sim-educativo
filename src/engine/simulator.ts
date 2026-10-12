@@ -95,6 +95,8 @@ export interface TrendPoint {
   pplatHold: number | null;
   cstatHold: number | null;
   type: string;
+  /** Tiempo inspiratorio mecánico de la respiración (s): con el Ti neural del modelo mide el ciclado tardío o precoz. */
+  tInspS: number;
 }
 
 export interface EngineFrame {
@@ -345,6 +347,7 @@ export class Simulator {
           pplatHold: this.procedures.last.inspHold?.values.pplat?.value ?? null,
           cstatHold: this.procedures.last.inspHold?.values.cstat?.value ?? null,
           type: ev.record.type,
+          tInspS: ev.record.tInspS,
         });
         if (this.trends.length > 900) this.trends.shift();
         this.alarms.onBreath(ev.record, this.lastMetrics, t);
