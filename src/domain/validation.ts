@@ -274,6 +274,7 @@ export function validatePatientParams(p: {
   efl?: { pcrit: number; rusFraction: number };
   rExpVolumeDep?: { gain: number; vRefL: number };
   second?: { crs: number; rInsp: number; rExp: number };
+  gas?: Partial<{ vco2MlMin: number; deadspaceL: number; hco3: number; storeL: number }>;
 }): string[] {
   const r: string[] = [];
   // Las cinco magnitudes del modelo son obligatorias: `Object.entries` no ve las claves ausentes, así que un
@@ -282,7 +283,7 @@ export function validatePatientParams(p: {
     if (typeof p[k] !== 'number' || !Number.isFinite(p[k])) r.push(`${k}: ausente o no numérico`);
   for (const [k, v] of Object.entries(p))
     if (
-      !['crs', 'rInsp', 'rExp', 'r2', 'p0', 'sigmoid', 'recruit', 'efl', 'rExpVolumeDep', 'second', 'disconnected'].includes(k) &&
+      !['crs', 'rInsp', 'rExp', 'r2', 'p0', 'sigmoid', 'recruit', 'efl', 'rExpVolumeDep', 'second', 'disconnected', 'gas'].includes(k) &&
       (typeof v !== 'number' || !Number.isFinite(v))
     )
       r.push(`${k}: no numérico`);
@@ -315,6 +316,22 @@ export function validatePatientParams(p: {
       if (s2.rInsp < 0.1 || s2.rInsp > 1000 || s2.rExp < 0.1 || s2.rExp > 1000)
         r.push('Resistencias de la segunda unidad fuera de 0.1–1000 cmH2O·s/L');
     }
+  }
+  if (p.gas !== undefined) {
+    const g = p.gas;
+    const RANGOS = {
+      vco2MlMin: [50, 600, 'Producción de CO₂ fuera de 50–600 mL/min'],
+      deadspaceL: [0, 0.6, 'Espacio muerto fuera de 0–600 mL'],
+      hco3: [5, 50, 'Bicarbonato fuera de 5–50 mEq/L'],
+      storeL: [5, 200, 'Depósito de CO₂ fuera de 5–200 L'],
+    } as const;
+    if (!g || typeof g !== 'object' || Array.isArray(g)) r.push('Gasometría inválida');
+    else
+      for (const [k, v] of Object.entries(g)) {
+        const rango = RANGOS[k as keyof typeof RANGOS];
+        if (!rango) r.push(`gas.${k}: clave desconocida`);
+        else if (typeof v !== 'number' || !Number.isFinite(v) || v < rango[0] || v > rango[1]) r.push(rango[2]);
+      }
   }
   if (p.rExpVolumeDep !== undefined) {
     const d = p.rExpVolumeDep;

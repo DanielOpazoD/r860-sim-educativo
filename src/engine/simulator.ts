@@ -30,6 +30,7 @@ import { SimClock } from './clock';
 import { VcController } from './controller';
 import type { ControllerEvent } from './controllerTypes';
 import { EffortGenerator } from './effort';
+import { GasExchange, gasParams, type GasState } from './gasExchange';
 import { MetricEngine } from './metrics';
 import { equilibriumVolumeFor, PatientModel, recruitmentAtRest } from './patient';
 import { ProcedureManager, type O2ProcedureState } from './procedures';
@@ -79,6 +80,8 @@ export interface Truth {
   effort: EffortParams;
   sensors: SensorParams;
   fio2Delivered: number;
+  /** Gasometría de modelo (P): docente, nunca en el monitor del equipo. null en las transcripciones fotográficas (sin motor). */
+  gas: GasState | null;
 }
 
 export interface TrendPoint {
@@ -135,6 +138,11 @@ export class Simulator {
   readonly o2: O2Sensor;
   readonly flowSensor: FlowSensor;
   readonly metrics = new MetricEngine();
+  /** CO₂ arterial de modelo: lo alimenta el volumen pulmonar verdadero, no el sensor del ventilador. */
+  readonly gas = new GasExchange();
+  /** Volumen que el pulmón espiró en la respiración en curso (L) y volumen pulmonar del paso anterior. */
+  private lungExpiredL = 0;
+  private lungVPrev = 0;
   readonly alarms: AlarmEngine;
   readonly procedures: ProcedureManager;
   readonly ring: SampleRing;
@@ -197,7 +205,8 @@ export class Simulator {
       // combinación expHold→inspHold; el reclutamiento se cuantiza para no vetarla por deriva irrelevante.
       () =>
         JSON.stringify({
-          p: this.patient.params,
+          // La gasometría no mueve la mecánica: cambiarla no invalida la PEEP total medida.
+          p: { ...this.patient.params, gas: undefined },
           e: this.effort.params,
           r: Math.round(this.patient.recruited * 100) / 100,
           s: { ...this.controller.settings, fio2: 0 },
@@ -206,6 +215,7 @@ export class Simulator {
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
     this.breathV2Start = this.patient.v2;
+    this.lungVPrev = this.patient.vTotal;
     if (init.startVentilating) {
       this.ventilation = 'ventilating';
       this.controller.paw = peep; // la vía aérea parte a PEEP en equilibrio
@@ -315,6 +325,13 @@ export class Simulator {
         ev.record.vtExpMeasured = ev.record.vtExp * gain;
         this.breaths.push(ev.record);
         if (this.breaths.length > 2000) this.breaths.shift();
+        this.gas.onBreath(
+          ev.record.endSimTimeMs / 1000,
+          (ev.record.endSimTimeMs - ev.record.startSimTimeMs) / 1000,
+          this.lungExpiredL,
+          gasParams(this.patient.params.gas),
+        );
+        this.lungExpiredL = 0;
         this.metrics.onBreath(ev.record);
         this.lastMetrics = this.metrics.compute(this.metricContext());
         this.trends.push({
@@ -407,6 +424,11 @@ export class Simulator {
   step(): void {
     const dtS = this.clock.dtMs / 1000;
     this.controller.step(dtS);
+    // El gas que sale del pulmón (ambas unidades: el pendelluft entre ellas no cuenta) alimenta la gasometría.
+    const vLung = this.patient.vTotal;
+    if (vLung < this.lungVPrev) this.lungExpiredL += this.lungVPrev - vLung;
+    this.lungVPrev = vLung;
+    this.gas.step(dtS, gasParams(this.patient.params.gas));
     this.clock.tick(); // el reloj representa el FIN del paso cuando se procesan los eventos
     this.o2.step(dtS);
     this.drainController();
@@ -499,6 +521,7 @@ export class Simulator {
         effort: { ...this.effort.params },
         sensors: { ...this.o2.params },
         fio2Delivered: this.o2.delivered,
+        gas: this.gas.state(t / 1000, gasParams(this.patient.params.gas)),
       },
       samples: this.ring.last(n),
       eventsTail,

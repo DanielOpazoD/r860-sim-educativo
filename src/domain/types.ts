@@ -186,6 +186,22 @@ export interface PatientParams {
    * saltar. 0 = válvula ideal instantánea (banco analítico).
    */
   expValveOpenMs?: number;
+  /**
+   * Gasometría de modelo (P): producción de CO₂, espacio muerto, bicarbonato y depósito. No realimenta la mecánica y
+   * su resultado nunca se muestra en el monitor del equipo. Ausente = adulto de referencia (DEFAULT_GAS del motor).
+   */
+  gas?: Partial<GasExchangeParams>;
+}
+
+export interface GasExchangeParams {
+  /** Producción de CO₂ (mL/min STPD). */
+  vco2MlMin: number;
+  /** Espacio muerto en serie: anatómico más el instrumental (L). */
+  deadspaceL: Liters;
+  /** Bicarbonato plasmático (mEq/L). */
+  hco3: number;
+  /** Capacidad del depósito equivalente de CO₂ (L): fija la velocidad con que la PaCO₂ sigue a la ventilación. */
+  storeL: Liters;
 }
 
 export interface EffortParams {

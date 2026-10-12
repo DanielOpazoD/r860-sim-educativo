@@ -270,6 +270,37 @@ En VC la presión del nodo se resuelve por bisección a cada paso: Py tal que `P
 
 Simplificaciones declaradas: no hay inertancia ni ondas de presión; en las fases de presión Py no se recalcula por la compliance (la fuente fija el nodo, se ignora el acople con la resistencia espiratoria); con dos unidades el reparto del gas comprimido igualó presiones estáticas. Banco BM-CC en `tests/bench/circuito.test.ts` (tabla del §7).
 
+## 10. Gasometría de modelo (docente)
+
+El motor deriva una PaCO₂ y un pH del paciente virtual a partir de la ventilación que **recibe el pulmón**. No es una medición del ventilador —el equipo no mide gases arteriales— y por eso no aparece en el monitor: se lee en Aula · Fundamentos · Ventilación, rotulada «Gasometría (modelo)» (E-096, P). No realimenta la mecánica: las curvas y las mediciones son idénticas con cualquier gasometría.
+
+**Ventilación alveolar.** En cada respiración cuenta el volumen que sale del pulmón (las dos unidades juntas, de modo que el pendelluft entre ellas no suma), menos el espacio muerto en serie: VA = máx(0, V_espirado_pulmón − VD). La fuga y el gas comprimido en el circuito pasan por el sensor del ventilador pero no por el alvéolo, así que no ventilan. La V̇A publicada es la suma de las respiraciones terminadas en el último minuto sobre el tiempo que cubren; en apnea ese tiempo crece y la V̇A cae hasta 0 (E-094, P).
+
+**Equilibrio y cinética.** Un depósito equivalente de CO₂ de capacidad C:
+
+    C · dPaCO₂/dt = 0,863 · VCO₂ − V̇A · PaCO₂        pH = 6,1 + log10(HCO₃⁻ / (0,03 · PaCO₂))
+
+La producción entra de forma continua y cada respiración lava la fracción VA/C del depósito. En equilibrio queda la ecuación de la ventilación alveolar, PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS). La constante de tiempo τ = C/V̇A no es un parámetro: sale del modelo, y es más lenta cuanto menos se ventila. En apnea la PaCO₂ sube 0,863·VCO₂/C mmHg por minuto (E-095, P).
+
+| Parámetro (`patient.gas`) | Adulto de referencia | Rango validado |
+| --- | --- | --- |
+| VCO₂ (`vco2MlMin`) | 200 mL/min | 50–600 |
+| Espacio muerto (`deadspaceL`) | 150 mL | 0–600 mL |
+| HCO₃⁻ (`hco3`) | 24 mEq/L | 5–50 |
+| Depósito (`storeL`) | 40 L | 5–200 |
+
+Con esos valores la apnea sube ≈ 4,3 mmHg/min y, a V̇A 5 L/min, una variación de la ventilación recorre el 63 % en ≈ 8 min: la gasometría de control se pide a los 20–30 minutos, no tras la siguiente respiración. La PaCO₂ inicial es la de equilibrio con la primera respiración completa.
+
+| Comprobación (`tests/unit/gasometria.test.ts`) | Valor |
+| --- | --- |
+| Banco SC-01: VT 500 mL, 15/min, VD 150 mL | V̇A 5,25 L/min · PaCO₂ 32,9 mmHg · VD/VT 0,30 |
+| PaCO₂ 40 con HCO₃⁻ 24 | pH 7,40 |
+| Apnea de 1 min | +4,3 mmHg |
+| Duplicar la FR, una τ después | ≈ 63 % del camino al nuevo equilibrio |
+| Mecánica con VCO₂ 400 y VD 300 frente al banco | idéntica |
+
+Simplificaciones declaradas: un solo depósito (sin los compartimentos rápido y lento del CO₂ corporal); bicarbonato fijo, sin el tamponamiento agudo (≈ +1 mEq/L por cada 10 mmHg): con PaCO₂ 60 el pH sale 7,23 en lugar de ≈ 7,26; sin mezcla parcial en el espacio muerto (una respiración menor que VD no ventila nada); oxigenación no modelada.
+
 ## Fuentes verificadas
 
 1. Messina Z, Olarewaju O. *Pressure Controlled Ventilation*. StatPearls [Internet], NCBI Bookshelf; última actualización 31 de julio de 2023. https://www.ncbi.nlm.nih.gov/books/NBK555897/ — leído: flujo dinámico con presión en meseta; VT dependiente de C, R, esfuerzo, I:E y rampa; Tinsp determina el VT; flujo que no vuelve a cero como signo de Tinsp insuficiente.

@@ -284,9 +284,64 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: 
   );
 }
 
+/** Lectura en una frase de hacia dónde va el CO₂ con la ventilación de ahora; no es un diagnóstico. */
+function tendencia(paco2: number, objetivo: number | null): string {
+  if (objetivo === null) return 'Sin ventilación alveolar: el CO₂ sólo se acumula.';
+  if (objetivo > paco2 + 1) return `Con esta ventilación sube hacia ${f(objetivo, 0)} mmHg.`;
+  if (objetivo < paco2 - 1) return `Con esta ventilación baja hacia ${f(objetivo, 0)} mmHg.`;
+  return 'Estable: la ventilación alveolar elimina lo que se produce.';
+}
+
+/** Pantalla «Ventilación»: la gasometría que el modelo deriva de la ventilación alveolar. Nunca va al monitor del equipo. */
+function ventilacionHTML(fr: EngineFrame): string {
+  const g = fr.truth.gas;
+  if (!g) return `<p class="edu-pie">Esta referencia fotográfica no tiene motor: no hay gasometría que calcular.</p>`;
+  const gp = fr.truth.patient.gas ?? {};
+  const vd = (gp.deadspaceL ?? 0.15) * 1000,
+    vco2 = gp.vco2MlMin ?? 200;
+  const vtPulmon = g.vdVt !== null && g.vdVt > 0 ? vd / g.vdVt : null;
+  const rr = fr.metrics.rr?.value ?? null;
+  const sustitucion =
+    g.vaLMin !== null && vtPulmon !== null && rr !== null
+      ? `(VT ${f(vtPulmon, 0)} − VD ${f(vd, 0)}) mL × ${f(rr, 0)}/min ≈ ${f(g.vaLMin, 1)} L/min`
+      : 'Aparece al completar la primera respiración.';
+  const ecuacion =
+    g.vaLMin !== null && g.vaLMin > 0 && g.paco2Target !== null
+      ? `${f(0.863, 3)} × ${f(vco2, 0)} mL/min ÷ ${f(g.vaLMin, 1)} L/min = ${f(g.paco2Target, 0)} mmHg`
+      : 'Sin ventilación alveolar no hay equilibrio: la PaCO₂ sube sin techo.';
+  return (
+    `<div class="edu-prot">` +
+    `<section class="edu-bloque" data-testid="gasometria">` +
+    `<header><h3>Gasometría (modelo)</h3><b>${f(g.paco2, 0)}<small>mmHg PaCO₂</small></b></header>` +
+    `<dl class="edu-gases">` +
+    `<dt>pH</dt><dd>${f(g.ph, 2)}</dd>` +
+    `<dt>HCO₃⁻</dt><dd>${f(g.hco3, 0)} <small>mEq/L</small></dd>` +
+    `<dt>Equilibrio</dt><dd>${g.paco2Target === null ? '—' : `${f(g.paco2Target, 0)} <small>mmHg</small>`}</dd>` +
+    `<dt>63 % del camino</dt><dd>${g.tauMin === null ? '—' : `${f(g.tauMin, 0)} <small>min</small>`}</dd>` +
+    `</dl>` +
+    `<p class="edu-nota">${esc(tendencia(g.paco2, g.paco2Target))}</p>` +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">El CO₂ del cuerpo es un depósito grande: un cambio ` +
+    `de ventilación tarda minutos en verse en sangre (τ = depósito ÷ V̇A, más lenta cuanto menos se ventila). Por eso la ` +
+    `gasometría de control se pide a los 20–30 minutos y no tras la siguiente respiración. El bicarbonato es el ` +
+    `componente metabólico y aquí no cambia.</p></details>` +
+    `</section>` +
+    `<section class="edu-bloque">` +
+    `<header><h3>Ventilación alveolar</h3><b>${g.vaLMin === null ? '—' : `${f(g.vaLMin, 1)}<small>L/min</small>`}</b></header>` +
+    `<p class="edu-nota">${esc(sustitucion)}</p>` +
+    `<p class="edu-nota">${esc(ecuacion)}</p>` +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">Sólo ventila el alvéolo lo que pasa del espacio ` +
+    `muerto: con el mismo volumen minuto, un VT más bajo a más frecuencia elimina menos CO₂. Cuenta el gas que sale del ` +
+    `pulmón, no el que mide el ventilador: la fuga y el gas del circuito no ventilan.</p></details>` +
+    `</section>` +
+    `</div>` +
+    `<p class="edu-pie">Gasometría del <b>modelo</b>, no del equipo: el ventilador no mide PaCO₂ ni pH. Producción de CO₂, ` +
+    `espacio muerto y bicarbonato son los del paciente virtual.</p>`
+  );
+}
+
 export function createTeachingView(ctx: AppContext): TeachingView {
   let firma = '';
-  let pantalla: 'presiones' | 'proteccion' = 'presiones';
+  let pantalla: 'presiones' | 'proteccion' | 'ventilacion' = 'presiones';
   let montado = false;
 
   /** Dos pantallas breves en vez de una larga: el resumen tiene que caber de un vistazo. */
@@ -296,7 +351,8 @@ export function createTeachingView(ctx: AppContext): TeachingView {
     $('#teaching-tabs').addEventListener('click', (ev) => {
       const b = (ev.target as HTMLElement).closest('[data-edu-tab]') as HTMLElement | null;
       if (!b) return;
-      pantalla = b.dataset.eduTab === 'proteccion' ? 'proteccion' : 'presiones';
+      const tab = b.dataset.eduTab;
+      pantalla = tab === 'proteccion' || tab === 'ventilacion' ? tab : 'presiones';
       firma = '';
       ctx.lesson.flags[`edu-${pantalla}`] = true;
       render();
@@ -320,6 +376,10 @@ export function createTeachingView(ctx: AppContext): TeachingView {
     const tapadas = ctx.examMode
       ? ['ppeak', 'peepe', 'pplat', 'driving', 'cstat', 'vte', 'rr', 'mechPower', 'stressIndex'].filter(oculto)
       : [];
+    // La gasometría cambia en décimas a cada respiración: la firma usa lo que se muestra, no el valor en bruto.
+    const g = fr.truth.gas;
+    const gases =
+      g && pantalla === 'ventilacion' ? [g.paco2, g.ph, g.paco2Target, g.vaLMin, g.tauMin].map((x) => (x === null ? null : f(x, 2))) : null;
     const nueva = JSON.stringify([
       ctx.scenario.id,
       ctx.scenario.caution,
@@ -329,6 +389,7 @@ export function createTeachingView(ctx: AppContext): TeachingView {
       estres(fr),
       puntos,
       tapadas,
+      gases,
     ]);
     if (nueva === firma) return;
     firma = nueva;
@@ -337,7 +398,9 @@ export function createTeachingView(ctx: AppContext): TeachingView {
         ? `<div class="edu-diagram">${esquema(fr, oculto)}</div><div class="edu-cards">${t.map((x) => tarjetaHTML(x, oculto)).join('')}</div>` +
           `<p class="edu-pie">Las referencias valen para un paciente <b>pasivo</b> en ventilación controlada: con esfuerzo ` +
           `espontáneo la meseta y la presión motriz dejan de medir lo que se cree que miden.</p>`
-        : proteccionHTML(fr, puntos, oculto);
+        : pantalla === 'proteccion'
+          ? proteccionHTML(fr, puntos, oculto)
+          : ventilacionHTML(fr);
     $('#teaching-body').insertAdjacentHTML('afterbegin', `<p class="notice-box">${esc(ctx.scenario.caution)}</p>`);
   }
 
