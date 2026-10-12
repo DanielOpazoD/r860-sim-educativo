@@ -104,7 +104,7 @@ export function startApp(opts: AppOptions): void {
     // Tres a la vez: el aviso de un objetivo llega en el mismo cuadro que el resultado del bloqueo que lo cumplió, y no
     // debe expulsarlo de la pantalla.
     while (stack.children.length > 3) stack.firstElementChild?.remove();
-    setTimeout(() => e.remove(), 4200);
+    setTimeout(() => e.remove(), 3200);
   }
   function notice(message: string): void {
     put('#global-notice', message);
@@ -250,7 +250,8 @@ export function startApp(opts: AppOptions): void {
     hold,
     metrics,
     plots,
-    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : isMobile() ? false : (prefs?.instructorVisible ?? false),
+    // Desplegado por omisión en escritorio; en móvil taparía el equipo. Una preferencia guardada manda.
+    initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : isMobile() ? false : (prefs?.instructorVisible ?? true),
   });
   const classroom = createClassroom(ctx, {
     cancelQuick: () => quick.cancelQuick(),

@@ -311,15 +311,7 @@
     font-size: var(--type-xs);
   }
   .toast-stack {
-    top: auto;
-    right: auto;
-    left: 14px;
-    bottom: 15px;
     max-width: calc(100vw - 28px);
-  }
-  .toast {
-    font-size: var(--type-xs);
-    padding: 11px 14px;
   }
   .app-dialog.wide,
   .app-dialog.compact {

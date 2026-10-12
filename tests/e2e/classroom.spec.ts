@@ -4,9 +4,13 @@ import { frame, open, openAula, openSimulator } from './helpers';
 const aulaSections = ['lesson', 'theory', 'questions', 'exam', 'results', 'library'] as const;
 
 test.describe('AULA · aprendizaje fuera del monitor', () => {
-  test('Paciente y Eventos quedan cerrados por omisión; el monitor ya no contiene educación', async ({ page }) => {
+  test('Paciente y Eventos quedan abiertos por omisión en escritorio y cerrados en móvil; el monitor ya no contiene educación', async ({
+    page,
+  }, info) => {
     await open(page);
-    await expect(page.locator('#workspace')).toHaveClass(/teacher-hidden/);
+    // En escritorio el panel acompaña al equipo desde el inicio; en móvil lo taparía.
+    if (info.project.name === 'mobile') await expect(page.locator('#workspace')).toHaveClass(/teacher-hidden/);
+    else await expect(page.locator('#workspace')).not.toHaveClass(/teacher-hidden/);
     await expect(page.locator('[data-instructor]')).toHaveCount(2);
     await expect(page.locator('[data-instructor="patient"]')).toBeAttached();
     await expect(page.locator('[data-instructor="events"]')).toBeAttached();
