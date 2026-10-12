@@ -572,7 +572,10 @@ test.describe('EDU · pestaña Resumen', () => {
   test('la pantalla de ventilación muestra la gasometría del modelo y el monitor nunca la muestra', async ({ page }) => {
     await open(page, { speed: 8, instructor: 0 });
     await openAula(page, 'theory');
+    // Esperar al primer pintado de Fundamentos: la vista se carga bajo demanda.
+    await expect(page.locator('#teaching-body .edu-card').first()).toBeVisible();
     await page.click('[data-edu-tab="ventilacion"]');
+    await expect(page.locator('[data-edu-tab="ventilacion"]')).toHaveAttribute('aria-pressed', 'true');
     const bloque = page.locator('[data-testid="gasometria"]');
     // Banco SC-01 (VT 500 mL, 15/min, VD 150 mL): V̇A 5,3 L/min y PaCO₂ de equilibrio ≈ 33 mmHg.
     await expect(bloque.locator('header b')).toHaveText(/^3[23]mmHg PaCO₂$/, { timeout: 15_000 });
