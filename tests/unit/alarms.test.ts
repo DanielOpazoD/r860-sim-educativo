@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AlarmEngine } from '../../src/engine/alarms';
-import { DEFAULT_ALARM_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
+import { DEFAULT_ALARM_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 import { benchSim, runUntilBreath, BENCH_PATIENT, BENCH_SETTINGS } from '../helpers';
 
 describe('ALM · estados separados (activa, reconocida, resuelta, audio)', () => {

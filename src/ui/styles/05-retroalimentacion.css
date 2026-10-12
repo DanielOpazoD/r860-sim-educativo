@@ -67,7 +67,7 @@
   margin: 0 auto;
   max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
 }
-/* Exterior claro; la carcasa y la pantalla azul del R860 conservan sus colores. */
+/* Exterior claro; la carcasa y la pantalla azul del equipo conservan sus colores. */
 :is(.app-top, .instructor, .signal-toolbar, .more-menu, .command-palette, .app-dialog, .toast, .safety-strip) {
   --text: var(--shell-text);
   --muted: var(--shell-muted);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
 import { ACTUATOR_MAX_FLOW_LPS } from '../../src/engine/controller';
-import { R860_PROFILE, defaultInit } from '../../src/profiles';
+import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { benchSim, runUntilBreath, BENCH_PATIENT, BENCH_SETTINGS, BENCH_SENSORS } from '../helpers';
 
@@ -18,7 +18,7 @@ function simEscenario(id: string, circuito: number | undefined) {
       settings: { ...base.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
 }
 

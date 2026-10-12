@@ -72,7 +72,7 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const respaldo = ps
       ? `<div class="settings-subtitle">Respaldo</div>${fieldHTML('minRate', s)}${fieldHTML('backupPinsp', s)}${fieldHTML('backupTinspS', s)}${fieldHTML('apneaTimeS', s)}`
       : '';
-    return `<details class="mode-explanation"><summary>${title}</summary><p>${desc}</p><p class="mode-other-note">Otros modos del R860 (PRVC, SIMV, BiLevel, APRV, NIV) no se simulan.</p></details><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${sync}${respaldo}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
+    return `<details class="mode-explanation"><summary>${title}</summary><p>${desc}</p><p class="mode-other-note">Otros modos (PRVC, SIMV, BiLevel, APRV, VNI) no se simulan.</p></details><div class="settings-grid">${main.map((k) => fieldHTML(k, s)).join('')}<div class="settings-subtitle">Sincronización</div>${sync}${respaldo}</div><div id="mode-timing" class="mode-timing"></div><div id="mode-warning" class="mode-error warn" role="status"></div><div id="mode-error" class="mode-error" role="status"></div>`;
   }
   function openModes(): void {
     if (!ctx.frame) return;

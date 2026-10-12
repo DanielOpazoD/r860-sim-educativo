@@ -1,8 +1,8 @@
 {
-  "name": "r860-sim-educativo",
+  "name": "ventila-lab",
   "version": "0.4.0",
   "private": true,
-  "description": "R860 Lab · Simulador EDUCATIVO web inspirado en GE Healthcare CARESCAPE R860. NO USO CLÍNICO.",
+  "description": "Ventila Lab · Simulador EDUCATIVO web de ventilación mecánica. NO USO CLÍNICO.",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -4,7 +4,7 @@ import { LESSON_TESTS, type LessonContext } from '../../src/ui/lesson';
 import { tarjetas, estres } from '../../src/ui/teaching';
 import { benchSim, runUntilBreath } from '../helpers';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 
 for (const [value, expected] of [
   [14.9, 'dentro'],
@@ -54,7 +54,7 @@ it('SC-22: el objetivo del disparo exige que el autodisparo cese, no sólo el aj
   const e = findScenario('SC-22')!;
   const sim = new Simulator(
     defaultInit({ patient: e.patient, effort: e.effort, sensors: e.sensors, settings: { ...defaultInit().settings, ...e.settings } }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
   sim.run(30_000);
   expect(sim.breaths.some((b) => b.type === 'assisted')).toBe(true); // la fuga dispara
@@ -75,7 +75,7 @@ it('SC-22: el objetivo del disparo exige que el autodisparo cese, no sólo el aj
   // Con un disparo que la fuga sigue superando no se acredita, aunque pase el mismo tiempo.
   const otro = new Simulator(
     defaultInit({ patient: e.patient, effort: e.effort, sensors: e.sensors, settings: { ...defaultInit().settings, ...e.settings } }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
   otro.run(30_000);
   const t2 = otro.simTimeMs;

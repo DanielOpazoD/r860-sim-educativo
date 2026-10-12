@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { gridValues } from '../../src/domain/validation';
-import { R860_PROFILE } from '../../src/profiles';
+import { REFERENCE_PROFILE } from '../../src/profiles';
 import { ruleRangeIndex, ruleRangeValue, stepInputValue } from '../../src/ui/numericSteps';
 
-describe('pasos numéricos según las reglas del perfil R860', () => {
-  const vt = R860_PROFILE.rules.vt;
-  const rrLow = R860_PROFILE.alarmLimitRules.rrLow;
+describe('pasos numéricos según las reglas del perfil adulto', () => {
+  const vt = REFERENCE_PROFILE.rules.vt;
+  const rrLow = REFERENCE_PROFILE.alarmLimitRules.rrLow;
 
   it('cruza el escalón de VT de 300 a 325 mL y vuelve a 300', () => {
     expect(stepInputValue(vt, '300', 1)).toBe('325');

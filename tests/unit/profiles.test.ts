@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
-import { exportSession, importSession } from '../../src/history/session';
-import { DEFAULT_PROFILE, R860_PROFILE, defaultInit, findProfile, profileFor } from '../../src/profiles';
+import { exportSession, importSession, replaySession } from '../../src/history/session';
+import { DEFAULT_PROFILE, REFERENCE_PROFILE, defaultInit, findProfile, profileFor } from '../../src/profiles';
 import { benchSim, runUntilBreath } from '../helpers';
 
 describe('ARQ-01 · perfil inyectado en el motor', () => {
   it('defaultInit declara el perfil; profileFor resuelve el de referencia y rechaza ids desconocidos', () => {
-    expect(defaultInit().profileId).toBe(R860_PROFILE.profileId);
+    expect(defaultInit().profileId).toBe(REFERENCE_PROFILE.profileId);
     expect(profileFor({ profileId: undefined })).toBe(DEFAULT_PROFILE);
     expect(findProfile('otro')).toBeNull();
     expect(() => profileFor({ profileId: 'otro' })).toThrow(/Perfil desconocido/);
   });
   it('el motor rechaza una inicialización cuyo profileId no coincide con el perfil inyectado', () => {
-    expect(() => new Simulator({ ...defaultInit(), profileId: 'otro' }, R860_PROFILE)).toThrow(/perfil otro/);
+    expect(() => new Simulator({ ...defaultInit(), profileId: 'otro' }, REFERENCE_PROFILE)).toThrow(/perfil otro/);
   });
   it('el motor usa las reglas del perfil inyectado (no un módulo concreto)', () => {
-    const strict = { ...R860_PROFILE, profileId: 'estricto', crossLimits: { ...R860_PROFILE.crossLimits, flowMaxLpm: 20 } };
+    const strict = { ...REFERENCE_PROFILE, profileId: 'estricto', crossLimits: { ...REFERENCE_PROFILE.crossLimits, flowMaxLpm: 20 } };
     const init = defaultInit({}, strict);
     expect(() => new Simulator(init, strict)).toThrow(/flujo máximo de 20/);
   });
@@ -29,5 +29,17 @@ describe('ARQ-01 · perfil inyectado en el motor', () => {
     const r = importSession(JSON.stringify({ ...good, profileId: 'otro' }));
     expect(r.ok).toBe(false);
     expect((r as { errors: string[] }).errors.join(' ')).toMatch(/profileId desconocido/);
+  });
+  it('una sesión guardada con el identificador anterior al cambio de nombre se importa y se reproduce igual', () => {
+    const sim = benchSim();
+    runUntilBreath(sim, 3);
+    const good = exportSession(sim);
+    const old = 'r860-es-photo-reference-v1';
+    expect(REFERENCE_PROFILE.legacyProfileIds).toContain(old);
+    const legacy = { ...good, profileId: old, init: { ...good.init, profileId: old } };
+    const imp = importSession(JSON.stringify(legacy));
+    expect(imp.ok).toBe(true);
+    if (!imp.ok) return;
+    expect(replaySession(imp.session).breaths.map((b) => b.vtExp)).toEqual(sim.breaths.map((b) => b.vtExp));
   });
 });

@@ -29,7 +29,7 @@ export interface FrameLike {
 }
 declare global {
   interface Window {
-    __r860: {
+    __ventila: {
       frame: FrameLike | null;
       edit: { kind: string; key?: string; draftDisplay?: number | 'off' };
       view: string;
@@ -51,11 +51,11 @@ declare global {
 export async function open(page: Page, params: Record<string, string | number> = {}, options: { firstRun?: boolean } = {}): Promise<void> {
   if (!options.firstRun)
     await page.addInitScript(() => {
-      if (!localStorage.getItem('r860.prefs')) localStorage.setItem('r860.prefs', JSON.stringify({ v: 1, welcomed: true }));
+      if (!localStorage.getItem('ventila.prefs')) localStorage.setItem('ventila.prefs', JSON.stringify({ v: 1, welcomed: true }));
     });
   const q = new URLSearchParams({ t0: T0, seed: '1', ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) });
   await page.goto(`/?${q.toString()}`);
-  await page.waitForFunction(() => window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
 }
 export type AulaSection = 'lesson' | 'theory' | 'questions' | 'exam' | 'results' | 'library';
 export async function openAula(page: Page, section: AulaSection = 'lesson'): Promise<void> {
@@ -117,7 +117,7 @@ export async function hidePanel(page: Page): Promise<void> {
     await page.locator('#instructor-close').click();
   }
 }
-export const frame = (page: Page): Promise<FrameLike> => page.evaluate(() => window.__r860.frame as unknown as FrameLike);
+export const frame = (page: Page): Promise<FrameLike> => page.evaluate(() => window.__ventila.frame as unknown as FrameLike);
 export async function screenshot(page: Page, info: TestInfo, name: string, meta: Record<string, unknown> = {}): Promise<void> {
   const f = await frame(page);
   const vp = page.viewportSize();
@@ -134,7 +134,7 @@ export async function screenshot(page: Page, info: TestInfo, name: string, meta:
         seed: 1,
         simTimeMs: f.simTimeMs,
         wallTimeMs: f.wallTimeMs,
-        engine: await page.evaluate(() => window.__r860.mode),
+        engine: await page.evaluate(() => window.__ventila.mode),
         ...meta,
       },
       null,
@@ -143,5 +143,5 @@ export async function screenshot(page: Page, info: TestInfo, name: string, meta:
   );
 }
 export async function expectSafetyMark(page: Page): Promise<void> {
-  await expect(page.locator('.bezel-signature')).toContainText('R860');
+  await expect(page.locator('.bezel-signature')).toContainText('Ventila');
 }

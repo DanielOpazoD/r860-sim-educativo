@@ -34,7 +34,7 @@ test.describe('VIS/DAT · fixtures fotográficas (transcripción, no motor)', ()
   });
 });
 
-test('VIS · el exterior usa tema claro y conserva el fondo del R860', async ({ page }) => {
+test('VIS · el exterior usa tema claro y conserva el fondo del equipo', async ({ page }) => {
   await open(page, { scenario: 'SC-02', instructor: 0 });
   await showPanel(page, 'patient');
 
@@ -121,7 +121,7 @@ test.describe('VIS · casillas del monitor sin desbordamiento', () => {
 test.describe('VIS · motor vivo con pausa automática determinista', () => {
   test('VIS-03 · banco SC-01 a t = 12 s: curvas, números y manómetro', async ({ page }, info) => {
     await open(page, { autopause: 12000, instructor: 0, speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 12000, null, { timeout: 20_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 12000, null, { timeout: 20_000 });
     const f = await frame(page);
     expect(f.simTimeMs).toBe(12000);
     expect(f.breathCount).toBe(3);
@@ -153,7 +153,7 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
   });
   test('VIS-04 · alarma de Pmáx (SC-09): banda roja, luz del bisel y celda resaltada', async ({ page }, info) => {
     await open(page, { scenario: 'SC-09', autopause: 20000, instructor: 0, speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 20000, null, { timeout: 25_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 20000, null, { timeout: 25_000 });
     const f = await frame(page);
     expect(f.alarmBar.color).toBe('red');
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);
@@ -171,7 +171,7 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
   });
   test('VIS-05 · vistas de bucles, tabla, tendencias y registro son funcionales', async ({ page }, info) => {
     await open(page, { autopause: 16000, instructor: 0, speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
     await page.click('[data-view="loops"]');
     await page.click('[data-action="loopReference"]');
     await expect(page.locator('#loop-reference-label')).toContainText('Referencia');
@@ -218,7 +218,7 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     page,
   }, info) => {
     await open(page, { scenario: 'SC-13', autopause: 16000, instructor: 0, speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
     await expect(page.locator('#quick-mode')).toHaveText('A/C PC');
     await screenshot(page, info, 'vis-06-pc-sc13-t16s', { mode: 'AC_PC' });
     await page.click('[data-view="basic"]');
@@ -227,7 +227,7 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
   });
   test('VIS-08 · CPAP/PS (SC-19): presión a PEEP + PS, flujo cortado al 25 % del pico, volumen del paciente', async ({ page }, info) => {
     await open(page, { scenario: 'SC-19', autopause: 16000, instructor: 0, speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 16000, null, { timeout: 20_000 });
     await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
     const f = await frame(page);
     expect(f.metrics.ppeak?.value ?? 0).toBeCloseTo(15, 0);

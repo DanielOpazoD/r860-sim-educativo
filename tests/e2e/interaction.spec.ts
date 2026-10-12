@@ -21,7 +21,7 @@ async function chooseRadio(page: Page, groupId: string, value: string) {
   await expect(radio).toBeChecked();
 }
 
-test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
+test.describe('NAV · opciones de cabecera y diálogos del equipo', () => {
   test('escritorio agrupa las opciones en ⋯ y Audio alterna aria-checked', async ({ page, isMobile }) => {
     test.skip(isMobile, 'sólo escritorio');
     await open(page, { instructor: 0 });
@@ -53,7 +53,7 @@ test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
     await expect(page.locator('#dialog-title')).toHaveText('Guía del simulador');
   });
 
-  test('el Menú del R860 conserva sólo sus cuatro entradas funcionales', async ({ page }) => {
+  test('el Menú del equipo conserva sólo sus cuatro entradas funcionales', async ({ page }) => {
     await open(page, { instructor: 0 });
     await page.locator('#monitor [data-action="menu"]').click();
     const entries = page.locator('#dialog-content .menu-entry');
@@ -63,12 +63,12 @@ test.describe('NAV · opciones de cabecera y diálogos del R860', () => {
     }
   });
 
-  test('Modo explica en texto los modos del R860 que no se simulan', async ({ page }) => {
+  test('Modo explica en texto los modos que no se simulan', async ({ page }) => {
     await open(page, { instructor: 0 });
     await page.locator('#monitor [data-action="menu"]').click();
     await page.locator('#dialog-content .menu-entry[data-action="modes"]').click();
     await expect(page.locator('.mode-option[disabled]')).toHaveCount(0);
-    await expect(page.locator('.mode-other-note')).toHaveText('Otros modos del R860 (PRVC, SIMV, BiLevel, APRV, NIV) no se simulan.');
+    await expect(page.locator('.mode-other-note')).toHaveText('Otros modos (PRVC, SIMV, BiLevel, APRV, VNI) no se simulan.');
   });
 });
 
@@ -167,7 +167,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
   });
   test('INT-01 · seleccionar PEEP y girar sin confirmar no cambia ajustes ni motor', async ({ page }) => {
     await open(page, { autopause: 4000, speed: 4, instructor: 0 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 4000);
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 4000);
     const before = await frame(page);
     await page.click('[data-setting-quick="peep"]');
     await expect(page.locator('#quick-editor')).toBeVisible();
@@ -194,7 +194,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await expect(page.locator('#quick-editor')).toBeHidden();
     await page.waitForFunction(
       () => {
-        const f = window.__r860.frame as { settings: { vt: number } } | null;
+        const f = window.__ventila.frame as { settings: { vt: number } } | null;
         return !!f && Math.abs(f.settings.vt - 0.525) < 1e-9;
       },
       null,
@@ -238,14 +238,16 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.click('#app-dialog [data-action="closeDialog"]');
     const a = await frame(page);
     expect(a.ventilation).toBe('ventilating');
-    await page.waitForFunction((n) => (window.__r860.frame as { breathCount: number }).breathCount > n, a.breathCount, { timeout: 15_000 });
+    await page.waitForFunction((n) => (window.__ventila.frame as { breathCount: number }).breathCount > n, a.breathCount, {
+      timeout: 15_000,
+    });
     await page.click('[data-action="standby"]');
     await page.click('[data-action="confirmStandby"]');
-    await page.waitForFunction(() => (window.__r860.frame as { ventilation: string }).ventilation === 'standby');
+    await page.waitForFunction(() => (window.__ventila.frame as { ventilation: string }).ventilation === 'standby');
     await expect(page.locator('#standby-overlay')).toBeVisible();
     await expect(page.locator('#numeric-grid [data-metric="ppeak"] .numeric-value')).toHaveText('—');
     await page.click('#standby-overlay [data-action="startVentilation"]');
-    await page.waitForFunction(() => (window.__r860.frame as { ventilation: string }).ventilation === 'ventilating');
+    await page.waitForFunction(() => (window.__ventila.frame as { ventilation: string }).ventilation === 'ventilating');
     await expect(page.locator('#standby-overlay')).toBeHidden();
   });
   test('INT-05 · cambiar de vista 100 veces no reinicia ni duplica el motor', async ({ page }) => {
@@ -261,7 +263,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     expect(after.simTimeMs).toBeGreaterThan(before.simTimeMs);
     expect(after.breathCount).toBeGreaterThanOrEqual(before.breathCount);
     expect(after.settings).toEqual(before.settings);
-    expect(await page.evaluate(() => window.__r860.mode)).toBe(await page.evaluate(() => window.__r860.mode));
+    expect(await page.evaluate(() => window.__ventila.mode)).toBe(await page.evaluate(() => window.__ventila.mode));
   });
   test('INT-06 · rueda sin selección, flechas sin selección y bloqueo de controles no cambian nada', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
@@ -329,7 +331,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await expect(page.locator('#quick-value')).toHaveValue('6');
     await expect(page.locator('[data-quick-val="peep"]')).toHaveText('5');
     await page.keyboard.press('Enter');
-    await page.waitForFunction(() => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === 6, null, {
+    await page.waitForFunction(() => (window.__ventila.frame as unknown as { settings: { peep: number } }).settings.peep === 6, null, {
       timeout: 15_000,
     });
     await page.locator('[data-setting-quick="rr"]').focus();
@@ -346,7 +348,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       Object.defineProperty(document, 'hidden', { value: true, configurable: true });
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await page.waitForFunction(() => window.__r860.running === false);
+    await page.waitForFunction(() => window.__ventila.running === false);
     await expect(page.locator('#global-notice')).toBeHidden();
     await expect(page.locator('#sim-pause')).toHaveAccessibleName(/Reanudar simulación · segundo plano/);
     const t1 = (await frame(page)).simTimeMs;
@@ -361,20 +363,20 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     expect((await frame(page)).simTimeMs).toBe(t2); // sigue pausada: reanudación manual
     const reanudadaEn = Date.now();
     await page.click('#sim-pause');
-    await page.waitForFunction((t) => (window.__r860.frame as { simTimeMs: number }).simTimeMs > t, t2, { timeout: 5000 });
+    await page.waitForFunction((t) => (window.__ventila.frame as { simTimeMs: number }).simTimeMs > t, t2, { timeout: 5000 });
     const paredTranscurrida = Date.now() - reanudadaEn;
     expect((await frame(page)).simTimeMs - t2).toBeLessThanOrEqual(4 * (paredTranscurrida + 1000));
   });
   test('ALM-02/03 (UI) · reconocer no resuelve; resolver sin reconocer deja banda gris; reconocer después la limpia', async ({ page }) => {
     await open(page, { scenario: 'SC-09', speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 30_000,
     });
     await page.click('[data-action="alarms"]');
     await expect(page.locator('#live-alarms')).toContainText('ACTIVA');
     await page.click('[data-action="acknowledge"]');
     await page.waitForFunction(() =>
-      (window.__r860.frame as { alarms: { id: string; acknowledgedAtMs: number | null }[] }).alarms.some(
+      (window.__ventila.frame as { alarms: { id: string; acknowledgedAtMs: number | null }[] }).alarms.some(
         (a) => a.id === 'pmax' && a.acknowledgedAtMs !== null,
       ),
     );
@@ -390,7 +392,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
     await hidePanel(page);
     // VMesp bajo se resuelve con la ventana de ocho respiraciones (32 s simulados): bajo carga, a 4× no bastan 20 s de reloj.
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color !== 'red', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color !== 'red', null, {
       timeout: 45_000,
     });
     if ((await frame(page)).alarmBar.color === 'grey') {
@@ -398,17 +400,17 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       await page.click('[data-action="acknowledge"]');
       await page.keyboard.press('Escape');
     }
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green', null, {
       timeout: 20_000,
     });
     // Nueva oclusión sin reconocer y resolución: banda gris (resuelta, pendiente de reconocer) hasta reconocer.
     await showPanel(page, 'events');
     await page.click('[data-event="obstruction"]');
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 20_000,
     });
     await page.click('[data-action="undoEvent"]');
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'grey', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'grey', null, {
       timeout: 20_000,
     });
     await expect(page.locator('#alarm-label')).toHaveText('Alarmas resueltas');
@@ -416,13 +418,13 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await page.click('[data-action="alarms"]');
     await expect(page.locator('#live-alarms')).toContainText('PENDIENTE DE RECONOCER');
     await page.click('[data-action="acknowledge"]');
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green', null, {
       timeout: 5000,
     });
   });
   test('SC-09 · el objetivo de resolver la oclusión se completa con controles visibles', async ({ page }) => {
     await open(page, { scenario: 'SC-09', speed: 4 });
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 30_000,
     });
     await openAula(page, 'lesson');
@@ -434,9 +436,9 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await showPanel(page, 'patient');
     await page.click('[data-action="resetPatient"]');
     await page.waitForFunction(
-      () => (window.__r860.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp === 10,
+      () => (window.__ventila.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp === 10,
     );
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color !== 'red', null, {
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color !== 'red', null, {
       timeout: 45_000,
     });
     if ((await frame(page)).alarmBar.color === 'grey') {
@@ -445,7 +447,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       await page.click('[data-action="acknowledge"]');
       await page.keyboard.press('Escape');
     }
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
     await openAula(page, 'lesson');
     await expect(page.locator('#lesson-count')).toHaveText('3 de 3 objetivos');
   });
@@ -472,7 +474,7 @@ test.describe('CFG · parámetros de la dirección que no son números', () => {
     await expect(page.locator('#engine-banner')).toBeVisible();
     await expect(page.locator('#engine-banner')).toContainText('speed=abc');
     await expect(page.locator('#engine-banner')).toContainText('seed=xyz');
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs > 0, null, { timeout: 15_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs > 0, null, { timeout: 15_000 });
     const f = await frame(page);
     expect(f.simTimeMs).toBeGreaterThan(0);
     expect(f.ventilation).toBe('ventilating');
@@ -543,7 +545,7 @@ test.describe('EDU · pestaña Resumen', () => {
     await page.click('[data-action="inspiratory"]');
     await page.click('[data-action="runHold"]');
     await page.waitForFunction(
-      () => (window.__r860.frame as unknown as { procedure: { last: { inspHold: unknown } } })?.procedure.last.inspHold !== null,
+      () => (window.__ventila.frame as unknown as { procedure: { last: { inspHold: unknown } } })?.procedure.last.inspHold !== null,
       null,
       { timeout: 40_000 },
     );
@@ -555,8 +557,8 @@ test.describe('EDU · pestaña Resumen', () => {
     await expect(page.locator('.edu-formula b')).toHaveCount(4);
     const pplat = await page.evaluate(
       () =>
-        (window.__r860.frame as unknown as { procedure: { last: { inspHold: { values: { pplat: { value: number } } } } } }).procedure.last
-          .inspHold.values.pplat.value,
+        (window.__ventila.frame as unknown as { procedure: { last: { inspHold: { values: { pplat: { value: number } } } } } }).procedure
+          .last.inspHold.values.pplat.value,
     );
     await expect(page.locator('.edu-card').nth(1)).toContainText(pplat.toFixed(1));
     // Y en escritorio la pestaña cabe sin desplazarse: es un resumen, no un documento. En móvil las cuatro tarjetas se
@@ -601,13 +603,13 @@ test.describe('EDU · pestaña Resumen', () => {
       // instante, así que la prueba cerraba el panel antes de que el nuevo terminara. De ahí venía su intermitencia.
       const previo = await page.evaluate(
         () =>
-          (window.__r860.frame as unknown as { procedure: { last: { inspHold: { procedureId: string } | null } } })?.procedure.last.inspHold
-            ?.procedureId ?? '',
+          (window.__ventila.frame as unknown as { procedure: { last: { inspHold: { procedureId: string } | null } } })?.procedure.last
+            .inspHold?.procedureId ?? '',
       );
       await page.click('[data-setting-quick="peep"]');
       await page.fill('#quick-value', String(peep));
       await page.click('[data-action="confirmEdit"]');
-      await page.waitForFunction((p) => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
+      await page.waitForFunction((p) => (window.__ventila.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
         timeout: 20_000,
       });
       await page.click('[data-action="inspiratory"]');
@@ -616,7 +618,7 @@ test.describe('EDU · pestaña Resumen', () => {
       // hacía la prueba dependiente de la máquina, y en el runner llegaba tarde.
       await page.waitForFunction(
         ([p, anterior]) => {
-          const fr = window.__r860.frame as unknown as {
+          const fr = window.__ventila.frame as unknown as {
             settings: { peep: number };
             procedure: {
               last: { inspHold: { procedureId: string; quality: string; values: { cstat?: { value: number | null } } } | null };
@@ -651,7 +653,7 @@ test.describe('CUR · medir sobre la curva congelada', () => {
   /** Deja 30 s de curva, pausa y congela. */
   async function congelar(page: Page): Promise<void> {
     await open(page, { speed: 4, instructor: 0, autopause: 30_000 });
-    await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
+    await page.waitForFunction(() => (window.__ventila.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
       timeout: 40_000,
     });
     await openTimeControls(page);
@@ -710,7 +712,7 @@ test.describe('CUR · medir sobre la curva congelada', () => {
 
   test('el cursor cae donde apunta el puntero: el centro de la rejilla es el centro de la ventana', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0, autopause: 30_000 });
-    await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
+    await page.waitForFunction(() => (window.__ventila.frame as unknown as { simTimeMs: number }).simTimeMs >= 30_000, null, {
       timeout: 40_000,
     });
     // En continuo el centro del área de trazado es «final − ventana/2». La conversión anterior usaba márgenes distintos
@@ -771,7 +773,7 @@ test.describe('LEC · la lección responde', () => {
     await page.fill('[data-phys-number="resistance"]', '25');
     await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
     await page.waitForFunction(
-      () => (window.__r860.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp >= 20,
+      () => (window.__ventila.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp >= 20,
       null,
       { timeout: 15_000 },
     );
@@ -810,7 +812,7 @@ test.describe('DESC · desconexión del circuito', () => {
     await hidePanel(page);
     await page.click('[data-action="alarms"]');
     await page.click('[data-action="acknowledge"]');
-    await page.waitForFunction(() => (window.__r860.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
+    await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
     await page.keyboard.press('Escape');
     await expect(page.locator('#alarm-label')).toHaveText('Sin alarmas');
     await openAula(page, 'lesson');
@@ -842,7 +844,7 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
     await open(page);
     await openTimeControls(page);
     await page.locator('#speed-options [data-speed="2"]').click();
-    await expect.poll(() => page.evaluate(() => window.__r860.speed)).toBe(2);
+    await expect.poll(() => page.evaluate(() => window.__ventila.speed)).toBe(2);
     await expect(page.locator('#speed-value')).toHaveText('2×');
     await expect(page.locator('#speed-options [data-speed="2"]')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#speed-options')).toBeVisible();
@@ -865,9 +867,9 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
     await expect(page.locator('#wave-scale input[value="auto"]')).toBeChecked();
     await openPresentation(page);
     await chooseRadio(page, 'wave-scale', 'fixed');
-    await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('fixed');
+    await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('fixed');
     await chooseRadio(page, 'wave-scale', 'auto');
-    await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('auto');
+    await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('auto');
   });
   test('los controles de tiempo caben sin desbordar el ancho del viewport', async ({ page }) => {
     await open(page);
@@ -888,11 +890,11 @@ test.describe('CUR · comparación antes/después', () => {
   test('una intervención conserva automáticamente la última respiración completa como «Antes»', async ({ page }) => {
     await open(page, { speed: 4 });
     await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(2);
-    expect(await page.evaluate(() => window.__r860.waveRef)).toBeNull();
+    expect(await page.evaluate(() => window.__ventila.waveRef)).toBeNull();
     await page.click('[data-setting-quick="peep"]');
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Enter');
-    await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
+    await expect.poll(() => page.evaluate(() => window.__ventila.waveRef)).not.toBeNull();
     await expect(page.locator('#wave-ref-button')).toHaveClass(/active/);
   });
   test('Comparar última respiración dibuja el ciclo previo atenuado bajo la traza actual', async ({ page }) => {
@@ -903,7 +905,7 @@ test.describe('CUR · comparación antes/después', () => {
     await expect(page.locator('#wave-ref-button')).toHaveClass(/active/);
     await expect(page.locator('#wave-ref-button')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#wave-ref-button')).toContainText('Dejar de comparar');
-    await expect.poll(() => page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
+    await expect.poll(() => page.evaluate(() => window.__ventila.waveRef)).not.toBeNull();
     await expect(page.locator('#wave-ref-clear')).toHaveCount(0);
     await closePersonalization(page);
     // Para que el fantasma no quede escondido bajo una curva idéntica, suben PEEP y Vt: la referencia queda
@@ -925,7 +927,7 @@ test.describe('CUR · comparación antes/después', () => {
     await page.waitForTimeout(300);
     await page.evaluate(() => {
       const c = document.querySelector<HTMLCanvasElement>('#waves-canvas')!;
-      (window as unknown as { __r860shot: number[] }).__r860shot = Array.from(
+      (window as unknown as { __ventilashot: number[] }).__ventilashot = Array.from(
         c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data,
       );
     });
@@ -933,7 +935,7 @@ test.describe('CUR · comparación antes/después', () => {
       page.evaluate(() => {
         const c = document.querySelector<HTMLCanvasElement>('#waves-canvas')!;
         const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-        const a = (window as unknown as { __r860shot: number[] }).__r860shot;
+        const a = (window as unknown as { __ventilashot: number[] }).__ventilashot;
         let n = 0;
         for (let i = 0; i < d.length; i += 4) if (d[i] !== a[i] || d[i + 1] !== a[i + 1] || d[i + 2] !== a[i + 2]) n++;
         return n;
@@ -943,7 +945,7 @@ test.describe('CUR · comparación antes/después', () => {
     await expect(page.locator('#wave-ref-button')).toBeDisabled();
     await closePersonalization(page);
     await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
-    expect(await page.evaluate(() => window.__r860.waveRef)).not.toBeNull();
+    expect(await page.evaluate(() => window.__ventila.waveRef)).not.toBeNull();
     await openPersonalization(page);
     await page.locator('#wave-guides').check();
     await expect(page.locator('#wave-ref-button')).toBeEnabled();
@@ -972,7 +974,7 @@ test.describe('EXM · modo examen', () => {
     await page.click('#exam-toggle');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#exam-toggle')).toHaveClass(/active/);
-    await expect.poll(() => page.evaluate(() => window.__r860.exam.active)).toBe(true);
+    await expect.poll(() => page.evaluate(() => window.__ventila.exam.active)).toBe(true);
     await openSimulator(page);
     // Las casillas con dato muestran «?»; las sin medición conservan el guion y explican el motivo debajo.
     await expect(pico.locator('.numeric-value')).toHaveText('?');
@@ -984,7 +986,7 @@ test.describe('EXM · modo examen', () => {
     await expect(page.locator('#app-dialog')).not.toBeVisible();
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
     await expect(pico.locator('.numeric-age')).toContainText('Est.');
-    await expect.poll(() => page.evaluate(() => window.__r860.exam.estimates)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__ventila.exam.estimates)).toBe(1);
     await expect(page.locator('.toast').last()).toContainText('estimaste');
     // La tabla de mediciones aplica la misma regla: estimada muestra el valor y la estimación; las demás siguen «?».
     await page.click('[data-view="data"]');
@@ -1021,7 +1023,7 @@ test.describe('EXM · modo examen', () => {
     await page.click('[data-action="examSubmit"]'); // sin escribir nada
     // El diálogo sigue abierto y no se registró estimación: el vacío no es una respuesta.
     await expect(page.locator('#app-dialog')).toBeVisible();
-    await expect.poll(() => page.evaluate(() => window.__r860.exam.estimates)).toBe(0);
+    await expect.poll(() => page.evaluate(() => window.__ventila.exam.estimates)).toBe(0);
     await page.click('[data-action="closeDialog"]');
     // El Resumen no filtra lo que la columna tapa: ni el valor de la tarjeta ni la fórmula sustituida.
     await openAula(page, 'theory');
@@ -1162,7 +1164,7 @@ test.describe('PAC · panel Paciente esencial', () => {
     await openMoreParams(page);
     await expect
       .poll(() =>
-        page.evaluate(() => (JSON.parse(localStorage.getItem('r860.prefs') ?? '{}') as { patientMoreOpen?: boolean }).patientMoreOpen),
+        page.evaluate(() => (JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}') as { patientMoreOpen?: boolean }).patientMoreOpen),
       )
       .toBe(true);
 
@@ -1177,12 +1179,12 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
     await page.click('[data-setting-quick="peep"]');
     await page.fill('#quick-value', String(peep));
     await page.click('[data-action="confirmEdit"]');
-    await page.waitForFunction((p) => (window.__r860.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
+    await page.waitForFunction((p) => (window.__ventila.frame as unknown as { settings: { peep: number } }).settings.peep === p, peep, {
       timeout: 20_000,
     });
   };
   const reclutado = (page: Page): Promise<number> =>
-    page.evaluate(() => (window.__r860.frame as unknown as { truth: { recruited: number } }).truth.recruited);
+    page.evaluate(() => (window.__ventila.frame as unknown as { truth: { recruited: number } }).truth.recruited);
 
   test('subir PEEP por encima de la apertura recluta; bajarla por encima del cierre lo conserva', async ({ page }) => {
     await open(page, { scenario: 'SC-25', speed: 8 });
@@ -1194,13 +1196,13 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
     await hidePanel(page);
     // PEEP 20: los picos inspiratorios (~37) superan pOpen y la fracción abierta sube respiración a respiración.
     await ponerPeep(page, 20);
-    await page.waitForFunction(() => (window.__r860.frame as unknown as { truth: { recruited: number } }).truth.recruited > 0.9, null, {
+    await page.waitForFunction(() => (window.__ventila.frame as unknown as { truth: { recruited: number } }).truth.recruited > 0.9, null, {
       timeout: 40_000,
     });
     // De vuelta a PEEP 10 —dentro de la banda, por encima del cierre— se conserva lo abierto: histéresis.
     await ponerPeep(page, 10);
     const n = (await frame(page)).breathCount;
-    await page.waitForFunction((b) => (window.__r860.frame as unknown as { breathCount: number }).breathCount >= b + 4, n, {
+    await page.waitForFunction((b) => (window.__ventila.frame as unknown as { breathCount: number }).breathCount >= b + 4, n, {
       timeout: 40_000,
     });
     expect(await reclutado(page)).toBeGreaterThan(0.9);
@@ -1211,14 +1213,14 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
 test.describe('PREF · bienvenida y memoria de preferencias', () => {
   test('la primera visita ofrece explorar o una práctica guiada; la bienvenida no se repite', async ({ page }) => {
     await open(page, {}, { firstRun: true });
-    await expect(page.locator('#dialog-title')).toHaveText('Bienvenido a R860 Lab');
+    await expect(page.locator('#dialog-title')).toHaveText('Bienvenido a Ventila Lab');
     await expect(page.locator('#welcome-free')).toBeFocused();
     await expect(page.locator('#dialog-content')).toContainText('Un ventilador virtual para aprender mecánica respiratoria sin riesgo.');
     await page.click('#welcome-guided');
     await expect(page.locator('#dialog-title')).toHaveText('Escenarios y paciente');
     await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
     await page.reload();
-    await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
+    await page.waitForFunction(() => !!window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
     await expect(page.locator('#app-dialog')).toBeHidden();
   });
 
@@ -1234,7 +1236,7 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await openPresentation(page);
     await chooseRadio(page, 'wave-window', '24');
     await page.reload();
-    await page.waitForFunction(() => !!window.__r860 && window.__r860.frame !== null, null, { timeout: 15_000 });
+    await page.waitForFunction(() => !!window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
     await expect(page.locator('#scenario-name')).toHaveText(scenarioName);
     await expect(page.locator('#view-loops')).toHaveClass(/active/);
     await expect(page.locator('#wave-window input[value="24"]')).toBeChecked();
@@ -1243,7 +1245,7 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
 
   test('un escenario de la dirección tiene prioridad sobre el guardado', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('r860.prefs', JSON.stringify({ v: 1, lastScenario: 'SC-03', welcomed: true }));
+      localStorage.setItem('ventila.prefs', JSON.stringify({ v: 1, lastScenario: 'SC-03', welcomed: true }));
     });
     await open(page, { scenario: 'SC-01' }, { firstRun: true });
     await expect(page.locator('#scenario-name')).toHaveText('Banco lineal pasivo');
@@ -1256,7 +1258,7 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await page.locator('#palette-input').press('Enter');
     await page.click('#app-dialog [data-action="resetPrefs"]');
     await expect(page.locator('#toast-stack .toast').last()).toHaveText('Preferencias restablecidas: se aplican al recargar');
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBeNull();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('ventila.prefs'))).toBeNull();
   });
 });
 
@@ -1269,9 +1271,9 @@ test.describe('PAT · perfiles del paciente', () => {
     await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos', { timeout: 25_000 });
     await openSimulator(page);
     await page.locator('#sim-pause').click();
-    await expect.poll(() => page.evaluate(() => window.__r860.running)).toBe(false);
+    await expect.poll(() => page.evaluate(() => window.__ventila.running)).toBe(false);
     const before = await page.evaluate(() => {
-      const current = window.__r860.frame as unknown as {
+      const current = window.__ventila.frame as unknown as {
         simTimeMs: number;
         settings: unknown;
         truth: { patient: unknown; effort: unknown };
@@ -1286,7 +1288,7 @@ test.describe('PAT · perfiles del paciente', () => {
           text: task.textContent,
           complete: task.classList.contains('complete'),
         })),
-        lessonFlags: (window.__r860 as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
+        lessonFlags: (window.__ventila as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
       };
     });
     const profile = PATIENT_PROFILES.find((item) => item.id === 'stiff')!;
@@ -1297,7 +1299,7 @@ test.describe('PAT · perfiles del paciente', () => {
     await expect(page.locator('#app-dialog')).toBeHidden();
     await expect(page.locator('#toast-stack .toast').last()).toContainText('Perfil aplicado: Pulmón rígido');
     const after = await page.evaluate(() => {
-      const current = window.__r860.frame as unknown as {
+      const current = window.__ventila.frame as unknown as {
         simTimeMs: number;
         settings: unknown;
         truth: { patient: unknown; effort: unknown };
@@ -1314,7 +1316,7 @@ test.describe('PAT · perfiles del paciente', () => {
           text: task.textContent,
           complete: task.classList.contains('complete'),
         })),
-        lessonFlags: (window.__r860 as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
+        lessonFlags: (window.__ventila as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
       };
     });
     expect(after.patient).toEqual(expected.patient);
@@ -1362,7 +1364,9 @@ test.describe('PAT · perfiles del paciente', () => {
     await compliance.fill('40');
     await compliance.dispatchEvent('change');
     await expect
-      .poll(() => page.evaluate(() => (window.__r860.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000))
+      .poll(() =>
+        page.evaluate(() => (window.__ventila.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000),
+      )
       .toBe(40);
     await expect(page.locator('.profile-chip[aria-pressed="true"]')).toHaveCount(0);
     await expect(page.locator('#profile-status')).toHaveText('Personalizado');
@@ -1383,7 +1387,7 @@ test.describe('PAT · perfiles del paciente', () => {
     const resetPatient = await page.evaluate(
       () =>
         (
-          window.__r860.frame as unknown as {
+          window.__ventila.frame as unknown as {
             truth: { patient: { crs: number; recruit?: unknown; sigmoid?: unknown; second?: unknown } };
           }
         ).truth.patient,

@@ -134,7 +134,7 @@ HECHOS = {
         f'la cobertura es líneas {num(sin_interfaz["lines"])} % · ramas '
         f'{num(sin_interfaz["branches"])} % · funciones {num(sin_interfaz["functions"])} % · sentencias '
         f'{num(sin_interfaz["statements"])} %. Ninguna cifra se presenta como fidelidad frente al equipo: '
-        f'miden qué parte del código ejecuta la suite, no cuánto se parece el simulador a un R860.'
+        f'miden qué parte del código ejecuta la suite, no cuánto se parece el simulador a un equipo real.'
     ),
 }
 

@@ -32,7 +32,7 @@ def cmd(args, default='?'):
 pkg = json.load(open('package.json', encoding='utf-8'))
 version = pkg['version']
 engine = rx(r"ENGINE_VERSION\s*=\s*'([^']+)'", read('src/engine/version.ts'))
-profile_src = read('src/profiles/r860-es-photo-reference/profile.ts')
+profile_src = read('src/profiles/adulto-referencia/profile.ts')
 profile_id = rx(r"profileId:\s*'([^']+)'", profile_src)
 modes = re.findall(r"'([A-Z_]+)'", rx(r'enabledModes:\s*\[([^\]]*)\]', profile_src, ''))
 MODE_LABEL = {'AC_VC': 'A/C VC', 'AC_PC': 'A/C PC', 'CPAP_PS': 'CPAP/PS'}
@@ -115,7 +115,7 @@ pending += ['auditoría de accesibilidad formal', 'revisión experta L3', 'contr
 
 # --- documento ---------------------------------------------------------------------------------------------------
 L = [
-    f'# Resultados de pruebas ejecutadas · v{version} (adulto {modes_text} · interfaz R860 Lab)\n',
+    f'# Resultados de pruebas ejecutadas · v{version} (adulto {modes_text} · interfaz Ventila Lab)\n',
     f"Generado el {datetime.datetime.now().isoformat(timespec='seconds')} con `npm run results:doc` a partir de `{V_PATH}`"
     f" y `{E_PATH}` (salidas reales). Motor {engine} · perfil {profile_id} · dt 4 ms · semilla 1 · t0 2026-08-18T21:04:05-04:00"
     f" · Node {node} · Chromium (Playwright {pw}, build {chromium}).\n",

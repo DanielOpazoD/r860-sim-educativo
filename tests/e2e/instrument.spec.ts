@@ -124,13 +124,13 @@ test('resizing to 390×844 recomputes device dialog bounds without horizontal ov
 
 test('mode edits stay draft on cancel and confirming sends only changed settings', async ({ page }) => {
   await page.addInitScript(() => {
-    const target = window as unknown as { __r860ConfirmSettings: unknown[] };
-    target.__r860ConfirmSettings = [];
+    const target = window as unknown as { __ventilaConfirmSettings: unknown[] };
+    target.__ventilaConfirmSettings = [];
     const prototype = Worker.prototype as unknown as { postMessage: (...args: unknown[]) => void };
     const original = prototype.postMessage;
     prototype.postMessage = function (this: Worker, ...args: unknown[]): void {
       const message = args[0] as { type?: string; cmd?: { type?: string; changes?: unknown } } | undefined;
-      if (message?.type === 'command' && message.cmd?.type === 'confirmSettings') target.__r860ConfirmSettings.push(message.cmd);
+      if (message?.type === 'command' && message.cmd?.type === 'confirmSettings') target.__ventilaConfirmSettings.push(message.cmd);
       original.apply(this, args);
     };
   });
@@ -144,14 +144,14 @@ test('mode edits stay draft on cancel and confirming sends only changed settings
   expect((await frame(page)).settings.vt).toBe(originalVt);
   await page.locator('#app-dialog [data-action="closeDialog"].secondary-button').click();
   expect((await frame(page)).settings.vt).toBe(originalVt);
-  expect(await page.evaluate(() => (window as unknown as { __r860ConfirmSettings: unknown[] }).__r860ConfirmSettings)).toEqual([]);
+  expect(await page.evaluate(() => (window as unknown as { __ventilaConfirmSettings: unknown[] }).__ventilaConfirmSettings)).toEqual([]);
 
   await openModes(page);
   await page.locator('[data-mode-field="vt"]').fill('325');
   await page.locator('[data-mode-field="vt"]').dispatchEvent('input');
   await page.locator('[data-action="confirmModes"]').click();
   await expect.poll(async () => (await frame(page)).settings.vt).toBe(0.325);
-  expect(await page.evaluate(() => (window as unknown as { __r860ConfirmSettings: unknown[] }).__r860ConfirmSettings)).toEqual([
+  expect(await page.evaluate(() => (window as unknown as { __ventilaConfirmSettings: unknown[] }).__ventilaConfirmSettings)).toEqual([
     { type: 'confirmSettings', changes: { vt: 0.325 } },
   ]);
 });

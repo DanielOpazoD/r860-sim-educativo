@@ -3,7 +3,7 @@ import { planSteps } from '../../src/engine/clock';
 import { cstatFromSamples } from '../../src/domain/consistency';
 import type { MetricSample } from '../../src/domain/types';
 import { EditController } from '../../src/app/uiState';
-import { VC_ADULT_CROSS_LIMITS, VC_ADULT_RULES } from '../../src/profiles/r860-es-photo-reference/settings';
+import { VC_ADULT_CROSS_LIMITS, VC_ADULT_RULES } from '../../src/profiles/adulto-referencia/settings';
 import { exportSession } from '../../src/history/session';
 import { getBounds } from '../../src/render/plots';
 import { clock, ieText, unitText } from '../../src/ui/format';

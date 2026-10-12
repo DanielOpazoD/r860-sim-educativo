@@ -2,8 +2,8 @@
 <html lang="es-CL">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="theme-color" content="#f3f4f6">
-<meta name="description" content="Simulador educativo de ventilación mecánica inspirado en la interfaz CARESCAPE R860. Sin conexión con equipos, sin datos de pacientes reales.">
-<title>R860 Lab — Simulador de ventilación</title>
+<meta name="description" content="Ventila Lab: simulador educativo de ventilación mecánica. Sin conexión con equipos, sin datos de pacientes reales.">
+<title>Ventila Lab — Simulador de ventilación</title>
 <link rel="stylesheet" href="./src/ui/styles.css">
 </head>
 <body>
@@ -51,7 +51,7 @@
 </defs></svg>
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
-  <a class="wordmark" href="#" data-action="home" aria-label="R860 Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>R860<span>LAB</span></strong></a>
+  <a class="wordmark" href="#" data-action="home" aria-label="Ventila Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>Ventila<span>LAB</span></strong></a>
   <nav class="space-nav" aria-label="Espacios de trabajo"><button id="space-simulator" data-action="simulator" aria-current="page">Simulador</button><button id="space-classroom" data-action="classroom">Aula</button></nav>
   <button class="app-context" data-action="scenarios" aria-label="Cambiar escenario" title="Cambiar escenario"><span class="live-dot" id="live-dot"></span><span class="app-context-copy"><span id="scenario-name">Banco lineal pasivo</span><span class="app-context-separator" aria-hidden="true">·</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
   <div class="top-actions">
@@ -75,9 +75,9 @@
   <section class="stage" aria-label="Ventilador virtual">
     <aside id="practice-card" class="practice-card" role="status" aria-label="Práctica activa" hidden><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p><div class="practice-actions"><button class="button subtle" id="practice-link" data-action="classroom">Ver lección</button><button class="button icon-only subtle" data-action="stopPractice" aria-label="Terminar práctica guiada" title="Terminar práctica guiada"><svg class="icon"><use href="#i-close"/></svg></button></div></aside>
     <div class="device-scroll"><div class="device-shell" id="device-shell">
-      <div class="bezel-top"><span class="bezel-model">CARESCAPE <b>R860</b></span><span class="bezel-light" id="bezel-light"></span></div>
+      <div class="bezel-top"><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
-        <section class="monitor" id="monitor" aria-label="Pantalla de simulación R860" tabindex="-1">
+        <section class="monitor" id="monitor" aria-label="Pantalla del ventilador simulado" tabindex="-1">
           <header class="monitor-top">
             <button class="device-key top-key" data-action="menu"><span>Menú</span><svg class="icon"><use href="#i-menu"/></svg></button>
             <button class="device-key top-key" data-action="patient"><span>Adulto</span><svg class="icon"><use href="#i-person"/></svg></button>
@@ -142,7 +142,7 @@
           </div>
         </section>
       </div>
-      <div class="bezel-bottom"><span class="power-led"></span><div class="hard-keys"><button class="hard-key" data-action="mute" title="Pausa de audio" aria-label="Pausa de audio"><svg class="icon"><use href="#i-muted"/></svg></button><button class="hard-key" data-action="oxygen" title="O₂ temporal" aria-label="O₂ temporal"><svg class="icon"><use href="#i-oxygen"/></svg></button><button class="hard-key" data-action="snapshot" title="Captura PNG del monitor" aria-label="Captura PNG del monitor"><svg class="icon"><use href="#i-camera"/></svg></button><button class="hard-key" id="lock-key" data-action="lock" title="Proteger los mandos" aria-label="Proteger los mandos" aria-pressed="false"><svg class="icon"><use href="#i-lock"/></svg></button></div><div class="bezel-signature">R860 <span>LAB</span></div><button class="hard-key home-key" data-action="home" aria-label="Volver a curvas" title="Vista principal"><svg class="icon"><use href="#i-home"/></svg></button><button class="trim-knob" id="trim-knob" data-action="knob" aria-label="Perilla: confirmar ajuste. Usa la rueda o las flechas para modificarlo." title="Selecciona un parámetro. Gira con la rueda; pulsa para confirmar."><span></span></button></div>
+      <div class="bezel-bottom"><span class="power-led"></span><div class="hard-keys"><button class="hard-key" data-action="mute" title="Pausa de audio" aria-label="Pausa de audio"><svg class="icon"><use href="#i-muted"/></svg></button><button class="hard-key" data-action="oxygen" title="O₂ temporal" aria-label="O₂ temporal"><svg class="icon"><use href="#i-oxygen"/></svg></button><button class="hard-key" data-action="snapshot" title="Captura PNG del monitor" aria-label="Captura PNG del monitor"><svg class="icon"><use href="#i-camera"/></svg></button><button class="hard-key" id="lock-key" data-action="lock" title="Proteger los mandos" aria-label="Proteger los mandos" aria-pressed="false"><svg class="icon"><use href="#i-lock"/></svg></button></div><div class="bezel-signature">Ventila <span>LAB</span></div><button class="hard-key home-key" data-action="home" aria-label="Volver a curvas" title="Vista principal"><svg class="icon"><use href="#i-home"/></svg></button><button class="trim-knob" id="trim-knob" data-action="knob" aria-label="Perilla: confirmar ajuste. Usa la rueda o las flechas para modificarlo." title="Selecciona un parámetro. Gira con la rueda; pulsa para confirmar."><span></span></button></div>
     </div></div>
     <div class="signal-toolbar">
       <div class="time-controls">
@@ -214,7 +214,7 @@
   </aside>
 </main>
 <main id="classroom" class="classroom" aria-labelledby="classroom-title" hidden>
-  <header class="aula-heading"><div><p class="aula-kicker" id="classroom-kicker">R860 LAB · APRENDIZAJE</p><h1 id="classroom-title" tabindex="-1">Comprender. Practicar. Reflexionar.</h1><p id="classroom-lead">Un espacio para aprender, conectado con tu simulación.</p></div><span id="classroom-session" class="aula-session"></span></header>
+  <header class="aula-heading"><div><p class="aula-kicker" id="classroom-kicker">VENTILA LAB · APRENDIZAJE</p><h1 id="classroom-title" tabindex="-1">Comprender. Practicar. Reflexionar.</h1><p id="classroom-lead">Un espacio para aprender, conectado con tu simulación.</p></div><span id="classroom-session" class="aula-session"></span></header>
   <nav class="aula-nav" aria-label="Secciones del Aula">
     <button data-aula-section="lesson" aria-current="page">Lección</button>
     <button data-aula-section="theory">Fundamentos</button>

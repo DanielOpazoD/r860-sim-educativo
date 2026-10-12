@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
@@ -34,7 +34,7 @@ function deEscenario(id: string): Simulator {
       settings: { ...base.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
 }
 

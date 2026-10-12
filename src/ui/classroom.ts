@@ -6,7 +6,7 @@ import { createLazyView } from './lazyView';
 const SECTIONS = ['lesson', 'theory', 'questions', 'exam', 'results', 'library'] as const;
 const HEADINGS: Record<Section, { kicker: string; title: string; lead: string }> = {
   lesson: {
-    kicker: 'R860 LAB · APRENDIZAJE',
+    kicker: 'VENTILA LAB · APRENDIZAJE',
     title: 'Comprender. Practicar. Reflexionar.',
     lead: 'Un espacio para aprender, conectado con tu simulación.',
   },

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "generated": "2026-09-07",
-  "profileId": "r860-es-photo-reference-v1",
+  "profileId": "ventila-adulto-v1",
   "legend": {
     "D": "Documentado en la fuente citada, para su edición; no se asigna versión a la unidad fotografiada.",
     "D-secundario": "Documentado según el dossier, pero la fuente primaria no pudo verificarse en esta sesión.",
@@ -336,7 +336,7 @@
       "status": "D",
       "source": "R03",
       "locator": "pp.2–3",
-      "implemented": "src/profiles/r860-es-photo-reference/settings.ts",
+      "implemented": "src/profiles/adulto-referencia/settings.ts",
       "tests": [
         "tests/unit/validation.test.ts"
       ]
@@ -458,7 +458,7 @@
       "status": "D",
       "source": "R03",
       "locator": "ficha 2014 p.2 (Pinsp, Rise Time)",
-      "implemented": "src/profiles/r860-es-photo-reference/settings.ts (VC_ADULT_RULES.pinsp, riseMs)",
+      "implemented": "src/profiles/adulto-referencia/settings.ts (VC_ADULT_RULES.pinsp, riseMs)",
       "tests": [
         "tests/unit/validation.test.ts"
       ]
@@ -560,7 +560,7 @@
       "status": "D (rango) / P (valor inicial 2 L/min y relación con el disparo)",
       "source": "R03",
       "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»",
-      "implemented": "src/profiles/r860-es-photo-reference/settings.ts (biasFlow); src/engine/controller.ts (fase exp, tope = settings.biasFlow); src/domain/validation.ts (flowTrigger ≤ biasFlow)",
+      "implemented": "src/profiles/adulto-referencia/settings.ts (biasFlow); src/engine/controller.ts (fase exp, tope = settings.biasFlow); src/domain/validation.ts (flowTrigger ≤ biasFlow)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-01)"
       ]
@@ -929,7 +929,7 @@
       "status": "P los valores (la proporción del límite de Ppico es O de P1 y P3); D los rangos editables, ficha 2014 p.3; O la PEEPe en Off",
       "source": "P1, P3",
       "locator": "límites de alarma visibles en las fotografías",
-      "implemented": "src/profiles/r860-es-photo-reference/settings.ts (DEFAULT_ALARM_LIMITS)",
+      "implemented": "src/profiles/adulto-referencia/settings.ts (DEFAULT_ALARM_LIMITS)",
       "tests": [
         "tests/unit/objetivos.test.ts"
       ]
@@ -1077,7 +1077,7 @@
       "status": "D",
       "source": "R03; R23",
       "locator": "R03 p.2 «Presión Soporte sobre nivel PEEP», «Trigger Espiratorio», «Tiempo de Rampa en PS», «Frecuencia … para CPAP/PS»; p.3 «Alarma de apnea: 5 a 60 seg»; R23 tabla «Modo · Parámetros · Sincronización · Seguridad» y sección «Presión Positiva continua en la Vía Aérea/Presión Soporte»",
-      "implemented": "src/domain/types.ts (VcSettings: psupport, expTriggerPct, minRate, backupPinsp, backupTinspS, apneaTimeS); src/profiles/r860-es-photo-reference/settings.ts (reglas y rangos); src/engine/controller.ts (fase inspSupport, plazoDeRespaldo)",
+      "implemented": "src/domain/types.ts (VcSettings: psupport, expTriggerPct, minRate, backupPinsp, backupTinspS, apneaTimeS); src/profiles/adulto-referencia/settings.ts (reglas y rangos); src/engine/controller.ts (fase inspSupport, plazoDeRespaldo)",
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)",
         "tests/unit/objetivos.test.ts (SC-19, SC-20)",

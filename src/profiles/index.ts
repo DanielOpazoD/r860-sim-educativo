@@ -1,7 +1,7 @@
 import type { ProfileSpec } from '../domain/profile';
 import type { EffortParams, PatientParams, SensorParams } from '../domain/types';
 import type { SimulatorInit } from '../engine/simulator';
-import { PROFILE } from './r860-es-photo-reference/profile';
+import { PROFILE } from './adulto-referencia/profile';
 import {
   ALARM_LIMIT_RULES,
   DEFAULT_ALARM_LIMITS,
@@ -10,11 +10,12 @@ import {
   INSP_HOLD_RULE,
   VC_ADULT_CROSS_LIMITS,
   VC_ADULT_RULES,
-} from './r860-es-photo-reference/settings';
+} from './adulto-referencia/settings';
 
-/** Perfil de referencia fotográfica del R860 (adulto, es-CL) como contrato inyectable. */
-export const R860_PROFILE: ProfileSpec = {
+/** Perfil adulto de referencia (es-CL) como contrato inyectable. */
+export const REFERENCE_PROFILE: ProfileSpec = {
   profileId: PROFILE.profileId,
+  legacyProfileIds: PROFILE.legacyProfileIds,
   profileVersion: PROFILE.profileVersion,
   banner: PROFILE.banner,
   rules: VC_ADULT_RULES,
@@ -29,8 +30,10 @@ export const R860_PROFILE: ProfileSpec = {
   editTimeoutMs: PROFILE.editTimeoutMs,
 };
 
-const REGISTRY: Record<string, ProfileSpec> = { [R860_PROFILE.profileId]: R860_PROFILE };
-export const DEFAULT_PROFILE = R860_PROFILE;
+const REGISTRY: Record<string, ProfileSpec> = { [REFERENCE_PROFILE.profileId]: REFERENCE_PROFILE };
+// Sesiones exportadas antes del cambio de nombre declaran el id anterior: el contrato es el mismo.
+for (const id of PROFILE.legacyProfileIds) REGISTRY[id] = REFERENCE_PROFILE;
+export const DEFAULT_PROFILE = REFERENCE_PROFILE;
 
 /** Devuelve el perfil por id; null si no está registrado (la importación de sesiones lo convierte en error legible). */
 export function findProfile(id: string | undefined): ProfileSpec | null {
@@ -48,7 +51,7 @@ export const DEFAULT_PATIENT: PatientParams = { crs: 0.05, rInsp: 10, rExp: 10, 
 export const DEFAULT_EFFORT: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0, shape: 'riseRelax' };
 export const DEFAULT_SENSORS: SensorParams = { fio2TauS: 6, fio2Bias: 0 };
 
-/** Inicialización de referencia (banco SC-01) sobre el perfil R860. */
+/** Inicialización de referencia (banco SC-01) sobre el perfil adulto. */
 export function defaultInit(overrides: Partial<SimulatorInit> = {}, profile: ProfileSpec = DEFAULT_PROFILE): SimulatorInit {
   return {
     profileId: profile.profileId,

@@ -47,7 +47,7 @@ test('una carga fallida deja el simulador operativo y permite recuperar la secci
   await openAula(page, 'library');
   await expect(status).toContainText('reiniciará la simulación');
   await status.getByRole('button', { name: 'Recargar página' }).click();
-  await page.waitForFunction(() => window.__r860?.frame !== null);
+  await page.waitForFunction(() => window.__ventila?.frame !== null);
   await openAula(page, 'library');
   await expect(page.locator('[data-aula-case="SC-01"]')).toBeVisible();
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { benchSim, BENCH_PATIENT, BENCH_SETTINGS, runUntilBreath } from '../helpers';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { LESSON_TESTS } from '../../src/ui/lesson';
 import { ALL_METRICS, metricStatus } from '../../src/ui/metricsTable';
@@ -177,7 +177,7 @@ describe('cierre de coherencia de pausa y SC-18', () => {
         sensors: e.sensors,
         settings: { ...BENCH_SETTINGS, ...e.settings },
       }),
-      R860_PROFILE,
+      REFERENCE_PROFILE,
     );
     sim.run(40000);
     sim.command({ type: 'setPatient', params: { rExp: 60 } });

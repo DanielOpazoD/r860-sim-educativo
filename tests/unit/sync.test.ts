@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TRIGGER_DELAY_FLOW_S, TRIGGER_DELAY_PRESSURE_S } from '../../src/engine/trigger';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 import { validateVcSettings } from '../../src/domain/validation';
-import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
+import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 
 // Cierre de U-33/U-35: flujo de base ajustable (D 2–10 L/min), disparo por presión (D −10…−0.25 cmH₂O) y resistencia de la rama espiratoria.
 const effort = { enabled: true, amplitude: 6, ratePerMin: 15, tiS: 0.8, phaseS: 2.0 };

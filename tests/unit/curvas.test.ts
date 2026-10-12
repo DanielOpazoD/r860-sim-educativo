@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator, type EngineFrame } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import {
   appendSamples,
   cursorMeasurements,
@@ -52,7 +52,7 @@ function correr(id: string, hastaMs: number, pasosPorCuadro: number | (() => num
       settings: { ...base.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
   const pendientes = [...(e.perturbations ?? [])];
   while (sim.simTimeMs < hastaMs) {

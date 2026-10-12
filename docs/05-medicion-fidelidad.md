@@ -69,7 +69,7 @@ y `pmus-boundary-green.log` en el directorio externo de evidencias de esta tarea
 
 ## Revisión de integración: el equipo no ve el músculo
 
-Al integrar con la gasometría de modelo (#100) se separó lo que ve el ventilador de lo que sabe el modelo. Un R860 sólo juzga la forma de la presión: ante una meseta estable con músculo activo publica Pplat, Cstat y ΔP sin aviso. Marcarla «no válida por esfuerzo» en la cara del equipo atribuía al ventilador una información (Pmus) que no tiene y resolvía por el alumno el reto de reconocerla en la curva.
+Al integrar con la gasometría de modelo (#100) se separó lo que ve el ventilador de lo que sabe el modelo. Un ventilador real sólo juzga la forma de la presión: ante una meseta estable con músculo activo publica Pplat, Cstat y ΔP sin aviso. Marcarla «no válida por esfuerzo» en la cara del equipo atribuía al ventilador una información (Pmus) que no tiene y resolvía por el alumno el reto de reconocerla en la curva.
 
 - `quality`/`reason` del bloqueo y de la Pplat de ciclo vuelven a ser sólo de la señal. Con el banco de esfuerzo (riseRelax 4 cmH₂O, 3/min, Ti 3 s) el equipo muestra Pplat 11, ΔP 6 y Cstat 83 mL/cmH₂O, «Medido».
 - `passiveMechanicsValid` (bloqueos) y `BreathRecord.effortDuringPause` (pausa de ciclo) conservan el criterio |Pmus| > 0,05 cmH₂O de este documento como verdad del modelo. Se retiran `signalQuality`/`signalReason`, redundantes con `quality`.

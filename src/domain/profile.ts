@@ -9,6 +9,8 @@ import type { AlarmLimits, SettingsKey, VcSettings, VentMode } from './types';
  */
 export interface ProfileSpec {
   profileId: string;
+  /** Identificadores anteriores del mismo contrato (sesiones guardadas antes de un cambio de nombre). */
+  legacyProfileIds?: readonly string[];
   profileVersion: string;
   /** Marca permanente exigida por el mandato. */
   banner: string;

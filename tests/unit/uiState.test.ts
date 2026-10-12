@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EditController, ModeMenuDraft, type EditEvent } from '../../src/app/uiState';
-import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
+import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 import { BENCH_SETTINGS } from '../helpers';
 
 function make(active = { ...BENCH_SETTINGS }) {

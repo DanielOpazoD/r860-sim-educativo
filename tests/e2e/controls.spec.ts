@@ -29,19 +29,19 @@ test.describe('Controles exteriores coherentes', () => {
     await chooseRadio(page, 'wave-scale', 'fixed');
     await chooseRadio(page, 'numeric-density', '6');
 
-    await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('fixed');
+    await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('fixed');
     await expect(page.locator('#numeric-density input[value="6"]')).toBeChecked();
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.tileDensity'))).toBe('6');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('ventila.tileDensity'))).toBe('6');
     await expect(page.locator('#waves-canvas')).toBeVisible();
     await closePersonalization(page);
     await page.locator('[data-view="basic"]').click();
-    await expect.poll(() => page.evaluate(() => window.__r860.view)).toBe('basic');
+    await expect.poll(() => page.evaluate(() => window.__ventila.view)).toBe('basic');
     await page.locator('[data-view="waves"]').click();
-    await expect.poll(() => page.evaluate(() => window.__r860.view)).toBe('waves');
+    await expect.poll(() => page.evaluate(() => window.__ventila.view)).toBe('waves');
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const prefs = JSON.parse(localStorage.getItem('r860.prefs') ?? '{}');
+          const prefs = JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}');
           return [prefs.waveWindow, prefs.waveStyle, prefs.waveScale];
         }),
       )
@@ -52,7 +52,7 @@ test.describe('Controles exteriores coherentes', () => {
     await expect(page.locator('#wave-style input[value="scroll"]')).toBeChecked();
     await expect(page.locator('#wave-scale input[value="fixed"]')).toBeChecked();
     await expect(page.locator('#numeric-density input[value="6"]')).toBeChecked();
-    await expect.poll(() => page.evaluate(() => window.__r860.waveScale)).toBe('fixed');
+    await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('fixed');
   });
 
   test('la barra muestra exactamente Pausar y Personalizar vista, y Sesión sólo aparece en Más opciones', async ({ page }) => {
@@ -90,7 +90,7 @@ test.describe('Controles exteriores coherentes', () => {
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const prefs = JSON.parse(localStorage.getItem('r860.prefs') ?? '{}');
+          const prefs = JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}');
           return [prefs.variableDescriptions, prefs.waveGuides, prefs.waveAnnotations];
         }),
       )
@@ -111,7 +111,7 @@ test.describe('Controles exteriores coherentes', () => {
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const prefs = JSON.parse(localStorage.getItem('r860.prefs') ?? '{}');
+          const prefs = JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}');
           return [prefs.variableDescriptions, prefs.waveGuides, prefs.waveAnnotations];
         }),
       )
@@ -121,7 +121,7 @@ test.describe('Controles exteriores coherentes', () => {
   test('las preferencias de ayudas no se escriben en una referencia fotográfica', async ({ page }) => {
     await page.addInitScript(() =>
       localStorage.setItem(
-        'r860.prefs',
+        'ventila.prefs',
         JSON.stringify({ v: 1, welcomed: true, variableDescriptions: false, waveGuides: true, waveAnnotations: true }),
       ),
     );
@@ -133,7 +133,7 @@ test.describe('Controles exteriores coherentes', () => {
     await page.locator('#wave-annotations').uncheck();
     await expect(page.locator('#variable-legend')).toBeVisible();
     await expect
-      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('r860.prefs') ?? '{}')))
+      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}')))
       .toEqual({ v: 1, welcomed: true, variableDescriptions: false, waveGuides: true, waveAnnotations: true });
   });
 
@@ -314,7 +314,9 @@ test.describe('Controles exteriores coherentes', () => {
     await page.locator('[data-phys-step="compliance"][data-direction="-1"]').click();
     await expect(compliance).toHaveValue('49');
     await expect
-      .poll(() => page.evaluate(() => (window.__r860.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000))
+      .poll(() =>
+        page.evaluate(() => (window.__ventila.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000),
+      )
       .toBe(49);
 
     const range = page.locator('[data-phys-range="compliance"]');
@@ -325,14 +327,16 @@ test.describe('Controles exteriores coherentes', () => {
     });
     await expect(compliance).toHaveValue('60');
     await expect
-      .poll(() => page.evaluate(() => (window.__r860.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000))
+      .poll(() =>
+        page.evaluate(() => (window.__ventila.frame as unknown as { truth: { patient: { crs: number } } }).truth.patient.crs * 1000),
+      )
       .toBe(60);
   });
 
   test('límites: Off vuelve al mínimo, admite Off y confirma sólo el borrador válido', async ({ page }) => {
     await open(page);
     const initial = await page.evaluate(
-      () => (window.__r860.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow,
+      () => (window.__ventila.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow,
     );
     await page.locator('[data-action="alarms"]').first().click();
     await page.locator('#app-dialog [data-action="alarmSetup"]').click();
@@ -350,14 +354,14 @@ test.describe('Controles exteriores coherentes', () => {
     await rrLow.dispatchEvent('input');
     await expect(rrLow).not.toHaveAttribute('aria-invalid', 'true');
     expect(
-      await page.evaluate(() => (window.__r860.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow),
+      await page.evaluate(() => (window.__ventila.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow),
     ).toBe(initial);
 
     await page.locator('[data-limit-step="rrLow"][data-direction="1"]').click();
     await expect(rrLow).toHaveValue('1');
     await page.locator('[data-action="confirmLimits"]').click();
     await expect
-      .poll(() => page.evaluate(() => (window.__r860.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow))
+      .poll(() => page.evaluate(() => (window.__ventila.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow))
       .toBe(1);
 
     await page.locator('[data-action="alarms"]').first().click();
@@ -367,7 +371,7 @@ test.describe('Controles exteriores coherentes', () => {
     await expect(page.locator('[data-limit="rrLow"]')).toHaveValue('');
     await page.locator('[data-action="confirmLimits"]').click();
     await expect
-      .poll(() => page.evaluate(() => (window.__r860.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow))
+      .poll(() => page.evaluate(() => (window.__ventila.frame as unknown as { alarmLimits: { rrLow: number | 'off' } }).alarmLimits.rrLow))
       .toBe('off');
   });
 
@@ -423,7 +427,7 @@ test.describe('Controles exteriores coherentes', () => {
       const option = page.locator(`.speed-option[data-speed="${speed}"]`);
       await expect(option).toBeFocused();
       await expect(option).toHaveAttribute('aria-checked', 'true');
-      await expect.poll(() => page.evaluate(() => window.__r860.speed)).toBe(speed);
+      await expect.poll(() => page.evaluate(() => window.__ventila.speed)).toBe(speed);
     };
     await page.locator('.speed-option[data-speed="1"]').focus();
     for (const [key, speed] of [

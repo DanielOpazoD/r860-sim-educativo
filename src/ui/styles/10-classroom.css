@@ -285,7 +285,7 @@
 .aula-export button {
   margin-top: 12px;
 }
-/* Puente de práctica: flota junto al R860 sin desplazar el monitor ni la barra de mando. */
+/* Puente de práctica: flota junto al equipo sin desplazar el monitor ni la barra de mando. */
 .practice-card {
   position: fixed;
   left: 20px;

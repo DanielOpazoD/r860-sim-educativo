@@ -150,30 +150,11 @@ export function debriefNodes(d: DebriefInput): HTMLElement[] {
   ];
 }
 export function debriefText(d: DebriefInput, fr: EngineFrame): string {
-  return `R860 LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nLímites: ${d.scenario.caution}\nTiempo simulado: ${clock(d.simS)}\nModo: ${etiquetaModo(fr.settings.mode)}\nObjetivos de interfaz: ${d.done.size}/${d.tasks.length}\n\n${d.tasks.map((x) => `${d.done.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
+  return `VENTILA LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nLímites: ${d.scenario.caution}\nTiempo simulado: ${clock(d.simS)}\nModo: ${etiquetaModo(fr.settings.mode)}\nObjetivos de interfaz: ${d.done.size}/${d.tasks.length}\n\n${d.tasks.map((x) => `${d.done.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
 }
 
+/** Referencias de fisiología y mecánica que sostienen Fundamentos y los casos (abiertas y leídas al citarlas). */
 export const SOURCES: [string, string, string][] = [
-  [
-    'GE HealthCare · Quick Reference Guide JB77395XX (2020)',
-    'Interfaz, perilla, vistas, alarmas, ↑O2 y espera. Leída íntegra; hash en evidence.json.',
-    'https://s7d9.scene7.com/is/content/gehealthcare/1-1_quick-reference-guidepdf-3',
-  ],
-  [
-    'GE HealthCare · Troubleshooting Guide JB79437XX (2020)',
-    'VT no alcanzado por Plimit; alarma de Ppico evaluada antes de refrescar pantalla.',
-    'https://s7d9.scene7.com/is/content/gehealthcare/2-5_trouble-shooting-guidepdf-1',
-  ],
-  [
-    'GE Healthcare · Especificaciones técnicas JB23840CO (2014)',
-    'Rangos, escalones, bloqueos, familias de temporización y límites de alarma.',
-    'https://www.pvequip.cl/wp-content/uploads/2019/08/EETT-Ventilador-Carescape-R860.pdf',
-  ],
-  [
-    'GE HealthCare · Modos de ventilación invasiva JB72469XX (ES, 2020)',
-    'Comportamiento de Plimit en VC; cotas de PRVC.',
-    'https://landing1.gehealthcare.com/rs/005-SHS-767/images/CARESCAPE%20R860%20Modes%20Invasivos_Spanish.pdf',
-  ],
   [
     'MDN · Web Workers',
     'Motor temporal separado de la interfaz.',
@@ -200,7 +181,7 @@ const KEYS: [string, string][] = [
 ];
 const HELP_TEXTS: Record<string, string> = {
   start: `<p class="dialog-lead">Un ventilador virtual para explorar la relación entre lo que ajustas, lo que hace el pulmón sintético y lo que muestra el monitor.</p><div class="help-list"><div><b>01 · Ventila</b><p>La sesión ya está ventilando. Selecciona un parámetro de la barra inferior. Ajusta con el deslizador, el número, las flechas o la perilla y <b>confirma</b>. Cancelar conserva el valor previo. El cambio se aplica en la próxima respiración.</p></div><div><b>02 · Cambia el pulmón</b><p>Abre «Paciente» para controlar C, R, esfuerzo y sensor de O₂. Estos cambios actúan sobre el modelo, no sobre los ajustes del equipo. En «Eventos» puedes provocar y deshacer alteraciones.</p></div><div><b>03 · Mide y compara</b><p>Bloqueo insp/esp abre la maniobra; pulsa ▶ para solicitarla. El motor espera una fase elegible. Revisa el resultado, su validez y su hora. En Bucles, guarda un ciclo de referencia.</p></div><div><b>04 · Aprende y guarda</b><p>El Aula reúne Lección, Fundamentos, Reflexión, Examen, Resultados y Biblioteca. Inicia la práctica desde Lección; el objetivo actual te acompaña junto al ventilador. Guarda JSON para reproducir y CSV/PNG para analizar. No hay subida de archivos a internet.</p></div></div><div class="info-box"><b>Tres acciones distintas:</b> Pausar detiene el reloj; Congelar curvas conserva una imagen mientras el motor sigue; En espera suspende la ventilación virtual. Al ocultar la pestaña se pausa la simulación y se reanuda manualmente.</div>`,
-  model: `<p class="dialog-lead">Mecánica consistente, alcance explícitamente limitado.</p><div class="equation">Paw + Pmus = V / C + R × Q<br>τesp = Rexp × C</div><p>Un compartimento lineal con resistencia inspiratoria y espiratoria independientes; volumen pulmonar continuo (no se reinicia al cambiar PEEP); esfuerzo muscular periódico; sensor de O₂ con retardo. Integración a paso fijo de 4 ms con sub-pasos exactos en los eventos y localización de los cruces de Plimit/Pmáx dentro del paso; las curvas dibujan cada muestra, así que un evento de un solo paso también se ve.</p><p><b>Modos:</b> A/C VC, A/C PC y CPAP/PS adulto. En VC, Plimit sostiene la presión el resto de la inspiración y Pmáx la termina; en PC y en soporte la presión es la consigna; en CPAP/PS el paciente dispara y el flujo cicla, con frecuencia mínima, apnea y respaldo. Otros modos se incorporarán sólo tras sus pruebas de banco.</p><p><b>Mediciones estáticas:</b> esfuerzo, Pmáx, duración insuficiente o cancelación invalidan una maniobra; el resultado conserva su hora y su motivo. FR y VMesp usan las últimas ocho respiraciones.</p><div class="notice-box"><b>No modela:</b> intercambio gaseoso, SpO₂, PaCO₂, hemodinámica ni elemento de tubo; la fuga se modela en la pieza en Y, sin compensación. FiO₂ cambia su sensor virtual, no una saturación inventada. No predice respuestas de pacientes ni controla equipos.</div><p>El firmware del equipo fotografiado no está identificado. Cada regla lleva su marca de evidencia (documentado / observado / propuesto / no resuelto) en los archivos evidence.json y gaps.json del proyecto.</p>`,
+  model: `<p class="dialog-lead">Mecánica consistente, alcance explícitamente limitado.</p><div class="equation">Paw + Pmus = V / C + R × Q<br>τesp = Rexp × C</div><p>Un compartimento lineal con resistencia inspiratoria y espiratoria independientes; volumen pulmonar continuo (no se reinicia al cambiar PEEP); esfuerzo muscular periódico; sensor de O₂ con retardo. Integración a paso fijo de 4 ms con sub-pasos exactos en los eventos y localización de los cruces de Plimit/Pmáx dentro del paso; las curvas dibujan cada muestra, así que un evento de un solo paso también se ve.</p><p><b>Modos:</b> A/C VC, A/C PC y CPAP/PS adulto. En VC, Plimit sostiene la presión el resto de la inspiración y Pmáx la termina; en PC y en soporte la presión es la consigna; en CPAP/PS el paciente dispara y el flujo cicla, con frecuencia mínima, apnea y respaldo. Otros modos se incorporarán sólo tras sus pruebas de banco.</p><p><b>Mediciones estáticas:</b> esfuerzo, Pmáx, duración insuficiente o cancelación invalidan una maniobra; el resultado conserva su hora y su motivo. FR y VMesp usan las últimas ocho respiraciones.</p><p><b>Gasometría de modelo:</b> PaCO₂ y pH salen de la ventilación alveolar del pulmón (Aula · Fundamentos · Ventilación); el equipo no los muestra.</p><div class="notice-box"><b>No modela:</b> oxigenación, SpO₂, hemodinámica ni elemento de tubo; la fuga se modela en la pieza en Y, sin compensación. FiO₂ cambia su sensor virtual, no una saturación inventada. No predice respuestas de pacientes ni controla equipos.</div><p>Cada regla lleva su marca de evidencia (documentado / observado / propuesto / no resuelto) en los archivos evidence.json y gaps.json del proyecto.</p>`,
   keys: `<table class="info-table"><tbody>${KEYS.map(
     ([k, d]) => `<tr><td><kbd class="keyboard-key">${k}</kbd></td><td>${d}</td></tr>`,
   ).join(
@@ -211,7 +192,7 @@ const HELP_TEXTS: Record<string, string> = {
       `<div class="source-entry"><a href="${url}" target="_blank" rel="noopener noreferrer">${title} ${icon('arrow')}</a><p>${desc}</p></div>`,
   ).join(
     '',
-  )}<p>Referencia visual: las tres fotografías aportadas por el usuario (P1, P2, P3). Sistema visual e interacción derivados de «R860 Lab» (MIT).</p>`,
+  )}<p>Las reglas del equipo virtual se basan en documentación técnica pública de un ventilador de UCI adulto; cada una lleva su marca de evidencia en evidence.json del repositorio. Partes del sistema visual derivan de un proyecto previo con licencia MIT (aviso completo en LICENSES/).</p>`,
 };
 export function helpHTML(tab: string): string {
   return `<div class="help-tabs">${HELP_TABS.map(([k, l]) => `<button data-help-tab="${k}" class="${tab === k ? 'active' : ''}">${l}</button>`).join('')}</div>${HELP_TEXTS[tab] ?? HELP_TEXTS.start}`;

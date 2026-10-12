@@ -260,21 +260,6 @@ a {
   padding: 0 6px;
   gap: 14px;
 }
-.bezel-model {
-  color: #d0d6d9;
-  text-shadow: 0 1px #1118;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-}
-.bezel-model b {
-  font-weight: 650;
-}
-.bezel-model > span {
-  margin-left: 13px;
-  font-size: 7px;
-  letter-spacing: 1.5px;
-  opacity: 0.62;
-}
 .bezel-light {
   width: 28px;
   height: 5px;

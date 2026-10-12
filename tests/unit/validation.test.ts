@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assert as fcAssert, double as fcDouble, pre as fcPre, property as fcProperty } from 'fast-check';
 import { gridValues, isOnGrid, nearestGridValue, stepDisplayValue, validateVcSettings, deriveVcTiming } from '../../src/domain/validation';
-import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS, IE_VALUES } from '../../src/profiles/r860-es-photo-reference/settings';
+import { VC_ADULT_RULES, VC_ADULT_CROSS_LIMITS, IE_VALUES } from '../../src/profiles/adulto-referencia/settings';
 import { BENCH_SETTINGS } from '../helpers';
 
 describe('escalones por tramo (D ficha 2014) en ambos sentidos', () => {

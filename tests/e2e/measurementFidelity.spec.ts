@@ -32,7 +32,7 @@ test('meseta estable con esfuerzo: el equipo muestra lo que mide y el Aula avisa
   session.commands = [{ simTimeMs: 0, actor: 'learner', command: { type: 'requestHold', kind: 'inspHold', durationS: 2 } }];
   session.finalSimTimeMs = 3004;
   await importSyntheticSession(page, session);
-  await expect.poll(() => page.evaluate(() => window.__r860.frame?.procedure.last.inspHold?.passiveMechanicsValid)).toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__ventila.frame?.procedure.last.inspHold?.passiveMechanicsValid)).toBe(false);
   // La cara del ventilador sólo ve la presión: meseta 11 estable, Cstat 83, sin mención del músculo.
   await page.click('[data-action="inspiratory"]');
   await expect(page.locator('#hold-value')).toHaveText('11');
@@ -51,9 +51,9 @@ test('meseta estable con esfuerzo: el equipo muestra lo que mide y el Aula avisa
 
 test('SC-09 prolongada: fuga sin denominador muestra motivo', async ({ page }, info) => {
   await open(page, { scenario: 'SC-09', speed: 4, view: 'data' });
-  await page.waitForFunction(() => (window.__r860.frame?.simTimeMs ?? 0) >= 26000);
+  await page.waitForFunction(() => (window.__ventila.frame?.simTimeMs ?? 0) >= 26000);
   await page.click('#sim-pause');
-  const metric = await page.evaluate(() => window.__r860.frame?.metrics.leakPct);
+  const metric = await page.evaluate(() => window.__ventila.frame?.metrics.leakPct);
   expect(metric).toMatchObject({ value: null, quality: 'unavailable', reason: 'volumenInspiradoInsuficiente' });
   await expect(page.locator('[data-row="leakPct"] .q-chip')).toHaveText('No disponible');
   await expect(page.locator('[data-row="leakPct"] .metric-status')).toHaveAttribute('title', /volumen inspirado insuficiente/);
@@ -81,9 +81,9 @@ test('pausa de ciclo: el equipo publica la meseta estable con o sin esfuerzo, si
     };
     await importSyntheticSession(page, session);
     await expect
-      .poll(() => page.evaluate(() => window.__r860.frame?.metrics.pplatCycle?.value))
+      .poll(() => page.evaluate(() => window.__ventila.frame?.metrics.pplatCycle?.value))
       .toBeCloseTo(kind === 'active' ? 11 : 15, 6);
-    await expect.poll(() => page.evaluate(() => window.__r860.frame?.metrics.pplatCycle?.quality)).toBe('valid');
+    await expect.poll(() => page.evaluate(() => window.__ventila.frame?.metrics.pplatCycle?.quality)).toBe('valid');
     await page.locator('[data-view="data"]').click();
     const row = page.locator('[data-row="pplatCycle"]');
     await expect(row.locator('.q-chip')).toHaveText('Válido');
@@ -97,22 +97,22 @@ test('SC-18: bloqueo con esfuerzo permite completar el objetivo sin certificar P
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await open(page, { scenario: 'SC-18', speed: 4 });
-  await page.waitForFunction(() => (window.__r860.frame?.simTimeMs ?? 0) >= 57476);
+  await page.waitForFunction(() => (window.__ventila.frame?.simTimeMs ?? 0) >= 57476);
   await page.locator('#sim-pause').click();
   await page.locator('[data-action="expiratory"]').click();
   await page.locator('#hold-duration').selectOption('2');
   for (let attempt = 0; attempt < 4; attempt++) {
-    const previous = await page.evaluate(() => window.__r860.frame?.procedure.last.expHold?.procedureId);
+    const previous = await page.evaluate(() => window.__ventila.frame?.procedure.last.expHold?.procedureId);
     await page.locator('#hold-run').click();
     await page.waitForFunction(
       (id) => {
-        const h = window.__r860.frame?.procedure.last.expHold;
+        const h = window.__ventila.frame?.procedure.last.expHold;
         return h && h.procedureId !== id;
       },
       previous,
       { timeout: 15000 },
     );
-    const conEsfuerzo = await page.evaluate(() => window.__r860.frame?.procedure.last.expHold?.passiveMechanicsValid === false);
+    const conEsfuerzo = await page.evaluate(() => window.__ventila.frame?.procedure.last.expHold?.passiveMechanicsValid === false);
     if (conEsfuerzo) break;
   }
   // El equipo informa sólo lo que ve en la presión; el músculo no aparece en su cara.

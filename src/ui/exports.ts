@@ -127,7 +127,7 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
   ctx.fillStyle = '#072d63';
   ctx.fillRect(8, 583, 1104, 56);
   txt(`Tiempo simulado ${clock(fr.simTimeMs / 1000)} · ${input.scenarioName}`, 27, 615, 13, '#acd0e6');
-  txt('R860 LAB · datos de un modelo sintético · no reproduce firmware GE', 1100, 615, 12, '#c0e4f4', 'right');
+  txt('VENTILA LAB · datos de un modelo sintético · no reproduce el firmware de ningún equipo', 1100, 615, 12, '#c0e4f4', 'right');
   let x = 8;
   input.quickItems.forEach((v, i) => {
     const width = i === 0 ? 169 : 155;
