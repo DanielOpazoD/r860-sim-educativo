@@ -92,7 +92,8 @@ describe('GAS-06 · equilibrio inicial con atrapamiento', () => {
       patient: { ...BENCH_PATIENT, crs: 0.06, rInsp: 20, rExp: 30 },
       settings: { ...BENCH_SETTINGS, rr: 20, ie: 1 / 2 },
     });
-    sim.run(25_000);
+    // A los 70 s la ventana de V̇A ya sólo contiene respiraciones con el atrapamiento asentado.
+    sim.run(70_000);
     const g = gas(sim);
     expect(Math.abs(g.paco2 - g.paco2Target!)).toBeLessThan(1);
   });

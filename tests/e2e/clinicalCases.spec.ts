@@ -5,6 +5,8 @@ test.describe('CASOS · caso clínico con entrega y revelación', () => {
   test('CC-01: se elige en el catálogo, se resuelve en el ventilador con la mecánica oculta y se revela al entregar', async ({ page }) => {
     await open(page, { speed: 4 });
     await openAula(page, 'library');
+    // Ocho casos clínicos, cada uno con su tema y sus referencias en la tarjeta.
+    await expect(page.locator('.aula-clinical [data-aula-case]')).toHaveCount(8);
     const tarjeta = page.locator('[data-aula-case="CC-01"]');
     // La referencia temática está a la vista desde el catálogo.
     await expect(tarjeta).toContainText('Hess, Respir Care 2014');

@@ -365,7 +365,9 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
       }
       if (vistas.size) ruidosos.push(`${e.id}: ${[...vistas].sort().join(',')}`);
     }
-    expect(ruidosos).toEqual(['SC-18: ppeakLow,vteHigh,vteLow']);
+    // Dos casos clínicos alarman porque su problema es justo ése, y la viñeta lo cuenta: la hipoventilación de CC-05
+    // (volumen minuto bajo) y el soporte excesivo de CC-06 (VT espirado alto).
+    expect(ruidosos.sort()).toEqual(['CC-05: mveLow', 'CC-06: vteHigh', 'SC-18: ppeakLow,vteHigh,vteLow']);
   });
 });
 

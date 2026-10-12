@@ -1,6 +1,6 @@
 # Casos clínicos
 
-Casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlos (Casos · Catálogo · Casos clínicos). Complementan las prácticas guiadas: aquéllas acompañan paso a paso; un caso plantea una pregunta y juzga el resultado.
+Ocho casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlos (Casos · Catálogo · Casos clínicos). Complementan las prácticas guiadas: aquéllas acompañan paso a paso; un caso plantea una pregunta y juzga el resultado.
 
 ## Formato
 
@@ -10,13 +10,45 @@ Casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlo
 - **Referencias visibles:** en la tarjeta del catálogo (cita corta) y en el caso (cita completa con enlace a PubMed), antes y después de entregar.
 - **Fidelidad:** los números de cada viñeta salen del motor con la mecánica del caso; `tests/unit/casosClinicos.test.ts` lo comprueba caso por caso, junto con que la solución de referencia aprueba y una incorrecta no.
 
+## Los ocho casos
+
+| Caso | Tema | Qué se evalúa | Solución de referencia (prueba) | Referencias |
+| --- | --- | --- | --- | --- |
+| CC-01 · Presión pico alta | Mecánica respiratoria | Meseta medida y causa elegida (diagnóstico) | Bloqueo inspiratorio: Pplat ≈ 15 con Ppico ≈ 29 → resistencia | Hess 2014; Mireles-Cabodevila y Chatburn 2025 |
+| CC-02 · Atrapamiento en EPOC | EPOC · hiperinflación dinámica | PEEP total medida; PEEPi ≤ 3; pH de equilibrio 7,30–7,50 | FR 12, I:E 1:4 (PEEPi 7,7 → 2,5; pH 7,55 → 7,35). Sólo I:E o VT 400: no | Marini 2011; Hess 2014 |
+| CC-03 · SDRA: VT protector | SDRA · ventilación protectora | VT ≤ 6,5 mL/kg PBW; Pplat ≤ 30; ΔP < 15; pH 7,30–7,45; FR ≤ 35 | VT 425, FR 28 (ΔP 20 → 14; pH 7,36). VT 425 con FR 16: pH 7,12 | ARDSNet 2000; Amato 2015; protocolo ARDSNet; Nuckton 2002 |
+| CC-04 · PEEP decremental | SDRA · reclutamiento y PEEP | Cstat antes de abrir; apertura; Cstat ≥ 1,3× a PEEP 9–12; PEEP final ≥ 10 | PEEP 5 → 20 (30 s) → 11: Cstat 30 → 46. Sin abrir: no | Suarez-Sipmann 2007; ART 2017 |
+| CC-05 · Hipercapnia | CO₂ · espacio muerto | PaCO₂ de equilibrio 35–45; VT ≤ 8 mL/kg PBW; PEEPi ≤ 2 | VT 500 FR 14 o VT 400 FR 22. FR 18 sola: 48 mmHg | Robertson 2015; protocolo ARDSNet |
+| CC-06 · Esfuerzos inefectivos | Asincronía · esfuerzos inefectivos | ≥ 95 % de esfuerzos disparados en el último minuto; VTe ≥ 5 mL/kg PBW | Soporte 12 (con 20 disparan 15 de 22). Soporte 6: VT insuficiente | Thille 2006; Blanch 2015; Georgopoulos 2006 |
+| CC-07 · Autodisparo por fuga | Asincronía · autodisparo | Sin autodisparo tras el ajuste; disparo ≤ 6 L/min | Disparo 4 L/min (fuga ≈ 3 L/min a PEEP 5). 8 L/min: de más | Imanaka 2000; Al Otair y BaHammam 2020 |
+| CC-08 · Ciclado tardío | Asincronía · ciclado | Ti mecánico − Ti neural ≤ 0,3 s; ≥ 95 % de esfuerzos disparados | Ciclado 25 % (con 5 %: ≈ 1 s de más y la mitad sin disparar) | Tassaux 2005; Hess 2005 |
+
+Los umbrales con cita salen de su fuente (ARDSNet: VT por peso predicho, Pplat ≤ 30, pH 7,30–7,45 y FR hasta 35; Amato: presión motriz). Los demás son objetivos docentes del caso (p. ej. PEEPi ≤ 3, 95 % de esfuerzos disparados) y así se presentan: no se atribuyen a una guía.
+
+Los criterios que dependen de una secuencia (CC-04) leen la historia de bloqueos anotados, no el último bloqueo: al entregar, el último ya es el posterior. Los de sincronía (CC-06, CC-08) exigen un minuto completo de respiraciones posterior al último ajuste. Los de equilibrio (pH, PaCO₂) usan la ventilación de las últimas respiraciones, de modo que un cambio se refleja en pocas respiraciones y no se mezcla con la ventilación anterior.
+
 ## Referencias verificadas
 
-Cada referencia se abrió y se leyó su resumen en PubMed (E-utilities, `efetch`) antes de citarla. Se citan por lo que el resumen dice; no se atribuyen al artículo cifras que el resumen no contiene.
+Cada referencia se abrió antes de citarla: los artículos, leyendo su resumen en PubMed (E-utilities, `efetch`); el protocolo ARDSNet, leyendo el PDF. Se citan por lo que esa fuente dice; no se les atribuyen cifras que no contiene.
 
-| Referencia | PMID | Qué se tomó |
+| Referencia | Identificador | Qué se tomó |
 | --- | --- | --- |
-| Hess DR. Respiratory mechanics in mechanically ventilated patients. *Respir Care* 2014;59(11):1773-94 | 25336536 | Presión meseta como presión de distensión al final de la inspiración; índices derivados de presión y flujo (resistencia, distensibilidad). |
-| Mireles-Cabodevila E, Chatburn RL. The equation of motion: a brief guide to ventilator adjustment. *Eur Heart J Acute Cardiovasc Care* 2025;14(8):494-496 | 40631448 | Ecuación de movimiento como guía de ajuste (también citada en `docs/03`). |
+| Hess DR. Respiratory mechanics in mechanically ventilated patients. *Respir Care* 2014;59(11):1773-94 | PMID 25336536 | Pplat como presión de distensión al final de la inspiración; índices derivados de presión y flujo. |
+| Mireles-Cabodevila E, Chatburn RL. The equation of motion. *Eur Heart J Acute Cardiovasc Care* 2025;14(8):494-496 | PMID 40631448 | Ecuación de movimiento como guía de ajuste. |
+| Marini JJ. Dynamic hyperinflation and auto-PEEP: lessons learned over 30 years. *Am J Respir Crit Care Med* 2011;184(7):756-62 | PMID 21700908 | Consecuencias de la auto-PEEP (hemodinamia, barotrauma, trabajo, sincronía, interpretación de la mecánica). |
+| ARDS Network. Lower vs traditional tidal volumes in ALI/ARDS. *N Engl J Med* 2000;342(18):1301-8 | PMID 10793162 | VT 6 frente a 12 mL/kg de peso predicho con Pplat ≤ 30; mortalidad 31,0 % frente a 39,8 %. |
+| NIH NHLBI ARDS Clinical Network. Mechanical Ventilation Protocol Summary | ardsnet.org (PDF) | Peso predicho (hombres 50 + 2,3 × [talla en pulgadas − 60]); Pplat ≤ 30; pH 7,30–7,45; FR hasta 35. |
+| Amato MB et al. Driving pressure and survival in ARDS. *N Engl J Med* 2015;372(8):747-55 | PMID 25693014 | ΔP la variable que mejor estratificó el riesgo; +1 DE (≈ 7 cmH₂O) RR 1,41. |
+| Nuckton TJ et al. Pulmonary dead-space fraction and death in ARDS. *N Engl J Med* 2002;346(17):1281-6 | PMID 11973365 | VD/VT temprana media 0,58 en SDRA. |
+| Suarez-Sipmann F et al. Dynamic compliance for open lung PEEP titration. *Crit Care Med* 2007;35(1):214-21 | PMID 17110872 | PEEP decremental tras reclutamiento guiada por la distensibilidad (estudio experimental). |
+| ART Investigators. Lung recruitment and titrated PEEP vs low PEEP in ARDS. *JAMA* 2017;318(14):1335-45 | PMID 28973363 | Mortalidad a 28 días 55,3 % frente a 49,3 % y más barotrauma con reclutamiento y PEEP titulada. |
+| Robertson HT. Dead space: the physiology of wasted ventilation. *Eur Respir J* 2015;45(6):1704-16 | PMID 25395032 | Fisiología del espacio muerto y su valor pronóstico. |
+| Thille AW et al. Patient-ventilator asynchrony during assisted ventilation. *Intensive Care Med* 2006;32(10):1515-22 | PMID 16896854 | Esfuerzos inefectivos asociados a más soporte (17,5 frente a 15), mayor VT y disparo menos sensible. |
+| Blanch L et al. Asynchronies during mechanical ventilation are associated with mortality. *Intensive Care Med* 2015;41(4):633-41 | PMID 25693449 | Los esfuerzos inefectivos espiratorios, la asincronía más frecuente. |
+| Georgopoulos D et al. Bedside waveforms interpretation to identify asynchronies. *Intensive Care Med* 2006;32(1):34-47 | PMID 16283171 | Reconocer asincronías en las curvas de flujo, volumen y presión. |
+| Imanaka H et al. Autotriggering caused by cardiogenic oscillation. *Crit Care Med* 2000;28(2):402-7 | PMID 10708174 | Autodisparo por señales que no son esfuerzo con disparo por flujo sensible. |
+| Al Otair HA, BaHammam AS. Factors influencing asynchrony during NIV. *Ann Thorac Med* 2020;15(1):1-8 | PMID 32002040 | La fuga entre los factores principales de asincronía (incluido el autodisparo). |
+| Tassaux D et al. Expiratory trigger setting and delayed cycling. *Am J Respir Crit Care Med* 2005;172(10):1283-9 | PMID 16109983 | En obstructivos, subir el criterio de ciclado reduce el retraso (1,26 → 0,25 s) y la PEEPi. |
+| Hess DR. Ventilator waveforms and the physiology of pressure support. *Respir Care* 2005;50(2):166-86 | PMID 15691390 | Asincronía cuando el ciclado no coincide con el fin de la inspiración neural. |
 
-Durante la verificación se descartó un identificador que no correspondía al artículo buscado (PMID 21719755 es un estudio de fibrosis pulmonar, no la revisión de Marini sobre auto-PEEP): por eso cada cita lleva su PMID comprobado.
+Durante la verificación se descartó un identificador que no correspondía al artículo buscado (PMID 21719755 es un estudio de fibrosis pulmonar, no la revisión de Marini, que es 21700908): por eso cada cita lleva su identificador comprobado.
