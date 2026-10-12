@@ -1188,6 +1188,30 @@
         "tests/bench/reclutamiento.test.ts (BM-RC)",
         "tests/e2e/interaction.spec.ts (RC · reclutamiento alveolar con histéresis)"
       ]
+    },
+    {
+      "id": "E-094",
+      "claim": "Gasometría de modelo: en equilibrio PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS) y pH = 6,1 + log10(HCO₃⁻/(0,03·PaCO₂)). V̇A es el volumen que espira el PULMÓN en cada respiración menos el espacio muerto en serie, nunca negativo: la fuga y el gas comprimido en el circuito no ventilan el alvéolo, y una respiración menor que el espacio muerto no aporta. Banco SC-01: V̇A 5,25 L/min, PaCO₂ 32,9 mmHg, VD/VT 0,30.",
+      "status": "P (ecuaciones estándar de libro de texto, sin fuente abierta en esta revisión; la V̇A como volumen pulmonar − VD por respiración, sin mezcla parcial de Bohr)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-02, GAS-05)"
+    },
+    {
+      "id": "E-095",
+      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, VD 150 mL, HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 8 min a V̇A 5 L/min). La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Sin tamponamiento agudo: el bicarbonato es fijo durante la sesión. No realimenta la mecánica.",
+      "status": "P (modelo de un depósito y sus valores: aproximación docente, no curva de un paciente)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04)"
+    },
+    {
+      "id": "E-096",
+      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen sólo en Aula · Fundamentos · Ventilación, rotuladas «Gasometría (modelo)».",
+      "status": "P (decisión de presentación para no atribuir al equipo una medición que no hace)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/teachingView.ts (ventilacionHTML); index.html (pestaña Ventilación); tests/e2e/interaction.spec.ts (pantalla de ventilación)"
     }
   ]
 }

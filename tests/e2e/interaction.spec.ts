@@ -569,6 +569,20 @@ test.describe('EDU · pestaña Resumen', () => {
     else expect(alturas.contenido).toBeGreaterThan(0);
   });
 
+  test('la pantalla de ventilación muestra la gasometría del modelo y el monitor nunca la muestra', async ({ page }) => {
+    await open(page, { speed: 8, instructor: 0 });
+    await openAula(page, 'theory');
+    await page.click('[data-edu-tab="ventilacion"]');
+    const bloque = page.locator('[data-testid="gasometria"]');
+    // Banco SC-01 (VT 500 mL, 15/min, VD 150 mL): V̇A 5,3 L/min y PaCO₂ de equilibrio ≈ 33 mmHg.
+    await expect(bloque.locator('header b')).toHaveText(/^3[23]mmHg PaCO₂$/, { timeout: 15_000 });
+    await expect(bloque.locator('.edu-gases')).toContainText('pH');
+    await expect(page.locator('.edu-bloque').nth(1)).toContainText('L/min');
+    await expect(page.locator('.edu-pie')).toContainText('no del equipo');
+    await openSimulator(page);
+    await expect(page.locator('#monitor')).not.toContainText('PaCO');
+  });
+
   test('la pantalla de protección lee el índice de estrés y construye la titulación con lo medido', async ({ page }) => {
     await open(page, { scenario: 'SC-15', speed: 8, instructor: 0 });
     await openAula(page, 'theory');

@@ -422,6 +422,29 @@
   color: #a6d0ed;
   margin-left: 5px;
 }
+.edu-gases {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+}
+.edu-gases dt {
+  color: #a6d0ed;
+  font-size: var(--type-xs);
+  align-self: baseline;
+}
+.edu-gases dd {
+  margin: 0;
+  color: #eaffff;
+  font-size: var(--type-lg);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.edu-gases dd small {
+  font-size: var(--type-xs);
+  font-weight: 400;
+  color: #a6d0ed;
+}
 .edu-siluetas {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
