@@ -85,10 +85,24 @@ describe('GAS-02 · banco SC-01: la ventilación del pulmón fija la PaCO₂', (
   });
 });
 
+describe('GAS-06 · equilibrio inicial con atrapamiento', () => {
+  it('se fija con la ventilación ya estable, no con la primera respiración', () => {
+    // Obstructivo con Te corto: el volumen espirado tarda varios ciclos en estabilizarse.
+    const sim = benchSim({
+      patient: { ...BENCH_PATIENT, crs: 0.06, rInsp: 20, rExp: 30 },
+      settings: { ...BENCH_SETTINGS, rr: 20, ie: 1 / 2 },
+    });
+    sim.run(25_000);
+    const g = gas(sim);
+    expect(Math.abs(g.paco2 - g.paco2Target!)).toBeLessThan(1);
+  });
+});
+
 describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇A', () => {
   it('duplicar la frecuencia lleva la PaCO₂ hacia la mitad y recorre ≈ 63 % en una τ', () => {
     const sim = benchSim();
-    runUntilBreath(sim, 2);
+    // Pasada la ventana inicial (EQUILIBRIUM_WINDOW_S) la PaCO₂ ya sólo cambia por el balance de masa.
+    sim.run(25_000);
     const p0 = gas(sim).paco2;
     sim.command({ type: 'confirmSettings', changes: { rr: 30 } });
     // Un minuto después la ventana de V̇A ya sólo contiene respiraciones a 30/min: desde ahí la aproximación es una
@@ -103,7 +117,9 @@ describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇
     const p1 = g.paco2;
     minutos(sim, tau);
     const recorrido = (p1 - gas(sim).paco2) / (p1 - objetivo);
-    expect(recorrido).toBeCloseTo(1 - Math.exp(-1), 1);
+    // 1 − e⁻¹ = 0,63 en el modelo continuo; el lavado ocurre por respiración y se lee en un punto del diente de sierra.
+    expect(recorrido).toBeGreaterThan(0.55);
+    expect(recorrido).toBeLessThan(0.72);
     expect(sim.simTimeMs).toBeGreaterThan((1 + tau) * 60_000);
   });
 

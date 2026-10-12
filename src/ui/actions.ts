@@ -147,6 +147,11 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     classroom: () => fx.classroom.open('theory'),
     cases: () => fx.classroom.open('library'),
     caseObjectives: () => fx.classroom.open('lesson'),
+    submitCase: () => fx.classroom.submitCase(),
+    restartCase: () => {
+      instructor.loadScenario(ctx.scenario.id);
+      fx.classroom.open('lesson');
+    },
     simulator: () => fx.classroom.simulator(),
     practice: () => fx.classroom.practice(),
     stopPractice: () => fx.classroom.stopPractice(),
@@ -162,7 +167,12 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       ctx.dialog.open(
         'scenarios',
         'Escenarios y paciente',
-        scenariosHTML(SCENARIOS, ctx.scenario.id, modeLabel, Boolean(ctx.fixtureId)),
+        scenariosHTML(
+          SCENARIOS.filter((s) => !s.clinical),
+          ctx.scenario.id,
+          modeLabel,
+          Boolean(ctx.fixtureId),
+        ),
         CLOSE_BTN,
         'scenario-dialog',
       );

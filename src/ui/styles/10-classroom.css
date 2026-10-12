@@ -545,3 +545,137 @@
     padding-bottom: 12px;
   }
 }
+/* ---- Casos clínicos (catálogo y caso actual): mismas superficies del Aula, sin colores nuevos. ---- */
+.classroom .aula-section-title {
+  font-size: var(--type-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--shell-text);
+  margin: 8px 0 12px;
+}
+.aula-clinical {
+  margin-bottom: 32px;
+}
+.aula-clinical-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.aula-case.solved .aula-kicker {
+  color: var(--shell-accent);
+}
+.case-question {
+  font-weight: 600;
+  color: var(--shell-text);
+  font-size: var(--type-lg);
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+.case-options {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.case-option {
+  text-align: left;
+  font: inherit;
+  font-size: var(--type-md);
+  line-height: 1.45;
+  color: var(--shell-text);
+  background: white;
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 11px 14px;
+}
+.case-option:hover:not(:disabled),
+.case-option.chosen {
+  border-color: var(--shell-accent);
+}
+.case-option.chosen {
+  box-shadow: inset 3px 0 0 var(--shell-accent);
+}
+.case-option.correct {
+  border-color: var(--shell-accent);
+  color: var(--shell-accent);
+}
+.case-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.case-refs {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--shell-line);
+}
+.case-refs ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.case-refs a {
+  color: var(--shell-accent);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.case-refs small {
+  display: block;
+  color: var(--shell-muted);
+  font-size: var(--type-xs);
+  line-height: 1.5;
+}
+.case-verdict {
+  font-weight: 600;
+  font-size: var(--type-md);
+  margin-bottom: 12px;
+}
+.case-verdict.ok {
+  color: var(--shell-accent);
+}
+.case-verdict.revisar {
+  color: var(--shell-warning);
+}
+.case-reveal {
+  color: var(--shell-text);
+  font-size: var(--type-md);
+  line-height: 1.7;
+  margin: 18px 0;
+}
+.case-truth {
+  border-top: 1px solid var(--shell-line);
+  padding-top: 14px;
+}
+.case-truth .edu-gases {
+  margin-top: 8px;
+}
+.case-truth .edu-gases > div {
+  display: contents;
+}
+.classroom .case-truth dt {
+  color: var(--shell-muted);
+}
+.classroom .case-truth dd {
+  color: var(--shell-text);
+  font-size: var(--type-md);
+}
+.case-lock-note {
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--shell-raised);
+  color: var(--shell-muted);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+.instructor.case-locked .instructor-pane {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .aula-clinical-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

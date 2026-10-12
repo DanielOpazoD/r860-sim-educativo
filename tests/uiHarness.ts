@@ -68,6 +68,7 @@ export function uiHarness(): { ctx: { -readonly [K in keyof AppContext]: AppCont
       reset: vi.fn(),
       render: vi.fn(),
       evaluate: vi.fn(),
+      context: vi.fn(() => null),
       noteSettingsChange: vi.fn(),
       notePatientChange: vi.fn(),
       setSessionImported: vi.fn(),

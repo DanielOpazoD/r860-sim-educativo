@@ -3,6 +3,7 @@
  * y es dueño de su propio estado y de su porción del DOM; lo que necesita de otros lo pide por aquí, nunca por variables ajenas.
  * El estado de sesión (cuadro, marcha, escenario, fixture, bloqueo) es del punto de composición (app.ts).
  */
+import type { LessonContext } from './lesson';
 import type { EngineClient } from '../app/engineClient';
 import type { Command } from '../domain/commands';
 import type { ProfileSpec } from '../domain/profile';
@@ -38,6 +39,8 @@ export interface LessonTracker {
   notePatientChange(simTimeMs: number): void;
   /** Una sesión importada no dice de qué escenario es: mientras dure, los objetivos no se evalúan. */
   setSessionImported(value: boolean): void;
+  /** Contexto de evaluación del cuadro actual (objetivos y casos clínicos), o null sin cuadro o con sesión importada. */
+  context(): LessonContext | null;
 }
 
 export interface AppContext {

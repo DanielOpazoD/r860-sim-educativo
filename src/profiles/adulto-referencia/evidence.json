@@ -1212,6 +1212,14 @@
       "source": "—",
       "locator": "—",
       "implemented": "src/ui/teachingView.ts (ventilacionHTML); index.html (pestaña Ventilación); tests/e2e/interaction.spec.ts (pantalla de ventilación)"
+    },
+    {
+      "id": "E-097",
+      "claim": "Caso clínico: escenario sintético con viñeta, pregunta y criterios de RESULTADO evaluados al entregar (varias soluciones válidas), no de acciones. Mientras no se entrega, la mecánica del paciente y sus eventos no se muestran; al entregar se revelan el veredicto por criterio, la verdad del modelo y la explicación. Cada caso lleva referencias temáticas visibles, abiertas y leídas en PubMed (registro en docs/08-casos-clinicos.md); los números de su viñeta salen del motor con esa mecánica y una prueba lo comprueba.",
+      "status": "P (formato docente; los umbrales clínicos de cada criterio citan su fuente en el caso)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/scenarios/cases.ts; src/scenarios/index.ts (ClinicalCase); src/ui/caseEvaluation.ts; src/ui/caseView.ts; src/ui/caseProgress.ts; src/ui/classroom.ts (submitCase, bloqueo del panel); tests/unit/casosClinicos.test.ts; tests/e2e/clinicalCases.spec.ts"
     }
   ]
 }

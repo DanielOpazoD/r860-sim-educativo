@@ -8,6 +8,8 @@ export const COMMAND_IDS = [
   'classroom',
   'cases',
   'caseObjectives',
+  'submitCase',
+  'restartCase',
   'simulator',
   'practice',
   'stopPractice',
