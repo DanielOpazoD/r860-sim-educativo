@@ -1,9 +1,11 @@
 import labels from './labels.es.json';
 
 export const PROFILE = {
-  profileId: 'r860-es-photo-reference-v1',
+  profileId: 'ventila-adulto-v1',
+  /** Identificador anterior al cambio de nombre: las sesiones guardadas con él se siguen abriendo. */
+  legacyProfileIds: ['r860-es-photo-reference-v1'] as readonly string[],
   profileVersion: '1.0.0',
-  deviceReference: 'GE Healthcare CARESCAPE R860 (referencia de inspiración; sin aval del fabricante)',
+  deviceReference: 'Ventilador de UCI adulto genérico; reglas documentadas en evidence.json (sin aval de ningún fabricante)',
   firmwareOfPhotographedUnit: null as string | null,
   locale: 'es-CL',
   visualEvidence: ['P1', 'P2', 'P3'],

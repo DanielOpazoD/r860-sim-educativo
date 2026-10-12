@@ -38,7 +38,7 @@ test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', ()
     page,
   }, info) => {
     await open(page, { autopause: 8000, speed: 4, instructor: 0 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 8000);
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 8000);
     await expectSafetyMark(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     // Antes #numeric-grid empezaba en x = 419 con la zona visible acabando en 392: la columna entera fuera de pantalla.
@@ -81,7 +81,7 @@ test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', ()
 
   test('datos grandes: los seis valores a la vista en dos columnas; bucles apilados; la alarma no se recorta', async ({ page }, info) => {
     await open(page, { scenario: 'SC-09', autopause: 20000, speed: 4, instructor: 0 });
-    await page.waitForFunction(() => (window.__r860.frame as { simTimeMs: number }).simTimeMs >= 20000, null, { timeout: 25_000 });
+    await page.waitForFunction(() => (window.__ventila.frame as { simTimeMs: number }).simTimeMs >= 20000, null, { timeout: 25_000 });
     expect((await frame(page)).alarmBar.color).toBe('red');
     const recorte = await page.$eval('#alarm-label', (e) => e.scrollHeight - e.clientHeight);
     expect(recorte).toBeLessThanOrEqual(1);
@@ -184,7 +184,7 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
       for (const botón of await page.locator('#monitor .nav-key[data-view]').all()) {
         const vista = await botón.getAttribute('data-view');
         await botón.tap();
-        await expect.poll(() => page.evaluate(() => window.__r860.view)).toBe(vista);
+        await expect.poll(() => page.evaluate(() => window.__ventila.view)).toBe(vista);
         await comprobarGeometríaMóvil();
       }
     }
@@ -202,7 +202,7 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
   test('la hoja del panel docente abre, cierra con el botón o Escape y devuelve el foco', async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 915 });
     await open(page, { scenario: 'SC-02' });
-    const preferences = await page.evaluate(() => localStorage.getItem('r860.prefs'));
+    const preferences = await page.evaluate(() => localStorage.getItem('ventila.prefs'));
     const alto = page.viewportSize()!.height;
     const panel = page.locator('#instructor');
     const button = page.locator('#panel-button');
@@ -222,7 +222,7 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(panel).toBeHidden();
     await expect(button).toBeFocused();
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('r860.prefs'))).toBe(preferences);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('ventila.prefs'))).toBe(preferences);
   });
 
   test('Paciente conserva targets táctiles y la hoja permite llegar a Restablecer mecánica', async ({ page }) => {

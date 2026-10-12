@@ -4,7 +4,7 @@ import { EngineClient } from '../../src/app/engineClient';
 import { EngineHost } from '../../src/app/engineHost';
 import type { EngineToMain } from '../../src/app/protocol';
 import { Simulator } from '../../src/engine/simulator';
-import { R860_PROFILE, defaultInit } from '../../src/profiles';
+import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { EXP_BIAS_FLOW_LPS } from '../../src/engine/controller';
 import { exportSession, importSession } from '../../src/history/session';
 
@@ -257,7 +257,7 @@ describe('R3-09 · bloqueo inspiratorio rechazado por Pmáx queda registrado', (
     // La inicialización sigue siendo reproducible después del bloqueo: un motor nuevo con la misma init y el mismo
     // número de pasos llega al mismo estado. (Antes aquí había un `expect(new Simulator(...).init).toBeTruthy()`,
     // que el constructor satisface siempre y no comprobaba nada.)
-    const gemelo = new Simulator(sim.init, R860_PROFILE);
+    const gemelo = new Simulator(sim.init, REFERENCE_PROFILE);
     runUntilBreath(gemelo, 4);
     gemelo.command({ type: 'requestHold', kind: 'inspHold', durationS: 3 });
     expect(gemelo.simTimeMs).toBeGreaterThan(0);

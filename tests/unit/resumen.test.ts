@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EngineFrame } from '../../src/engine/simulator';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { niveles, tarjetas } from '../../src/ui/teaching';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
@@ -113,7 +113,7 @@ describe('RES · con atrapamiento aéreo la resta es contra la PEEP total', () =
         settings: { ...base.settings, ...(e.settings ?? {}) },
         initialV: 'equilibrium',
       }),
-      R860_PROFILE,
+      REFERENCE_PROFILE,
     );
     const bloqueo = (kind: 'inspHold' | 'expHold', durationS: number): void => {
       sim.command({ type: 'requestHold', kind, durationS });

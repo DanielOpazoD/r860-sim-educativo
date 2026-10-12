@@ -1,4 +1,6 @@
-export const PREFS_KEY = 'r860.prefs';
+export const PREFS_KEY = 'ventila.prefs';
+/** Clave anterior al cambio de nombre: se lee una vez y se migra para no perder las preferencias guardadas. */
+export const LEGACY_PREFS_KEY = 'ventila.prefs';
 
 export type Prefs = {
   v: 1;
@@ -47,7 +49,14 @@ function normalize(value: unknown): Prefs {
 
 export function loadPrefs(): Prefs {
   try {
-    const stored = globalThis.localStorage.getItem(PREFS_KEY);
+    let stored = globalThis.localStorage.getItem(PREFS_KEY);
+    if (stored === null) {
+      stored = globalThis.localStorage.getItem(LEGACY_PREFS_KEY);
+      if (stored !== null) {
+        globalThis.localStorage.setItem(PREFS_KEY, stored);
+        globalThis.localStorage.removeItem(LEGACY_PREFS_KEY);
+      }
+    }
     return stored ? normalize(JSON.parse(stored)) : { v: 1 };
   } catch {
     return { v: 1 };

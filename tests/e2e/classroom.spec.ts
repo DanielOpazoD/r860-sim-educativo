@@ -37,7 +37,7 @@ test.describe('AULA · aprendizaje fuera del monitor', () => {
     await expect(page.locator('#practice-objective')).toHaveText(nextObjective ?? '');
 
     await page.locator('#sim-pause').click();
-    await expect.poll(() => page.evaluate(() => window.__r860.running)).toBe(false);
+    await expect.poll(() => page.evaluate(() => window.__ventila.running)).toBe(false);
     const before = await frame(page);
     const scenario = await page.locator('#scenario-name').textContent();
     await openAula(page, 'lesson');
@@ -60,7 +60,7 @@ test.describe('AULA · aprendizaje fuera del monitor', () => {
     await expect(page.locator('#practice-progress')).toHaveText('1/3 · Práctica activa');
   });
 
-  test('la práctica flota junto al R860: el monitor no se desplaza ni aparece scroll en escritorio', async ({ page }) => {
+  test('la práctica flota junto al equipo: el monitor no se desplaza ni aparece scroll en escritorio', async ({ page }) => {
     await open(page, { scenario: 'SC-01', speed: 4 });
     const before = await page.locator('#monitor').boundingBox();
     await openAula(page, 'lesson');
@@ -91,7 +91,7 @@ test.describe('AULA · aprendizaje fuera del monitor', () => {
     await expect(page.locator('#reflection-notes')).toHaveValue('Observo la misma sesión desde ambos espacios.');
     await openSimulator(page);
     await page.locator('#sim-pause').click();
-    await expect.poll(() => page.evaluate(() => window.__r860.running)).toBe(false);
+    await expect.poll(() => page.evaluate(() => window.__ventila.running)).toBe(false);
     const before = await frame(page);
 
     await openAula(page, 'library');
@@ -142,7 +142,7 @@ test.describe('AULA · aprendizaje fuera del monitor', () => {
     await page.locator('#space-simulator').click();
     await expect(page.locator('#workspace')).toBeVisible();
     await expect(page.locator('[data-view="waves"]')).toHaveClass(/chosen/);
-    await expect.poll(() => page.evaluate(() => window.__r860.view)).toBe('waves');
+    await expect.poll(() => page.evaluate(() => window.__ventila.view)).toBe('waves');
   });
 
   test('el resumen se abre en Resultados y la exportación queda dentro de su disclosure', async ({ page }) => {

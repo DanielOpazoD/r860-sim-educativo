@@ -96,14 +96,14 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       ctx.toast('No se pudo guardar la sesión: el motor no la entregó.', true);
       return;
     }
-    downloadBlob(sessionBlob(file), `R860_sesion_${stamp()}.json`);
+    downloadBlob(sessionBlob(file), `Ventila_sesion_${stamp()}.json`);
     ctx.toast(`Sesión guardada (${file.commands.length} comandos, ${file.breaths.length} respiraciones).`);
   }
   function exportCSV(signal: boolean): void {
     const fr = ctx.frame;
     if (!fr) return;
     const rows = signal ? signalRows(plots.points) : trendsRows(fr);
-    downloadBlob(csvBlob(signal ? SIGNAL_HEADER : TRENDS_HEADER, rows), `R860_${signal ? 'senal' : 'tendencias'}_${stamp()}.csv`);
+    downloadBlob(csvBlob(signal ? SIGNAL_HEADER : TRENDS_HEADER, rows), `Ventila_${signal ? 'senal' : 'tendencias'}_${stamp()}.csv`);
     ctx.toast(`${rows.length} filas exportadas.`);
   }
   function snapshot(): void {
@@ -136,7 +136,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         ctx.toast('No se pudo crear la imagen.', true);
         return;
       }
-      downloadBlob(blob, `R860_monitor_${stamp()}.png`);
+      downloadBlob(blob, `Ventila_monitor_${stamp()}.png`);
       ctx.lesson.flags.snapshot = true;
       ctx.lesson.evaluate();
     }, 'image/png');
@@ -269,7 +269,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     snapshot: () => snapshot(),
     debrief: () => fx.classroom.open('results'),
     exportDebrief: () => {
-      if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `R860_practica_${stamp()}.txt`);
+      if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `Ventila_practica_${stamp()}.txt`);
     },
     help: () => openHelp('start'),
     model: () => openHelp('model'),

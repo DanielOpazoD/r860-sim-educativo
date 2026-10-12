@@ -1,5 +1,5 @@
 /**
- * Punto de composición de la interfaz de R860 Lab sobre el motor determinista de este proyecto.
+ * Punto de composición de la interfaz de Ventila Lab sobre el motor determinista de este proyecto.
  * Estructura de interacción derivada de «R860 Lab» v1.1 (src/app.js, MIT 2026) y reescrita en TypeScript:
  * la UI sólo envía comandos tipados; los borradores viven en EditController; requestAnimationFrame sólo dibuja.
  * Aquí viven el estado de sesión (cuadro, marcha, escenario, fixture, bloqueo) y el arranque del motor; cada rasgo
@@ -68,7 +68,7 @@ export interface AppOptions {
   /**
    * Perfil del equipo que se simula. Lo elige quien monta la página, no un módulo de interfaz: así la interfaz depende
    * del contrato `ProfileSpec` y no de un equipo concreto, que es lo que hace posible un perfil pediátrico o de otro
-   * ventilador sin tocarla. Antes `app.ts` importaba `R860_PROFILE` directamente y era la única referencia al perfil
+   * ventilador sin tocarla. Antes `app.ts` importaba `REFERENCE_PROFILE` directamente y era la única referencia al perfil
    * concreto fuera de `src/profiles` — deuda registrada como U-45.
    */
   profile: ProfileSpec;
@@ -89,7 +89,7 @@ export function startApp(opts: AppOptions): void {
   let locked = false;
   /** Modo examen: las mediciones muestran «?» hasta que el alumno escribe su estimación. */
   let examMode = false;
-  const guardada = localStorage.getItem('r860.tileDensity');
+  const guardada = localStorage.getItem('ventila.tileDensity') ?? localStorage.getItem('r860.tileDensity');
   let tileDensity: 6 | 13 = guardada === '6' ? 6 : 13;
   let scenario: Scenario = findScenario(params.get('scenario') ?? prefs?.lastScenario ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
   let fixtureId: FixtureId | null = null;
@@ -191,7 +191,7 @@ export function startApp(opts: AppOptions): void {
     },
     setTileDensity(d) {
       tileDensity = d;
-      localStorage.setItem('r860.tileDensity', String(d));
+      localStorage.setItem('ventila.tileDensity', String(d));
       const grid = $('#numeric-grid');
       grid.classList.toggle('six', d === 6);
       setSegmentedValue('numeric-density', String(d));
@@ -310,7 +310,7 @@ export function startApp(opts: AppOptions): void {
   if (paletteKbd) paletteKbd.textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
   function showWelcome(): void {
     welcomeOpen = true;
-    dialog.open('welcome', 'Bienvenido a R860 Lab', welcomeHTML(), null, 'compact');
+    dialog.open('welcome', 'Bienvenido a Ventila Lab', welcomeHTML(), null, 'compact');
     requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('#welcome-free')?.focus());
   }
 
@@ -546,7 +546,7 @@ export function startApp(opts: AppOptions): void {
       toast(`Continúas en: ${scenario.name}`);
     if (!params.has('scenario') && !params.has('fixture') && !params.has('view') && !prefs?.welcomed) showWelcome();
   });
-  (window as unknown as { __r860: unknown }).__r860 = {
+  (window as unknown as { __ventila: unknown }).__ventila = {
     get frame() {
       return frame;
     },

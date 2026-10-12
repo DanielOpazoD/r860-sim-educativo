@@ -170,7 +170,7 @@ export class Simulator {
     init: SimulatorInit,
     readonly profile: ProfileSpec,
   ) {
-    if (init.profileId !== undefined && init.profileId !== profile.profileId)
+    if (init.profileId !== undefined && init.profileId !== profile.profileId && !profile.legacyProfileIds?.includes(init.profileId))
       throw new Error(`Inicialización inválida: perfil ${init.profileId} distinto del inyectado ${profile.profileId}`);
     const errs = [
       ...validateSettingsKeys(init.settings as unknown as Record<string, unknown>, profile.rules),

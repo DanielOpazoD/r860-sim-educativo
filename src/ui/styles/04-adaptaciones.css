@@ -56,9 +56,6 @@
     scrollbar-color: var(--shell-dim) var(--shell-bg);
     border-radius: 15px;
   }
-  .bezel-model > span {
-    font-size: 6px;
-  }
   .hard-key {
     width: 35px;
     height: 34px;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
-import { R860_PROFILE, defaultInit } from '../../src/profiles';
+import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 
 // BM-RT · disparo reverso (SC-24): la Pmus evocada queda fase-bloqueada a la insuflación; con latencia larga
@@ -16,7 +16,7 @@ function simSC24(): Simulator {
       settings: { ...base.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
 }
 
@@ -80,7 +80,7 @@ describe('BM-RT · disparo reverso en SC-24', () => {
         settings: { ...base.settings, ...(e.settings ?? {}) },
         initialV: e.initialV ?? 'equilibrium',
       }),
-      R860_PROFILE,
+      REFERENCE_PROFILE,
     );
     const pawA: number[] = [],
       pawB: number[] = [];

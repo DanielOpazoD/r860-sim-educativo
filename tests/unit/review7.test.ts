@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S } from '../../src/engine/breathAnalysis';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { runUntilBreath } from '../helpers';
 
@@ -19,7 +19,7 @@ function escenario(id: string): Simulator {
       settings: { ...base.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
 }
 
@@ -107,7 +107,7 @@ describe('R7-02 · si la lección pide un bloqueo espiratorio, dice cuánto tien
 describe('R7-03 · un límite recién puesto se compara enseguida con lo último medido', () => {
   /** Ventila unas cuantas respiraciones a la frecuencia pedida y devuelve el simulador listo. */
   function ventilando(rr: number): Simulator {
-    const sim = new Simulator(defaultInit({ settings: { ...defaultInit({}).settings, rr } }), R860_PROFILE);
+    const sim = new Simulator(defaultInit({ settings: { ...defaultInit({}).settings, rr } }), REFERENCE_PROFILE);
     runUntilBreath(sim, 6);
     return sim;
   }

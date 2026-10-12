@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { scenariosHTML } from '../../src/ui/dialogs';
 import type { LessonContext } from '../../src/ui/lesson';
@@ -21,7 +21,7 @@ function primerCuadro(id: string): { tasks: { id: string; text: string; test: st
       settings: { ...inicial.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
   sim.run(12_000);
   const frame = sim.frame();

@@ -10,7 +10,7 @@ export const COMMAND_IDS = [
   'practice',
   'stopPractice',
   'palette',
-  // monitor y diálogos del R860
+  // monitor y diálogos del equipo
   'home',
   'menu',
   'modes',

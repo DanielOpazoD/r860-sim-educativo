@@ -397,10 +397,6 @@
   .bezel-top {
     height: 30px;
   }
-  .bezel-model {
-    font-size: var(--type-sm);
-    opacity: 0.75;
-  }
   .bezel-signature {
     opacity: 0.55;
   }
@@ -969,9 +965,6 @@
   }
   .bezel-top {
     height: 24px;
-  }
-  .bezel-model {
-    font-size: var(--type-xs);
   }
   .signal-toolbar,
   #instructor {

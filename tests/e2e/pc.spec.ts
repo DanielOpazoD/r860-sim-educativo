@@ -38,19 +38,19 @@ test.describe('A/C PC y edición', () => {
     await page.click('[data-action="editPlus"]');
     await page.click('[data-action="editPlus"]');
     expect(Number(await range.inputValue())).toBe(start + 2);
-    await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(550);
+    await expect.poll(() => page.evaluate(() => window.__ventila.edit.draftDisplay)).toBe(550);
     // El deslizador por índice produce exactamente el mismo escalón que dos «−».
     await range.evaluate((e: HTMLInputElement, v) => {
       e.value = String(v);
       e.dispatchEvent(new Event('input', { bubbles: true }));
     }, start);
-    await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(500);
+    await expect.poll(() => page.evaluate(() => window.__ventila.edit.draftDisplay)).toBe(500);
     // Arrastrar a un extremo nunca sale de la rejilla ni del dominio.
     await range.evaluate((e: HTMLInputElement) => {
       e.value = e.max;
       e.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(2000);
+    await expect.poll(() => page.evaluate(() => window.__ventila.edit.draftDisplay)).toBe(2000);
     await expect(page.locator('#quick-validation')).toBeHidden();
     await page.fill('#quick-value', '287');
     await expect(page.locator('#quick-validation')).toContainText('no es un valor admitido');
@@ -68,12 +68,12 @@ test.describe('A/C PC y edición', () => {
       e.value = '0';
       e.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe('off');
+    await expect.poll(() => page.evaluate(() => window.__ventila.edit.draftDisplay)).toBe('off');
     await range.evaluate((e: HTMLInputElement) => {
       e.value = '1';
       e.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    await expect.poll(() => page.evaluate(() => window.__r860.edit.draftDisplay)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__ventila.edit.draftDisplay)).toBe(1);
   });
 
   test('bloqueo inspiratorio rechazado por Pmáx: resultado no válido con motivo legible y aviso', async ({ page }) => {
@@ -153,7 +153,7 @@ test.describe('Alarmas configuradas desde el diálogo', () => {
 test.describe('Presentación del manómetro y del volumen medido', () => {
   test('la columna de presión desciende de forma progresiva al terminar la inspiración', async ({ page }) => {
     await open(page, { speed: 1, instructor: 0 });
-    await page.waitForFunction(() => window.__r860.frame?.live.phase === 'inspFlow');
+    await page.waitForFunction(() => window.__ventila.frame?.live.phase === 'inspFlow');
     // 8 s cubren más de un ciclo a 12 rpm: si el navegador se salta los fotogramas de una bajada, la respiración
     // siguiente vuelve a ofrecerla. La afirmación es sobre la forma de la bajada, no sobre qué respiración la mostró.
     const serie = await page.evaluate(
@@ -162,8 +162,8 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
           const out: [number, number, string, number][] = [];
           const t0 = performance.now();
           const step = (): void => {
-            const f = window.__r860.frame!;
-            out.push([f.live.paw, window.__r860.gaugePaw ?? 0, f.live.phase, f.simTimeMs]);
+            const f = window.__ventila.frame!;
+            out.push([f.live.paw, window.__ventila.gaugePaw ?? 0, f.live.phase, f.simTimeMs]);
             if (performance.now() - t0 < 8000) requestAnimationFrame(step);
             else res(out);
           };
@@ -204,11 +204,11 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
 
   test('el VTesp mostrado cambia entre ciclos alrededor del volumen programado', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0, autopause: 60_000 });
-    await page.waitForFunction(() => (window.__r860.frame as unknown as { simTimeMs: number }).simTimeMs >= 60_000, null, {
+    await page.waitForFunction(() => (window.__ventila.frame as unknown as { simTimeMs: number }).simTimeMs >= 60_000, null, {
       timeout: 60_000,
     });
     const vte = await page.evaluate(() =>
-      (window.__r860.frame as unknown as { trends: { vte: number }[] }).trends.slice(-10).map((t) => Math.round(t.vte * 1000)),
+      (window.__ventila.frame as unknown as { trends: { vte: number }[] }).trends.slice(-10).map((t) => Math.round(t.vte * 1000)),
     );
     expect(new Set(vte).size).toBeGreaterThan(4);
     for (const v of vte) expect(Math.abs(v - 500)).toBeLessThanOrEqual(16);

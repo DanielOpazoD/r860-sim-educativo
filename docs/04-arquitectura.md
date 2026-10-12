@@ -15,7 +15,7 @@ domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui
 | --- | --- | --- | --- |
 | `domain` | Tipos, unidades, reglas de ajuste, validación, contrato de perfil (`ProfileSpec`), comandos | sólo `domain` | nada más |
 | `engine` | Física, controlador, métricas, alarmas, procedimientos, reloj, `Simulator` | `domain`, `engine` | perfiles concretos, historia, app, ui |
-| `profiles` | Perfiles de equipo (`R860_PROFILE`), registro, `defaultInit` | `domain`, `profiles` | motor en valor (sólo tipos) |
+| `profiles` | Perfiles de equipo (`REFERENCE_PROFILE`), registro, `defaultInit` | `domain`, `profiles` | motor en valor (sólo tipos) |
 | `scenarios` | Escenarios sintéticos con lección | `domain` | — |
 | `fixtures` | Transcripción de las fotografías P1/P3 a un cuadro congelado, sin física | `domain`, `engine`, `profiles` | app, ui, render |
 | `history` | Exportación, importación validada y reproducción de sesiones | `domain`, `engine`, `profiles` | app, ui |
@@ -51,7 +51,7 @@ El simulador y el Aula son espacios separados. `classroom.ts` gestiona Lección,
 
 `views.ts` sólo registra las vistas del monitor. La preferencia y URL antiguas `?view=teaching` se mantienen como compatibilidad: abren Aula/Fundamentos sin sustituir la vista seleccionada del monitor; al volver al Simulador se recupera esa vista.
 
-La interfaz depende del perfil inyectado (`ctx.profile`), no del módulo del R860: **ningún módulo de `src/ui` nombra un equipo concreto**. Quien lo elige es la raíz de composición, `src/main.ts`, que se lo entrega a `startApp` en `AppOptions.profile`; por eso el verificador de capas autoriza a `main` —y sólo a `main`— a alcanzar `profiles`. Un perfil pediátrico o de otro ventilador se cambia ahí, en una línea, sin tocar la interfaz.
+La interfaz depende del perfil inyectado (`ctx.profile`), no del módulo de un equipo concreto: **ningún módulo de `src/ui` nombra un equipo concreto**. Quien lo elige es la raíz de composición, `src/main.ts`, que se lo entrega a `startApp` en `AppOptions.profile`; por eso el verificador de capas autoriza a `main` —y sólo a `main`— a alcanzar `profiles`. Un perfil pediátrico o de otro ventilador se cambia ahí, en una línea, sin tocar la interfaz.
 
 ## 5. Herramientas y puertas
 

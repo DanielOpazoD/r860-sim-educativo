@@ -8,7 +8,7 @@ const cssNames = readdirSync(stylesDir)
 const cssFiles = cssNames.map((file) => readFileSync(new URL(file, stylesDir), 'utf8'));
 const css = cssFiles.join('\n');
 
-/** Hojas del exterior (cromo claro, diálogos, panel y Aula); la pantalla del R860 conserva sus px. */
+/** Hojas del exterior (cromo claro, diálogos, panel y Aula); la pantalla del equipo conserva sus px. */
 const EXTERIOR = [
   '03-laboratorio.css',
   '04-adaptaciones.css',

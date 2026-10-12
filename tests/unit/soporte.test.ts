@@ -3,7 +3,7 @@ import type { VcSettings } from '../../src/domain/types';
 import { validateVcSettings } from '../../src/domain/validation';
 import { APNEA_BACKUP_RATE_PER_MIN, SUPPORT_TI_MAX_S } from '../../src/engine/controller';
 import { exportSession, importSession } from '../../src/history/session';
-import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/r860-es-photo-reference/settings';
+import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // PHY-03 · CPAP/PS: esfuerzo, disparo, ciclaje y respaldo. Banco propio del modo antes de habilitarlo en el perfil.

@@ -6,9 +6,9 @@ for (const scenario of ['SC-02', 'SC-12']) {
   test(`${scenario} respeta paused=1 durante el arranque`, async ({ page }, info) => {
     await open(page, { scenario, paused: 1 });
     await expect(page.locator('#sim-pause')).toContainText('Reanudar');
-    const t = await page.evaluate(() => window.__r860.frame?.simTimeMs);
+    const t = await page.evaluate(() => window.__ventila.frame?.simTimeMs);
     await page.waitForTimeout(200);
-    expect(await page.evaluate(() => window.__r860.frame?.simTimeMs)).toBe(t);
+    expect(await page.evaluate(() => window.__ventila.frame?.simTimeMs)).toBe(t);
     if (scenario === 'SC-12') {
       await page.locator('.palette-trigger').click();
       await page.locator('#palette-input').fill('Sesión y archivos');
@@ -26,6 +26,6 @@ for (const scenario of ['SC-02', 'SC-12']) {
 test('autopause=12001 detiene el reloj a 12004', async ({ page }, info) => {
   await open(page, { autopause: 12001 });
   await expect(page.locator('#sim-pause')).toContainText('Reanudar');
-  expect(await page.evaluate(() => window.__r860.frame?.simTimeMs)).toBe(12004);
+  expect(await page.evaluate(() => window.__ventila.frame?.simTimeMs)).toBe(12004);
   await page.screenshot({ path: info.outputPath('autopause-12001.png'), fullPage: true });
 });

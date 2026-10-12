@@ -366,7 +366,7 @@
     },
     {
       "id": "U-45",
-      "question": "Dónde debe elegirse el perfil del equipo: hoy `src/ui/app.ts` importa `R860_PROFILE` directamente, que es la única referencia al perfil concreto fuera de `src/profiles`.",
+      "question": "Dónde debe elegirse el perfil del equipo: hoy `src/ui/app.ts` importa `REFERENCE_PROFILE` directamente, que es la única referencia al perfil concreto fuera de `src/profiles`.",
       "policy": "Resuelto el 07-09-2026: `main.ts`, que es la raíz de composición, elige el perfil y se lo entrega a `startApp` en `AppOptions.profile`. La interfaz depende del contrato `ProfileSpec` y ya no nombra ningún equipo concreto; el verificador de capas autoriza a `main` a alcanzar `profiles` justo por eso.",
       "status": "cerrada (v0.5.4)",
       "blocks": []

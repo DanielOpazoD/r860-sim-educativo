@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const stylesDir = new URL('../../src/ui/styles/', import.meta.url);
-const exceptions = ['.bezel-model > span', '.bezel-signature small'];
+const exceptions = ['.bezel-signature small'];
 
 describe('escala tipográfica del monitor', () => {
   it('no declara tamaños en px inferiores a 10 fuera de la serigrafía', () => {

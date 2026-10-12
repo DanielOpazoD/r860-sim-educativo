@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProcedureResult } from '../../src/domain/types';
 import type { EngineFrame } from '../../src/engine/simulator';
 import { Simulator } from '../../src/engine/simulator';
-import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS, type LessonTask } from '../../src/scenarios';
 import { LESSON_TESTS, nextCompletedTask, type LessonContext } from '../../src/ui/lesson';
 import { runUntilBreath } from '../helpers';
@@ -22,7 +22,7 @@ function simular(id: string) {
       settings: { ...base.settings, ...(e.settings ?? {}) },
       initialV: e.initialV ?? 'equilibrium',
     }),
-    R860_PROFILE,
+    REFERENCE_PROFILE,
   );
 }
 
@@ -356,7 +356,7 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
           alarmLimits: { ...base.alarmLimits, ...(e.alarmLimits ?? {}) },
           initialV: e.initialV ?? 'equilibrium',
         }),
-        R860_PROFILE,
+        REFERENCE_PROFILE,
       );
       const vistas = new Set<string>();
       for (let n = 6; n <= 22; n++) {
