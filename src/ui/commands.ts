@@ -6,6 +6,8 @@
 export const COMMAND_IDS = [
   // espacios
   'classroom',
+  'cases',
+  'caseObjectives',
   'simulator',
   'practice',
   'stopPractice',
@@ -110,7 +112,8 @@ export const PALETTE_COMMANDS: readonly PaletteEntry[] = [
   { id: 'session', label: 'Sesión y archivos', keywords: 'guardar importar exportar' },
   { id: 'exportSession', label: 'Exportar sesión', keywords: 'json archivo descargar' },
   { id: 'debrief', label: 'Resumen para el debriefing', keywords: 'resumen práctica informe' },
-  { id: 'classroom', label: 'Abrir el Aula', keywords: 'entrenamiento lección educación fundamentos' },
+  { id: 'classroom', label: 'Abrir el Aula', keywords: 'teoría fundamentos reflexión educación' },
+  { id: 'cases', label: 'Abrir Casos', keywords: 'casos clínicos práctica examen catálogo biblioteca' },
   { id: 'teacher', label: 'Mostrar u ocultar paciente y eventos', keywords: 'fisiología instructor' },
   { id: 'sound', label: 'Audio de alarmas', keywords: 'sonido silenciar mute' },
   { id: 'resetPatient', label: 'Restablecer mecánica', keywords: 'reiniciar paciente valores' },

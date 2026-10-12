@@ -60,7 +60,9 @@ export async function open(page: Page, params: Record<string, string | number> =
 export type AulaSection = 'lesson' | 'theory' | 'questions' | 'exam' | 'results' | 'library';
 export async function openAula(page: Page, section: AulaSection = 'lesson'): Promise<void> {
   const classroom = page.locator('#classroom');
-  if (!(await classroom.isVisible())) await page.locator('#space-classroom').click();
+  // Fundamentos y Reflexión viven en el Aula; el resto, en Casos.
+  const space = section === 'theory' || section === 'questions' ? '#space-classroom' : '#space-cases';
+  if ((await page.locator(space).getAttribute('aria-current')) !== 'page') await page.locator(space).click();
   const tab = page.locator(`[data-aula-section="${section}"]`);
   if ((await tab.getAttribute('aria-current')) !== 'page') await tab.click();
   await expect(classroom).toBeVisible();

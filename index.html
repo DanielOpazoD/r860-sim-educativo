@@ -52,7 +52,7 @@
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
   <a class="wordmark" href="#" data-action="home" aria-label="Ventila Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>Ventila<span>LAB</span></strong></a>
-  <nav class="space-nav" aria-label="Espacios de trabajo"><button id="space-simulator" data-action="simulator" aria-current="page">Simulador</button><button id="space-classroom" data-action="classroom">Aula</button></nav>
+  <nav class="space-nav" aria-label="Espacios de trabajo"><button id="space-simulator" data-action="simulator" aria-current="page">Simulador</button><button id="space-classroom" data-action="classroom">Aula</button><button id="space-cases" data-action="cases">Casos</button></nav>
   <button class="app-context" data-action="scenarios" aria-label="Cambiar escenario" title="Cambiar escenario"><span class="live-dot" id="live-dot"></span><span class="app-context-copy"><span id="scenario-name">Banco lineal pasivo</span><span class="app-context-separator" aria-hidden="true">·</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
   <div class="top-actions">
     <button class="button subtle palette-trigger" data-action="palette" aria-label="Buscar comandos" title="Buscar comandos (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><svg class="icon"><use href="#i-search"/></svg><span>Buscar</span><kbd class="palette-kbd">⌘K</kbd></button>
@@ -73,7 +73,7 @@
 <div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
   <section class="stage" aria-label="Ventilador virtual">
-    <aside id="practice-card" class="practice-card" role="status" aria-label="Práctica activa" hidden><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p><div class="practice-actions"><button class="button subtle" id="practice-link" data-action="classroom">Ver lección</button><button class="button icon-only subtle" data-action="stopPractice" aria-label="Terminar práctica guiada" title="Terminar práctica guiada"><svg class="icon"><use href="#i-close"/></svg></button></div></aside>
+    <aside id="practice-card" class="practice-card" role="status" aria-label="Práctica activa" hidden><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p><div class="practice-actions"><button class="button subtle" id="practice-link" data-action="caseObjectives">Ver objetivos</button><button class="button icon-only subtle" data-action="stopPractice" aria-label="Terminar práctica guiada" title="Terminar práctica guiada"><svg class="icon"><use href="#i-close"/></svg></button></div></aside>
     <div class="device-scroll"><div class="device-shell" id="device-shell">
       <div class="bezel-top"><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
@@ -215,13 +215,13 @@
 </main>
 <main id="classroom" class="classroom" aria-labelledby="classroom-title" hidden>
   <header class="aula-heading"><div><p class="aula-kicker" id="classroom-kicker">VENTILA LAB · APRENDIZAJE</p><h1 id="classroom-title" tabindex="-1">Comprender. Practicar. Reflexionar.</h1><p id="classroom-lead">Un espacio para aprender, conectado con tu simulación.</p></div><span id="classroom-session" class="aula-session"></span></header>
-  <nav class="aula-nav" aria-label="Secciones del Aula">
-    <button data-aula-section="lesson" aria-current="page">Lección</button>
-    <button data-aula-section="theory">Fundamentos</button>
-    <button data-aula-section="questions">Reflexión</button>
-    <button data-aula-section="exam">Examen</button>
-    <button data-aula-section="results">Resultados</button>
-    <button data-aula-section="library">Biblioteca</button>
+  <nav class="aula-nav" id="aula-nav" aria-label="Secciones">
+    <button data-aula-section="theory" data-space="aula" aria-current="page">Fundamentos</button>
+    <button data-aula-section="questions" data-space="aula">Reflexión</button>
+    <button data-aula-section="library" data-space="casos">Catálogo</button>
+    <button data-aula-section="lesson" data-space="casos">Caso actual</button>
+    <button data-aula-section="exam" data-space="casos">Examen</button>
+    <button data-aula-section="results" data-space="casos">Resultados</button>
   </nav>
   <section id="aula-lesson" class="aula-pane">
     <div class="aula-lesson-layout"><article class="aula-intro"><p id="aula-scenario" class="aula-kicker"></p><h2 class="lesson-title" id="lesson-title"></h2><p class="lesson-text" id="lesson-text"></p><p class="notice-box" id="lesson-caution"></p><button class="primary-button" data-action="practice">Practicar en el simulador <span aria-hidden="true">→</span></button><p class="aula-caption">El objetivo actual te acompaña junto al ventilador. Los avances se comprueban automáticamente.</p><button id="practice-stop" class="button subtle" data-action="stopPractice" hidden>Terminar práctica guiada</button></article><article class="aula-paper"><div class="lesson-count" id="lesson-count">0 objetivos</div><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa los resultados y explica qué cambió.</div></article></div>
