@@ -7,6 +7,7 @@ import {
   hidePanel,
   open,
   openFundamentos,
+  openModelData,
   openMoreParams,
   openPersonalization,
   openPresentation,
@@ -226,7 +227,8 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     await open(page, { speed: 4, instructor: 0 });
     const pplat = page.locator('#numeric-grid [data-metric="pplat"]');
     await expect(pplat.locator('.numeric-value')).toHaveText('—');
-    await expect(pplat.locator('.numeric-age')).toHaveText('Haz un bloqueo inspiratorio');
+    // Sin pista dentro de la casilla: el guion basta; el motivo queda en su nombre accesible.
+    await expect(pplat.locator('.numeric-age')).toBeEmpty();
     await expect(pplat).toHaveAttribute('aria-label', 'Pplat: requiere un bloqueo inspiratorio. Información y medición');
     await page.click('[data-action="inspiratory"]');
     await expect(page.locator('#hold-panel')).toBeVisible();
@@ -705,7 +707,7 @@ test.describe('DESC · desconexión del circuito', () => {
 test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   test('Pausar, velocidad y Congelar viven en .signal-toolbar y no se confunden', async ({ page }) => {
     await open(page, { speed: 4 });
-    await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(2);
+    await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(3);
     await expect(page.locator('#sim-pause')).toBeVisible();
     await expect(page.locator('#wave-options-button')).toBeVisible();
     await openTimeControls(page);
@@ -755,7 +757,7 @@ test.describe('TIE · controles de tiempo en la barra de curvas', () => {
   });
   test('los controles de tiempo caben sin desbordar el ancho del viewport', async ({ page }) => {
     await open(page);
-    await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(2);
+    await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(3);
     const d = await page.locator('.signal-toolbar').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
     expect(d.scroll).toBeLessThanOrEqual(d.client + 1);
   });
@@ -822,14 +824,15 @@ test.describe('CUR · comparación antes/después', () => {
         for (let i = 0; i < d.length; i += 4) if (d[i] !== a[i] || d[i + 1] !== a[i + 1] || d[i + 2] !== a[i + 2]) n++;
         return n;
       });
+    await page.locator('#wave-guides-toggle').click();
+    await expect(page.locator('#wave-guides-toggle')).toHaveAttribute('aria-pressed', 'false');
     await openPersonalization(page);
-    await page.locator('#wave-guides').uncheck();
     await expect(page.locator('#wave-ref-button')).toBeDisabled();
     await closePersonalization(page);
     await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
     expect(await page.evaluate(() => window.__ventila.waveRef)).not.toBeNull();
+    await page.locator('#wave-guides-toggle').click();
     await openPersonalization(page);
-    await page.locator('#wave-guides').check();
     await expect(page.locator('#wave-ref-button')).toBeEnabled();
     await closePersonalization(page);
     await expect.poll(cambiados, { timeout: 10_000 }).toBe(0);
@@ -928,7 +931,7 @@ test.describe('BLD · bucle docente con presión muscular', () => {
   test('el bucle Pva·V con presión total se ve en el panel docente', async ({ page }) => {
     await open(page, { scenario: 'SC-19' });
     await showPanel(page, 'patient');
-    await page.locator('#truth-details summary').click();
+    await openModelData(page);
     const canvas = page.locator('#muscle-loop-canvas');
     await expect(canvas).toBeVisible();
     const box = await canvas.boundingBox();
@@ -991,7 +994,7 @@ test.describe('RT · disparo reverso (SC-24)', () => {
   test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
     await open(page, { scenario: 'SC-24' });
     await showPanel(page, 'patient');
-    await openMoreParams(page);
+    await openMoreParams(page, 'esfuerzo');
     await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
     await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
   });
@@ -1001,7 +1004,7 @@ test.describe('PRE · presets de mecánica del paciente', () => {
   test('«TET 7,0 mm» fija el deslizador K₂ a 9,2 y moverlo a mano deja «Personalizado»', async ({ page }) => {
     await open(page);
     await showPanel(page, 'patient');
-    await openMoreParams(page);
+    await openMoreParams(page, 'via');
     const tubo = page.locator('#preset-tube');
     await expect(tubo).toHaveValue('none');
     await tubo.selectOption('id70');
@@ -1011,6 +1014,7 @@ test.describe('PRE · presets de mecánica del paciente', () => {
     await page.locator('[data-phys-range="rohrer"]').fill('5');
     await expect(page.locator('[data-phys-range="rohrer"]')).toHaveValue('5');
     await expect(tubo).toHaveValue('custom');
+    await openMoreParams(page, 'pulmon');
     const tejido = page.locator('#preset-tissue');
     await tejido.selectOption('healthy');
     await expect(page.locator('[data-phys-number="viscoelastic"]')).toHaveValue('3');
@@ -1019,32 +1023,39 @@ test.describe('PRE · presets de mecánica del paciente', () => {
 });
 
 test.describe('PAC · panel Paciente esencial', () => {
-  test('muestra tres controles principales y agrupa Más parámetros en cinco secciones', async ({ page }) => {
+  test('tres controles a la vista; la mecánica avanzada sale de la barra en cuatro pestañas, un grupo a la vez', async ({ page }) => {
     await open(page, { scenario: 'SC-02' });
     await showPanel(page, 'patient');
-    const details = page.locator('.advanced-patient');
-    await expect(details).not.toHaveAttribute('open', '');
     await expect(page.locator('#instructor-patient [data-phys-range]:visible')).toHaveCount(3);
+    await expect(page.locator('#flyout-advanced')).toBeHidden();
 
-    await openMoreParams(page);
-    await expect(page.locator('#patient-extra-controls .phys-group-title:visible')).toHaveCount(5);
+    await openMoreParams(page, 'via');
+    await expect(page.locator('#advanced-tabs [data-group]')).toHaveCount(4);
+    await expect(page.locator('#patient-extra-controls [data-group]:visible')).toHaveCount(1);
     await expect(page.locator('[data-phys-range="expResistance"]')).toBeVisible();
+    await expect(page.locator('[data-phys-range="effortExp"]')).toBeHidden();
+    await openMoreParams(page, 'esfuerzo');
     await expect(page.locator('[data-phys-range="effortExp"]')).toBeVisible();
   });
 
-  test('recuerda si Más parámetros quedó abierto al recargar', async ({ page }) => {
+  test('los paneles laterales: uno a la vez, Esc devuelve el foco y se cierran al ir a Casos', async ({ page }, info) => {
+    // En móvil el panel ocupa la pantalla y tapa la barra: allí se prueba abrirlo y cerrarlo (mobile.spec.ts).
+    test.skip(info.project.name === 'mobile', 'sólo escritorio');
     await open(page, { scenario: 'SC-02' });
     await showPanel(page, 'patient');
-    await openMoreParams(page);
-    await expect
-      .poll(() =>
-        page.evaluate(() => (JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}') as { patientMoreOpen?: boolean }).patientMoreOpen),
-      )
-      .toBe(true);
-
-    await page.reload();
-    await showPanel(page, 'patient');
-    await expect(page.locator('.advanced-patient')).toHaveAttribute('open', '');
+    await openMoreParams(page, 'pulmon');
+    await openModelData(page);
+    await expect(page.locator('#flyout-advanced')).toBeHidden();
+    await expect(page.locator('[data-flyout="model"]')).toHaveAttribute('aria-expanded', 'true');
+    // Sale del borde derecho de la barra, sin taparla.
+    const [barra, panel] = await Promise.all([page.locator('#instructor').boundingBox(), page.locator('#flyout-model').boundingBox()]);
+    expect(panel!.x).toBeGreaterThanOrEqual(barra!.x + barra!.width);
+    await page.locator('#flyout-model-title').press('Escape');
+    await expect(page.locator('#flyout-model')).toBeHidden();
+    await expect(page.locator('[data-flyout="model"]')).toBeFocused();
+    await openModelData(page);
+    await page.locator('[data-instructor="case"]').click();
+    await expect(page.locator('#flyout-model')).toBeHidden();
   });
 });
 
@@ -1063,7 +1074,7 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
   test('subir PEEP por encima de la apertura recluta; bajarla por encima del cierre lo conserva', async ({ page }) => {
     await open(page, { scenario: 'SC-25', speed: 8 });
     await showPanel(page, 'patient');
-    await page.locator('#truth-details summary').click();
+    await openModelData(page);
     // La celda del modelo aparece sólo con reclutamiento configurado, y arranca en 0 % (PEEP 5, picos ~22 < pOpen 28).
     await expect(page.locator('#truth-recruit-cell')).toBeVisible();
     expect(await reclutado(page)).toBeLessThan(0.05);
@@ -1170,7 +1181,7 @@ test.describe('PAT · perfiles del paciente', () => {
     const expected = JSON.parse(JSON.stringify(profileState(profile))) as { patient: unknown; effort: unknown };
     await showPanel(page, 'patient');
     await page.locator('#patient-profiles [data-profile="stiff"]').click();
-    await expect(page.locator('#toast-stack .toast').last()).toContainText('Perfil aplicado: Pulmón rígido');
+    await expect(page.locator('#toast-stack .toast').last()).toContainText('Perfil aplicado: Restrictivo');
     await expect.poll(async () => (await estado()).patient).toEqual(expected.patient);
     const after = await estado();
     expect(after.effort).toEqual(expected.effort);
@@ -1202,7 +1213,7 @@ test.describe('PAT · perfiles del paciente', () => {
     await expect(stiff).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#profile-status')).toHaveText('');
     await expect(page.locator('#toast-stack .toast').last()).toHaveText(
-      'Perfil aplicado: Pulmón rígido. La programación del ventilador no cambia.',
+      'Perfil aplicado: Restrictivo. La programación del ventilador no cambia.',
     );
     expect((await frame(page)).settings).toEqual(programmedSettings);
 
@@ -1223,8 +1234,8 @@ test.describe('PAT · perfiles del paciente', () => {
     await expect(healthy).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#profile-status')).toHaveText('');
 
-    await page.locator('#patient-profiles [data-profile="recruitable"]').click();
-    await expect(page.locator('#patient-profiles [data-profile="recruitable"]')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#patient-profiles [data-profile="obstructive"]').click();
+    await expect(page.locator('#patient-profiles [data-profile="obstructive"]')).toHaveAttribute('aria-pressed', 'true');
     await page.click('[data-action="resetPatient"]');
     await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('50');
     await expect(healthy).toHaveAttribute('aria-pressed', 'true');

@@ -11,12 +11,13 @@ import { $, $$, element, esc, iconNode, put } from './dom';
 import type { HoldPanel } from './holdPanel';
 import { contextualHelpPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
-import { matchesProfile, PATIENT_PROFILES, profileHint, profileState } from './patientProfiles';
-import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetsHtml, type PhysSpec } from './patientControls';
+import { matchesProfile, PATIENT_PROFILES, profileHint, profileShort, profileState } from './patientProfiles';
+import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetHtml, type PhysSpec } from './patientControls';
 import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
-import { loadPrefs, savePrefs } from './prefs';
+import { createSideFlyouts, type SideFlyouts } from './sideFlyouts';
+import { savePrefs } from './prefs';
 import { isMobile } from './labels';
 
 export interface InstructorPanel {
@@ -31,6 +32,8 @@ export interface InstructorPanel {
   applyProfile(id: string): Promise<void>;
   loadScenario(id: string): void;
   switchInstructor(tab: string): void;
+  /** Paneles desplegables laterales del panel Paciente (mecánica avanzada y datos del modelo). */
+  readonly flyouts: SideFlyouts;
   /** Muestra el panel lateral en la pestaña pedida (Paciente o Casos). */
   showPanel(tab: 'patient' | 'case'): void;
   toggleTeacher(): void;
@@ -50,6 +53,7 @@ export function createInstructorPanel(
   deps: { quick: QuickEditor; hold: HoldPanel; metrics: MetricsView; plots: PlotsView; initialVisible: boolean },
 ): InstructorPanel {
   let teacherVisible = deps.initialVisible;
+  const flyouts = createSideFlyouts(ctx);
   const eventUndo: Command[][] = [];
   const physEditing = new Set<string>();
   let apneaApplied = false;
@@ -166,17 +170,7 @@ export function createInstructorPanel(
     if (!fr) return;
     const p = fr.truth.patient,
       e = fr.truth.effort;
-    if (kind === 'resistance')
-      await setPhys(
-        [{ type: 'setPatient', params: { rInsp: Math.min(100, p.rInsp * 2), rExp: Math.min(150, p.rExp * 2) } }],
-        [{ type: 'setPatient', params: { rInsp: p.rInsp, rExp: p.rExp } }],
-      );
-    else if (kind === 'compliance')
-      await setPhys(
-        [{ type: 'setPatient', params: { crs: Math.max(0.005, p.crs / 2) } }],
-        [{ type: 'setPatient', params: { crs: p.crs } }],
-      );
-    else if (kind === 'apnea') {
+    if (kind === 'apnea') {
       const on = e.enabled && e.amplitude > 0;
       apneaApplied = on;
       await setPhys(
@@ -204,6 +198,7 @@ export function createInstructorPanel(
       e.setAttribute('aria-selected', String(on));
     }
     for (const id of ['patient', 'case']) $('#instructor-' + id).classList.toggle('active', id === tab);
+    if (tab !== 'patient') flyouts.close();
   }
   /** Select de preset reflejando el estado: preset coincidente (tolerancia 1e-6) o «Personalizado», con su nota. */
   function syncPreset<T extends { id: string }>(
@@ -239,17 +234,17 @@ export function createInstructorPanel(
     get teacherVisible() {
       return teacherVisible;
     },
+    flyouts,
     init() {
       const status = element('p', 'profile-status', 'Personalizado');
       status.id = 'profile-status';
       status.setAttribute('aria-live', 'polite');
       $('#patient-profiles').replaceChildren(
-        element('h3', 'small-section-title', 'Perfil del paciente'),
         element(
           'div',
           'profile-grid',
           ...PATIENT_PROFILES.map((profile) => {
-            const button = element('button', 'profile-chip', element('b', '', profile.label), element('small', '', profileHint(profile)));
+            const button = element('button', 'profile-chip', element('b', '', profile.label), element('small', '', profileShort(profile)));
             button.dataset.profile = profile.id;
             button.setAttribute('aria-pressed', 'false');
             button.title = profileHint(profile);
@@ -261,13 +256,15 @@ export function createInstructorPanel(
       );
       profileTruthJson = null;
       $('#patient-controls').innerHTML = physHtml(PATIENT_MAIN, contextualHelpPanel);
+      // Mecánica avanzada: un grupo por pestaña, con su preajuste al comienzo (es lo primero que se elige).
+      $('#advanced-tabs').innerHTML = PATIENT_GROUPS.map(
+        (group) =>
+          `<button class="flyout-tab" role="tab" type="button" id="tab-group-${group.id}" data-group="${group.id}" aria-controls="group-${group.id}" aria-selected="false">${esc(group.title)}</button>`,
+      ).join('');
       $('#patient-extra-controls').innerHTML = PATIENT_GROUPS.map(
         (group) =>
-          `<section class="phys-group"><h4 class="phys-group-title">${esc(group.title)}</h4>${physHtml(group.keys, contextualHelpPanel)}${group.presets ? presetsHtml(contextualHelpPanel) : ''}${group.note ? `<p class="settings-annotation">${esc(group.note)}</p>` : ''}</section>`,
+          `<section class="phys-group" role="tabpanel" id="group-${group.id}" data-group="${group.id}" aria-labelledby="tab-group-${group.id}" hidden>${group.preset ? presetHtml(group.preset, contextualHelpPanel) : ''}${physHtml(group.keys, contextualHelpPanel)}${group.note ? `<p class="settings-annotation">${esc(group.note)}</p>` : ''}</section>`,
       ).join('');
-      const moreParams = $<HTMLDetailsElement>('.advanced-patient');
-      moreParams.open = loadPrefs().patientMoreOpen ?? false;
-      moreParams.addEventListener('toggle', () => savePrefs({ patientMoreOpen: moreParams.open }));
       $('#fault-grid').replaceChildren(
         ...FAULTS.map(([id, i, label, description, off]) => {
           const button = element('button', 'event-chip', iconNode(i), element('b', '', label));
@@ -279,6 +276,7 @@ export function createInstructorPanel(
           return button;
         }),
       );
+      flyouts.init();
     },
     initChrome() {
       renderToggle();
@@ -319,6 +317,7 @@ export function createInstructorPanel(
     },
     toggleTeacher() {
       teacherVisible = !teacherVisible;
+      if (!teacherVisible) flyouts.close();
       renderToggle();
       if (!ctx.fixtureId && !isMobile()) savePrefs({ instructorVisible: teacherVisible });
       if (isMobile()) {

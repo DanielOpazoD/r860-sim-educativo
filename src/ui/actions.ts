@@ -229,6 +229,13 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     resetPatient: () => instructor.resetPatient(),
     undoEvent: () => instructor.undoEvent(),
     loopReference: () => plots.saveLoopReference(),
+    // Curva de referencia: el botón muestra su estado; no hace falta un aviso aparte.
+    waveGuides: () => {
+      const on = !plots.waveGuides;
+      plots.setWaveGuides(on);
+      if (!ctx.fixtureId) savePrefs({ waveGuides: on });
+      ctx.updateUI();
+    },
     clearLoop: () => plots.clearLoopReference(),
     waveReference: () => {
       if (plots.waveRefAt !== null) plots.clearWaveReference();
@@ -437,11 +444,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         $('#variable-legend').hidden = !el.checked;
         if (!ctx.fixtureId) savePrefs({ variableDescriptions: el.checked });
       }
-      if (el instanceof HTMLInputElement && el.id === 'wave-guides') {
-        plots.setWaveGuides(el.checked);
-        if (!ctx.fixtureId) savePrefs({ waveGuides: el.checked });
-        ctx.updateUI();
-      }
       if (el instanceof HTMLInputElement && el.id === 'wave-annotations') {
         plots.setWaveAnnotations(el.checked);
         if (!ctx.fixtureId) savePrefs({ waveAnnotations: el.checked });
@@ -489,9 +491,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         ctx.lesson.setSessionImported(false);
         ctx.toast(`Rechazada: ${r.errors?.join(' · ')}`, true);
       }
-    });
-    $('#truth-details').addEventListener('toggle', () => {
-      if ($<HTMLDetailsElement>('#truth-details').open) ctx.lesson.flags.truthOpen = true;
     });
     $('#trim-knob').addEventListener(
       'wheel',

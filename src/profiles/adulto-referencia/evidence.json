@@ -907,7 +907,7 @@
       "status": "P (paleta; la exigencia de contraste es D por WCAG 2.1 AA)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/ui/styles.css (.alarm-band y estados, .alarm-message small, .numeric-limits, .numeric-age, .numeric.alarm-value)",
+      "implemented": "src/ui/styles.css (.alarm-band y estados, .alarm-message small, .numeric-age, .numeric.alarm-value)",
       "tests": [
         "tests/unit/contraste.test.ts (CTR-01, CTR-02)"
       ]

@@ -58,6 +58,7 @@ export const COMMAND_IDS = [
   'resetPatient',
   'undoEvent',
   'loopReference',
+  'waveGuides',
   'clearLoop',
   'waveReference',
   // evaluación y herramientas
@@ -97,6 +98,7 @@ export interface PaletteEntry {
 export const PALETTE_COMMANDS: readonly PaletteEntry[] = [
   { id: 'pause', label: 'Pausar o reanudar', keywords: 'detener parar play pausa continuar' },
   { id: 'freeze', label: 'Congelar curvas', keywords: 'congelar inmovilizar ondas' },
+  { id: 'waveGuides', label: 'Curva de referencia', keywords: 'referencia antes después previo contorno guía' },
   { id: 'snapshot', label: 'Captura del monitor', keywords: 'foto png imagen captura pantalla' },
   { id: 'alarms', label: 'Alarmas activas', keywords: 'alarmas alertas límites' },
   { id: 'home', label: 'Volver al inicio del monitor', keywords: 'inicio casa principal' },

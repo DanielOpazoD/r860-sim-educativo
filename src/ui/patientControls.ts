@@ -349,73 +349,63 @@ export const PHYS: Record<string, PhysSpec> = {
   },
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'effort'];
-export const PATIENT_GROUPS: { title: string; keys: string[]; presets?: true; note?: string }[] = [
-  { title: 'Espiración', keys: ['expResistance', 'effortExp'] },
+/**
+ * Mecánica avanzada, en el panel desplegable lateral: un grupo por pestaña, del más usado al más técnico. Cada grupo
+ * puede llevar su preajuste fisiológico (tubo en la vía aérea, tejido en el pulmón) y una nota de alcance.
+ */
+export const PATIENT_GROUPS: { id: string; title: string; keys: string[]; preset?: 'tissue' | 'tube'; note?: string }[] = [
+  { id: 'esfuerzo', title: 'Esfuerzo', keys: ['patientRR', 'muscleTi', 'effortVariability', 'effortExp', 'reverseAmp', 'reverseDelay'] },
+  { id: 'via', title: 'Vía aérea', keys: ['expResistance', 'eflPcrit', 'airwayCollapse', 'rohrer'], preset: 'tube' },
   {
+    id: 'pulmon',
     title: 'Pulmón',
     keys: [
-      'secondCrs',
-      'secondR',
-      'eflPcrit',
-      'airwayCollapse',
       'sigmoidB',
       'sigmoidC',
       'sigmoidD',
       'recruitFrac',
       'recruitPOpen',
       'recruitPClose',
+      'secondCrs',
+      'secondR',
       'viscoelastic',
       'viscTau',
-      'rohrer',
     ],
-    presets: true,
+    preset: 'tissue',
   },
   {
+    id: 'circuito',
     title: 'Circuito',
-    keys: ['expValve', 'leak', 'circuitCompliance'],
+    keys: ['expValve', 'leak', 'circuitCompliance', 'o2Tau', 'o2Bias'],
     note: 'La fuga se modela en la pieza en Y, lineal con la presión; sin compensación de fuga ni distensibilidad del circuito.',
   },
-  { title: 'Esfuerzo del paciente', keys: ['patientRR', 'muscleTi', 'effortVariability', 'reverseAmp', 'reverseDelay'] },
-  { title: 'Sensor de O₂', keys: ['o2Tau', 'o2Bias'] },
 ];
 export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
-/** Eventos del panel Paciente: [id, icono, rótulo breve, descripción (en la ayuda emergente), deshabilitado]. */
+/**
+ * Eventos súbitos del panel Paciente: lo que los deslizadores no hacen (oclusión fuera de rango, circuito abierto) o
+ * conviene poder deshacer de un golpe. [id, icono, rótulo, descripción (en la ayuda emergente), deshabilitado].
+ */
 export const FAULTS: [string, string, string, string, boolean][] = [
-  ['resistance', 'wave', 'R × 2', 'Duplica la resistencia: más carga resistiva', false],
-  ['compliance', 'lung', 'C ÷ 2', 'Divide la distensibilidad: más carga elástica', false],
   ['apnea', 'pause', 'Apnea', 'Interrumpe el esfuerzo del paciente', false],
   ['obstruction', 'lock', 'Oclusión', 'Resistencia extrema: la presión llega a Pmáx', false],
   ['leak', 'wave', 'Fuga', '6 L/min a 10 cmH₂O en la pieza en Y', false],
   ['disconnect', 'plug', 'Desconexión', 'Circuito abierto en la pieza en Y', false],
 ];
 
-/** Selects de presets fisiológicos (U-37) junto a los deslizadores de E₂/τ₂ y K₂: no cambian valores por omisión. */
-export function presetsHtml(contextualPanel: (key: string, id: string) => string): string {
-  const campo = (id: string, preset: 'tissue' | 'tube', label: string, help: string, opciones: string): string => {
-    const hid = `help-preset-${preset}`;
-    return (
-      `<div class="phys-field contextual-field"><div class="phys-field-header"><div class="parameter-label"><label for="${id}">${label}</label></div></div>` +
-      `<select id="${id}" data-phys-preset="${preset}" aria-label="${label}" aria-describedby="${hid}">` +
-      opciones +
-      `<option value="custom" disabled hidden>Personalizado</option></select>` +
-      `<small class="preset-note" id="${id}-note"></small>${contextualPanel(help, hid)}</div>`
-    );
-  };
+/** Select de un preset fisiológico (U-37) junto a sus deslizadores (E₂/τ₂ o K₂): no cambia valores por omisión. */
+export function presetHtml(preset: 'tissue' | 'tube', contextualPanel: (key: string, id: string) => string): string {
+  const [label, help, presets] =
+    preset === 'tissue'
+      ? (['Tejido (E₂/τ₂)', 'patient.presetTissue', TISSUE_PRESETS] as const)
+      : (['Tubo endotraqueal (K₂)', 'patient.presetTube', TUBE_PRESETS] as const);
+  const id = `preset-${preset}`;
+  const hid = `help-preset-${preset}`;
   return (
-    campo(
-      'preset-tissue',
-      'tissue',
-      'Tejido (E₂/τ₂)',
-      'patient.presetTissue',
-      TISSUE_PRESETS.map((p) => `<option value="${p.id}">${p.label}</option>`).join(''),
-    ) +
-    campo(
-      'preset-tube',
-      'tube',
-      'Tubo endotraqueal (K₂)',
-      'patient.presetTube',
-      TUBE_PRESETS.map((p) => `<option value="${p.id}">${p.label}</option>`).join(''),
-    )
+    `<div class="phys-field contextual-field"><div class="phys-field-header"><div class="parameter-label"><label for="${id}">${label}</label></div></div>` +
+    `<select id="${id}" data-phys-preset="${preset}" aria-label="${label}" aria-describedby="${hid}">` +
+    presets.map((p) => `<option value="${p.id}">${p.label}</option>`).join('') +
+    `<option value="custom" disabled hidden>Personalizado</option></select>` +
+    `<small class="preset-note" id="${id}-note"></small>${contextualPanel(help, hid)}</div>`
   );
 }
 export function physHtml(keys: string[], contextualPanel: (key: string, id: string) => string): string {

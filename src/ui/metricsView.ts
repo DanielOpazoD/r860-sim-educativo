@@ -12,7 +12,6 @@ import {
   BIG_METRICS,
   CORE_METRICS,
   DATA_TABLE_GROUPS,
-  limitPair,
   METRIC_HELP,
   METRICS,
   metricInAlarm,
@@ -23,9 +22,6 @@ import {
   type MetricSpec,
   veredictoEstimacion,
 } from './metricsTable';
-
-/** Casilla que lleva la única pista de bloqueo (la primera que depende de él). */
-const HOLD_HINT_KEY = METRICS.find((m) => m.source === 'hold')?.key;
 
 const EVENT_KIND: Record<string, string> = {
   setting: 'ajuste',
@@ -95,11 +91,11 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         '</dl>';
       $('#numeric-grid').innerHTML = METRICS.map(
         (m, i) =>
-          `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}</span><strong class="numeric-value"><span>—</span></strong><span class="numeric-unit">${m.unit}</span><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span><span class="numeric-age"></span></button>`,
+          `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}</span><strong class="numeric-value"><span>—</span></strong><span class="numeric-unit">${m.unit}</span><span class="numeric-age"></span></button>`,
       ).join('');
       $('#big-metrics').innerHTML = BIG_METRICS.map(
         ([k, l, u], i) =>
-          `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}</span><b>—</b><em>${u}</em><span class="numeric-limits" title="Límites de alarma: alto / bajo"></span></button>`,
+          `<button class="big-numeric" data-metric="${k}" tabindex="${i === 0 ? 0 : -1}"><span>${l}</span><b>—</b><em>${u}</em></button>`,
       ).join('');
     },
     updateMetrics() {
@@ -118,7 +114,6 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           if (m.source === 'hold' && !h) {
             motivoCompleto = 'requiere un bloqueo inspiratorio';
             // Una sola pista para las tres casillas que dependen del bloqueo: va en la primera (Pplat).
-            motivoCorto = m.key === HOLD_HINT_KEY ? 'Haz un bloqueo inspiratorio' : '';
           } else if (m.source === 'hold' && h && h.quality !== 'valid') {
             motivoCompleto = razon || 'bloqueo no válido';
             motivoCorto = 'Bloqueo no válido';
@@ -144,7 +139,6 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           }
         }
         el.classList.toggle('exam-masked', !sinDato && oculto(m.key));
-        put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
         el.classList.toggle('alarm-value', metricInAlarm(fr, m.key));
         if (m.key === 'ppeak') el.classList.toggle('plimit-limited', fr.live.plimitLimited); // indicador discreto, no alarma (E-036)
         // Con dos unidades en paralelo la Cstat/R son aproximadas: el aviso va pegado a la unidad porque la línea de
@@ -167,7 +161,6 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       for (const e of $$('#big-metrics [data-metric]')) {
         const spec = METRICS.find((m) => m.key === e.dataset.metric) as MetricSpec;
         put(e.querySelector('b'), oculto(spec.key) && value(spec) !== null ? '?' : f(value(spec), spec.decimals));
-        put(e.querySelector('.numeric-limits'), limitPair(fr, spec.key));
       }
       if (ctx.view === 'data') {
         const fila = (key: string): HTMLTableRowElement[] => {

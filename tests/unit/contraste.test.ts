@@ -56,7 +56,6 @@ describe('CTR-01 · la banda de alarmas contrasta en todos sus estados y en los 
 
 describe('CTR-02 · las cifras pequeñas de la columna numérica contrastan sobre el azul del monitor', () => {
   for (const [selector, minimo] of [
-    ['.numeric-limits', 6],
     ['.numeric .numeric-age', 6],
     ['.numeric-label', 6],
     ['.numeric-unit', 6],

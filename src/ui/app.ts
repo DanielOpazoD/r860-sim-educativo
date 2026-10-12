@@ -337,12 +337,7 @@ export function startApp(opts: AppOptions): void {
     $('#live-dot').classList.toggle('paused', !running);
     $('#sim-pause').innerHTML =
       icon(running ? 'pause' : 'play') + `<span>${running ? 'Pausar' : 'Reanudar'}${speed !== 1 ? ` · ${speed}×` : ''}</span>`;
-    put(
-      '#view-active-state',
-      [plots.frozen ? 'Curvas congeladas' : '', plots.waveGuides && plots.waveRefAt !== null ? 'Referencia activa' : '']
-        .filter(Boolean)
-        .join(' · '),
-    );
+    put('#view-active-state', plots.frozen ? 'Curvas congeladas' : '');
     $('#sim-pause').setAttribute(
       'aria-label',
       running ? 'Pausar simulación' : `Reanudar simulación${pauseReason ? ' · ' + pauseReason : ''}`,
@@ -492,7 +487,6 @@ export function startApp(opts: AppOptions): void {
   metrics.init();
   $<HTMLInputElement>('#variable-descriptions').checked = prefs?.variableDescriptions ?? false;
   $('#variable-legend').hidden = !(prefs?.variableDescriptions ?? false);
-  $<HTMLInputElement>('#wave-guides').checked = prefs?.waveGuides ?? true;
   $<HTMLInputElement>('#wave-annotations').checked = prefs?.waveAnnotations ?? true;
   plots.setWaveGuides(prefs?.waveGuides ?? true);
   plots.setWaveAnnotations(prefs?.waveAnnotations ?? true);

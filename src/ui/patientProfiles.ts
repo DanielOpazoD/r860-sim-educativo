@@ -1,12 +1,15 @@
 import type { EffortParams, PatientParams } from '../domain/types';
 import { findScenario } from '../scenarios';
 
+/**
+ * Perfiles rápidos: la fisiopatología que define a cada uno está en su nombre y, debajo, en sus números. El pulmón
+ * reclutable queda para su escenario (SC-25): sin la maniobra que lo explica, como perfil suelto confundía.
+ */
 export const PATIENT_PROFILES: { id: string; label: string; scenarioId: string }[] = [
-  { id: 'healthy', label: 'Sano pasivo', scenarioId: 'SC-01' },
-  { id: 'stiff', label: 'Pulmón rígido', scenarioId: 'SC-21' },
+  { id: 'healthy', label: 'Sano, sedado', scenarioId: 'SC-01' },
+  { id: 'stiff', label: 'Restrictivo', scenarioId: 'SC-21' },
   { id: 'obstructive', label: 'Obstructivo', scenarioId: 'SC-16' },
-  { id: 'recruitable', label: 'Reclutable', scenarioId: 'SC-25' },
-  { id: 'spontaneous', label: 'Respira solo', scenarioId: 'SC-19' },
+  { id: 'spontaneous', label: 'Esfuerzo normal', scenarioId: 'SC-19' },
   { id: 'weak', label: 'Esfuerzo débil', scenarioId: 'SC-05' },
 ];
 
@@ -26,6 +29,15 @@ export function profileHint(profile: PatientProfile): string {
   const { patient, effort } = profileState(profile);
   const drive = effort.enabled && effort.amplitude > 0 ? `Pmus ${displayNumber(effort.amplitude)}` : 'pasivo';
   return `C ${displayNumber(patient.crs * 1000)} · R ${displayNumber(patient.rInsp)}/${displayNumber(patient.rExp)} · ${drive}`;
+}
+
+/** Lo que define al perfil, en una línea breve bajo su nombre: el esfuerzo si respira, si no C y R. */
+export function profileShort(profile: PatientProfile): string {
+  const { patient, effort } = profileState(profile);
+  if (effort.enabled && effort.amplitude > 0) return `Pmus ${displayNumber(effort.amplitude)} · ${displayNumber(effort.ratePerMin)}/min`;
+  const r =
+    patient.rInsp === patient.rExp ? displayNumber(patient.rInsp) : `${displayNumber(patient.rInsp)}/${displayNumber(patient.rExp)}`;
+  return `C ${displayNumber(patient.crs * 1000)} · R ${r}`;
 }
 
 function stableEqual(a: unknown, b: unknown): boolean {

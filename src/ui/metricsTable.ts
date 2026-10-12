@@ -1,5 +1,5 @@
-/** Tabla de mediciones del monitor: especificación, valor mostrado, calidad y pareja de límites. Funciones puras sobre el cuadro. */
-import type { MetricSample, OffOr } from '../domain/types';
+/** Tabla de mediciones del monitor: especificación, valor mostrado y calidad. Funciones puras sobre el cuadro. */
+import type { MetricSample } from '../domain/types';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber } from '../domain/units';
 import { clock, wallDate } from './format';
@@ -169,29 +169,6 @@ export function metricStatus(frame: EngineFrame | null, spec: MetricSpec): Metri
   };
   const result = byQuality[sample.quality];
   return status(result.tone, result.label, SOURCE_SHORT[sample.source] ?? '');
-}
-/** Pareja «alto\nbajo» de límites de alarma para la casilla de una medición; un límite apagado deja su renglón vacío. */
-export function limitPair(fr: EngineFrame, key: string): string {
-  const L = fr.alarmLimits;
-  const fmt = (v: OffOr<number>, factor: number, d: number): string => (v === 'off' ? '' : (v * factor).toFixed(d));
-  const par = (hi: OffOr<number>, lo: OffOr<number>, factor: number, d: number): string =>
-    hi === 'off' && lo === 'off' ? '' : `${fmt(hi, factor, d)}\n${fmt(lo, factor, d)}`;
-  switch (key) {
-    case 'vte':
-      return par(L.vteHigh, L.vteLow, 1000, 0);
-    case 'mve':
-      return par(L.mveHigh, L.mveLow, 1, 1);
-    case 'rr':
-      return par(L.rrHigh, L.rrLow, 1, 0);
-    case 'peepe':
-      return par(L.peepeHigh, L.peepeLow, 1, 0);
-    case 'ppeak':
-      return `${fr.settings.pmax}\n${fmt(L.ppeakLow, 1, 0)}`;
-    case 'fio2':
-      return par(L.fio2High, L.fio2Low, 100, 0);
-    default:
-      return '';
-  }
 }
 /** ¿Alguna alarma activa afecta a esta medición? */
 export function metricInAlarm(fr: EngineFrame, key: string): boolean {

@@ -30,11 +30,6 @@
 .phys-range-labels {
   font-size: var(--type-2xs);
 }
-.advanced-patient > summary,
-.truth-details > summary {
-  font-size: var(--type-xs);
-  padding: 6px 0;
-}
 .button.full {
   margin-top: 8px;
   min-height: 34px;

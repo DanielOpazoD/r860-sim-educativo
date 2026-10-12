@@ -29,6 +29,7 @@
 <symbol id="i-hand" viewBox="0 0 24 24"><path d="M7 12V5a1.5 1.5 0 0 1 3 0v6-7a1.5 1.5 0 0 1 3 0v7-6a1.5 1.5 0 0 1 3 0v7-4a1.5 1.5 0 0 1 3 0v9c0 7-10 7-12 3l-4-6c-1-2 1-4 3-2l1 1Z"/></symbol>
 <symbol id="i-plug" viewBox="0 0 24 24"><path d="M8 3v5m8-5v5M5 8h14v4a7 7 0 0 1-7 7v4M8 8h8"/></symbol>
 <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 9a9 9 0 1 1 0 7M3 3v6h6M12 7v6l4 2"/></symbol>
+<symbol id="i-ref" viewBox="0 0 24 24"><path d="M3 16c3 0 3.5-9 6.5-9s3.5 9 6.5 9c2 0 3-3 5-3"/><path d="M3 19c3 0 3.5-7 6.5-7s3.5 7 6.5 7c2 0 3-2 5-2" stroke-dasharray="2 2.6" opacity=".55"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
 <symbol id="i-minus" viewBox="0 0 24 24"><path d="M4 12h16"/></symbol>
 <symbol id="i-close" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
@@ -80,20 +81,31 @@
     </div>
     <section class="instructor-pane active" id="instructor-patient">
       <p class="case-note" id="case-lock-note" hidden>Caso en curso: cambiar el paciente altera el caso. <button class="case-link" data-action="freeExplore">Salir del caso</button></p>
+      <div class="pane-head"><h3 class="small-section-title">Perfil del paciente</h3><span class="pane-actions"><button class="pane-action" data-action="undoEvent" id="undo-event" title="Deshace el último evento o perfil"><svg class="icon"><use href="#i-history"/></svg>Deshacer</button><button class="pane-action" data-action="resetPatient" title="Vuelve a la mecánica del escenario"><svg class="icon"><use href="#i-reset"/></svg>Restablecer</button></span></div>
       <div id="patient-profiles"></div>
       <div id="patient-controls"></div>
-      <section class="event-section" aria-labelledby="events-title"><div class="event-head"><h3 class="small-section-title" id="events-title">Eventos</h3><button class="event-undo" data-action="undoEvent" id="undo-event" title="Deshace el último evento, perfil o cambio de mecánica"><svg class="icon"><use href="#i-history"/></svg>Deshacer</button></div><div class="fault-grid" id="fault-grid"></div></section>
-      <details class="advanced-patient"><summary>Más parámetros</summary><div id="patient-extra-controls"></div></details>
-      <details class="truth-details" id="truth-details"><summary>Datos del modelo</summary>
-      <div class="truth-grid"><div><span class="truth-label">τ insp<button type="button" class="info-button" data-help-key="teacher.tau" data-help-target="help-truth-tau" aria-controls="help-truth-tau" aria-expanded="false" aria-label="Información sobre constante de tiempo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-tauin">—<small>s</small></b></div><div><span class="truth-label">τ esp</span><b id="truth-tau">—<small>s</small></b></div><div><span class="truth-label">PEEPi del modelo<button type="button" class="info-button" data-help-key="teacher.auto" data-help-target="help-truth-auto" aria-controls="help-truth-auto" aria-expanded="false" aria-label="Información sobre PEEPi del modelo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-auto">—<small>cmH₂O</small></b></div><div><span class="truth-label">Volumen absoluto</span><b id="truth-vabs">—<small>mL</small></b></div><div><span class="truth-label">O₂ entregado / sensor</span><b id="truth-o2">—<small>%</small></b></div><div><span class="truth-label">Presión viscoelástica</span><b id="truth-pvisc">—<small>cmH₂O</small></b></div><div><span class="truth-label">Compliance local</span><b id="truth-clocal">—<small>mL/cmH₂O</small></b></div><div><span class="truth-label">Codos P-V</span><b id="truth-knees">—<small>cmH₂O</small></b></div><div id="truth-vcirc-cell" hidden><span class="truth-label">Vol. comprimido en circuito</span><b id="truth-vcirc">—<small>mL</small></b></div><div id="truth-recruit-cell" hidden><span class="truth-label">Reclutamiento</span><b id="truth-recruit">—<small>%</small></b></div><div class="truth-wide"><span class="truth-label">Opciones del modelo</span><b id="truth-opciones">—</b></div></div>
-      <div class="truth-help-panels"><div class="parameter-help" id="help-truth-tau" hidden></div><div class="parameter-help" id="help-truth-auto" hidden></div></div><div class="mini-muscle"><div><span>Esfuerzo muscular</span><b id="muscle-value">0,0 cmH₂O</b></div><canvas id="muscle-canvas" width="560" height="110" aria-label="Presión muscular del paciente virtual" role="img"></canvas><div><span>Bucle presión · volumen del pulmón</span><b id="muscle-loop-note"></b></div><canvas id="muscle-loop-canvas" width="280" height="170" aria-label="Bucle presión-volumen con presión muscular" role="img"></canvas></div>
-      </details>
-      <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
+      <section class="event-section" aria-labelledby="events-title"><h3 class="small-section-title" id="events-title">Eventos</h3><div class="fault-grid" id="fault-grid"></div></section>
+      <div class="flyout-launchers">
+        <button class="flyout-launcher" data-flyout="advanced" aria-expanded="false" aria-controls="flyout-advanced"><span>Mecánica avanzada</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="flyout-launcher" data-flyout="model" aria-expanded="false" aria-controls="flyout-model"><span>Datos del modelo</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      </div>
     </section>
     <section class="instructor-pane" id="instructor-case"></section>
     
     <div class="instructor-about"><span class="version" id="version-tag">v%ENGINE_VERSION% · Offline</span><button data-action="model">Acerca del simulador</button></div>
   </aside>
+  <section class="flyout" id="flyout-advanced" role="dialog" aria-labelledby="flyout-advanced-title" hidden>
+    <header class="flyout-head"><h2 id="flyout-advanced-title" tabindex="-1">Mecánica avanzada</h2><button class="button icon-only flyout-close" data-flyout-close aria-label="Cerrar mecánica avanzada"><svg class="icon"><use href="#i-close"/></svg></button></header>
+    <div class="flyout-tabs" id="advanced-tabs" role="tablist" aria-label="Grupos de mecánica avanzada"></div>
+    <div class="flyout-body" id="patient-extra-controls"></div>
+  </section>
+  <section class="flyout" id="flyout-model" role="dialog" aria-labelledby="flyout-model-title" hidden>
+    <header class="flyout-head"><h2 id="flyout-model-title" tabindex="-1">Datos del modelo</h2><button class="button icon-only flyout-close" data-flyout-close aria-label="Cerrar datos del modelo"><svg class="icon"><use href="#i-close"/></svg></button></header>
+    <div class="flyout-body">
+      <div class="truth-grid"><div><span class="truth-label">τ insp<button type="button" class="info-button" data-help-key="teacher.tau" data-help-target="help-truth-tau" aria-controls="help-truth-tau" aria-expanded="false" aria-label="Información sobre constante de tiempo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-tauin">—<small>s</small></b></div><div><span class="truth-label">τ esp</span><b id="truth-tau">—<small>s</small></b></div><div><span class="truth-label">PEEPi del modelo<button type="button" class="info-button" data-help-key="teacher.auto" data-help-target="help-truth-auto" aria-controls="help-truth-auto" aria-expanded="false" aria-label="Información sobre PEEPi del modelo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-auto">—<small>cmH₂O</small></b></div><div><span class="truth-label">Volumen absoluto</span><b id="truth-vabs">—<small>mL</small></b></div><div><span class="truth-label">O₂ entregado / sensor</span><b id="truth-o2">—<small>%</small></b></div><div><span class="truth-label">Presión viscoelástica</span><b id="truth-pvisc">—<small>cmH₂O</small></b></div><div><span class="truth-label">Compliance local</span><b id="truth-clocal">—<small>mL/cmH₂O</small></b></div><div><span class="truth-label">Codos P-V</span><b id="truth-knees">—<small>cmH₂O</small></b></div><div id="truth-vcirc-cell" hidden><span class="truth-label">Vol. comprimido en circuito</span><b id="truth-vcirc">—<small>mL</small></b></div><div id="truth-recruit-cell" hidden><span class="truth-label">Reclutamiento</span><b id="truth-recruit">—<small>%</small></b></div><div class="truth-wide"><span class="truth-label">Opciones del modelo</span><b id="truth-opciones">—</b></div></div>
+      <div class="truth-help-panels"><div class="parameter-help" id="help-truth-tau" hidden></div><div class="parameter-help" id="help-truth-auto" hidden></div></div><div class="mini-muscle"><div><span>Esfuerzo muscular</span><b id="muscle-value">0,0 cmH₂O</b></div><canvas id="muscle-canvas" width="560" height="110" aria-label="Presión muscular del paciente virtual" role="img"></canvas><div><span>Bucle presión · volumen del pulmón</span><b id="muscle-loop-note"></b></div><canvas id="muscle-loop-canvas" width="280" height="170" aria-label="Bucle presión-volumen con presión muscular" role="img"></canvas></div>
+    </div>
+  </section>
   <section class="stage" aria-label="Ventilador virtual">
     
     <div class="device-scroll"><div class="device-shell" id="device-shell">
@@ -172,7 +184,7 @@
           <button class="button small simulation-pause" id="sim-pause" data-action="pause" aria-label="Pausar simulación" title="Pausar simulación: se detienen el reloj, la ventilación y las curvas"><svg class="icon"><use href="#i-pause"/></svg><span>Pausar</span></button>
         </div>
         <div class="time-group wave-options-wrap" role="group" aria-label="Pantalla">
-          <button class="button small wave-options-button" id="wave-options-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="wave-options" aria-label="Personalizar vista" title="Personalizar vista"><svg class="icon"><use href="#i-gear"/></svg><span>Personalizar vista</span></button>
+          <button class="button small wave-options-button" id="wave-options-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="wave-options" aria-label="Personalizar vista" title="Personalizar vista"><svg class="icon"><use href="#i-gear"/></svg><span>Personalizar vista</span></button><button class="button small icon-only ref-toggle" id="wave-guides-toggle" data-action="waveGuides" aria-pressed="true" aria-label="Curva de referencia" title="Curva de referencia: contorno de la respiración anterior al cambiar un ajuste"><svg class="icon"><use href="#i-ref"/></svg></button>
           <dialog id="wave-options" class="wave-options view-settings" aria-labelledby="view-options-title">
             <header class="view-options-heading"><div><h2 id="view-options-title">Personalizar vista</h2><p class="view-options-note">Tu espacio de observación.</p></div><button type="button" class="button icon-only" id="view-options-close" aria-label="Cerrar personalización"><svg class="icon"><use href="#i-close"/></svg></button></header>
             <div class="view-tabs" role="tablist" aria-label="Personalización">
@@ -184,7 +196,6 @@
             <section id="view-aids" role="tabpanel" aria-labelledby="view-tab-aids" tabindex="0">
             <label class="checkline view-description-toggle"><span>Anotaciones sobre curvas<small>Presión pico, meseta y fases del ciclo.</small></span><input id="wave-annotations" type="checkbox" role="switch" checked></label>
             <label class="checkline view-description-toggle"><span>Descripción de variables<small>Glosario bajo el equipo: Ppico, Pplat…</small></span><input id="variable-descriptions" type="checkbox" role="switch"></label>
-            <label class="checkline view-description-toggle"><span>Curvas previas segmentadas<small>Contorno anterior al cambiar un ajuste.</small></span><input id="wave-guides" type="checkbox" role="switch" checked></label>
             <div class="view-reference">
             <button class="button small" id="wave-ref-button" data-action="waveReference" aria-pressed="false" aria-label="Comparar última respiración" title="Superpone la última respiración completa para compararla con las siguientes"><svg class="icon"><use href="#i-history"/></svg><span>Comparar última respiración</span></button>
             <p class="view-options-note">También puedes fijar un ciclo manualmente.</p>

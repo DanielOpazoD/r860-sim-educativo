@@ -308,10 +308,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     $('#freeze-button').classList.toggle('active', frozen);
     $('#freeze-button').setAttribute('aria-pressed', String(frozen));
     $('#freeze-button').setAttribute('aria-label', frozen ? 'Reanudar curvas' : 'Congelar curvas');
-    put(
-      '#view-active-state',
-      [frozen ? 'Curvas congeladas' : '', waveGuides && waveReference ? 'Referencia activa' : ''].filter(Boolean).join(' · '),
-    );
+    put('#view-active-state', frozen ? 'Curvas congeladas' : '');
     dirty = true;
   }
   function onPointer(e: PointerEvent): void {
@@ -330,7 +327,6 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     btn.setAttribute('aria-label', 'Dejar de comparar la última respiración');
     btn.title = 'Quita la respiración de referencia';
     (btn.querySelector('span') as HTMLElement).textContent = 'Dejar de comparar';
-    put('#view-active-state', [frozen ? 'Curvas congeladas' : '', waveGuides ? 'Referencia activa' : ''].filter(Boolean).join(' · '));
     dirty = true;
   }
   function resetWaveReferenceButton(): void {
@@ -361,6 +357,9 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     setWaveGuides(on) {
       waveGuides = on;
       $<HTMLButtonElement>('#wave-ref-button').disabled = !on;
+      const toggle = $<HTMLButtonElement>('#wave-guides-toggle');
+      toggle.classList.toggle('active', on);
+      toggle.setAttribute('aria-pressed', String(on));
       dirty = true;
     },
     setWaveAnnotations(on) {

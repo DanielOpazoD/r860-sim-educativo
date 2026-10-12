@@ -42,6 +42,18 @@
   margin: 0;
 }
 
+/* Curva de referencia: botón con icono junto a «Personalizar vista», con su misma caja; encendido, en el color de acento. */
+.signal-toolbar .button.icon-only.ref-toggle {
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
+  color: var(--shell-dim);
+}
+.signal-toolbar .button.icon-only.ref-toggle[aria-pressed='true'] {
+  background: var(--shell-accent-soft);
+  border-color: var(--shell-accent);
+  color: var(--shell-accent);
+}
+
 /* Pestañas y gasometría quedan arriba aunque el panel se desplace por dentro. */
 .instructor-head {
   position: sticky;
@@ -125,19 +137,21 @@
   white-space: nowrap;
 }
 
-/* Eventos: compactos, en una cuadrícula de tres; la descripción va en la ayuda emergente. */
-.event-section {
-  margin: 0 0 8px;
-}
-.event-head {
+/* Panel Paciente: título del perfil con «Deshacer» y «Restablecer» a la derecha, como acciones del paciente entero. */
+.pane-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
-.event-head .small-section-title {
-  margin: 10px 0 6px;
+.pane-head .small-section-title {
+  margin: 2px 0 8px;
 }
-.event-undo {
+.pane-actions {
+  display: flex;
+  gap: 12px;
+}
+.pane-action {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -147,20 +161,32 @@
   font: inherit;
   font-size: var(--type-xs);
   font-weight: 600;
-  padding: 4px 0;
+  padding: 2px 0;
 }
-.event-undo .icon {
-  width: 13px;
-  height: 13px;
+.pane-action .icon {
+  width: 12px;
+  height: 12px;
 }
-.event-undo:disabled {
+.pane-action:disabled {
   color: var(--shell-dim);
   cursor: default;
 }
+
+/* Eventos súbitos: chips en una fila que se reparten el ancho; la descripción va en la ayuda emergente. */
+.event-section {
+  margin: 0 0 10px;
+}
+.event-section .small-section-title {
+  margin: 8px 0 6px;
+}
 .fault-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+}
+.fault-grid .event-chip {
+  flex: 1 1 auto;
+  justify-content: center;
 }
 .event-chip {
   display: flex;
@@ -421,6 +447,176 @@
   text-decoration: underline;
 }
 
+/* Lanzadores de los paneles desplegables laterales: pequeños, con la flecha que dice hacia dónde salen. */
+.flyout-launchers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.flyout-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 8px 2px 10px;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+  background: var(--shell-surface);
+  color: var(--shell-muted);
+  font: inherit;
+  font-size: var(--type-xs);
+  font-weight: 600;
+}
+.flyout-launcher .icon {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+.flyout-launcher:hover,
+.flyout-launcher.active {
+  border-color: var(--shell-accent);
+  color: var(--shell-accent);
+}
+.flyout-launcher.active {
+  background: var(--shell-accent-soft);
+}
+
+/* Panel desplegable lateral: sale del borde de la barra, encima del equipo, con su propio desplazamiento. */
+.flyout {
+  position: fixed;
+  z-index: 205;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--shell-surface);
+  border: 1px solid var(--shell-line);
+  border-radius: var(--shell-radius);
+  box-shadow: var(--shell-shadow);
+  overflow: hidden;
+  animation: flyout-in 140ms ease-out;
+}
+@keyframes flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+.flyout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--shell-line);
+}
+.flyout-head h2 {
+  margin: 0;
+  font-size: var(--type-md);
+  font-weight: 600;
+  color: var(--shell-text);
+}
+.flyout-head h2:focus {
+  outline: none;
+}
+.flyout-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--shell-line);
+  background: var(--shell-raised);
+}
+.flyout-tab {
+  flex: 1;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  padding: 5px 4px;
+  color: var(--shell-muted);
+  font: inherit;
+  font-size: var(--type-xs);
+  white-space: nowrap;
+}
+.flyout-tab.chosen {
+  background: var(--shell-surface);
+  color: var(--shell-accent);
+  font-weight: 600;
+  box-shadow: 0 1px 3px #18344215;
+}
+.flyout-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px;
+}
+.flyout-body .settings-annotation {
+  font-size: var(--type-2xs);
+  color: var(--shell-muted);
+}
+/*
+ * Mecánica avanzada en escritorio: cada variable en una fila —nombre, deslizador, valor— para que el grupo entero quepa
+ * sin desplazarse. El preajuste conserva su fila propia. En pantallas táctiles quedan los controles de 44 px.
+ */
+@media (min-width: 701px) and (pointer: fine) {
+  #flyout-advanced .flyout-body {
+    padding: 10px 16px;
+  }
+  #flyout-advanced .phys-field:has(> input[type='range']) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px auto;
+    align-items: center;
+    column-gap: 10px;
+    margin: 0 0 4px;
+  }
+  #flyout-advanced .phys-field:has(> input[type='range']) > .phys-field-header {
+    display: contents;
+  }
+  #flyout-advanced .phys-field:has(> input[type='range']) .parameter-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #flyout-advanced .phys-field:has(> input[type='range']) > input[type='range'] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  #flyout-advanced .phys-field:has(> input[type='range']) .phys-value {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  #flyout-advanced .phys-field:has(> input[type='range']) > .parameter-help {
+    grid-column: 1 / -1;
+  }
+  #flyout-advanced .parameter-label > label {
+    font-size: var(--type-xs);
+  }
+  #flyout-advanced .phys-value > .step-button {
+    width: 26px;
+    min-width: 26px;
+    height: 28px;
+    min-height: 28px;
+  }
+  #flyout-advanced .phys-value input {
+    width: 40px;
+    min-height: 28px;
+    font-size: var(--type-md);
+  }
+  #flyout-advanced .phys-field input[type='range'] {
+    height: 20px;
+    border-top-width: 8px;
+    border-bottom-width: 8px;
+  }
+}
+/* En móvil ocupa la pantalla, sobre la hoja del panel. */
+.flyout.mobile {
+  inset: 0;
+  z-index: 240;
+  width: auto;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+}
+
 /* ---- Espacio educativo bajo el equipo: desarrollo del caso, Fundamentos y reflexión, en superficies claras. ---- */
 .learn {
   display: grid;
@@ -619,7 +815,9 @@
 @media (max-width: 700px) {
   /* Objetivos táctiles de 44 px, como el resto del panel en móvil. */
   .event-chip,
-  .event-undo,
+  .pane-action,
+  .flyout-launcher,
+  .flyout-tab,
   .case-link {
     min-height: 44px;
   }
@@ -704,8 +902,10 @@
     padding: 0 12px;
     font-size: var(--type-md);
   }
-  .app-top .signal-toolbar .wave-options-button {
+  .app-top .signal-toolbar .wave-options-button,
+  .app-top .signal-toolbar .ref-toggle {
     width: 44px;
+    min-width: 44px;
     padding: 0;
     justify-content: center;
   }

@@ -543,10 +543,6 @@ a {
 .numeric-grid.six .numeric-unit {
   font-size: 11px;
 }
-.numeric-grid.six .numeric-limits {
-  font-size: 12px;
-  top: 34px;
-}
 .numeric-grid.six .numeric .numeric-age {
   font-size: 10px;
 }
@@ -590,16 +586,6 @@ a {
   line-height: 1;
   /* lleva «· aprox.» cuando el dato es aproximado: una línea sola, como el resto de unidades */
   white-space: nowrap;
-}
-.numeric-limits {
-  position: absolute;
-  right: 0;
-  top: 24px;
-  font-size: 10px;
-  line-height: 1.25;
-  color: #b9e6ff;
-  max-width: 30px;
-  text-align: right;
 }
 .numeric .numeric-age {
   font-size: var(--type-2xs);
@@ -1057,24 +1043,10 @@ a {
   color: var(--shell-dim);
   margin-top: 7px;
 }
-.advanced-patient {
-  border-top: 1px solid var(--shell-line);
-  border-bottom: 1px solid var(--shell-line);
-  margin: 2px 0 17px;
-}
-.advanced-patient summary {
-  padding: 12px 0;
-  color: var(--shell-muted);
-  font-size: 10px;
-  cursor: pointer;
-}
-.advanced-patient > div {
-  padding: 12px 0 0;
-}
 .truth-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 17px 9px;
+  gap: 10px 12px;
   padding: 1px 0 0;
 }
 .truth-grid > div {
@@ -1085,15 +1057,14 @@ a {
   color: var(--shell-muted);
   display: block;
   line-height: 1.45;
-  min-height: 26px;
 }
 .truth-grid span em {
   color: var(--shell-accent);
   font-size: var(--type-2xs);
 }
 .truth-grid b {
-  font-size: 20px;
-  font-weight: 550;
+  font-size: var(--type-lg);
+  font-weight: 600;
   color: var(--shell-text);
   display: flex;
   align-items: baseline;
@@ -1137,7 +1108,7 @@ a {
   display: block;
 }
 .mini-muscle canvas#muscle-loop-canvas {
-  height: 170px;
+  height: 150px;
   margin-top: 8px;
 }
 .lesson-tasks {

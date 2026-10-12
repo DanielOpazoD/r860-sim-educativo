@@ -227,14 +227,14 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('ventila.prefs'))).toBe(preferences);
   });
 
-  test('Paciente conserva targets táctiles y la hoja permite llegar a Restablecer mecánica', async ({ page }) => {
+  test('Paciente conserva targets táctiles; la mecánica avanzada se abre a pantalla completa sobre la hoja', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page, { scenario: 'SC-02' });
     await showPanel(page, 'patient');
 
-    await expect(page.locator('.advanced-patient')).not.toHaveAttribute('open', '');
+    await expect(page.locator('#flyout-advanced')).toBeHidden();
     const targets = page.locator(
-      '#patient-profiles .profile-chip, #patient-controls [data-phys-step], #fault-grid [data-event], #undo-event',
+      '#patient-profiles .profile-chip, #patient-controls [data-phys-step], #fault-grid [data-event], #undo-event, [data-action="resetPatient"], [data-flyout]',
     );
     await expect(targets).toHaveCount(19);
     const heights = await targets.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
@@ -242,8 +242,14 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
 
     const sheet = page.locator('#instructor');
     await sheet.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-    await expect(page.locator('#instructor-patient [data-action="resetPatient"]')).toBeInViewport();
-    expect(await sheet.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 1)).toBe(true);
+    await expect(page.locator('[data-flyout="advanced"]')).toBeInViewport();
+    await page.locator('[data-flyout="advanced"]').click();
+    const panel = page.locator('#flyout-advanced');
+    await expect(panel).toBeVisible();
+    const caja = (await panel.boundingBox())!;
+    expect(caja.width).toBeGreaterThanOrEqual(389);
+    await page.locator('#flyout-advanced [data-flyout-close]').click();
+    await expect(panel).toBeHidden();
   });
 
   test('la hoja vuelve a la columna del panel al ensanchar el viewport', async ({ page }) => {

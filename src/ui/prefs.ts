@@ -13,7 +13,6 @@ export type Prefs = {
   waveGuides?: boolean;
   waveAnnotations?: boolean;
   instructorVisible?: boolean;
-  patientMoreOpen?: boolean;
   welcomed?: boolean;
 };
 
@@ -42,7 +41,6 @@ function normalize(value: unknown): Prefs {
     ...(typeof source.variableDescriptions === 'boolean' ? { variableDescriptions: source.variableDescriptions } : {}),
     ...(typeof source.waveGuides === 'boolean' ? { waveGuides: source.waveGuides } : {}),
     ...(typeof source.waveAnnotations === 'boolean' ? { waveAnnotations: source.waveAnnotations } : {}),
-    ...(typeof source.patientMoreOpen === 'boolean' ? { patientMoreOpen: source.patientMoreOpen } : {}),
     ...(typeof source.welcomed === 'boolean' ? { welcomed: source.welcomed } : {}),
   };
 }
