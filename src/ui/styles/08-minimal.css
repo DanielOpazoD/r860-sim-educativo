@@ -36,10 +36,25 @@
   --shell-warning-soft: #fff8e1;
   --shell-danger: #b42318;
   --shell-danger-soft: #fef3f2;
-  --shell-radius-sm: 6px;
-  --shell-radius: 10px;
-  --shell-focus: 0 0 0 2px var(--shell-accent);
-  --shell-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  /*
+   * Sistema del exterior (barra, panel, paneles laterales, diálogos, paleta, Aula). El equipo conserva su propio cromo.
+   * Radios: 4 teclas · 6 piezas internas · 8 controles · 12 superficies · píldora. Sombras: superficie, flotante, modal.
+   */
+  --font-ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(15, 23, 42, 0.02);
+  --shadow-md: 0 10px 28px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --shell-radius-sm: var(--radius-sm);
+  --shell-radius: var(--radius-lg);
+  --shell-focus: 0 0 0 2px var(--shell-surface), 0 0 0 3.5px var(--shell-accent);
+  --shell-shadow: var(--shadow-md);
   --device-chrome: 232px;
   --device-max: min(100%, max(640px, calc((100vh - var(--device-chrome)) * 1.524)));
 }
@@ -52,7 +67,7 @@
   max-width: 480px;
   padding: 7px 10px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--shell-text);
   text-align: left;
@@ -385,10 +400,9 @@
   }
   .instructor {
     background: var(--shell-surface);
-    border: 0;
-    border-left: 1px solid var(--shell-line);
-    border-radius: 0;
-    box-shadow: none;
+    border: 1px solid var(--shell-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     margin-top: 0;
   }
   .instructor-tabs {
@@ -413,7 +427,7 @@
   .instructor-tabs button.active {
     color: var(--shell-accent);
     border-bottom-color: var(--shell-accent);
-    background: var(--shell-accent-soft);
+    background: transparent;
   }
   .instructor-pane {
     padding: 12px 14px 14px;
@@ -464,7 +478,7 @@
   min-width: 220px;
   z-index: 30;
   border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius);
+  border-radius: var(--radius-lg);
   background: var(--shell-surface);
   box-shadow: var(--shell-shadow);
 }
@@ -476,7 +490,7 @@
   min-height: 36px;
   padding: 8px 10px;
   border: 0;
-  border-radius: var(--shell-radius-sm);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--shell-text);
   text-align: left;
@@ -558,7 +572,7 @@
   gap: 1px;
   padding: 5px 8px;
   border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius-sm);
+  border-radius: var(--radius-md);
   background: var(--shell-raised);
   color: var(--shell-text);
   text-align: left;
@@ -600,9 +614,9 @@
 }
 .palette-kbd {
   border: 1px solid var(--shell-line);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--shell-muted);
-  font-size: 10.5px;
+  font-size: var(--type-2xs);
   line-height: 1.4;
   padding: 1px 4px;
 }
@@ -615,9 +629,9 @@
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--shell-line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--shell-surface);
-  box-shadow: var(--shell-shadow);
+  box-shadow: var(--shadow-lg);
   color: var(--shell-text);
 }
 .command-palette::backdrop {
@@ -673,7 +687,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--shell-text);
   cursor: pointer;
   font-size: var(--type-md);
@@ -692,9 +706,9 @@
 .command-palette kbd {
   flex: none;
   border: 1px solid var(--shell-line);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--shell-muted);
-  font-size: 10.5px;
+  font-size: var(--type-2xs);
   padding: 2px 5px;
 }
 .palette-empty {
@@ -861,11 +875,26 @@
   }
 }
 
-:is(.app-top, .instructor, .signal-toolbar, .wave-options, dialog)
+:is(.app-top, .instructor, .signal-toolbar, .wave-options, dialog, .flyout, .learn)
   :is(.button, .device-small, button, a, summary, input, select):focus-visible,
 .device-shell > :not(#screen-window) :is(.button, .device-small, button, a, summary, input, select):focus-visible {
   outline: none;
   box-shadow: var(--shell-focus);
+}
+
+/* El buscador de la paleta es el único campo y tiene el foco al abrirla: el anillo sobraría. */
+#palette-input:focus-visible {
+  box-shadow: none;
+}
+/* Cerrar en los diálogos del exterior: botón fantasma, como los demás iconos; el equipo conserva el suyo. */
+.app-dialog:not(.device-dialog) .close-button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--shell-muted);
+}
+.app-dialog:not(.device-dialog) .close-button:hover {
+  background: var(--shell-hover);
+  color: var(--shell-text);
 }
 
 #panel-button,
@@ -889,9 +918,9 @@
     margin: 0;
     padding: 5px 6px;
     border: 1px solid var(--shell-line);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--shell-raised);
-    box-shadow: var(--shell-shadow);
+    box-shadow: var(--shadow-sm);
   }
   .signal-toolbar .time-controls {
     flex-wrap: nowrap;
@@ -948,7 +977,7 @@
 
 :is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) :is(.button, .primary-button, .secondary-button) {
   min-height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 :is(.app-top, .signal-toolbar, .instructor, .app-dialog, .more-menu, .command-palette) .button {
   background: var(--shell-raised);
@@ -985,27 +1014,27 @@
   background: var(--shell-accent-soft);
   color: var(--shell-accent);
 }
-.app-dialog .primary-button {
+:is(.app-dialog, .instructor, .flyout, .classroom) .primary-button {
   background: var(--shell-accent);
   border: 1px solid var(--shell-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--shell-accent-ink);
   min-height: 32px;
 }
-.app-dialog .primary-button:hover {
+:is(.app-dialog, .instructor, .flyout, .classroom) .primary-button:hover {
   filter: brightness(0.94);
   background: var(--shell-accent);
   border-color: var(--shell-accent);
   color: var(--shell-accent-ink);
 }
-.app-dialog .secondary-button {
+:is(.app-dialog, .instructor, .flyout, .classroom) .secondary-button {
   background: var(--shell-raised);
   border: 1px solid var(--shell-line);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--shell-text);
   min-height: 32px;
 }
-.app-dialog .secondary-button:hover {
+:is(.app-dialog, .instructor, .flyout, .classroom) .secondary-button:hover {
   background: var(--shell-hover);
   border-color: var(--shell-line);
 }
@@ -1145,10 +1174,10 @@
   min-height: 32px;
   padding: 0;
   border: 1px solid var(--shell-line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--shell-raised);
   color: var(--shell-text);
-  font-size: 16px;
+  font-size: var(--type-lg);
   line-height: 1;
 }
 .step-button:hover {
@@ -1263,7 +1292,7 @@
 :is(#instructor-patient, .flyout) .phys-value {
   gap: 0;
   border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius-sm);
+  border-radius: var(--radius-md);
 }
 :is(#instructor-patient, .flyout) .phys-value > .step-button {
   width: 32px;
@@ -1493,11 +1522,11 @@
   margin: 8px auto 20px;
   padding: 16px;
   border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius);
+  border-radius: var(--radius-lg);
   background: var(--shell-surface);
 }
 .variable-legend h2 {
-  font-size: 14px;
+  font-size: var(--type-md);
   margin: 0 0 12px;
 }
 .variable-legend dl {

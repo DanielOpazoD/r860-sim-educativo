@@ -229,11 +229,11 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     resetPatient: () => instructor.resetPatient(),
     undoEvent: () => instructor.undoEvent(),
     loopReference: () => plots.saveLoopReference(),
-    // Curva de referencia: el botón muestra su estado; no hace falta un aviso aparte.
-    waveGuides: () => {
-      const on = !plots.waveGuides;
-      plots.setWaveGuides(on);
-      if (!ctx.fixtureId) savePrefs({ waveGuides: on });
+    // Ayudas sobre las curvas, todas juntas: el botón muestra su estado; no hace falta un aviso aparte.
+    waveAids: () => {
+      const on = !plots.waveAids;
+      plots.setWaveAids(on);
+      if (!ctx.fixtureId) savePrefs({ waveGuides: on, waveAnnotations: on });
       ctx.updateUI();
     },
     clearLoop: () => plots.clearLoopReference(),
@@ -443,10 +443,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       if (el instanceof HTMLInputElement && el.id === 'variable-descriptions') {
         $('#variable-legend').hidden = !el.checked;
         if (!ctx.fixtureId) savePrefs({ variableDescriptions: el.checked });
-      }
-      if (el instanceof HTMLInputElement && el.id === 'wave-annotations') {
-        plots.setWaveAnnotations(el.checked);
-        if (!ctx.fixtureId) savePrefs({ waveAnnotations: el.checked });
       }
       if ((el as HTMLInputElement).dataset.physRange || (el as HTMLInputElement).dataset.physNumber) instructor.physChange(el);
       if (el.dataset.physPreset) instructor.presetChange(el as HTMLSelectElement);

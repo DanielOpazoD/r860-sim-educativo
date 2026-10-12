@@ -824,25 +824,17 @@ test.describe('CUR · comparación antes/después', () => {
         for (let i = 0; i < d.length; i += 4) if (d[i] !== a[i] || d[i + 1] !== a[i + 1] || d[i + 2] !== a[i + 2]) n++;
         return n;
       });
-    await page.locator('#wave-guides-toggle').click();
-    await expect(page.locator('#wave-guides-toggle')).toHaveAttribute('aria-pressed', 'false');
+    // Un solo botón apaga todas las ayudas: curva previa, marcas de fase y presión, líneas de PEEP y Pmáx.
+    await page.locator('#wave-aids-toggle').click();
+    await expect(page.locator('#wave-aids-toggle')).toHaveAttribute('aria-pressed', 'false');
     await openPersonalization(page);
     await expect(page.locator('#wave-ref-button')).toBeDisabled();
     await closePersonalization(page);
     await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
     expect(await page.evaluate(() => window.__ventila.waveRef)).not.toBeNull();
-    await page.locator('#wave-guides-toggle').click();
+    await page.locator('#wave-aids-toggle').click();
     await openPersonalization(page);
     await expect(page.locator('#wave-ref-button')).toBeEnabled();
-    await closePersonalization(page);
-    await expect.poll(cambiados, { timeout: 10_000 }).toBe(0);
-
-    await openPersonalization(page);
-    await page.locator('#wave-annotations').uncheck();
-    await closePersonalization(page);
-    await expect.poll(cambiados, { timeout: 10_000 }).toBeGreaterThan(80);
-    await openPersonalization(page);
-    await page.locator('#wave-annotations').check();
     await closePersonalization(page);
     await expect.poll(cambiados, { timeout: 10_000 }).toBe(0);
   });

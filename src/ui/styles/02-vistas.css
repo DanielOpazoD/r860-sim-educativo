@@ -170,7 +170,7 @@
 .event-log-row time {
   color: #8abbdf;
   font-size: 11px;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 .event-log-row.alert-event {
   color: #ffdfbe;
@@ -429,7 +429,7 @@
   margin: 14px 0 6px;
 }
 .inline-validation {
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: #ffd3a6;
   margin: 9px 0 12px;
   line-height: 1.5;
@@ -450,7 +450,7 @@
 }
 .primary-button,
 .secondary-button {
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   border: 1px solid #74baaa;
   background: #4c978a;
@@ -479,7 +479,7 @@
 .close-button {
   background: transparent;
   border: 1px solid #456177;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   width: 32px;
   height: 32px;
   display: flex;

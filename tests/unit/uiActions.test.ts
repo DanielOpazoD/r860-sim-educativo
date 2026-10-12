@@ -82,22 +82,20 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
     tabs[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     expect(tabs.at(-1)!.getAttribute('aria-selected')).toBe('true');
     $('#view-options-close').click();
-    for (const id of ['variable-descriptions', 'wave-annotations']) {
-      const input = $<HTMLInputElement>('#' + id);
-      input.checked = false;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    // La curva de referencia es un botón de la barra: su estado se ve en el propio botón.
-    const guides = $<HTMLButtonElement>('#wave-guides-toggle');
-    plots.setWaveGuides(true);
-    guides.click();
+    const descripciones = $<HTMLInputElement>('#variable-descriptions');
+    descripciones.checked = false;
+    descripciones.dispatchEvent(new Event('change', { bubbles: true }));
+    // Las ayudas sobre las curvas son un botón de la barra que las apaga todas juntas; su estado se ve en el botón.
+    const ayudas = $<HTMLButtonElement>('#wave-aids-toggle');
+    plots.setWaveAids(true);
+    ayudas.click();
     expect(loadPrefs()).toMatchObject({ variableDescriptions: false, waveGuides: false, waveAnnotations: false });
     expect($('#variable-legend').hidden).toBe(true);
-    expect(plots.waveGuides).toBe(false);
-    expect(guides.getAttribute('aria-pressed')).toBe('false');
+    expect(plots.waveAids).toBe(false);
+    expect(ayudas.getAttribute('aria-pressed')).toBe('false');
     ctx.fixtureId = 'P1';
-    guides.click();
-    expect(plots.waveGuides).toBe(true);
+    ayudas.click();
+    expect(plots.waveAids).toBe(true);
     expect(loadPrefs().waveGuides).toBe(false);
     ctx.fixtureId = null;
 

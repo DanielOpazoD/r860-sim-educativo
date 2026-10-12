@@ -184,7 +184,7 @@
           <button class="button small simulation-pause" id="sim-pause" data-action="pause" aria-label="Pausar simulación" title="Pausar simulación: se detienen el reloj, la ventilación y las curvas"><svg class="icon"><use href="#i-pause"/></svg><span>Pausar</span></button>
         </div>
         <div class="time-group wave-options-wrap" role="group" aria-label="Pantalla">
-          <button class="button small wave-options-button" id="wave-options-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="wave-options" aria-label="Personalizar vista" title="Personalizar vista"><svg class="icon"><use href="#i-gear"/></svg><span>Personalizar vista</span></button><button class="button small icon-only ref-toggle" id="wave-guides-toggle" data-action="waveGuides" aria-pressed="true" aria-label="Curva de referencia" title="Curva de referencia: contorno de la respiración anterior al cambiar un ajuste"><svg class="icon"><use href="#i-ref"/></svg></button>
+          <button class="button small wave-options-button" id="wave-options-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="wave-options" aria-label="Personalizar vista" title="Personalizar vista"><svg class="icon"><use href="#i-gear"/></svg><span>Personalizar vista</span></button><button class="button small icon-only aids-toggle" id="wave-aids-toggle" data-action="waveAids" aria-pressed="true" aria-label="Ayudas sobre las curvas" title="Ayudas sobre las curvas: curva previa, marcas de inicio, ciclado y presiones, líneas de PEEP y Pmáx"><svg class="icon"><use href="#i-ref"/></svg></button>
           <dialog id="wave-options" class="wave-options view-settings" aria-labelledby="view-options-title">
             <header class="view-options-heading"><div><h2 id="view-options-title">Personalizar vista</h2><p class="view-options-note">Tu espacio de observación.</p></div><button type="button" class="button icon-only" id="view-options-close" aria-label="Cerrar personalización"><svg class="icon"><use href="#i-close"/></svg></button></header>
             <div class="view-tabs" role="tablist" aria-label="Personalización">
@@ -194,7 +194,6 @@
             </div>
             <div class="view-settings-body">
             <section id="view-aids" role="tabpanel" aria-labelledby="view-tab-aids" tabindex="0">
-            <label class="checkline view-description-toggle"><span>Anotaciones sobre curvas<small>Presión pico, meseta y fases del ciclo.</small></span><input id="wave-annotations" type="checkbox" role="switch" checked></label>
             <label class="checkline view-description-toggle"><span>Descripción de variables<small>Glosario bajo el equipo: Ppico, Pplat…</small></span><input id="variable-descriptions" type="checkbox" role="switch"></label>
             <div class="view-reference">
             <button class="button small" id="wave-ref-button" data-action="waveReference" aria-pressed="false" aria-label="Comparar última respiración" title="Superpone la última respiración completa para compararla con las siguientes"><svg class="icon"><use href="#i-history"/></svg><span>Comparar última respiración</span></button>

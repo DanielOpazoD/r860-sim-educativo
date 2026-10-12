@@ -487,9 +487,8 @@ export function startApp(opts: AppOptions): void {
   metrics.init();
   $<HTMLInputElement>('#variable-descriptions').checked = prefs?.variableDescriptions ?? false;
   $('#variable-legend').hidden = !(prefs?.variableDescriptions ?? false);
-  $<HTMLInputElement>('#wave-annotations').checked = prefs?.waveAnnotations ?? true;
-  plots.setWaveGuides(prefs?.waveGuides ?? true);
-  plots.setWaveAnnotations(prefs?.waveAnnotations ?? true);
+  // Las ayudas se encienden y apagan juntas; de preferencias antiguas con valores distintos, manda el apagado.
+  plots.setWaveAids((prefs?.waveGuides ?? true) && (prefs?.waveAnnotations ?? true));
   ctx.setTileDensity(tileDensity);
   instructor.init();
   fillStaticHelp();

@@ -351,6 +351,8 @@ export interface WaveOptions {
   pmax?: number;
   /** Instantes en que el sensor detectó un disparo (s). Es la detección del equipo, no prueba de esfuerzo del paciente: una fuga que cruce el umbral también cuenta (autodisparo). */
   triggerDetectionsS?: number[];
+  /** Ayudas sobre las curvas (líneas de PEEP y Pmáx, marcas de disparo). Apagadas, la curva queda como en el equipo. */
+  aids?: boolean;
 }
 
 /** Tres curvas apiladas (o sólo Pva con `single`) con relleno degradado y barrido con hueco por delante del cursor. */
@@ -470,7 +472,7 @@ export function drawWave(
     ctx.beginPath();
     ctx.rect(left, ytop, plotW, ph);
     ctx.clip();
-    if (sp.index === 1) {
+    if (sp.index === 1 && options.aids !== false) {
       // Referencias del panel de presión: PEEP programada y techo Pmáx (P: legibilidad de la curva).
       ctx.save();
       ctx.setLineDash([4, 4]);
