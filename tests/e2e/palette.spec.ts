@@ -62,8 +62,8 @@ test.describe('Paleta de comandos', () => {
     await expect(page.getByRole('option', { name: /Hipercapnia/ })).toBeVisible();
     await input.press('Enter');
     await expect(page.locator('#command-palette')).not.toBeVisible();
-    await expect(page.locator('#scenario-name')).toHaveText('Hipercapnia: ventilación alveolar y espacio muerto');
-    await expect(page.locator('#instructor-case .case-title')).toHaveText('Hipercapnia: ventilación alveolar y espacio muerto');
+    await expect(page.locator('#scenario-name')).toHaveText('Hipercapnia con pulmones sanos');
+    await expect(page.locator('#instructor-case .case-title')).toHaveText('Hipercapnia con pulmones sanos');
   });
 
   test('la cabecera no desborda horizontalmente', async ({ page }) => {

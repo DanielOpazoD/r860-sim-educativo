@@ -1,6 +1,6 @@
 /**
  * Vistas del caso clínico. En el panel lateral: la lista de casos y, con un caso activo, qué debe lograr el alumno,
- * cómo se evalúa y sus referencias. Bajo el ventilador: el desarrollo, que se revela al entregar. Presentación pura.
+ * la entrega y sus referencias. Bajo el ventilador: el desarrollo, que se revela al entregar. Presentación pura.
  */
 import { formatNumber as f } from '../domain/units';
 import { phFrom } from '../engine/gasExchange';
@@ -16,24 +16,24 @@ function boton(clase: string, texto: string, action: string): HTMLButtonElement 
   return b;
 }
 
+/** «Hess, Respir Care 2014» → «Hess 2014»: autor y año a la vista; la cita completa, en la ayuda emergente. */
+export function refCorta(short: string): string {
+  const año = /(\d{4})\s*$/.exec(short)?.[1];
+  return año ? `${short.split(',')[0]!.trim()} ${año}` : short;
+}
+
+/** Referencias en una línea: autor y año enlazados a la fuente. */
 function referencias(c: ClinicalCase): HTMLElement {
-  return element(
-    'div',
-    'case-refs',
-    element('h3', 'aula-kicker', 'Referencias'),
-    element(
-      'ul',
-      '',
-      ...c.references.map((r) => {
-        const a = element('a', '', r.short);
-        a.href = r.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.title = r.citation;
-        return element('li', '', a);
-      }),
-    ),
-  );
+  const nodos: (Node | string)[] = [element('span', 'case-refs-label', 'Referencias')];
+  c.references.forEach((r, i) => {
+    const a = element('a', '', refCorta(r.short));
+    a.href = r.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.title = r.citation;
+    nodos.push(i === 0 ? ' ' : ' · ', a);
+  });
+  return element('p', 'case-refs', ...nodos);
 }
 
 /** Lista de casos del panel: código, tema, título y estado. */
@@ -58,21 +58,31 @@ export function caseListNodes(cases: Scenario[], currentId: string, progress: Re
   ];
 }
 
-/** Caso activo en el panel: qué lograr, cómo se evalúa y, tras entregar, el veredicto por criterio. */
+/**
+ * Caso activo en el panel, compacto para leerse entero sin desplazarse: tema, título en una línea, viñeta, objetivo
+ * (cada consigna ya nombra sus criterios), respuestas si es diagnóstico, entrega y referencias. Tras entregar, el
+ * veredicto por criterio ocupa el lugar que antes no hacía falta.
+ */
 export function caseBriefNodes(sc: Scenario, answer: string | null, result: CaseResult | null, imported = false): HTMLElement[] {
   const c = sc.clinical!;
+  const volver = boton('case-back', '←', 'scenarios');
+  volver.setAttribute('aria-label', 'Todos los casos');
+  volver.title = 'Todos los casos';
+  const titulo = element('h2', 'case-title', sc.name);
+  titulo.title = sc.name;
   const nodos: HTMLElement[] = [
-    boton('case-back', '← Todos los casos', 'scenarios'),
-    element('p', 'aula-kicker', `${sc.id} · ${c.theme}`),
-    element('h2', 'case-title', sc.name),
+    element('div', 'case-top', volver, element('span', 'aula-kicker', `${sc.id} · ${c.theme}`)),
+    titulo,
     element('p', 'case-vignette', c.vignette),
-    element('div', 'case-goal', element('span', 'aula-kicker', 'Qué debes lograr'), element('p', '', c.question)),
+    element('div', 'case-goal', element('span', 'aula-kicker', 'Objetivo'), element('p', '', c.question)),
   ];
   if (c.kind === 'diagnostico' && c.options) {
+    // Entregado, ya no se elige: quedan sólo la respuesta del alumno y la correcta.
+    const visibles = result ? c.options.filter((o) => o.correct || o.id === answer) : c.options;
     const opciones = element(
       'div',
       'case-options',
-      ...c.options.map((o) => {
+      ...visibles.map((o) => {
         const b = element('button', `case-option${answer === o.id ? ' chosen' : ''}${result && o.correct ? ' correct' : ''}`, o.text);
         b.dataset.caseOption = o.id;
         b.setAttribute('aria-pressed', String(answer === o.id));
@@ -84,29 +94,20 @@ export function caseBriefNodes(sc: Scenario, answer: string | null, result: Case
     opciones.setAttribute('aria-label', 'Respuestas posibles');
     nodos.push(opciones);
   }
-  const marca = (ok: boolean | null, i: number): HTMLElement =>
-    element('span', 'task-check', ok === null ? String(i + 1) : ok ? iconNode('check') : '×');
-  const criterios = c.criteria.map((cr, i) => {
-    const ok = result ? (result.criteria.find((x) => x.id === cr.id)?.ok ?? false) : null;
-    return element('div', `task${ok ? ' complete' : ''}`, marca(ok, i), element('span', '', cr.text));
-  });
-  if (c.kind === 'diagnostico')
-    criterios.push(
+  if (result) {
+    const item = (ok: boolean, texto: string): HTMLElement =>
+      element('li', ok ? 'ok' : 'no', element('span', 'case-check', ok ? iconNode('check') : '×'), element('span', '', texto));
+    const items = c.criteria.map((cr) => item(result.criteria.find((x) => x.id === cr.id)?.ok ?? false, cr.text));
+    if (c.kind === 'diagnostico') items.push(item(!!result.answer?.ok, 'Tu respuesta'));
+    nodos.push(
       element(
         'div',
-        `task${result?.answer?.ok ? ' complete' : ''}`,
-        marca(result ? !!result.answer?.ok : null, c.criteria.length),
-        element('span', '', 'Tu respuesta'),
+        'case-criteria',
+        element('p', `case-verdict ${result.passed ? 'ok' : 'revisar'}`, result.passed ? 'Caso resuelto' : 'Revisa lo que faltó'),
+        element('ul', 'case-checks', ...items),
       ),
     );
-  nodos.push(
-    element(
-      'div',
-      'case-criteria',
-      element('span', 'aula-kicker', result ? (result.passed ? 'Caso resuelto' : 'Revisa lo que faltó') : 'Qué se evalúa al entregar'),
-      element('div', 'lesson-tasks', ...criterios),
-    ),
-  );
+  }
   const acciones = element('div', 'case-actions');
   // Una sesión importada no dice de qué caso es: evaluarla juzgaría al alumno por algo que no hizo aquí.
   if (imported && !result) {
@@ -116,7 +117,7 @@ export function caseBriefNodes(sc: Scenario, answer: string | null, result: Case
     const entregar = boton('primary-button', 'Entregar', 'submitCase');
     entregar.disabled = c.kind === 'diagnostico' && !answer;
     acciones.append(entregar);
-  } else acciones.append(boton('button secondary-button', 'Repetir el caso', 'restartCase'));
+  } else acciones.append(boton('button secondary-button', 'Repetir', 'restartCase'));
   acciones.append(
     boton('case-link', result ? 'Ver desarrollo ↓' : 'Desarrollo ↓', 'caseDevelopment'),
     boton('case-link', 'Aula ↓', 'classroom'),

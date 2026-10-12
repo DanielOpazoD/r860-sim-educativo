@@ -15,20 +15,7 @@ interface Punto {
 /** Una muestra cada 2 s simulados; al pasar del máximo se diezma y la curva conserva su forma. */
 const PASO_S = 2;
 const MAX_PUNTOS = 400;
-/** Distancia al equilibrio que ya se da por alcanzada (mmHg). */
-const LLEGADA_MMHG = 1;
 const SVG = 'http://www.w3.org/2000/svg';
-
-/** Estado del pH en palabras del clínico; null si está en rango. */
-export function estadoPh(ph: number): 'acidemia' | 'alcalemia' | null {
-  return ph < 7.35 ? 'acidemia' : ph > 7.45 ? 'alcalemia' : null;
-}
-
-/** Minutos simulados hasta quedar a 1 mmHg del equilibrio (aproximación exponencial con su constante de tiempo). */
-export function minutosAlEquilibrio(paco2: number, objetivo: number, tauMin: number): number {
-  const d = Math.abs(paco2 - objetivo);
-  return d <= LLEGADA_MMHG ? 0 : tauMin * Math.log(d / LLEGADA_MMHG);
-}
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number>): SVGElementTagNameMap[K] {
   const el = document.createElementNS(SVG, tag);
@@ -116,7 +103,6 @@ export function createGasView(ctx: AppContext): { render(): void } {
     const contexto = ctx.lesson.context();
     const cambioMs = contexto ? Math.max(contexto.patientChangeMs, contexto.settingsChangeMs) : -1;
     const cambioS = cambioMs >= 0 ? cambioMs / 1000 : null;
-    const faltan = objetivo !== null && g.tauMin !== null ? minutosAlEquilibrio(g.paco2, objetivo, g.tauMin) : null;
     const nueva = JSON.stringify([
       f(inicio.paco2, 0),
       f(inicio.ph, 2),
@@ -124,14 +110,12 @@ export function createGasView(ctx: AppContext): { render(): void } {
       f(g.ph, 2),
       objetivo === null ? null : f(objetivo, 0),
       phObjetivo === null ? null : f(phObjetivo, 2),
-      faltan === null ? null : Math.ceil(faltan),
       puntos.length,
       cambioS,
     ]);
     if (nueva === firma) return;
     firma = nueva;
 
-    const estado = estadoPh(g.ph);
     const celda = (texto: string, clase = ''): HTMLTableCellElement => element('td', clase, texto);
     const fila = (nombre: string, unidad: string, a: string, b: string, c: string): HTMLTableRowElement => {
       const th = element('th', '', nombre, unidad ? element('small', '', unidad) : '');
@@ -154,24 +138,10 @@ export function createGasView(ctx: AppContext): { render(): void } {
         fila('pH', '', f(inicio.ph, 2), f(g.ph, 2), phObjetivo === null ? '↓' : f(phObjetivo, 2)),
       ),
     );
-    const nota =
-      objetivo === null
-        ? 'Sin ventilación alveolar: la PaCO₂ sube sin techo.'
-        : faltan === 0
-          ? 'En equilibrio con la ventilación actual.'
-          : `Llega al equilibrio en ≈ ${f(Math.max(1, Math.ceil(faltan!)), 0)} min de simulación. Acelera el tiempo para verlo.`;
     const resumen = `PaCO₂ de ${f(inicio.paco2, 0)} al inicio a ${f(g.paco2, 0)} mmHg ahora${objetivo === null ? ', subiendo' : `; tiende a ${f(objetivo, 0)}`}.`;
     const cabeza = element('header', 'gas-head', element('span', 'gas-title', 'Gasometría'), element('small', 'gas-tag', 'modelo'));
-    if (estado) cabeza.append(element('span', `gas-state ${estado}`, estado));
     host.replaceChildren(
-      element(
-        'div',
-        'gas-card',
-        cabeza,
-        tabla,
-        ...(puntos.length > 1 ? [tendencia(puntos, objetivo, cambioS, resumen)] : []),
-        element('p', 'gas-note', nota),
-      ),
+      element('div', 'gas-card', cabeza, tabla, ...(puntos.length > 1 ? [tendencia(puntos, objetivo, cambioS, resumen)] : [])),
     );
   }
 
