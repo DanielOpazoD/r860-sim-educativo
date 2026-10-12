@@ -26,12 +26,26 @@ Navegador: 1440×1000, 1280×900 y Pixel7; importar sesión sintética → abrir
 
 ## Cierre de revisión local
 
-La revisión del padre detectó dos inconsistencias que no debían quedar para después: el objetivo válido de SC-18 y la etiqueta de pausa de ciclo con músculo. Se resolvieron en un segundo commit local, sin repetir suites por instrucción expresa.
+La revisión del padre detectó dos inconsistencias que no debían quedar para después: el objetivo válido de SC-18 y la etiqueta de pausa de ciclo con músculo. Se resolvieron en el commit local 9f22643cf6ef1dd85fd43626a773d506ebaf44f1. En la fase inicial de revisión se usaron probes por la instrucción de no repetir suites; después el padre autorizó la validación completa necesaria, documentada abajo.
 
 - SC-18 ahora solicita reconocer la invalidez por esfuerzo de un bloqueo espiratorio de 2 s tras la perturbación. Si cae entre esfuerzos, indica repetir. El objetivo exige inicio posterior a la perturbación y al inicio de lección, duración real 2 s ±1e-6 s, calidad inválida, confusor muscular presente y motivo de esfuerzo/meseta perturbada/inestable. No premia cancelaciones, Pmáx ni resultados anteriores. La prueba general de objetivos `validExp` recupera su expectativa original, sin una excepción para SC-18.
 - La pausa de ciclo vigila |Pmus|>0.05 cmH2O en todos sus pasos. Si cumple estabilidad, mantiene la presión observada; con esfuerzo publica calidad inválida y motivo `esfuerzoDurantePausa`. Sin estabilidad conserva el contrato previo de dato nulo. No se sustituye por la presión pasiva interna.
 - `HoldOutcome.effortDuringHold` pasa a ser obligatorio: el productor interno debe declarar el confusor.
-- Nuevas regresiones redactadas (4 casos): pausa pasiva/activa estable, esfuerzo sólo inicial y objetivo SC-18. No se ejecutaron como suite. Un probe focalizado independiente del runner, `../evidence/closure-probe.ts`, ejecutó esos bancos y verificó magnitudes/calidad, cumplimiento del objetivo y rechazo de resultados previos/cancelación. Pasaron typecheck, lint y fronteras de capas. La matriz y cobertura previas corresponden al primer commit; no se atribuyen al cierre posterior.
+- Nuevas regresiones (4 casos): pausa pasiva/activa estable, esfuerzo sólo inicial y objetivo SC-18. Un probe focalizado inicial, `../evidence/closure-probe.ts`, verificó esos bancos. Tras autorización del padre se ejecutaron también las regresiones y la validación descrita en la siguiente sección. Las cifras previas de 556 pruebas y 366 E2E corresponden sólo al primer commit.
+
+## Validación del cierre
+
+Código de producto idéntico a 9f22643 (el commit de evidencia posterior sólo añade/refina pruebas y documentación). Se ejecutó el archivo actual de 15 regresiones en copias aisladas obtenidas por `git archive`, sin alterar la rama de trabajo:
+
+| Código de producto | Resultado de las 15 regresiones actuales |
+| --- | --- |
+| ea39875 (base) | 8 fallos, 7 controles aprobados |
+| 56e716ed (antes del cierre) | 3 fallos: pausa con esfuerzo estable, esfuerzo sólo inicial y objetivo SC-18; 12 aprobadas |
+| 9f22643 y árbol final | 15 aprobadas |
+
+Las pruebas focalizadas de medición, procedimientos, fuga, objetivos, lección y revisión7 pasan: 65 casos. `check` final pasa con 560 pruebas; cobertura final: líneas69.31%, ramas60.54%, funciones67.03%, sentencias67.12%, sin cambios de umbral. Build aprobado. Los 12 E2E focalizados (4 flujos × 3 viewports) pasan: bloqueo con esfuerzo, denominador cero, pausa pasiva/activa/esfuerzo sólo inicial y SC-18. Se inspeccionaron capturas reales de la pausa activa y del objetivo SC-18 completado en escritorio y móvil; advertencia visible y dato inválido sin inventar PEEP pasiva. Sin errores de página en esos flujos.
+
+Matriz final: 372 E2E aprobados, 27 omisiones preexistentes por viewport y 0 fallos (133 pruebas × 3 proyectos). `results-doc.py`, `docs:facts` y `docs:facts -- --check` pasan con artefactos nuevos. La matriz completa final se amplió por dependencia del flujo documental: `docs:facts` calcula el recuento global desde el JSON E2E completo. No se mezclaron ejecuciones de SHAs diferentes. Los artefactos finales se guardan con prefijo `final-` en `../evidence/`, separados de los históricos.
 
 ## Límites y siguiente bloque
 
@@ -39,4 +53,4 @@ La pasividad se vigila desde Pmus conocido del escenario durante toda la oclusi�
 
 SC-18 ya no exige obtener PEEP total pasiva mientras el músculo invalida la maniobra: enseña a reconocer esa limitación y permite repetir si la oclusión cae entre esfuerzos. La pausa de ciclo también advierte esfuerzo aunque su cola sea estable. No se tocaron reloj/autopausa ni otras lecciones.
 
-Validación clínica y educativa externa pendiente. La referencia primaria fue verificada por la auditoría del padre; esta sesión no la reabrió ni afirma haber superado el captcha. Las suites, cobertura, build y capturas completas documentadas arriba verifican 56e716ed; el cierre posterior sólo tiene revisión estática, typecheck, lint, fronteras y probes numéricos focalizados. Las cuatro regresiones nuevas y la UI de SC-18/pausa quedan pendientes de ejecución cuando el padre autorice la siguiente validación.
+Validación clínica y educativa externa pendiente. La referencia primaria fue verificada por la auditoría del padre; esta sesión no la reabrió ni afirma haber superado el captcha. La validación del cierre anterior verifica el código de producto de 9f22643 y las pruebas del árbol final; las cifras históricas de 56e716ed permanecen identificadas por separado. No queda pendiente la ejecución de las cuatro regresiones ni de los E2E de SC-18/pausa. Persisten los límites del modelo y la validación externa pendiente.

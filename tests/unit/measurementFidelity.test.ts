@@ -183,9 +183,9 @@ describe('cierre de coherencia de pausa y SC-18', () => {
       flags: {},
     };
     const task = e.lesson!.tasks.find((t) => t.id === 'peepi')!;
-    expect(task.test).toBe('expHoldWithEffort');
-    expect(LESSON_TESTS[task.test]!(context)).toBe(true);
     const h = frame.procedure.last.expHold!;
+    expect(h).toMatchObject({ quality: 'invalid', passiveMechanicsValid: false });
+    expect(LESSON_TESTS[task.test]!(context)).toBe(true);
     h.startedAtMs = 39000;
     expect(LESSON_TESTS[task.test]!(context)).toBe(false);
     h.startedAtMs = 50000;
