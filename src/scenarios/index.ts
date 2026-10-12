@@ -235,8 +235,8 @@ export const SCENARIOS: Scenario[] = [
         { id: 'ver', text: 'Observa en el registro las respiraciones asistidas seguidas de otra al poco tiempo.', test: 'assisted' },
         {
           id: 'peepi',
-          text: 'Tras la perturbación, mide la PEEP total con un bloqueo espiratorio de 2 s: el hueco entre dos esfuerzos dura 3 s y uno más largo sale perturbado.',
-          test: 'validExp',
+          text: 'Tras la perturbación, solicita un bloqueo espiratorio de 2 s y observa cómo el esfuerzo impide estimar PEEP total pasiva. Repite si el bloqueo cae íntegramente entre esfuerzos: una cola estable no demuestra que toda la maniobra fuera pasiva.',
+          test: 'expHoldWithEffort',
         },
         { id: 'trig', text: 'Baja el disparo por flujo a 1 L/min y comprueba si recupera alguna respiración.', test: 'trigger1' },
       ],

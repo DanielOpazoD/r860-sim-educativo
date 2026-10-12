@@ -134,7 +134,11 @@ export class MetricEngine {
         source: 'derivedModel',
         ...(leak === null ? { quality: 'unavailable' as const, reason: 'volumenInspiradoInsuficiente' } : {}),
       });
-      if (last.pplatCycle !== null) out.pplatCycle = sample('pplatCycle', last.pplatCycle, 'cmH2O', base);
+      if (last.pplatCycle !== null)
+        out.pplatCycle = sample('pplatCycle', last.pplatCycle, 'cmH2O', {
+          ...base,
+          ...(last.pplatCycleReason ? { quality: 'invalid' as const, reason: last.pplatCycleReason } : {}),
+        });
       else
         out.pplatCycle = sample('pplatCycle', null, 'cmH2O', {
           ...base,

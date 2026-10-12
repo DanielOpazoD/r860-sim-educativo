@@ -32,6 +32,18 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
     const e = c.frame.procedure.last.expHold;
     return !!e && e.quality === 'valid' && after(e, c.lessonStartMs);
   },
+  expHoldWithEffort: (c) => {
+    const h = c.frame.procedure.last.expHold;
+    const since = Math.max(c.lessonStartMs, c.perturbationMs ?? Number.POSITIVE_INFINITY);
+    return (
+      !!h &&
+      h.quality === 'invalid' &&
+      h.passiveMechanicsValid === false &&
+      (h.startedAtMs ?? -1) >= since &&
+      Math.abs((h.actualDurationS ?? 0) - 2) < 1e-6 &&
+      ['esfuerzoDuranteBloqueo', 'mesetaPerturbada', 'mesetaInestable'].includes(h.reason ?? '')
+    );
+  },
   r20: (c) => c.frame.truth.patient.rInsp >= 20,
   holdAfterPatient: (c) => {
     const h = c.frame.procedure.last.inspHold;

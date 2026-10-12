@@ -568,11 +568,15 @@ export class VcController {
         this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
         // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
         this.paw = p.pawForFlow(0, this.pmusAt(this.simT + h));
-        if (this.phase === 'inspPause' && this.breath) this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
+        const effortDuringOcclusion = Math.max(Math.abs(this.pmusAt(this.simT)), Math.abs(this.pmusAt(this.simT + h))) > 0.05;
+        if (this.phase === 'inspPause' && this.breath) {
+          this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
+          if (effortDuringOcclusion) this.breath.effortDuringPause = true;
+        }
         if (this.hold) {
           this.hold.samples.push({ t: this.tPhase + h, paw: this.paw });
           // Toda la maniobra, incluido el arranque que el filtro de estabilidad descarta.
-          if (Math.max(Math.abs(this.pmusAt(this.simT)), Math.abs(this.pmusAt(this.simT + h))) > 0.05) this.hold.effortDuringHold = true;
+          if (effortDuringOcclusion) this.hold.effortDuringHold = true;
           if (this.paw >= s.pmax) this.hold.pmaxHit = true;
         }
         if (this.phase === 'inspPause' && this.paw >= s.pmax) this.transition = () => this.onPmax();
@@ -840,7 +844,7 @@ export class VcController {
       return;
     }
     b.pplatCycle = this.paw;
-    b.pplatReason = null;
+    b.pplatReason = b.effortDuringPause ? 'esfuerzoDurantePausa' : null;
   }
 
   private beginHold(): void {
@@ -953,6 +957,7 @@ export class VcController {
       plimitReached: false,
       pmaxReached: false,
       pauseSamples: [],
+      effortDuringPause: false,
       flowSamples: [],
       pawAtFlowEnd: this.paw,
       qAtFlowEnd: 0,

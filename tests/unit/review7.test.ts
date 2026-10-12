@@ -89,7 +89,7 @@ describe('R7-01 · la PEEP total no se certifica mientras sigue subiendo', () =>
 });
 
 describe('R7-02 · si la lección pide un bloqueo espiratorio, dice cuánto tiene que durar', () => {
-  it('los objetivos pasivos cumplen su duración; SC-18 con esfuerzo no certifica pasividad', () => {
+  it('todo objetivo «validExp» se cumple con la duración que su propio texto nombra', () => {
     // Al estrechar el criterio, SC-14 dejó de aceptar los 3 s que trae el selector por omisión. Un objetivo que sólo
     // se cumple con un ajuste que la tarea no menciona es un objetivo imposible disfrazado.
     const conExp = SCENARIOS.filter((e) => e.lesson?.tasks.some((t) => t.test === 'validExp'));
@@ -99,11 +99,7 @@ describe('R7-02 · si la lección pide un bloqueo espiratorio, dice cuánto tien
       const nombrada = /(\d+)\s*s\b/.exec(texto);
       const d = nombrada ? Number(nombrada[1]) : 3; // 3 s es lo que el selector ofrece al abrirse
       const r = bloquear(e.id, d);
-      if (e.id === 'SC-18') {
-        // Deuda docente explícita: su esfuerzo invade la oclusión aunque la cola sea estable.
-        expect(r.valida).toBe(false);
-        expect(r.motivo).toBe('esfuerzoDuranteBloqueo');
-      } else expect(r.valida, `${e.id} a ${d} s → ${r.motivo}`).toBe(true);
+      expect(r.valida, `${e.id} a ${d} s → ${r.motivo}`).toBe(true);
     }
   });
 });

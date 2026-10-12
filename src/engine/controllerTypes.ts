@@ -25,7 +25,7 @@ export interface HoldOutcome {
   reversal: number;
   pmaxHit: boolean;
   /** Pmus sintético > 0.05 cmH2O en cualquier paso de la oclusión; umbral numérico, no clínico. */
-  effortDuringHold?: boolean;
+  effortDuringHold: boolean;
   cancelled: boolean;
   /** Motivo de la cancelación (usuario o paso a espera). */
   cancelReason: 'user' | 'standby' | null;
@@ -71,6 +71,7 @@ export interface BreathAccum {
   plimitReached: boolean;
   pmaxReached: boolean;
   pauseSamples: { t: number; paw: number }[];
+  effortDuringPause: boolean;
   /** Muestras de la rampa a flujo constante: de su forma sale el índice de estrés. */
   flowSamples: { t: number; paw: number }[];
   /** Paw y flujo en el ÚLTIMO instante en que aún entraba gas: el numerador y el denominador de la resistencia. */

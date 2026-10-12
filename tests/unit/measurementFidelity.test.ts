@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { benchSim, BENCH_PATIENT, BENCH_SETTINGS, runUntilBreath } from '../helpers';
+import { Simulator } from '../../src/engine/simulator';
+import { defaultInit, R860_PROFILE } from '../../src/profiles';
+import { SCENARIOS } from '../../src/scenarios';
+import { LESSON_TESTS } from '../../src/ui/lesson';
 import { ALL_METRICS, metricStatus } from '../../src/ui/metricsTable';
 
 const effort = { enabled: true, amplitude: 4, ratePerMin: 3, tiS: 3, phaseS: 0, shape: 'riseRelax' as const };
@@ -121,5 +125,71 @@ describe('fidelidad de medición: señal, validez y canales', () => {
     expect(frame.metrics.leakPct).toMatchObject({ value: null, quality: 'unavailable', reason: 'volumenInspiradoInsuficiente' });
     const spec = ALL_METRICS.find((m) => m.key === 'leakPct')!;
     expect(metricStatus(frame, spec).label).toBe('No disponible');
+  });
+});
+
+describe('cierre de coherencia de pausa y SC-18', () => {
+  it.each([false, true])('pausa estable: conserva presión observada; esfuerzo=%s', (enabled) => {
+    const sim = benchSim({
+      settings: { ...BENCH_SETTINGS, pausePct: 0.2 },
+      effort: { ...effort, enabled, tiS: 1 },
+    });
+    runUntilBreath(sim, 1);
+    expect(sim.frame().metrics.pplatCycle).toMatchObject({
+      value: enabled ? expect.closeTo(11, 6) : expect.closeTo(15, 6),
+      quality: enabled ? 'invalid' : 'valid',
+      reason: enabled ? 'esfuerzoDurantePausa' : null,
+    });
+  });
+
+  it('pausa: no pierde el esfuerzo inicial aunque la cola y Pmus final sean pasivos', () => {
+    const sim = benchSim({
+      settings: { ...BENCH_SETTINGS, pausePct: 0.2 },
+      effort: { ...effort, shape: 'halfSine', tiS: 0.02, phaseS: 0.8 },
+    });
+    runUntilBreath(sim, 1);
+    expect(sim.frame().metrics.pplatCycle).toMatchObject({
+      value: expect.closeTo(15, 6),
+      quality: 'invalid',
+      reason: 'esfuerzoDurantePausa',
+    });
+  });
+
+  it('SC-18: el objetivo acepta la maniobra con esfuerzo tras la perturbación, no cancelaciones ni resultados previos', () => {
+    const e = SCENARIOS.find((s) => s.id === 'SC-18')!;
+    const sim = new Simulator(
+      defaultInit({
+        patient: e.patient,
+        effort: e.effort,
+        sensors: e.sensors,
+        settings: { ...BENCH_SETTINGS, ...e.settings },
+      }),
+      R860_PROFILE,
+    );
+    sim.run(40000);
+    sim.command({ type: 'setPatient', params: { rExp: 60 } });
+    runUntilBreath(sim, sim.breaths.length + 6);
+    expect(sim.command({ type: 'requestHold', kind: 'expHold', durationS: 2 }).accepted).toBe(true);
+    for (let i = 0; i < 20000 && !sim.procedures.last.expHold; i++) sim.step();
+    expect(sim.procedures.last.expHold).not.toBeNull();
+    const frame = sim.frame();
+    const context = {
+      frame,
+      scenarioId: e.id,
+      lessonStartMs: 0,
+      patientChangeMs: 40000,
+      settingsChangeMs: -1,
+      perturbationMs: 40000,
+      flags: {},
+    };
+    const task = e.lesson!.tasks.find((t) => t.id === 'peepi')!;
+    expect(task.test).toBe('expHoldWithEffort');
+    expect(LESSON_TESTS[task.test]!(context)).toBe(true);
+    const h = frame.procedure.last.expHold!;
+    h.startedAtMs = 39000;
+    expect(LESSON_TESTS[task.test]!(context)).toBe(false);
+    h.startedAtMs = 50000;
+    h.reason = 'canceladoPorUsuario';
+    expect(LESSON_TESTS[task.test]!(context)).toBe(false);
   });
 });
