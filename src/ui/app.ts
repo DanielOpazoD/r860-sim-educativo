@@ -467,8 +467,7 @@ export function startApp(opts: AppOptions): void {
       engineBanner(
         `Parámetros de la dirección ignorados por no ser válidos: ${parametrosMalos.join(' · ')}. Se usan los valores por omisión.`,
       );
-    client.init(init, speed, params.get('paused') !== '1', autopause);
-    if (scenario.perturbations.length) client.loadScenario(scenario, false);
+    client.init(init, speed, params.get('paused') !== '1', autopause, true, scenario);
     setTimeout(() => {
       if (frame === null && !fixtureId) {
         engineBanner(

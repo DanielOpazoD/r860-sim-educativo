@@ -12,7 +12,7 @@ export interface Discontinuity {
 }
 
 export type MainToEngine =
-  | { type: 'init'; init: SimulatorInit; speed: number; running: boolean; autopauseAtMs?: number; warmUp?: boolean }
+  | { type: 'init'; init: SimulatorInit; speed: number; running: boolean; autopauseAtMs?: number; warmUp?: boolean; scenario?: Scenario }
   | { type: 'command'; id: number; cmd: Command; actor: Actor }
   | { type: 'control'; action: 'pause' | 'resume'; reason: string }
   | { type: 'setSpeed'; speed: number }

@@ -26,7 +26,7 @@ export class EngineHost {
   private discontinuities: Discontinuity[] = [];
   private generation = 0;
   private scenarioPerturbations: { atSimTimeMs: number; apply: () => void; note: string }[] = [];
-  /** Pausa exacta en tiempo simulado (capturas deterministas, VIS). */
+  /** Objetivo absoluto: se pausa en el primer paso fijo que lo alcanza (VIS). */
   private autopauseAtMs: number | null = null;
 
   constructor(
@@ -45,7 +45,6 @@ export class EngineHost {
           this.post({ type: 'initError', reason: (e as Error).message });
           return;
         }
-        if (m.warmUp !== false) this.warmUp(this.sim);
         // El protocolo es un contrato: un número que no lo es congelaría el reloj sin decir nada (`?speed=abc`).
         if (!Number.isFinite(m.speed) || m.speed <= 0) {
           this.post({ type: 'initError', reason: `velocidad inválida: ${String(m.speed)}` });
@@ -64,7 +63,10 @@ export class EngineHost {
         this.accMs = 0;
         this.lastNow = null;
         this.discontinuities = [];
-        this.scenarioPerturbations = [];
+        this.setPerturbations(m.scenario?.perturbations ?? []);
+        if (m.warmUp !== false) this.warmUp(this.sim);
+        this.applyDuePerturbations();
+        this.finishAutopause();
         this.startTimer();
         this.postFrame();
         break;
@@ -129,6 +131,7 @@ export class EngineHost {
         this.generation += 1;
         this.scenarioPerturbations = []; // una sesión importada no hereda perturbaciones del escenario previo (regla 9)
         this.discontinuities = [];
+        this.autopauseAtMs = null;
         this.running = false;
         this.pauseReason = 'sesión importada (reproducida); pulse Reanudar';
         this.accMs = 0;
@@ -167,8 +170,18 @@ export class EngineHost {
     this.sim = new Simulator(init, profileFor(init));
     this.generation += 1;
     this.sim.noteEvent('scenario', 'instructor', { scenarioId: sc.id, name: sc.name, synthetic: true });
+    this.autopauseAtMs = null;
+    this.setPerturbations(sc.perturbations);
     this.warmUp(this.sim);
-    this.scenarioPerturbations = sc.perturbations.map((p) => ({
+    this.running = true;
+    this.pauseReason = null;
+    this.accMs = 0;
+    this.lastNow = null;
+    this.postFrame();
+  }
+
+  private setPerturbations(perturbations: Scenario['perturbations']): void {
+    this.scenarioPerturbations = perturbations.map((p) => ({
       atSimTimeMs: p.atSimTimeMs,
       note: p.note,
       apply: () => {
@@ -177,18 +190,29 @@ export class EngineHost {
         if (p.sensors) this.sim?.command({ type: 'setSensors', params: p.sensors }, 'scenario');
       },
     }));
-    this.running = true;
-    this.pauseReason = null;
-    this.accMs = 0;
-    this.lastNow = null;
-    this.postFrame();
   }
 
-  /** Adelanta dos ciclos respiratorios al instante para que la pantalla muestre curvas desde el primer cuadro (P: sólo presentación; el registro conserva t = 0). */
+  /** Adelanta tres ciclos (12–20 s), respetando perturbaciones y autopausa desde t=0. */
   private warmUp(sim: Simulator): void {
     if (sim.ventilationState !== 'ventilating') return;
     const cycleMs = 60_000 / sim.controller.settings.rr;
-    sim.run(Math.min(Math.max(cycleMs * 3, 12_000), 20_000));
+    const endMs = Math.min(Math.max(cycleMs * 3, 12_000), 20_000, this.autopauseAtMs ?? Infinity);
+    while (sim.simTimeMs < endMs) {
+      this.applyDuePerturbations();
+      sim.step();
+    }
+    this.applyDuePerturbations();
+  }
+
+  private finishAutopause(): boolean {
+    const sim = this.sim;
+    if (!sim || this.autopauseAtMs === null || sim.simTimeMs < this.autopauseAtMs) return false;
+    this.running = false;
+    this.pauseReason = 'pausa automática';
+    this.autopauseAtMs = null;
+    this.accMs = 0;
+    sim.noteEvent('pause', 'system', { paused: true, reason: 'pausa automática', simTimeMs: sim.simTimeMs });
+    return true;
   }
 
   private startTimer(): void {
@@ -223,7 +247,7 @@ export class EngineHost {
       }
       let steps = plan.steps;
       if (this.autopauseAtMs !== null) {
-        const left = Math.max(0, Math.round((this.autopauseAtMs - sim.simTimeMs) / sim.clock.dtMs));
+        const left = Math.max(0, Math.ceil((this.autopauseAtMs - sim.simTimeMs) / sim.clock.dtMs));
         steps = Math.min(steps, left);
       }
       for (let i = 0; i < steps; i++) {
@@ -231,15 +255,8 @@ export class EngineHost {
         sim.step();
       }
       this.accMs = plan.remainderMs;
-      if (this.autopauseAtMs !== null && sim.simTimeMs >= this.autopauseAtMs) {
-        this.running = false;
-        // En la cara del equipo va sólo el motivo, en castellano y corto: el instante exacto queda en el registro, que
-        // es donde sirve. Antes se leía «pausa automática en t = 12000 ms (captura)», que además no cabía y se cortaba.
-        this.pauseReason = 'pausa automática';
-        this.autopauseAtMs = null;
-        sim.noteEvent('pause', 'system', { paused: true, reason: 'pausa automática', simTimeMs: sim.simTimeMs });
-        this.postFrame();
-      }
+      this.applyDuePerturbations();
+      if (this.finishAutopause()) this.postFrame();
     } else {
       this.lastNow = now;
     }

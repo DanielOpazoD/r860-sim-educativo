@@ -125,8 +125,16 @@ export class EngineClient {
     };
   }
 
-  init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number, warmUp = true): void {
-    const m: MainToEngine = { type: 'init', init, speed, running, warmUp, ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}) };
+  init(init: SimulatorInit, speed = 1, running = true, autopauseAtMs?: number, warmUp = true, scenario?: Scenario): void {
+    const m: MainToEngine = {
+      type: 'init',
+      init,
+      speed,
+      running,
+      warmUp,
+      ...(scenario ? { scenario } : {}),
+      ...(autopauseAtMs !== undefined ? { autopauseAtMs } : {}),
+    };
     this.restartMsgs = [m];
     this.send(m);
   }
