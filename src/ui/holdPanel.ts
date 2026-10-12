@@ -125,10 +125,18 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
       text =
         h.quality === 'valid'
           ? `Medido · ${wallDate(h.wallTimeMs ?? 0)}`
-          : `No válida: ${humanReason(h.reason)}${h.signalQuality === 'valid' ? ' · señal estable; presión observada' : ''} · ${wallDate(h.wallTimeMs ?? 0)}`;
+          : `No válida: ${humanReason(h.reason)} · ${wallDate(h.wallTimeMs ?? 0)}`;
     if (h && h.procedureId !== lastHoldToastId && (h.completedAtMs ?? 0) > holdOpenedAtMs) {
       lastHoldToastId = h.procedureId;
-      if (h.kind === 'inspHold' && h.quality === 'valid' && h.values.pplat?.value !== null && h.values.pplat?.value !== undefined) {
+      // La práctica sólo guarda mecánica pasiva: una meseta estable con músculo activo la muestra el equipo, pero no
+      // entra en la curva de titulación ni en los objetivos (verdad del modelo, `passiveMechanicsValid`).
+      if (
+        h.kind === 'inspHold' &&
+        h.quality === 'valid' &&
+        h.passiveMechanicsValid !== false &&
+        h.values.pplat?.value !== null &&
+        h.values.pplat?.value !== undefined
+      ) {
         const previos = (ctx.lesson.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
         ctx.lesson.flags.inspHolds = [...previos, { d: h.requestedDurationS ?? 0, p: h.values.pplat.value }];
         // Cada medición válida es un punto de la curva de titulación que el alumno construye por su cuenta: la PEEP a

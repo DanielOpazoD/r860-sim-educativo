@@ -168,16 +168,12 @@ export class ProcedureManager {
       quality = 'invalid';
       reason = 'mesetaInestable';
     }
-    const signalQuality = quality;
-    const signalReason = reason;
+    // La calidad es la del equipo: sólo juzga la forma de la presión. El esfuerzo muscular es verdad del modelo y va
+    // aparte, para la capa docente; una meseta estable con músculo activo se publica como la publicaría el ventilador.
     const passiveMechanicsValid = !o.effortDuringHold;
-    if (quality === 'valid' && !passiveMechanicsValid) {
-      quality = 'invalid';
-      reason = 'esfuerzoDuranteBloqueo';
-    }
     const values: Record<string, MetricSample> = {};
     if (o.kind === 'inspHold') {
-      const pplat = signalQuality === 'valid' ? o.pawEnd : null;
+      const pplat = quality === 'valid' ? o.pawEnd : null;
       values.pplat = mkSample('pplatHold', pplat, 'cmH2O', { ...base, quality, reason });
       // Denominador: PEEPtot si hay un bloqueo espiratorio válido medido con la misma PEEP programada Y en la
       // misma mecánica (P, E-035). La PEEPe igual no basta: la autoPEEP depende de toda la mecánica — tras
@@ -283,8 +279,6 @@ export class ProcedureManager {
       quality,
       reason,
       values,
-      signalQuality,
-      signalReason,
       passiveMechanicsValid,
       // La maniobra queda vinculada a la mecánica que la produjo: sólo las espiratorias válidas la llevan.
       ...(o.kind === 'expHold' && quality === 'valid' ? { contextSig: this.contextSig() } : {}),

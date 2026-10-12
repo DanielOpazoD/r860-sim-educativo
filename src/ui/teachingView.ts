@@ -127,7 +127,9 @@ function tarjetaHTML(t: Tarjeta, oculto: (k: string) => boolean): string {
     ? '<p class="edu-falta">En examen se revela al estimar la medición en la columna numérica.</p>'
     : t.valor === null
       ? `<p class="edu-falta">${esc(t.faltaPara)}</p>`
-      : null;
+      : t.aviso
+        ? `<p class="edu-falta">${esc(t.aviso)}</p>`
+        : null;
   const ref = t.referencia
     ? `<p class="edu-ref">Referencia <b>${esc(t.referencia.texto)}</b></p>`
     : '<p class="edu-ref edu-sinref">Sin rango de referencia</p>';
@@ -384,7 +386,7 @@ export function createTeachingView(ctx: AppContext): TeachingView {
       ctx.scenario.id,
       ctx.scenario.caution,
       pantalla,
-      t.map((x) => [x.valor, x.estado, x.sustituida]),
+      t.map((x) => [x.valor, x.estado, x.sustituida, x.aviso]),
       niveles(fr),
       estres(fr),
       puntos,

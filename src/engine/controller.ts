@@ -846,7 +846,7 @@ export class VcController {
       return;
     }
     b.pplatCycle = this.paw;
-    b.pplatReason = b.effortDuringPause ? 'esfuerzoDurantePausa' : null;
+    b.pplatReason = null; // el equipo publica la meseta estable; el esfuerzo queda en `effortDuringPause` (docente)
   }
 
   private beginHold(): void {
@@ -1013,6 +1013,7 @@ export class VcController {
       pmaxReached: b.pmaxReached,
       energyInspJ: b.energyInsp * JOULES_PER_CMH2O_L,
       truthVStartL: b.vStart,
+      effortDuringPause: b.effortDuringPause,
     };
     this.events.push({ type: 'breathEnd', record });
   }

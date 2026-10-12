@@ -38,6 +38,11 @@ export interface Tarjeta {
   estado: 'dentro' | 'fuera' | 'sinRango' | 'sinDato';
   /** Qué significa, o qué hay que hacer para medirlo. */
   nota: string;
+  /**
+   * Verdad del modelo que el equipo no ve: el bloqueo del que sale el número tuvo esfuerzo muscular. El valor es el que
+   * mostró el ventilador; el aviso dice que no es mecánica pasiva. null sin aviso.
+   */
+  aviso?: string | null;
 }
 
 const REF_PPLAT: Referencia = {
@@ -66,12 +71,17 @@ function metrica(fr: EngineFrame, clave: string): number | null {
   return m && m.quality === 'valid' ? m.value : null;
 }
 
+/** Lo que el equipo no puede saber y el Aula sí: hubo músculo activo durante la oclusión. */
+export const AVISO_ESFUERZO =
+  'Según el modelo hubo esfuerzo muscular durante este bloqueo: el ventilador lo midió como estable, pero no es mecánica pasiva.';
+
 /** Valor de un bloqueo inspiratorio válido, o null. Los tres derivados sólo existen tras una oclusión. */
-function delBloqueo(fr: EngineFrame, clave: string): { valor: number | null; motivo: string | null } {
+function delBloqueo(fr: EngineFrame, clave: string): { valor: number | null; motivo: string | null; aviso: string | null } {
   const h = fr.procedure.last.inspHold;
-  if (!h || h.quality !== 'valid') return { valor: null, motivo: null };
+  if (!h || h.quality !== 'valid') return { valor: null, motivo: null, aviso: null };
   const v = h.values[clave];
-  return v && v.quality === 'valid' ? { valor: v.value, motivo: v.reason } : { valor: null, motivo: v?.reason ?? null };
+  const aviso = h.passiveMechanicsValid === false ? AVISO_ESFUERZO : null;
+  return v && v.quality === 'valid' ? { valor: v.value, motivo: v.reason, aviso } : { valor: null, motivo: v?.reason ?? null, aviso: null };
 }
 
 /**
@@ -134,6 +144,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(ppico, 1, null),
     faltaPara: 'Haz un bloqueo inspiratorio para separar la parte resistiva de la elástica.',
     nota: 'Sin rango propio: sube con el flujo y con la resistencia.',
+    aviso: pplat.aviso,
   };
 
   const tarjetaPplat: Tarjeta = {
@@ -148,6 +159,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(pplat.valor, 1, REF_PPLAT),
     faltaPara: 'Se mide ocluyendo al final de la inspiración: bloqueo inspiratorio.',
     nota: 'Con flujo cero sólo queda carga elástica. Exige ocluir.',
+    aviso: pplat.aviso,
   };
 
   const tarjetaDriving: Tarjeta = {
@@ -162,6 +174,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(driving.valor, 1, REF_DRIVING),
     faltaPara: 'Necesita la meseta: bloqueo inspiratorio.',
     nota: 'El VT normalizado por la distensibilidad: ΔP = VT / Cstat. ' + denominador(cstat.motivo),
+    aviso: driving.aviso,
   };
 
   const cstatMl = cstat.valor === null ? null : cstat.valor * 1000;
@@ -178,6 +191,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(cstatMl, 0, REF_CSTAT),
     faltaPara: 'Necesita la meseta: bloqueo inspiratorio.',
     nota: 'Volumen admitido por cmH₂O elástico. Sólo vale con el paciente pasivo.',
+    aviso: cstat.aviso,
   };
 
   return [tarjetaPpico, tarjetaPplat, tarjetaDriving, tarjetaCstat];

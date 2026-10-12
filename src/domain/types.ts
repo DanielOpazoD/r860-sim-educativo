@@ -287,16 +287,19 @@ export interface BreathRecord {
   energyInspJ?: number;
   /** Estado verdadero al inicio (docente): volumen absoluto sobre relajación. */
   truthVStartL: Liters;
+  /** Verdad del modelo (docente): hubo esfuerzo muscular durante la pausa inspiratoria. La Pplat de ciclo no lo refleja. */
+  effortDuringPause?: boolean;
 }
 
 export type ProcedureKind = 'inspHold' | 'expHold' | 'manualBreath' | 'increaseO2';
 export type ProcedurePhase = 'queued' | 'running' | 'completed' | 'cancelled' | 'invalid';
 
 export interface ProcedureResult {
-  /** Calidad de adquisición de la meseta, separada de su interpretación como mecánica pasiva. */
-  signalQuality?: Quality;
-  signalReason?: string | null;
-  /** Confusor conocido del escenario; no inferido sólo de la forma de Paw. */
+  /**
+   * Verdad del modelo (docente): false si hubo esfuerzo muscular (|Pmus| > 0,05 cmH₂O) en algún paso de la oclusión.
+   * El equipo no lo ve —su `quality` sólo juzga la señal de presión— y la cara del ventilador no lo muestra; lo usan
+   * Aula · Fundamentos, la curva de titulación y los objetivos de lección. Ausente en resultados anteriores.
+   */
   passiveMechanicsValid?: boolean;
   procedureId: string;
   kind: ProcedureKind;

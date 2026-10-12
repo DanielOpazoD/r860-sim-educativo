@@ -16,48 +16,46 @@ export interface LessonContext {
 }
 
 const after = (r: ProcedureResult | null, since: number): boolean => !!r && (r.completedAtMs ?? -1) >= since;
+/** Bloqueo que sirve como mecánica pasiva: señal válida para el equipo Y sin esfuerzo según el modelo. */
+const valida = (r: ProcedureResult | null): boolean => !!r && r.quality === 'valid' && r.passiveMechanicsValid !== false;
 
 /** Tabla de pruebas por nombre (`LessonTask.test`). Cada prueba lee el cuadro y las banderas; no muta nada. */
 export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   validInsp: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return (
-      !!h &&
-      h.quality === 'valid' &&
-      after(h, c.lessonStartMs) &&
-      (c.scenarioId !== 'SC-P' || Math.abs((h.requestedDurationS ?? 0) - 3) < 0.02)
-    );
+    return !!h && valida(h) && after(h, c.lessonStartMs) && (c.scenarioId !== 'SC-P' || Math.abs((h.requestedDurationS ?? 0) - 3) < 0.02);
   },
   validExp: (c) => {
     const e = c.frame.procedure.last.expHold;
-    return !!e && e.quality === 'valid' && after(e, c.lessonStartMs);
+    return !!e && valida(e) && after(e, c.lessonStartMs);
   },
   expHoldWithEffort: (c) => {
     const h = c.frame.procedure.last.expHold;
     const since = Math.max(c.lessonStartMs, c.perturbationMs ?? Number.POSITIVE_INFINITY);
+    // Basta el confusor del modelo: con el músculo activo en algún punto la PEEP total no es pasiva, la vea o no el
+    // equipo (una cola estable puede ocultar un esfuerzo al principio). Exige la maniobra completa, no una cancelada.
     return (
       !!h &&
-      h.quality === 'invalid' &&
+      h.phase === 'completed' &&
       h.passiveMechanicsValid === false &&
       (h.startedAtMs ?? -1) >= since &&
-      Math.abs((h.actualDurationS ?? 0) - 2) < 1e-6 &&
-      ['esfuerzoDuranteBloqueo', 'mesetaPerturbada', 'mesetaInestable'].includes(h.reason ?? '')
+      Math.abs((h.actualDurationS ?? 0) - 2) < 1e-6
     );
   },
   r20: (c) => c.frame.truth.patient.rInsp >= 20,
   holdAfterPatient: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return !!h && h.quality === 'valid' && c.patientChangeMs >= 0 && (h.completedAtMs ?? 0) > c.patientChangeMs;
+    return !!h && valida(h) && c.patientChangeMs >= 0 && (h.completedAtMs ?? 0) > c.patientChangeMs;
   },
   holdAfter20: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return !!h && h.quality === 'valid' && (h.completedAtMs ?? 0) > 20_000;
+    return !!h && valida(h) && (h.completedAtMs ?? 0) > 20_000;
   },
   /** SC-02: la medición «de antes» tiene que ser ANTES del cambio de mecánica — si la única meseta es posterior,
    *  la comparación que la tarea enseña nunca ocurrió (auditoría: un bloqueo a los 25 s la cumplía igual). */
   holdBeforePatient: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    if (!h || h.quality !== 'valid' || !after(h, c.lessonStartMs)) return false;
+    if (!h || !valida(h) || !after(h, c.lessonStartMs)) return false;
     const limite = c.patientChangeMs >= 0 ? c.patientChangeMs : (c.perturbationMs ?? Number.POSITIVE_INFINITY);
     return (h.completedAtMs ?? 0) < limite;
   },
@@ -66,12 +64,12 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
     const p = c.frame.settings.peep;
     const tPeep = c.flags.peepChangedMs as number | undefined;
     const h = c.frame.procedure.last.inspHold;
-    return p !== 'off' && p >= 8 && tPeep !== undefined && !!h && h.quality === 'valid' && (h.completedAtMs ?? 0) > tPeep;
+    return p !== 'off' && p >= 8 && tPeep !== undefined && !!h && valida(h) && (h.completedAtMs ?? 0) > tPeep;
   },
   te3: (c) => deriveVcTiming(c.frame.settings).tExpS >= 3,
   expAfterSettings: (c) => {
     const e = c.frame.procedure.last.expHold;
-    return !!e && e.quality === 'valid' && c.settingsChangeMs >= 0 && (e.completedAtMs ?? 0) > c.settingsChangeMs;
+    return !!e && valida(e) && c.settingsChangeMs >= 0 && (e.completedAtMs ?? 0) > c.settingsChangeMs;
   },
   vteBelowSet: (c) => (c.frame.metrics.vte?.value ?? 1) < c.frame.settings.vt * 0.9,
   plimitChanged: (c) => !!c.flags.plimitChanged,
@@ -101,7 +99,7 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   },
   cstatOver70: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return !!h && h.quality === 'valid' && (h.values.cstat?.value ?? 0) > 0.07;
+    return !!h && valida(h) && (h.values.cstat?.value ?? 0) > 0.07;
   },
   peep18: (c) => {
     const p = c.frame.settings.peep;
@@ -113,11 +111,11 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   },
   longHoldValid: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return !!h && h.quality === 'valid' && (h.requestedDurationS ?? 0) >= 5;
+    return !!h && valida(h) && (h.requestedDurationS ?? 0) >= 5;
   },
   invalidHold: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return !!h && h.quality !== 'valid' && after(h, c.lessonStartMs);
+    return !!h && !valida(h) && after(h, c.lessonStartMs);
   },
   noEffort: (c) => !c.frame.truth.effort.enabled || c.frame.truth.effort.amplitude === 0,
   fio2Gap: (c) => c.frame.settings.fio2 >= 0.99 && (c.frame.metrics.fio2?.value ?? 1) < 0.985,
@@ -151,14 +149,14 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   /** SC-21: un bloqueo válido de ESTA lección muestra una ΔP estática de 15 o más. */
   dpHigh: (c) => {
     const h = c.frame.procedure.last.inspHold;
-    return !!h && h.quality === 'valid' && after(h, c.lessonStartMs) && (h.values.driving?.value ?? 0) >= 15;
+    return !!h && valida(h) && after(h, c.lessonStartMs) && (h.values.driving?.value ?? 0) >= 15;
   },
   /** Tras cambiar ajustes, un bloqueo válido con ΔP estática por debajo de 15 y el VT ya reducido. */
   dpProtective: (c) => {
     const h = c.frame.procedure.last.inspHold;
     return (
       !!h &&
-      h.quality === 'valid' &&
+      valida(h) &&
       c.settingsChangeMs >= 0 &&
       (h.completedAtMs ?? 0) > c.settingsChangeMs &&
       (h.values.driving?.value ?? 99) < 15 &&
@@ -167,8 +165,16 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   },
   /** SC-22: la fuga se ve en la tabla: más del 15 % del VT inspirado no vuelve. */
   leakSeen: (c) => (c.frame.metrics.leakPct?.value ?? 0) >= 0.15,
-  /** Práctica del ajuste de disparo por flujo a 4 L/min o más; no evalúa el cese del autodisparo. */
-  trigger4: (c) => !c.frame.settings.triggerByPressure && c.frame.settings.flowTrigger >= 4 / 60 - 1e-9,
+  /**
+   * SC-22: disparo por flujo a 4 L/min o más Y el autodisparo cesó: las tres últimas respiraciones terminadas después
+   * del cambio no fueron asistidas (con el esfuerzo apagado, una asistida sólo puede ser la fuga disparando).
+   */
+  trigger4: (c) => {
+    const s = c.frame.settings;
+    if (s.triggerByPressure || s.flowTrigger < 4 / 60 - 1e-9 || c.settingsChangeMs < 0) return false;
+    const ultimas = c.frame.trends.filter((p) => p.tMs > c.settingsChangeMs).slice(-3);
+    return ultimas.length === 3 && ultimas.every((p) => p.type !== 'assisted');
+  },
   /** SC-23: se vio la alarma de desconexión. */
   disconnectSeen: (c) => !!c.flags.disconnectSeen,
   /** Reconectado: la alarma de desconexión se vio y ya no está activa. */
@@ -178,7 +184,7 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   holdDereclutada: (c) => {
     const h = c.frame.procedure.last.inspHold;
     const tRec = c.flags.recruitedAltaMs as number | undefined;
-    return !!h && h.quality === 'valid' && after(h, c.lessonStartMs) && (tRec === undefined || (h.completedAtMs ?? 0) < tRec);
+    return !!h && valida(h) && after(h, c.lessonStartMs) && (tRec === undefined || (h.completedAtMs ?? 0) < tRec);
   },
   /** SC-25: la fracción reclutada del modelo llegó al 90 % (PEEP por encima de la presión de apertura). */
   recruitedFull: (c) => c.frame.truth.recruited >= 0.9,

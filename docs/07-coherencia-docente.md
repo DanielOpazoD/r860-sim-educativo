@@ -10,10 +10,12 @@ modelos ni modos, ni inicia validación externa.
   con el protocolo ni los resultados del estudio ART.
 - `Scenario.caution` aparece en Lección, Fundamentos y Resultados, y viaja en el
   resumen descargable. Se reutilizan las cajas y componentes existentes.
-- SC-04 acredita practicar y confirmar un cambio de Plimit. SC-22 acredita un
-  disparo por flujo de al menos 4 L/min. Ambos textos dicen que no se comprueba
-  el efecto. No se inventa una ventana clínica ni se atribuye cese de autodisparo
-  a un mero ajuste. Se corrige además la descripción desfasada de SC-04: Rinsp
+- SC-04 acredita practicar y confirmar un cambio de Plimit, y su texto dice que no
+  se comprueba el efecto. SC-22 sí comprueba el efecto (revisión de integración):
+  disparo por flujo de al menos 4 L/min y las tres últimas respiraciones terminadas
+  tras el cambio sin ninguna asistida; con el esfuerzo apagado, una asistida sólo
+  puede ser la fuga. Un ajuste solo, o una fuga que sigue superando el umbral, no
+  lo acredita. Se corrige además la descripción desfasada de SC-04: Rinsp
   cambia a 60, como ya hacían la perturbación y la lección.
 - La referencia ΔP <15 es exclusiva: 15 mostrado queda fuera; se conserva el
   criterio de comparar el valor redondeado que ve el alumno. Los techos

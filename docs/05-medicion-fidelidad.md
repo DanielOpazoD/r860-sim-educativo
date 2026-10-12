@@ -66,3 +66,14 @@ se reutiliza para integración y vigilancia. La regresión falla antes (incluida
 la validez fisiológica) y pasa después; los 15 controles de fidelidad también.
 No se modifica el generador ni las ecuaciones. Evidencia: `pmus-boundary-red.log`
 y `pmus-boundary-green.log` en el directorio externo de evidencias de esta tarea.
+
+## Revisión de integración: el equipo no ve el músculo
+
+Al integrar con la gasometría de modelo (#100) se separó lo que ve el ventilador de lo que sabe el modelo. Un R860 sólo juzga la forma de la presión: ante una meseta estable con músculo activo publica Pplat, Cstat y ΔP sin aviso. Marcarla «no válida por esfuerzo» en la cara del equipo atribuía al ventilador una información (Pmus) que no tiene y resolvía por el alumno el reto de reconocerla en la curva.
+
+- `quality`/`reason` del bloqueo y de la Pplat de ciclo vuelven a ser sólo de la señal. Con el banco de esfuerzo (riseRelax 4 cmH₂O, 3/min, Ti 3 s) el equipo muestra Pplat 11, ΔP 6 y Cstat 83 mL/cmH₂O, «Medido».
+- `passiveMechanicsValid` (bloqueos) y `BreathRecord.effortDuringPause` (pausa de ciclo) conservan el criterio |Pmus| > 0,05 cmH₂O de este documento como verdad del modelo. Se retiran `signalQuality`/`signalReason`, redundantes con `quality`.
+- Capa docente: las tarjetas de Aula · Fundamentos conservan el número del equipo y añaden «Según el modelo hubo esfuerzo muscular durante este bloqueo…»; la curva de titulación y los objetivos de lección sólo aceptan bloqueos pasivos (`valida` en `lesson.ts`); SC-18 se acredita con la maniobra completa de 2 s y `passiveMechanicsValid === false`.
+- Se mantiene la anulación existente, también por Pmus, del índice de estrés y de τ espiratoria: son índices derivados del simulador, no lecturas del equipo.
+
+Pruebas: `measurementFidelity` (unitarias y e2e) reescritas al contrato separado, más una de tarjetas con y sin esfuerzo; SC-22 comprueba el cese del autodisparo (`teachingHonesty`, `objetivos`).

@@ -31,5 +31,5 @@ it('la pausa conserva Pmus inicial al cruzar la frontera de un período variable
   // Una consulta retrospectiva devuelve 0 tras cambiar onsetS y perdería el confusor.
   expect.soft(samples.filter((s) => Math.abs(s.t - 0.8) < 1e-9).every((s) => s.pmus === initial.pmus)).toBe(true);
   runUntilBreath(sim, 1);
-  expect(sim.frame().metrics.pplatCycle).toMatchObject({ quality: 'invalid', reason: 'esfuerzoDurantePausa' });
+  expect(sim.breaths.at(-1)!.effortDuringPause).toBe(true);
 });

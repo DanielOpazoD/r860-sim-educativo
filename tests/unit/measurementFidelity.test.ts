@@ -5,22 +5,37 @@ import { defaultInit, R860_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 import { LESSON_TESTS } from '../../src/ui/lesson';
 import { ALL_METRICS, metricStatus } from '../../src/ui/metricsTable';
+import { AVISO_ESFUERZO, tarjetas } from '../../src/ui/teaching';
 
 const effort = { enabled: true, amplitude: 4, ratePerMin: 3, tiS: 3, phaseS: 0, shape: 'riseRelax' as const };
 
 describe('fidelidad de medición: señal, validez y canales', () => {
-  it('conserva Paw11 estable con músculo pero no certifica mecánica pasiva', () => {
+  it('con músculo y meseta estable el equipo publica lo que mide; el modelo la marca como no pasiva', () => {
     const sim = benchSim({ effort });
     sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 2 });
     sim.run(3004);
     const r = sim.procedures.last.inspHold!;
+    // Lo que vería el ventilador: sólo juzga la presión, y la presión es estable.
+    expect(r.quality).toBe('valid');
     expect(r.values.pplat!.value).toBeCloseTo(11, 5);
-    expect(r.quality).toBe('invalid');
-    expect(r.reason).toBe('esfuerzoDuranteBloqueo');
-    expect(r.signalQuality).toBe('valid');
+    expect(r.values.driving!.value).toBeCloseTo(6, 5);
+    expect(r.values.cstat!.value).toBeCloseTo(0.5 / 6, 5);
+    // Lo que sabe el modelo y usa la capa docente.
     expect(r.passiveMechanicsValid).toBe(false);
-    expect(r.values.cstat!.value).toBeNull();
-    expect(r.values.driving!.value).toBeNull();
+  });
+
+  it('Aula: las tarjetas conservan el número del equipo y añaden el aviso del modelo sólo con esfuerzo', () => {
+    for (const conEsfuerzo of [true, false]) {
+      const sim = conEsfuerzo ? benchSim({ effort }) : benchSim();
+      sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 2 });
+      sim.run(3004);
+      const cards = tarjetas(sim.frame());
+      for (const id of ['ppico', 'pplat', 'driving', 'cstat']) {
+        const card = cards.find((c) => c.id === id)!;
+        expect(card.aviso ?? null, id).toBe(conEsfuerzo ? AVISO_ESFUERZO : null);
+      }
+      expect(cards.find((c) => c.id === 'pplat')!.valor).toBeCloseTo(conEsfuerzo ? 11 : 15, 5);
+    }
   });
 
   it('detecta esfuerzo al arranque del bloqueo aunque desaparezca antes de la ventana final', () => {
@@ -28,7 +43,7 @@ describe('fidelidad de medición: señal, validez y canales', () => {
     sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 2 });
     sim.run(3004);
     expect(sim.effort.pmusAt(3)).toBe(0);
-    expect(sim.procedures.last.inspHold!.quality).toBe('invalid');
+    expect(sim.procedures.last.inspHold!.passiveMechanicsValid).toBe(false);
   });
 
   it('control pasivo: Pplat15, Cstat50, deltaP10', () => {
@@ -137,9 +152,10 @@ describe('cierre de coherencia de pausa y SC-18', () => {
     runUntilBreath(sim, 1);
     expect(sim.frame().metrics.pplatCycle).toMatchObject({
       value: enabled ? expect.closeTo(11, 6) : expect.closeTo(15, 6),
-      quality: enabled ? 'invalid' : 'valid',
-      reason: enabled ? 'esfuerzoDurantePausa' : null,
+      quality: 'valid',
+      reason: null,
     });
+    expect(sim.breaths.at(-1)!.effortDuringPause).toBe(enabled);
   });
 
   it('pausa: no pierde el esfuerzo inicial aunque la cola y Pmus final sean pasivos', () => {
@@ -148,11 +164,8 @@ describe('cierre de coherencia de pausa y SC-18', () => {
       effort: { ...effort, shape: 'halfSine', tiS: 0.02, phaseS: 0.8 },
     });
     runUntilBreath(sim, 1);
-    expect(sim.frame().metrics.pplatCycle).toMatchObject({
-      value: expect.closeTo(15, 6),
-      quality: 'invalid',
-      reason: 'esfuerzoDurantePausa',
-    });
+    expect(sim.frame().metrics.pplatCycle).toMatchObject({ value: expect.closeTo(15, 6), quality: 'valid' });
+    expect(sim.breaths.at(-1)!.effortDuringPause).toBe(true);
   });
 
   it('SC-18: el objetivo acepta la maniobra con esfuerzo tras la perturbación, no cancelaciones ni resultados previos', () => {
@@ -184,12 +197,12 @@ describe('cierre de coherencia de pausa y SC-18', () => {
     };
     const task = e.lesson!.tasks.find((t) => t.id === 'peepi')!;
     const h = frame.procedure.last.expHold!;
-    expect(h).toMatchObject({ quality: 'invalid', passiveMechanicsValid: false });
+    expect(h).toMatchObject({ phase: 'completed', passiveMechanicsValid: false });
     expect(LESSON_TESTS[task.test]!(context)).toBe(true);
     h.startedAtMs = 39000;
     expect(LESSON_TESTS[task.test]!(context)).toBe(false);
     h.startedAtMs = 50000;
-    h.reason = 'canceladoPorUsuario';
+    h.phase = 'cancelled';
     expect(LESSON_TESTS[task.test]!(context)).toBe(false);
   });
 });

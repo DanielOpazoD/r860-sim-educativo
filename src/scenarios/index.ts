@@ -736,7 +736,7 @@ SCENARIOS.push({
       },
       {
         id: 'trig',
-        text: 'Practica ajustar el disparo por flujo a 4 L/min o más; este objetivo comprueba el ajuste, no que haya cesado el autodisparo.',
+        text: 'Sube el disparo por flujo a 4 L/min o más, por encima de la fuga a esta PEEP, y comprueba en el registro que el autodisparo cesa.',
         test: 'trigger4',
       },
     ],

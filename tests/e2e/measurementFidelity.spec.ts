@@ -22,7 +22,7 @@ async function importSyntheticSession(page: Page, session: SessionFile): Promise
   });
 }
 
-test('presión observada con esfuerzo, advertencia y Cstat no disponible', async ({ page }, info) => {
+test('meseta estable con esfuerzo: el equipo muestra lo que mide y el Aula avisa que no es mecánica pasiva', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const session = await syntheticSession(page);
@@ -32,14 +32,20 @@ test('presión observada con esfuerzo, advertencia y Cstat no disponible', async
   session.commands = [{ simTimeMs: 0, actor: 'learner', command: { type: 'requestHold', kind: 'inspHold', durationS: 2 } }];
   session.finalSimTimeMs = 3004;
   await importSyntheticSession(page, session);
-  await expect.poll(() => page.evaluate(() => window.__r860.frame?.procedure.last.inspHold?.quality)).toBe('invalid');
-  await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-age')).toHaveText('Mecánica no válida');
+  await expect.poll(() => page.evaluate(() => window.__r860.frame?.procedure.last.inspHold?.passiveMechanicsValid)).toBe(false);
+  // La cara del ventilador sólo ve la presión: meseta 11 estable, Cstat 83, sin mención del músculo.
   await page.click('[data-action="inspiratory"]');
   await expect(page.locator('#hold-value')).toHaveText('11');
-  await expect(page.locator('#hold-second')).toHaveText('—');
-  await expect(page.locator('#hold-status')).toContainText('esfuerzo muscular');
-  await expect(page.locator('#hold-status')).toContainText('señal estable; presión observada');
-  await page.screenshot({ path: info.outputPath('esfuerzo.png'), fullPage: true });
+  await expect(page.locator('#hold-second')).toHaveText('83');
+  await expect(page.locator('#hold-status')).toContainText('Medido');
+  await expect(page.locator('#hold-status')).not.toContainText('esfuerzo');
+  await page.screenshot({ path: info.outputPath('esfuerzo-equipo.png'), fullPage: true });
+  // El Aula sí conoce la verdad del modelo.
+  await page.click('[data-action="closeHold"]');
+  await openAula(page, 'theory');
+  const meseta = page.locator('.edu-card').filter({ hasText: 'Presión meseta' });
+  await expect(meseta).toContainText('no es mecánica pasiva');
+  await page.screenshot({ path: info.outputPath('esfuerzo-aula.png'), fullPage: true });
   expect(errors).toEqual([]);
 });
 
@@ -56,7 +62,7 @@ test('SC-09 prolongada: fuga sin denominador muestra motivo', async ({ page }, i
   await page.screenshot({ path: info.outputPath('fuga-sin-denominador.png'), fullPage: true });
 });
 
-test('pausa de ciclo: presión observada y validez distinguen esfuerzo, incluido al inicio', async ({ page }, info) => {
+test('pausa de ciclo: el equipo publica la meseta estable con o sin esfuerzo, sin delatar el músculo', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const session = await syntheticSession(page);
@@ -77,13 +83,11 @@ test('pausa de ciclo: presión observada y validez distinguen esfuerzo, incluido
     await expect
       .poll(() => page.evaluate(() => window.__r860.frame?.metrics.pplatCycle?.value))
       .toBeCloseTo(kind === 'active' ? 11 : 15, 6);
-    await expect
-      .poll(() => page.evaluate(() => window.__r860.frame?.metrics.pplatCycle?.quality))
-      .toBe(kind === 'passive' ? 'valid' : 'invalid');
+    await expect.poll(() => page.evaluate(() => window.__r860.frame?.metrics.pplatCycle?.quality)).toBe('valid');
     await page.locator('[data-view="data"]').click();
     const row = page.locator('[data-row="pplatCycle"]');
-    await expect(row.locator('.q-chip')).toHaveText(kind === 'passive' ? 'Válido' : 'No válido');
-    if (kind !== 'passive') await expect(row.locator('.metric-status')).toHaveAttribute('title', /esfuerzo muscular durante la pausa/);
+    await expect(row.locator('.q-chip')).toHaveText('Válido');
+    await expect(row.locator('.metric-status')).not.toHaveAttribute('title', /esfuerzo/);
     await page.screenshot({ path: info.outputPath(`pausa-${kind}.png`), fullPage: true });
   }
   expect(errors).toEqual([]);
@@ -108,11 +112,11 @@ test('SC-18: bloqueo con esfuerzo permite completar el objetivo sin certificar P
       previous,
       { timeout: 15000 },
     );
-    const invalid = await page.evaluate(() => window.__r860.frame?.procedure.last.expHold?.quality === 'invalid');
-    if (invalid) break;
+    const conEsfuerzo = await page.evaluate(() => window.__r860.frame?.procedure.last.expHold?.passiveMechanicsValid === false);
+    if (conEsfuerzo) break;
   }
-  await expect(page.locator('#hold-status')).toContainText('No válida');
-  await expect(page.locator('#hold-value')).toHaveText('—');
+  // El equipo informa sólo lo que ve en la presión; el músculo no aparece en su cara.
+  await expect(page.locator('#hold-status')).not.toContainText('esfuerzo');
   await page.screenshot({ path: info.outputPath('sc18-bloqueo.png'), fullPage: true });
   await openAula(page, 'lesson');
   const task = page.locator('#lesson-tasks .task').filter({ hasText: 'solicita un bloqueo espiratorio de 2 s' });
