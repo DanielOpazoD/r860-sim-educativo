@@ -31,15 +31,14 @@ export interface DialogHost {
 export interface LessonTracker {
   readonly sessionImported: boolean;
   readonly flags: Record<string, unknown>;
-  readonly done: Set<string>;
   reset(): void;
   render(): void;
   evaluate(): void;
   noteSettingsChange(): void;
   notePatientChange(simTimeMs: number): void;
-  /** Una sesión importada no dice de qué escenario es: mientras dure, los objetivos no se evalúan. */
+  /** Una sesión importada no dice de qué escenario es: mientras dure, el caso no se evalúa. */
   setSessionImported(value: boolean): void;
-  /** Contexto de evaluación del cuadro actual (objetivos y casos clínicos), o null sin cuadro o con sesión importada. */
+  /** Contexto de evaluación del caso clínico con el cuadro actual, o null sin cuadro o con sesión importada. */
   context(): LessonContext | null;
 }
 

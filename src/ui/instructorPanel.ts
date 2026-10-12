@@ -31,6 +31,8 @@ export interface InstructorPanel {
   applyProfile(id: string): Promise<void>;
   loadScenario(id: string): void;
   switchInstructor(tab: string): void;
+  /** Muestra el panel lateral en la pestaña pedida (Explorar o Casos). */
+  showPanel(tab: 'patient' | 'case'): void;
   toggleTeacher(): void;
   resetPatient(): Promise<void>;
   undoEvent(): Promise<void>;
@@ -58,12 +60,13 @@ export function createInstructorPanel(
     for (const tb of [$<HTMLButtonElement>('#teacher-toggle'), $<HTMLButtonElement>('#panel-button')]) {
       tb.setAttribute('aria-pressed', String(teacherVisible));
       tb.classList.toggle('active', teacherVisible);
-      tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} paciente y eventos`);
-      tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} paciente y eventos`);
+      tb.setAttribute('aria-label', `${teacherVisible ? 'Ocultar' : 'Mostrar'} el panel lateral`);
+      tb.setAttribute('title', `${teacherVisible ? 'Ocultar' : 'Mostrar'} el panel lateral`);
     }
   }
   function syncProfileButtons(patient: EngineFrame['truth']['patient'], effort: EngineFrame['truth']['effort']): void {
-    const json = JSON.stringify([patient, effort]);
+    // La referencia fotográfica llega después del primer pintado: los perfiles se bloquean al entrar en ella.
+    const json = JSON.stringify([patient, effort, !!ctx.fixtureId]);
     if (json === profileTruthJson) return;
     profileTruthJson = json;
     let matched = false;
@@ -72,6 +75,7 @@ export function createInstructorPanel(
       const button = document.querySelector<HTMLButtonElement>(`#patient-profiles [data-profile="${profile.id}"]`);
       button?.classList.toggle('active', selected);
       button?.setAttribute('aria-pressed', String(selected));
+      if (button) button.disabled = !!ctx.fixtureId;
       matched ||= selected;
     }
     put('#profile-status', matched ? '' : 'Personalizado');
@@ -199,7 +203,7 @@ export function createInstructorPanel(
       e.classList.toggle('active', on);
       e.setAttribute('aria-selected', String(on));
     }
-    for (const id of ['patient', 'events']) $('#instructor-' + id).classList.toggle('active', id === tab);
+    for (const id of ['patient', 'case']) $('#instructor-' + id).classList.toggle('active', id === tab);
   }
   /** Select de preset reflejando el estado: preset coincidente (tolerancia 1e-6) o «Personalizado», con su nota. */
   function syncPreset<T extends { id: string }>(
@@ -266,7 +270,9 @@ export function createInstructorPanel(
       moreParams.addEventListener('toggle', () => savePrefs({ patientMoreOpen: moreParams.open }));
       $('#fault-grid').replaceChildren(
         ...FAULTS.map(([id, i, label, description, off]) => {
-          const button = element('button', '', iconNode(i), element('b', '', label), element('small', '', description));
+          const button = element('button', 'event-chip', iconNode(i), element('b', '', label));
+          button.title = description;
+          button.setAttribute('aria-label', `${label}: ${description}`);
           button.dataset.event = id;
           button.id = `event-${id}`;
           button.disabled = !!off;
@@ -299,12 +305,18 @@ export function createInstructorPanel(
         ],
       );
       if (applied) {
-        if (ctx.dialog.kind === 'scenarios') ctx.dialog.close();
         ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
       }
     },
     loadScenario,
     switchInstructor,
+    showPanel(tab) {
+      switchInstructor(tab);
+      if (teacherVisible) return;
+      teacherVisible = true;
+      renderToggle();
+      if (isMobile()) $('[data-instructor].active').focus();
+    },
     toggleTeacher() {
       teacherVisible = !teacherVisible;
       renderToggle();

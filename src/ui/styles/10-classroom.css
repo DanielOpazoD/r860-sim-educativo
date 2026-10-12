@@ -1,180 +1,465 @@
-.space-nav {
-  display: flex;
-  padding: 3px;
-  border: 1px solid var(--shell-line);
-  border-radius: 9px;
+/* ---- Una sola pantalla: el panel lateral izquierdo lleva el caso y el paciente; bajo el equipo, el espacio educativo. ---- */
+@media (min-width: 1021px) {
+  .workspace {
+    grid-template-columns: 380px minmax(0, 1fr);
+    max-width: 1860px;
+  }
+  .instructor {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100dvh - 24px);
+    margin-top: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+@media (min-width: 1021px) and (max-width: 1250px) {
+  .workspace {
+    grid-template-columns: 330px minmax(0, 1fr);
+  }
+}
+/* Mientras el caso no se entrega, la mecánica del paciente es lo que se diagnostica: Explorar sólo muestra el aviso. */
+.instructor.case-locked #instructor-patient,
+#instructor-case.active ~ .case-lock-note {
+  display: none;
+}
+.case-lock-note {
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
   background: var(--shell-raised);
-  flex-shrink: 0;
-}
-.space-nav button,
-.aula-nav button,
-.classroom .edu-tabs .device-small {
-  border: 0;
-  background: transparent;
   color: var(--shell-muted);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: var(--type-md);
+  font-size: var(--type-sm);
+  line-height: 1.5;
 }
-.space-nav [aria-current],
-.aula-nav [aria-current],
-.classroom .edu-tabs .chosen {
-  background: white;
-  color: var(--shell-text);
-  box-shadow: 0 1px 4px #18344215;
-  font-weight: 600;
-}
-.classroom {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 42px 32px 24px;
-  color: var(--shell-text);
-}
-.aula-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 28px;
+.case-lock-note p {
+  margin: 0 0 4px;
 }
 .aula-kicker {
   font-size: var(--type-xs);
   font-weight: 600;
   letter-spacing: 0.07em;
   color: var(--shell-muted);
+  margin: 0;
 }
-.aula-heading h1 {
-  font-size: clamp(24px, 3vw, 34px);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1.2;
-  margin: 10px 0;
+
+/* Pestañas y gasometría quedan arriba aunque el panel se desplace por dentro. */
+.instructor-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--shell-surface);
 }
-.aula-heading p,
-.aula-library-heading p {
-  color: var(--shell-muted);
-  margin: 8px 0;
-}
-.aula-session {
-  font-size: var(--type-sm);
-  white-space: nowrap;
-  color: var(--shell-muted);
-}
-.aula-nav {
-  display: flex;
-  gap: 6px;
-  padding: 6px;
+/* Gasometría del modelo: inicio, ahora y hacia dónde tiende, con su trayectoria. Rotulada «modelo»: el equipo no la mide. */
+.case-gas-host {
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--shell-line);
   background: var(--shell-raised);
-  border: 1px solid var(--shell-line);
-  border-radius: 10px;
-  margin-bottom: 32px;
-  overflow-x: auto;
 }
-.aula-nav button {
-  flex: 1;
-  padding: 9px 13px;
+.gas-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.gas-title {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  color: var(--shell-muted);
+}
+.gas-tag {
+  font-size: var(--type-2xs);
+  color: var(--shell-muted);
+  padding: 0 6px;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+}
+.gas-state {
+  margin-left: auto;
+  font-size: var(--type-2xs);
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: var(--shell-warning);
+  background: var(--shell-warning-soft);
+}
+.gas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.gas-table thead th {
+  font-size: var(--type-2xs);
+  font-weight: 500;
+  color: var(--shell-muted);
+  text-align: right;
+  padding: 0 0 2px;
+}
+.gas-table tbody th {
+  text-align: left;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--shell-text);
+  padding: 1px 0;
   white-space: nowrap;
 }
-.classroom.compact .aula-heading {
-  margin-bottom: 20px;
+.gas-table tbody th small {
+  font-size: var(--type-2xs);
+  font-weight: 400;
+  color: var(--shell-muted);
+  margin-left: 4px;
 }
-.classroom.compact .aula-heading h1 {
-  font-size: clamp(20px, 2.2vw, 26px);
-  margin: 6px 0 0;
+.gas-table td {
+  text-align: right;
+  font-size: var(--type-md);
+  color: var(--shell-muted);
+  padding: 1px 0 1px 10px;
 }
-.classroom.compact .aula-nav {
-  margin-bottom: 24px;
+.gas-table td.gas-now {
+  font-size: var(--type-lg);
+  font-weight: 600;
+  color: var(--shell-text);
 }
-.aula-lesson-layout {
+.gas-table td.gas-target {
+  color: var(--shell-accent);
+  font-weight: 600;
+}
+.gas-trend {
+  display: block;
+  width: 100%;
+  height: 34px;
+  margin: 4px 0 2px;
+}
+.gas-trend-line {
+  fill: none;
+  stroke: var(--shell-text);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.gas-trend-now {
+  fill: var(--shell-text);
+}
+.gas-trend-target {
+  stroke: var(--shell-accent);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+.gas-trend-label {
+  fill: var(--shell-accent);
+  font-size: var(--type-2xs);
+  font-weight: 600;
+}
+.gas-trend-change {
+  stroke: var(--shell-muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.gas-note {
+  margin: 0;
+  font-size: var(--type-2xs);
+  line-height: 1.45;
+  color: var(--shell-muted);
+}
+
+/* Eventos: compactos, en una cuadrícula de tres; la descripción va en la ayuda emergente. */
+.event-section {
+  margin: 0 0 8px;
+}
+.event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.event-head .small-section-title {
+  margin: 10px 0 6px;
+}
+.event-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  color: var(--shell-accent);
+  font: inherit;
+  font-size: var(--type-xs);
+  font-weight: 600;
+  padding: 4px 0;
+}
+.event-undo .icon {
+  width: 13px;
+  height: 13px;
+}
+.event-undo:disabled {
+  color: var(--shell-dim);
+  cursor: default;
+}
+.fault-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
-  gap: 36px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
-.classroom h2 {
-  font-size: 24px;
+.event-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  background: var(--shell-surface);
+  color: var(--shell-text);
+  text-align: left;
+}
+.event-chip .icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--shell-muted);
+}
+.event-chip b {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-chip:hover {
+  border-color: var(--shell-accent);
+}
+.event-chip.active {
+  border-color: var(--shell-accent);
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+
+/* Lista de casos */
+.case-panel-lead {
+  color: var(--shell-muted);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.case-list {
+  display: grid;
+  gap: 6px;
+}
+.case-item {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  color: var(--shell-text);
+  background: var(--shell-surface);
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.case-item:hover {
+  border-color: var(--shell-accent);
+}
+.case-item.current {
+  border-color: var(--shell-accent);
+  box-shadow: inset 3px 0 0 var(--shell-accent);
+}
+.case-item strong {
+  font-size: var(--type-md);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.case-item.solved .aula-kicker {
+  color: var(--shell-accent);
+}
+
+/* Caso activo: qué lograr, cómo se evalúa, entrega y referencias */
+.case-back,
+.case-link {
+  border: 0;
+  background: none;
+  color: var(--shell-accent);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  padding: 4px 0;
+}
+.case-back {
+  margin-bottom: 10px;
+}
+.case-back:hover,
+.case-link:hover {
+  text-decoration: underline;
+}
+.case-title {
+  font-size: var(--type-lg);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--shell-text);
+  margin: 4px 0 8px;
+}
+.case-vignette {
+  color: var(--shell-muted);
+  font-size: var(--type-md);
+  line-height: 1.6;
+  margin: 0;
+}
+.case-goal {
+  margin: 14px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--shell-accent-soft);
+}
+.case-goal .aula-kicker {
+  color: var(--shell-accent);
+}
+.case-goal p {
+  margin: 4px 0 0;
+  color: var(--shell-text);
+  font-size: var(--type-md);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.case-options {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.case-option {
+  text-align: left;
+  font: inherit;
+  font-size: var(--type-sm);
+  line-height: 1.45;
+  color: var(--shell-text);
+  background: var(--shell-surface);
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.case-option:hover:not(:disabled),
+.case-option.chosen {
+  border-color: var(--shell-accent);
+}
+.case-option.chosen {
+  box-shadow: inset 3px 0 0 var(--shell-accent);
+}
+.case-option.correct {
+  border-color: var(--shell-accent);
+  color: var(--shell-accent);
+}
+.case-option:disabled {
+  cursor: default;
+}
+.case-criteria .lesson-tasks {
+  margin-top: 6px;
+}
+.case-criteria .task {
+  font-size: var(--type-sm);
+  padding: 5px 0;
+}
+.case-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 16px 0 4px;
+}
+.case-actions .primary-button {
+  min-width: 112px;
+}
+.case-refs {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--shell-line);
+}
+.case-refs ul {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: grid;
+  gap: 4px;
+}
+.case-refs a {
+  color: var(--shell-accent);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.case-refs a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Espacio educativo bajo el equipo: desarrollo del caso, Fundamentos y reflexión, en superficies claras. ---- */
+.learn {
+  display: grid;
+  gap: 48px;
+  max-width: 980px;
+  margin: 48px auto 32px;
+  padding: 32px 0 0;
+  border-top: 1px solid var(--shell-line);
+  color: var(--shell-text);
+}
+.learn-block {
+  scroll-margin-top: 16px;
+}
+.learn-block:focus {
+  outline: none;
+}
+.learn-title {
+  font-size: var(--type-2xl);
   font-weight: 600;
   letter-spacing: -0.025em;
-  line-height: 1.3;
-  margin: 12px 0 16px;
-}
-.classroom .lesson-text,
-.aula-reading > p {
-  font-size: var(--type-lg);
-  line-height: 1.75;
-  color: var(--shell-muted);
-  margin-bottom: 24px;
-}
-.classroom .primary-button {
-  background: var(--shell-accent);
-  color: white;
-  padding: 11px 18px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  font-weight: 600;
-}
-.classroom .primary-button:hover {
-  background: #0b625b;
+  line-height: 1.25;
+  margin: 8px 0 18px;
 }
 .aula-caption {
   color: var(--shell-muted);
-  font-size: var(--type-sm);
+  font-size: var(--type-md);
   line-height: 1.6;
-  margin: 14px 0;
+  margin: 10px 0;
 }
-.aula-paper {
-  background: white;
-  border: 1px solid var(--shell-line);
-  border-radius: 14px;
-  padding: 24px;
+.case-verdict {
+  font-weight: 600;
+  font-size: var(--type-md);
+  margin-bottom: 12px;
 }
-.classroom .lesson-count {
+.case-verdict.ok {
   color: var(--shell-accent);
-  font-size: var(--type-sm);
-  margin-bottom: 18px;
 }
-.classroom .task {
+.case-verdict.revisar {
+  color: var(--shell-warning);
+}
+.case-reveal {
   color: var(--shell-text);
-  font-size: 14px;
-  padding: 14px 0;
-  border: 0;
-  border-bottom: 1px solid var(--shell-line);
-  background: transparent;
+  font-size: var(--type-lg);
+  line-height: 1.7;
+  margin: 18px 0;
+  max-width: 72ch;
 }
-.classroom .task-check {
+.case-truth {
+  border-top: 1px solid var(--shell-line);
+  padding-top: 14px;
+}
+.case-truth .edu-gases {
+  margin-top: 8px;
+}
+.case-truth .edu-gases > div {
+  display: contents;
+}
+.classroom .case-truth dt {
   color: var(--shell-muted);
-  border-color: var(--shell-line);
-  background: var(--shell-raised);
-  flex-shrink: 0;
 }
-.classroom .task.complete .task-check {
-  background: var(--shell-accent);
-  color: white;
-}
-.classroom .lesson-feedback {
-  background: var(--shell-raised);
-  color: var(--shell-accent);
-}
-.aula-reading {
-  max-width: 720px;
-  padding: 24px 28px;
-  background: white;
-  border: 1px solid var(--shell-line);
-  border-radius: 14px;
-  margin: 0 auto;
-}
-.classroom textarea,
-.classroom input {
-  font: inherit;
+.classroom .case-truth dd {
   color: var(--shell-text);
-  background: white;
-  border: 1px solid var(--shell-line);
-  border-radius: 8px;
-  padding: 12px;
-  width: 100%;
+  font-size: var(--type-md);
 }
 .classroom textarea {
   display: block;
+  width: 100%;
+  font: inherit;
+  color: var(--shell-text);
+  background: var(--shell-surface);
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 12px;
   resize: vertical;
   margin-top: 8px;
 }
@@ -182,151 +467,28 @@
   outline: 2px solid var(--shell-accent);
   outline-offset: 3px;
 }
-.classroom .reflection,
-.classroom .exam-switch {
+.classroom label {
+  font-size: var(--type-sm);
+  color: var(--shell-muted);
+}
+.classroom .reflection {
   color: var(--shell-text);
   background: var(--shell-raised);
   border: 1px solid var(--shell-line);
-  margin: 24px 0;
+  margin: 16px 0 0;
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px 16px;
 }
-.classroom .reflection p,
-.classroom .exam-switch small {
+.classroom .reflection p {
   color: var(--shell-muted);
+  line-height: 1.6;
 }
-.aula-library-heading {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 20px;
-}
-.aula-library-heading label {
+.aula-load-status {
+  color: var(--shell-muted);
   font-size: var(--type-sm);
-  min-width: 280px;
 }
-.aula-library {
-  column-count: 3;
-  column-gap: 20px;
-}
-.aula-group {
-  break-inside: avoid;
-  margin-bottom: 20px;
-}
-.aula-group h3 {
-  margin: 0 0 8px;
-}
-.aula-library-list {
-  display: grid;
-  gap: 8px;
-}
-.aula-case {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'kicker arrow'
-    'name arrow'
-    'text arrow';
-  column-gap: 12px;
-  background: white;
-  border: 1px solid var(--shell-line);
-  border-radius: 10px;
-  padding: 12px 14px;
-  text-align: left;
-  color: var(--shell-text);
-}
-.aula-case::after {
-  content: '→';
-  grid-area: arrow;
-  align-self: center;
-  color: var(--shell-muted);
-}
-.aula-case:hover {
-  border-color: var(--shell-accent);
-}
-.aula-case:hover::after,
-.aula-case.current .aula-kicker {
-  color: var(--shell-accent);
-}
-.aula-case.current {
-  border-color: var(--shell-accent);
-}
-.aula-case .aula-kicker {
-  grid-area: kicker;
-}
-.aula-case strong {
-  grid-area: name;
-  font-size: 14px;
-  font-weight: 600;
-  margin-top: 2px;
-}
-.aula-case > span:not(.aula-kicker) {
-  grid-area: text;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--shell-muted);
-  margin-top: 3px;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.aula-footer {
-  border-top: 1px solid var(--shell-line);
-  padding-top: 18px;
-  margin-top: 44px;
-  color: var(--shell-muted);
-  font-size: var(--type-xs);
-}
-.aula-export {
-  color: var(--shell-muted);
-  font-size: var(--type-md);
-  margin-top: 24px;
-}
-.aula-export button {
-  margin-top: 12px;
-}
-/* Puente de práctica: flota junto al equipo sin desplazar el monitor ni la barra de mando. */
-.practice-card {
-  position: fixed;
-  left: 20px;
-  bottom: 16px;
-  z-index: 30;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'progress actions'
-    'objective actions';
-  column-gap: 12px;
-  width: min(440px, calc(100vw - 40px));
-  padding: 10px 10px 10px 14px;
-  border-radius: 10px;
-  background: white;
-  border: 1px solid var(--shell-line);
-  border-left: 3px solid var(--shell-accent);
-  box-shadow: 0 8px 24px rgba(15, 23, 32, 0.1);
-}
-.practice-card .aula-kicker {
-  grid-area: progress;
-}
-.practice-card p {
-  grid-area: objective;
-  font-size: var(--type-md);
-  line-height: 1.35;
-  margin: 2px 0 0;
-}
-.practice-card.complete {
-  border-left-color: var(--shell-accent);
-}
-.practice-actions {
-  grid-area: actions;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.in-classroom #teacher-toggle,
-.in-classroom #panel-button {
-  display: none;
-}
+
+/* Fundamentos (la vista docente del equipo, en tema claro dentro del espacio educativo) */
 .classroom #view-teaching {
   display: flex;
   color: var(--shell-text);
@@ -337,9 +499,6 @@
   padding: 0 0 14px;
   color: var(--shell-text);
 }
-.classroom .device-view-header h2 {
-  color: var(--shell-text);
-}
 .classroom .edu-tabs {
   display: inline-flex;
   padding: 3px;
@@ -347,9 +506,23 @@
   border-radius: 9px;
   background: var(--shell-raised);
 }
+.classroom .edu-tabs .device-small {
+  border: 0;
+  background: transparent;
+  color: var(--shell-muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: var(--type-md);
+}
+.classroom .edu-tabs .chosen {
+  background: var(--shell-surface);
+  color: var(--shell-text);
+  box-shadow: 0 1px 4px #18344215;
+  font-weight: 600;
+}
 .classroom .edu-body {
   overflow: visible;
-  padding: 0 0 24px;
+  padding: 0 0 8px;
   gap: 18px;
 }
 .classroom .edu-cards {
@@ -357,7 +530,7 @@
 }
 .classroom .edu-card,
 .classroom .edu-bloque {
-  background: white;
+  background: var(--shell-surface);
   padding: 20px;
   border-color: var(--shell-line);
   border-radius: 10px;
@@ -374,7 +547,7 @@
 }
 .classroom .edu-formula {
   color: var(--shell-text);
-  background: white;
+  background: var(--shell-surface);
   border: 1px solid var(--shell-line);
   border-radius: 8px;
   padding: 10px 12px;
@@ -408,54 +581,29 @@
   .app-context {
     flex-basis: 30%;
   }
-  .aula-library {
-    column-count: 2;
-  }
 }
 @media (max-width: 700px) {
-  .classroom {
-    padding: 24px 16px;
+  /* Objetivos táctiles de 44 px, como el resto del panel en móvil. */
+  .event-chip,
+  .event-undo,
+  .case-back,
+  .case-link {
+    min-height: 44px;
   }
-  .space-nav button,
-  .aula-nav button {
-    min-height: 40px;
+  .learn {
+    margin: 32px 4px 24px;
+    padding-top: 24px;
+    gap: 36px;
   }
-  .aula-heading,
-  .aula-library-heading {
-    display: block;
+  .learn-block {
+    scroll-margin-top: 112px;
   }
-  .aula-session {
-    display: block;
-    margin-top: 16px;
+  .learn-title {
+    font-size: var(--type-xl);
   }
-  .aula-library {
-    column-count: 1;
-  }
-  .aula-lesson-layout,
   .classroom .edu-cards {
     grid-template-columns: 1fr;
     gap: 18px;
-  }
-  .aula-reading,
-  .aula-paper {
-    padding: 18px;
-  }
-  .aula-nav {
-    margin-bottom: 24px;
-  }
-  .aula-library-heading label {
-    display: block;
-    min-width: 0;
-  }
-  .practice-card {
-    position: static;
-    width: auto;
-    margin: 0 0 12px;
-    padding: 8px 8px 8px 12px;
-    box-shadow: none;
-  }
-  .practice-card p {
-    font-size: var(--type-sm);
   }
 }
 
@@ -478,7 +626,6 @@
   .top-actions {
     margin-left: auto;
   }
-  .space-nav button,
   .top-actions .button,
   .app-top .signal-toolbar .button.small {
     min-height: 44px;
@@ -538,144 +685,7 @@
     right: 0;
     left: auto;
   }
-  body:has(#workspace[hidden]) .app-top .signal-toolbar {
-    display: none;
-  }
   .workspace {
     padding-bottom: 12px;
-  }
-}
-/* ---- Casos clínicos (catálogo y caso actual): mismas superficies del Aula, sin colores nuevos. ---- */
-.classroom .aula-section-title {
-  font-size: var(--type-md);
-  font-weight: 600;
-  letter-spacing: 0;
-  color: var(--shell-text);
-  margin: 8px 0 12px;
-}
-.aula-clinical {
-  margin-bottom: 32px;
-}
-.aula-clinical-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.aula-case.solved .aula-kicker {
-  color: var(--shell-accent);
-}
-.case-question {
-  font-weight: 600;
-  color: var(--shell-text);
-  font-size: var(--type-lg);
-  line-height: 1.55;
-  margin: 0 0 18px;
-}
-.case-options {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.case-option {
-  text-align: left;
-  font: inherit;
-  font-size: var(--type-md);
-  line-height: 1.45;
-  color: var(--shell-text);
-  background: white;
-  border: 1px solid var(--shell-line);
-  border-radius: 8px;
-  padding: 11px 14px;
-}
-.case-option:hover:not(:disabled),
-.case-option.chosen {
-  border-color: var(--shell-accent);
-}
-.case-option.chosen {
-  box-shadow: inset 3px 0 0 var(--shell-accent);
-}
-.case-option.correct {
-  border-color: var(--shell-accent);
-  color: var(--shell-accent);
-}
-.case-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.case-refs {
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 1px solid var(--shell-line);
-}
-.case-refs ul {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
-  display: grid;
-  gap: 8px;
-}
-.case-refs a {
-  color: var(--shell-accent);
-  font-size: var(--type-sm);
-  font-weight: 600;
-  text-decoration: none;
-}
-.case-refs small {
-  display: block;
-  color: var(--shell-muted);
-  font-size: var(--type-xs);
-  line-height: 1.5;
-}
-.case-verdict {
-  font-weight: 600;
-  font-size: var(--type-md);
-  margin-bottom: 12px;
-}
-.case-verdict.ok {
-  color: var(--shell-accent);
-}
-.case-verdict.revisar {
-  color: var(--shell-warning);
-}
-.case-reveal {
-  color: var(--shell-text);
-  font-size: var(--type-md);
-  line-height: 1.7;
-  margin: 18px 0;
-}
-.case-truth {
-  border-top: 1px solid var(--shell-line);
-  padding-top: 14px;
-}
-.case-truth .edu-gases {
-  margin-top: 8px;
-}
-.case-truth .edu-gases > div {
-  display: contents;
-}
-.classroom .case-truth dt {
-  color: var(--shell-muted);
-}
-.classroom .case-truth dd {
-  color: var(--shell-text);
-  font-size: var(--type-md);
-}
-.case-lock-note {
-  margin: 10px 12px 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--shell-raised);
-  color: var(--shell-muted);
-  font-size: var(--type-sm);
-  line-height: 1.5;
-}
-.instructor.case-locked .instructor-pane {
-  display: none;
-}
-@media (max-width: 1000px) {
-  .aula-clinical-grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 }

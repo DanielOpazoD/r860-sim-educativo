@@ -1,40 +1,20 @@
-/** Estado de la lección (objetivos cumplidos, banderas y marcas de tiempo), su pintado en Aula y sus avisos. */
+/** Estado de la sesión docente: banderas e instantes que leen los criterios de los casos, y la reflexión del escenario. */
 import type { AppContext, LessonTracker } from './context';
-import { $, element, iconNode, put } from './dom';
-import { avisoDeObjetivo, nextCompletedTask, tareasCumplidasAlAbrir, updateLessonFlags } from './lesson';
+import { put } from './dom';
+import { updateLessonFlags } from './lesson';
 
 export function createLessonTracker(ctx: AppContext): LessonTracker {
-  const done = new Set<string>();
   const flags: Record<string, unknown> = {};
   let lessonStartMs = 0,
     patientChangeMs = -1,
     settingsChangeMs = -1;
-  // Una sesión importada no dice de qué escenario es: evaluar contra ella los objetivos del escenario que estaba abierto
-  // marcaría —y anunciaría— logros que el alumno no ha conseguido. Hasta que se cargue un escenario, no se evalúa nada.
+  // Una sesión importada no dice de qué escenario es: evaluar contra ella el caso que estaba abierto juzgaría al alumno
+  // por algo que no hizo. Hasta que se cargue un escenario, no se evalúa nada.
   let sessionImported = false;
-  // Lo que ya estaba cumplido con el primer cuadro de la lección se marca sin aviso: no lo consiguió el alumno.
-  let alAbrir = new Set<string>();
   function render(): void {
     const scenario = ctx.scenario;
-    const l = scenario.lesson;
-    put('#lesson-title', l?.title ?? scenario.name);
-    put('#lesson-text', l?.text ?? scenario.description);
-    put('#lesson-caution', scenario.caution);
     put('#reflection-question', scenario.question ?? '¿Qué observar?');
     put('#reflection-answer', scenario.answer ?? scenario.observe);
-    const tasks = l?.tasks ?? [];
-    put('#lesson-count', sessionImported ? 'Sesión importada: sus objetivos no se evalúan' : `${done.size} de ${tasks.length} objetivos`);
-    $('#lesson-tasks').replaceChildren(
-      ...tasks.map((task, i) =>
-        element(
-          'div',
-          `task ${done.has(task.id) ? 'complete' : ''}`,
-          element('span', 'task-check', done.has(task.id) ? iconNode('check') : String(i + 1)),
-          element('span', '', task.text),
-        ),
-      ),
-    );
-    $('#lesson-feedback').hidden = tasks.length === 0 || done.size !== tasks.length;
   }
   // La primera perturbación programada del escenario fija el «antes» aunque la mecánica todavía no haya cambiado.
   const perturbacionMs = (): number | undefined => {
@@ -46,52 +26,18 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
       return sessionImported;
     },
     flags,
-    done,
     reset() {
-      done.clear();
       for (const k of Object.keys(flags)) delete flags[k];
       lessonStartMs = ctx.frame?.simTimeMs ?? 0;
       patientChangeMs = -1;
       settingsChangeMs = -1;
-      const tasks = ctx.scenario.lesson?.tasks ?? [];
-      alAbrir = ctx.frame
-        ? tareasCumplidasAlAbrir(tasks, {
-            frame: ctx.frame,
-            scenarioId: ctx.scenario.id,
-            lessonStartMs,
-            patientChangeMs,
-            settingsChangeMs,
-            perturbationMs: perturbacionMs(),
-            flags,
-          })
-        : new Set();
       render();
     },
     render,
     evaluate() {
-      const frame = ctx.frame,
-        scenario = ctx.scenario;
-      if (!frame || ctx.fixtureId || sessionImported) return;
-      // Un caso clínico no tiene objetivos que anunciar, pero sus criterios leen la historia (reclutamiento, disparos).
-      if (!scenario.lesson) {
-        if (scenario.clinical) updateLessonFlags(frame, flags);
-        return;
-      }
-      const tasks = scenario.lesson.tasks;
-      const task = nextCompletedTask(tasks, done, {
-        frame,
-        scenarioId: scenario.id,
-        lessonStartMs,
-        patientChangeMs,
-        settingsChangeMs,
-        perturbationMs: perturbacionMs(),
-        flags,
-      });
-      if (!task) return;
-      done.add(task.id);
-      render();
-      if (alAbrir.has(task.id)) return;
-      ctx.toast(avisoDeObjetivo({ numero: tasks.indexOf(task) + 1, total: tasks.length, cumplidos: done.size, texto: task.text }));
+      // Las prácticas guiadas antiguas quedan como datos para futuros casos: no se evalúan ni se anuncian. Sólo se
+      // registra la historia que leen los criterios de los casos clínicos (disparos, reclutamiento, alarmas).
+      if (ctx.frame && !ctx.fixtureId && !sessionImported) updateLessonFlags(ctx.frame, flags);
     },
     noteSettingsChange() {
       settingsChangeMs = ctx.frame?.simTimeMs ?? 0;

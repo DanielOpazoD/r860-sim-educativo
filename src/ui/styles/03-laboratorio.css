@@ -478,30 +478,6 @@
   display: block;
   margin-top: 6px;
 }
-.debrief-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 17px;
-  margin: 14px 0 25px;
-}
-.debrief-stat-grid > div {
-  background: var(--shell-surface);
-  border: 1px solid var(--shell-line);
-  padding: 16px;
-  border-radius: 5px;
-}
-.debrief-stat-grid span {
-  display: block;
-  font-size: var(--type-2xs);
-  color: var(--shell-muted);
-}
-.debrief-stat-grid strong {
-  font-size: 26px;
-  font-weight: 500;
-  color: var(--shell-text);
-  display: block;
-  margin-top: 8px;
-}
 .tools-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -624,9 +600,6 @@
   .bezel-top {
     height: 46px;
   }
-  .safety-strip {
-    padding-top: 24px;
-  }
 }
 @media (max-width: 1250px) {
   .workspace {
@@ -697,15 +670,6 @@
   .simulation-clock {
     font-size: var(--type-2xs);
   }
-  .safety-strip {
-    font-size: var(--type-2xs);
-    padding-left: 20px;
-    padding-right: 20px;
-    gap: 12px;
-  }
-  .safety-strip .version {
-    display: none;
-  }
 }
 @media (max-width: 1020px) {
   .workspace {
@@ -760,22 +724,9 @@
   .truth-grid b {
     font-size: 25px;
   }
-  .lesson-text,
   .task,
   .reflection {
     font-size: var(--type-md);
-  }
-  .fault-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .fault-grid button {
-    padding: 17px 14px;
-  }
-  .fault-grid b {
-    font-size: var(--type-sm);
-  }
-  .fault-grid small {
-    font-size: var(--type-2xs);
   }
   .bezel-top {
     height: 39px;
@@ -810,12 +761,5 @@
   }
   .simulation-clock {
     font-size: var(--type-xs);
-  }
-  .safety-strip {
-    justify-content: center;
-    max-width: 1000px;
-  }
-  .safety-strip > span:not(.version) {
-    font-size: var(--type-2xs);
   }
 }

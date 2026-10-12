@@ -379,14 +379,14 @@ export const PATIENT_GROUPS: { title: string; keys: string[]; presets?: true; no
   { title: 'Sensor de O₂', keys: ['o2Tau', 'o2Bias'] },
 ];
 export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
-/** Botones de eventos (pestaña «Eventos»): [id, icono, título, descripción, deshabilitado]. */
+/** Eventos del panel Explorar: [id, icono, rótulo breve, descripción (en la ayuda emergente), deshabilitado]. */
 export const FAULTS: [string, string, string, string, boolean][] = [
-  ['resistance', 'wave', 'Resistencia ×2', 'Aumenta la carga resistiva', false],
-  ['compliance', 'lung', 'C ÷2', 'Aumenta la carga elástica', false],
-  ['apnea', 'pause', 'Apnea', 'Interrumpe el esfuerzo', false],
-  ['obstruction', 'lock', 'Oclusión', 'Resistencia extrema (Pmáx)', false],
-  ['leak', 'wave', 'Fuga', '6 L/min a 10 cmH₂O en la Y', false],
-  ['disconnect', 'plug', 'Desconexión', 'Circuito abierto en la Y', false],
+  ['resistance', 'wave', 'R × 2', 'Duplica la resistencia: más carga resistiva', false],
+  ['compliance', 'lung', 'C ÷ 2', 'Divide la distensibilidad: más carga elástica', false],
+  ['apnea', 'pause', 'Apnea', 'Interrumpe el esfuerzo del paciente', false],
+  ['obstruction', 'lock', 'Oclusión', 'Resistencia extrema: la presión llega a Pmáx', false],
+  ['leak', 'wave', 'Fuga', '6 L/min a 10 cmH₂O en la pieza en Y', false],
+  ['disconnect', 'plug', 'Desconexión', 'Circuito abierto en la pieza en Y', false],
 ];
 
 /** Selects de presets fisiológicos (U-37) junto a los deslizadores de E₂/τ₂ y K₂: no cambian valores por omisión. */

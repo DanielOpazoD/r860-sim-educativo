@@ -170,59 +170,6 @@
   background: var(--shell-accent-soft);
   color: var(--shell-accent);
 }
-.exam-switch {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-  padding: 10px 12px;
-  border: 1px solid var(--shell-line);
-  background: var(--shell-surface);
-  color: var(--shell-text);
-  text-align: left;
-  cursor: pointer;
-}
-.exam-switch-track {
-  position: relative;
-  width: 32px;
-  height: 18px;
-  flex: none;
-  border: 1px solid var(--shell-line);
-  border-radius: 999px;
-  background: var(--shell-raised);
-}
-.exam-switch-track > span {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--shell-muted);
-  transition: transform 160ms ease;
-}
-.exam-switch.active .exam-switch-track {
-  border-color: var(--shell-accent);
-  background: var(--shell-accent);
-}
-.exam-switch.active .exam-switch-track > span {
-  transform: translateX(14px);
-  background: var(--shell-accent-ink);
-}
-.exam-switch-copy {
-  display: grid;
-  gap: 3px;
-}
-.exam-switch-copy strong {
-  font-size: var(--type-sm);
-  font-weight: 600;
-}
-.exam-switch-copy small {
-  color: var(--shell-muted);
-  font-size: var(--type-2xs);
-  line-height: 1.4;
-}
 .wave-options-button {
   white-space: nowrap;
 }
@@ -589,134 +536,7 @@
   color: var(--shell-dim);
   font-size: var(--type-2xs);
 }
-.scenario-picker-tabs {
-  display: flex;
-  gap: 4px;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--shell-surface);
-  padding-bottom: 10px;
-}
-.scenario-picker-tabs button {
-  background: transparent;
-  border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius-sm);
-  color: var(--shell-muted);
-  padding: 8px 10px;
-  font-size: var(--type-sm);
-}
-.scenario-picker-tabs button[aria-pressed='true'] {
-  background: var(--shell-accent-soft);
-  border-color: var(--shell-accent);
-  color: var(--shell-accent);
-}
-.scenario-intro {
-  color: var(--shell-muted);
-  margin: 2px 0 12px;
-  font-size: var(--type-sm);
-  line-height: 1.5;
-}
-.scenario-filter {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--shell-muted);
-  margin: 4px 0 16px;
-}
-.scenario-filter select {
-  background: var(--shell-raised);
-  border: 1px solid var(--shell-line);
-  border-radius: 6px;
-  color: var(--shell-text);
-  padding: 8px;
-}
-.scenario-group {
-  margin-bottom: 24px;
-}
-.scenario-group h3 {
-  color: var(--shell-text);
-  font-size: var(--type-md);
-  margin: 0 0 10px;
-}
-.scenario-picker .scenario-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.scenario-picker .scenario-card {
-  min-height: 0;
-  padding: 10px 12px;
-  background: var(--shell-surface);
-  border-color: var(--shell-line);
-}
-.scenario-picker .scenario-card.selected {
-  background: var(--shell-accent-soft);
-  border-color: var(--shell-accent);
-}
-.scenario-picker .scenario-card h3 {
-  font-size: var(--type-sm);
-  line-height: 1.3;
-  margin: 0 0 5px;
-}
-.scenario-picker .scenario-card p {
-  flex: 1;
-  color: var(--shell-muted);
-  font-size: var(--type-xs);
-  line-height: 1.45;
-  margin: 0 0 6px;
-}
-.scenario-picker .scenario-card footer {
-  color: var(--shell-dim);
-  border-top: 0;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-}
-.app-dialog.scenario-dialog {
-  width: min(640px, calc(100vw - 24px));
-  height: min(580px, calc(100dvh - 32px));
-  max-height: none;
-}
-.app-dialog.scenario-dialog[open] {
-  display: flex;
-  flex-direction: column;
-}
-.scenario-dialog #dialog-title {
-  font-size: 18px;
-}
-.scenario-dialog #dialog-content {
-  padding: 14px 18px;
-  min-height: 0;
-  max-height: none;
-  flex: 1;
-}
-.scenario-dialog .dialog-header,
-.scenario-dialog #dialog-footer {
-  padding: 12px 18px;
-  flex-shrink: 0;
-  min-height: 0;
-}
-.patient-choice footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-@media (min-width: 701px) and (max-width: 900px) {
-  .scenario-picker .scenario-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 700px) {
-  .scenario-picker .scenario-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .scenario-picker .scenario-card {
-    min-height: 0;
-  }
-  .scenario-picker-tabs button {
-    flex: 1;
-  }
-}
+
 #patient-profiles {
   padding: 0 0 10px;
 }
@@ -1295,9 +1115,6 @@
 }
 .phys-field-header .parameter-label {
   min-width: 0;
-}
-.exam-switch {
-  border-radius: 6px;
 }
 
 @media (max-width: 700px), (pointer: coarse) {

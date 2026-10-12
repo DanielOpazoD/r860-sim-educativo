@@ -54,15 +54,16 @@ test.describe('Paleta de comandos', () => {
     await expect(page.locator('#scenario-name')).toHaveText('Banco lineal pasivo');
   });
 
-  test('permite cargar un escenario por su identificador', async ({ page }) => {
+  test('permite cargar un caso clínico por su identificador y lo presenta en el panel', async ({ page }) => {
     await open(page);
     const input = page.locator('#palette-input');
     await page.locator('.palette-trigger').click();
-    await input.fill('SC-21');
-    await expect(page.getByRole('option', { name: /Ventilación protectora/ })).toBeVisible();
+    await input.fill('CC-05');
+    await expect(page.getByRole('option', { name: /Hipercapnia/ })).toBeVisible();
     await input.press('Enter');
     await expect(page.locator('#command-palette')).not.toBeVisible();
-    await expect(page.locator('#scenario-name')).toHaveText('Ventilación protectora: la presión de distensión y la potencia');
+    await expect(page.locator('#scenario-name')).toHaveText('Hipercapnia: ventilación alveolar y espacio muerto');
+    await expect(page.locator('#instructor-case .case-title')).toHaveText('Hipercapnia: ventilación alveolar y espacio muerto');
   });
 
   test('la cabecera no desborda horizontalmente', async ({ page }) => {

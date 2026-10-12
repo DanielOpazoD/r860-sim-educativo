@@ -108,7 +108,9 @@ const REF = {
   },
 } as const;
 /** Paciente EPOC en soporte: obstrucción espiratoria y esfuerzo propio (CC-06, CC-08). */
-const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0 };
+// EPOC hipercápnica crónica, como CC-02: bicarbonato compensador y espacio muerto mayor. Con la gasometría siempre a la
+// vista, un EPOC con bicarbonato normal mostraría una alcalosis respiratoria pura que no corresponde a su enfermedad.
+const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0, gas: { hco3: 32, deadspaceL: 0.25 } };
 const ESFUERZO_EPOC: EffortParams = { enabled: true, amplitude: 6, ratePerMin: 22, tiS: 0.8, phaseS: 0.3, shape: 'riseRelax' };
 const PS_BASE = { mode: 'CPAP_PS' as const, peep: 5, flowTrigger: 2 / 60, minRate: 'off' as const, pmax: 40 };
 
@@ -361,7 +363,7 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'Con soporte 20 el volumen corriente es grande (≈ 630 mL) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: queda PEEP intrínseca y el paciente tiene que vencerla antes de que el ventilador detecte nada. Un tercio de sus esfuerzos no dispara. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. Bajar el soporte a 10–14 cmH₂O acorta el volumen, baja la PEEP intrínseca y todos los esfuerzos disparan con VT ≈ 350–430 mL. En las curvas se reconocen como una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
+        'Con soporte 20 el volumen corriente es grande (≈ 630 mL) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: queda PEEP intrínseca y el paciente tiene que vencerla antes de que el ventilador detecte nada. Un tercio de sus esfuerzos no dispara. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. Bajar el soporte a 10–14 cmH₂O acorta el volumen, baja la PEEP intrínseca y todos los esfuerzos disparan con VT ≈ 350–430 mL. Además ventila de más: con soporte 20 la PaCO₂ de equilibrio cae a ≈ 25 mmHg y, con el bicarbonato alto de su EPOC, el pH pasa de 7,7; con soporte 12 vuelve a su equilibrio crónico (≈ 53 mmHg, pH 7,40). En las curvas se reconocen como una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
       references: [REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
     },
     question: '¿Por qué más soporte puede significar peor sincronía?',
@@ -374,7 +376,8 @@ export const CLINICAL_CASES: Scenario[] = [
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Frecuencia del ventilador menor que la del paciente.',
-    caution: 'Esfuerzo sintético periódico; un compartimento lineal sin limitación al flujo.',
+    caution:
+      'Esfuerzo sintético periódico; un compartimento lineal sin limitación al flujo. La frecuencia de esfuerzos no responde a la PaCO₂: un paciente real con tanta alcalosis bajaría su impulso.',
   },
   {
     id: 'CC-07',

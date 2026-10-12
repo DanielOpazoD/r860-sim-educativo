@@ -52,17 +52,18 @@
 <a class="skip-link" href="#monitor">Ir al ventilador</a>
 <header class="app-top">
   <a class="wordmark" href="#" data-action="home" aria-label="Ventila Lab inicio"><svg class="icon"><use href="#i-wave"/></svg><strong>Ventila<span>LAB</span></strong></a>
-  <nav class="space-nav" aria-label="Espacios de trabajo"><button id="space-simulator" data-action="simulator" aria-current="page">Simulador</button><button id="space-classroom" data-action="classroom">Aula</button><button id="space-cases" data-action="cases">Casos</button></nav>
-  <button class="app-context" data-action="scenarios" aria-label="Cambiar escenario" title="Cambiar escenario"><span class="live-dot" id="live-dot"></span><span class="app-context-copy"><span id="scenario-name">Banco lineal pasivo</span><span class="app-context-separator" aria-hidden="true">·</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+  
+  <button class="app-context" data-action="scenarios" aria-label="Elegir caso clínico" title="Elegir caso clínico"><span class="live-dot" id="live-dot"></span><span class="app-context-copy"><span id="scenario-name">Banco lineal pasivo</span><span class="app-context-separator" aria-hidden="true">·</span><span class="stage-sub" id="scenario-sub">Adulto virtual · A/C VC</span></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
   <div class="top-actions">
     <button class="button subtle palette-trigger" data-action="palette" aria-label="Buscar comandos" title="Buscar comandos (Ctrl K)" aria-keyshortcuts="Control+K Meta+K"><svg class="icon"><use href="#i-search"/></svg><span>Buscar</span><kbd class="palette-kbd">⌘K</kbd></button>
-    <button class="button secondary-button" id="teacher-toggle" data-action="teacher" aria-label="Mostrar paciente y eventos" title="Mostrar paciente y eventos" aria-pressed="false"><svg class="icon"><use href="#i-person"/></svg><span>Paciente</span></button>
-    <button class="button secondary-button" id="panel-button" data-action="teacher" aria-label="Mostrar paciente y eventos" aria-controls="instructor" aria-pressed="false"><span>Paciente</span></button>
+    <button class="button secondary-button" id="teacher-toggle" data-action="teacher" aria-label="Mostrar el panel lateral" title="Mostrar el panel lateral" aria-pressed="false"><svg class="icon"><use href="#i-person"/></svg><span>Panel</span></button>
+    <button class="button secondary-button" id="panel-button" data-action="teacher" aria-label="Mostrar el panel lateral" aria-controls="instructor" aria-pressed="false"><span>Panel</span></button>
     <div class="more-wrap">
       <button class="button icon-only" id="more-button" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" aria-label="Más opciones" title="Más opciones"><svg class="icon"><use href="#i-more"/></svg></button>
       <div id="more-menu" class="wave-options more-menu" role="menu" hidden>
         <button role="menuitem" data-action="session"><svg class="icon"><use href="#i-download"/></svg><span>Sesión y archivos</span></button>
         <button role="menuitem" data-action="help"><svg class="icon"><use href="#i-help"/></svg><span>Guía y alcance</span></button>
+        <button role="menuitemcheckbox" id="exam-toggle" data-action="exam" aria-checked="false"><svg class="icon"><use href="#i-help"/></svg><span>Modo examen</span><span class="menuitem-switch" aria-hidden="true"><span></span></span></button>
         <button role="menuitemcheckbox" id="sound-toggle" data-action="sound" aria-checked="false"><svg class="icon"><use href="#i-muted"/></svg><span>Audio de alarmas</span><span class="menuitem-switch" aria-hidden="true"><span></span></span></button>
         <button role="menuitem" data-action="fullscreen"><svg class="icon"><use href="#i-expand"/></svg><span>Pantalla completa</span></button>
       </div>
@@ -72,8 +73,29 @@
 <div class="global-notice" id="global-notice" hidden role="status"></div>
 <div class="engine-banner" id="engine-banner" hidden role="alert" aria-live="assertive"></div>
 <main class="workspace" id="workspace">
+  <aside class="instructor" id="instructor" aria-label="Panel lateral: explorar y casos">
+    <div class="instructor-head">
+      <div class="instructor-tabs" role="tablist" aria-label="Explorar y casos"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Explorar</button><button role="tab" aria-selected="false" data-instructor="case">Casos</button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
+      <div class="case-gas-host" id="case-gas" aria-live="off"></div>
+    </div>
+    <section class="instructor-pane active" id="instructor-patient">
+      <div id="patient-profiles"></div>
+      <div id="patient-controls"></div>
+      <section class="event-section" aria-labelledby="events-title"><div class="event-head"><h3 class="small-section-title" id="events-title">Eventos</h3><button class="event-undo" data-action="undoEvent" id="undo-event" title="Deshace el último evento, perfil o cambio de mecánica"><svg class="icon"><use href="#i-history"/></svg>Deshacer</button></div><div class="fault-grid" id="fault-grid"></div></section>
+      <details class="advanced-patient"><summary>Más parámetros</summary><div id="patient-extra-controls"></div></details>
+      <details class="truth-details" id="truth-details"><summary>Datos del modelo</summary>
+      <div class="truth-grid"><div><span class="truth-label">τ insp<button type="button" class="info-button" data-help-key="teacher.tau" data-help-target="help-truth-tau" aria-controls="help-truth-tau" aria-expanded="false" aria-label="Información sobre constante de tiempo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-tauin">—<small>s</small></b></div><div><span class="truth-label">τ esp</span><b id="truth-tau">—<small>s</small></b></div><div><span class="truth-label">PEEPi del modelo<button type="button" class="info-button" data-help-key="teacher.auto" data-help-target="help-truth-auto" aria-controls="help-truth-auto" aria-expanded="false" aria-label="Información sobre PEEPi del modelo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-auto">—<small>cmH₂O</small></b></div><div><span class="truth-label">Volumen absoluto</span><b id="truth-vabs">—<small>mL</small></b></div><div><span class="truth-label">O₂ entregado / sensor</span><b id="truth-o2">—<small>%</small></b></div><div><span class="truth-label">Presión viscoelástica</span><b id="truth-pvisc">—<small>cmH₂O</small></b></div><div><span class="truth-label">Compliance local</span><b id="truth-clocal">—<small>mL/cmH₂O</small></b></div><div><span class="truth-label">Codos P-V</span><b id="truth-knees">—<small>cmH₂O</small></b></div><div id="truth-vcirc-cell" hidden><span class="truth-label">Vol. comprimido en circuito</span><b id="truth-vcirc">—<small>mL</small></b></div><div id="truth-recruit-cell" hidden><span class="truth-label">Reclutamiento</span><b id="truth-recruit">—<small>%</small></b></div><div class="truth-wide"><span class="truth-label">Opciones del modelo</span><b id="truth-opciones">—</b></div></div>
+      <div class="truth-help-panels"><div class="parameter-help" id="help-truth-tau" hidden></div><div class="parameter-help" id="help-truth-auto" hidden></div></div><div class="mini-muscle"><div><span>Esfuerzo muscular</span><b id="muscle-value">0,0 cmH₂O</b></div><canvas id="muscle-canvas" width="560" height="110" aria-label="Presión muscular del paciente virtual" role="img"></canvas><div><span>Bucle presión · volumen del pulmón</span><b id="muscle-loop-note"></b></div><canvas id="muscle-loop-canvas" width="280" height="170" aria-label="Bucle presión-volumen con presión muscular" role="img"></canvas></div>
+      </details>
+      <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
+    </section>
+    <section class="instructor-pane" id="instructor-case"></section>
+    <div class="case-lock-note" id="case-lock-note" hidden><p>Caso clínico en curso: la mecánica del paciente y los eventos se revelan al entregar.</p><button class="case-link" data-action="freeExplore">Salir del caso y explorar libremente</button></div>
+    
+    <div class="instructor-about"><span class="version" id="version-tag">v%ENGINE_VERSION% · Offline</span><button data-action="model">Acerca del simulador</button></div>
+  </aside>
   <section class="stage" aria-label="Ventilador virtual">
-    <aside id="practice-card" class="practice-card" role="status" aria-label="Práctica activa" hidden><span id="practice-progress" class="aula-kicker"></span><p id="practice-objective"></p><div class="practice-actions"><button class="button subtle" id="practice-submit" data-action="submitCase" hidden>Entregar</button><button class="button subtle" id="practice-link" data-action="caseObjectives">Ver objetivos</button><button class="button icon-only subtle" data-action="stopPractice" aria-label="Terminar práctica guiada" title="Terminar práctica guiada"><svg class="icon"><use href="#i-close"/></svg></button></div></aside>
+    
     <div class="device-scroll"><div class="device-shell" id="device-shell">
       <div class="bezel-top"><span class="bezel-light" id="bezel-light"></span></div>
       <div class="screen-window" id="screen-window">
@@ -196,56 +218,27 @@
     </div>
     <section id="variable-legend" class="variable-legend" aria-label="Descripción de variables" hidden></section>
     <div class="signal-inspector" id="signal-inspector" hidden><span id="inspector-label">Mueve los cursores A y B para medir la señal.</span><small class="inspector-hint">Ti/Δt mide la separación entre cursores. Para τesp, coloca A y B sobre la caída del flujo espiratorio.</small><label class="inspector-field"><span>Cursor A</span><input type="range" min="0" max="1000" value="350" id="cursor-slider" aria-label="Cursor A de medición sobre la curva congelada"></label><label class="inspector-field"><span>Cursor B</span><input type="range" min="0" max="1000" value="650" id="cursor-b-slider" aria-label="Cursor B de medición sobre la curva congelada"></label><label class="inspector-field"><span>Historia</span><input type="range" min="0" max="1000" value="1000" id="history-slider" aria-label="Revisar curvas anteriores"></label></div>
-  </section>
-<aside class="instructor" id="instructor" aria-label="Panel docente">
-    <div class="instructor-tabs" role="tablist" aria-label="Paciente y eventos"><button class="active" role="tab" aria-selected="true" data-instructor="patient">Paciente</button><button role="tab" aria-selected="false" data-instructor="events">Eventos</button><button class="button icon-only instructor-close" id="instructor-close" data-action="teacher" aria-label="Cerrar panel"><svg class="icon"><use href="#i-close"/></svg></button></div>
-    <p class="case-lock-note" id="case-lock-note" hidden>Caso clínico en curso: la mecánica del paciente y sus eventos se revelan al entregar.</p>
-    <section class="instructor-pane active" id="instructor-patient">
-      <div id="patient-profiles"></div>
-      <div id="patient-controls"></div>
-      <details class="advanced-patient"><summary>Más parámetros</summary><div id="patient-extra-controls"></div></details>
-      <details class="truth-details" id="truth-details"><summary>Datos del modelo</summary>
-      <div class="truth-grid"><div><span class="truth-label">τ insp<button type="button" class="info-button" data-help-key="teacher.tau" data-help-target="help-truth-tau" aria-controls="help-truth-tau" aria-expanded="false" aria-label="Información sobre constante de tiempo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-tauin">—<small>s</small></b></div><div><span class="truth-label">τ esp</span><b id="truth-tau">—<small>s</small></b></div><div><span class="truth-label">PEEPi del modelo<button type="button" class="info-button" data-help-key="teacher.auto" data-help-target="help-truth-auto" aria-controls="help-truth-auto" aria-expanded="false" aria-label="Información sobre PEEPi del modelo" title="Información"><svg class="icon"><use href="#i-info"/></svg></button></span><b id="truth-auto">—<small>cmH₂O</small></b></div><div><span class="truth-label">Volumen absoluto</span><b id="truth-vabs">—<small>mL</small></b></div><div><span class="truth-label">O₂ entregado / sensor</span><b id="truth-o2">—<small>%</small></b></div><div><span class="truth-label">Presión viscoelástica</span><b id="truth-pvisc">—<small>cmH₂O</small></b></div><div><span class="truth-label">Compliance local</span><b id="truth-clocal">—<small>mL/cmH₂O</small></b></div><div><span class="truth-label">Codos P-V</span><b id="truth-knees">—<small>cmH₂O</small></b></div><div id="truth-vcirc-cell" hidden><span class="truth-label">Vol. comprimido en circuito</span><b id="truth-vcirc">—<small>mL</small></b></div><div id="truth-recruit-cell" hidden><span class="truth-label">Reclutamiento</span><b id="truth-recruit">—<small>%</small></b></div><div class="truth-wide"><span class="truth-label">Opciones del modelo</span><b id="truth-opciones">—</b></div></div>
-      <div class="truth-help-panels"><div class="parameter-help" id="help-truth-tau" hidden></div><div class="parameter-help" id="help-truth-auto" hidden></div></div><div class="mini-muscle"><div><span>Esfuerzo muscular</span><b id="muscle-value">0,0 cmH₂O</b></div><canvas id="muscle-canvas" width="560" height="110" aria-label="Presión muscular del paciente virtual" role="img"></canvas><div><span>Bucle presión · volumen del pulmón</span><b id="muscle-loop-note"></b></div><canvas id="muscle-loop-canvas" width="280" height="170" aria-label="Bucle presión-volumen con presión muscular" role="img"></canvas></div>
-      </details>
-      <button class="button full subtle" data-action="resetPatient"><svg class="icon"><use href="#i-reset"/></svg>Restablecer mecánica</button>
+  <section class="learn classroom" id="learn" aria-label="Espacio educativo">
+    <section class="learn-block" id="learn-case" hidden>
+      <p class="aula-kicker">Desarrollo del caso</p>
+      <div id="learn-case-body"></div>
     </section>
-    <section class="instructor-pane" id="instructor-events"><p class="lesson-text">Introduce cambios durante la ventilación. Cada acción queda en el registro y puede revertirse.</p><div class="fault-grid" id="fault-grid"></div><button class="button full" data-action="undoEvent" id="undo-event"><svg class="icon"><use href="#i-history"/></svg>Deshacer último evento</button><h3 class="small-section-title">Últimos eventos</h3><div class="teacher-log" id="teacher-log"></div></section>
-    <div class="instructor-about"><span class="version" id="version-tag">v%ENGINE_VERSION% · Offline</span><button data-action="model">Acerca del simulador</button></div>
-  </aside>
+    <section class="learn-block" id="learn-theory">
+      <p class="aula-kicker">Aula · Fundamentos</p>
+      <h2 class="learn-title">Las presiones que mides y lo que significan</h2>
+      <div id="aula-theory-host"></div>
+    </section>
+    <section class="learn-block" id="learn-reflection">
+      <p class="aula-kicker">Aula · Reflexión</p>
+      <h2 class="learn-title" id="reflection-question"></h2>
+      <label for="reflection-notes">Tu interpretación</label><textarea id="reflection-notes" rows="4" placeholder="¿Qué cambió en las curvas? ¿Cómo lo explicarías?"></textarea>
+      <details class="reflection" id="reflection"><summary>Comparar con la explicación</summary><p id="reflection-answer"></p></details>
+    </section>
+  </section>
+  </section>
+
 </main>
-<main id="classroom" class="classroom" aria-labelledby="classroom-title" hidden>
-  <header class="aula-heading"><div><p class="aula-kicker" id="classroom-kicker">VENTILA LAB · APRENDIZAJE</p><h1 id="classroom-title" tabindex="-1">Comprender. Practicar. Reflexionar.</h1><p id="classroom-lead">Un espacio para aprender, conectado con tu simulación.</p></div><span id="classroom-session" class="aula-session"></span></header>
-  <nav class="aula-nav" id="aula-nav" aria-label="Secciones">
-    <button data-aula-section="theory" data-space="aula" aria-current="page">Fundamentos</button>
-    <button data-aula-section="questions" data-space="aula">Reflexión</button>
-    <button data-aula-section="library" data-space="casos">Catálogo</button>
-    <button data-aula-section="lesson" data-space="casos">Caso actual</button>
-    <button data-aula-section="exam" data-space="casos">Examen</button>
-    <button data-aula-section="results" data-space="casos">Resultados</button>
-  </nav>
-  <section id="aula-lesson" class="aula-pane">
-    <div id="aula-case" class="aula-lesson-layout" hidden></div>
-    <div id="aula-guided" class="aula-lesson-layout"><article class="aula-intro"><p id="aula-scenario" class="aula-kicker"></p><h2 class="lesson-title" id="lesson-title"></h2><p class="lesson-text" id="lesson-text"></p><p class="notice-box" id="lesson-caution"></p><button class="primary-button" data-action="practice">Practicar en el simulador <span aria-hidden="true">→</span></button><p class="aula-caption">El objetivo actual te acompaña junto al ventilador. Los avances se comprueban automáticamente.</p><button id="practice-stop" class="button subtle" data-action="stopPractice" hidden>Terminar práctica guiada</button></article><article class="aula-paper"><div class="lesson-count" id="lesson-count">0 objetivos</div><div id="lesson-tasks" class="lesson-tasks"></div><div class="lesson-feedback" id="lesson-feedback" hidden>Secuencia completada. Revisa los resultados y explica qué cambió.</div></article></div>
-  </section>
-  <section id="aula-theory" class="aula-pane" hidden>
-    <div id="aula-theory-host"></div>
-    <button class="button secondary-button" data-action="simulator">Volver al ventilador</button>
-  </section>
-  <section id="aula-questions" class="aula-pane aula-reading" hidden>
-    <h2 id="reflection-question"></h2>
-    <label for="reflection-notes">Tu interpretación</label><textarea id="reflection-notes" rows="5" placeholder="¿Qué cambió en las curvas? ¿Cómo lo explicarías?"></textarea><p class="aula-caption">Tus notas se conservan al navegar; se borran al cambiar de caso o recargar.</p>
-    <details class="reflection" id="reflection"><summary>Comparar con la explicación</summary><p id="reflection-answer"></p></details>
-  </section>
-  <section id="aula-exam" class="aula-pane aula-reading" hidden>
-    <p>Activa el examen y vuelve al ventilador. Pulsa una medición oculta para estimarla y conocer la diferencia con el valor registrado.</p>
-    <button class="exam-switch" id="exam-toggle" data-action="exam" role="switch" aria-checked="false" aria-pressed="false"><span class="exam-switch-track" aria-hidden="true"><span></span></span><span class="exam-switch-copy"><strong>Modo examen</strong><small>Las mediciones se ocultan hasta que escribes tu estimación</small></span></button>
-    <button class="primary-button" data-action="simulator">Ir al ventilador <span aria-hidden="true">→</span></button>
-  </section>
-  <section id="aula-results" class="aula-pane aula-reading" hidden><div id="aula-results-body"></div><details class="aula-export"><summary>Guardar el resumen</summary><button class="button secondary-button" data-action="exportDebrief">Descargar texto</button></details></section>
-  <section id="aula-library" class="aula-pane" hidden><div class="aula-library-heading"><label>Buscar caso<input id="aula-search" type="search" placeholder="Tema, nombre o código…" /></label></div><div id="aula-library-list" class="aula-catalog"></div><p id="aula-library-empty" hidden>No hay casos que coincidan con tu búsqueda.</p></section>
-  <footer class="aula-footer">Simulación educativa · Los objetivos de manejo no acreditan competencia clínica.</footer>
-</main>
+
 <dialog id="command-palette" class="command-palette" aria-label="Paleta de comandos">
   <div class="palette-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="palette-input" type="search" role="combobox" aria-controls="palette-list" aria-expanded="true" placeholder="Buscar acción, vista, escenario o perfil…" autocomplete="off"></div>
   <ul id="palette-list" role="listbox"></ul>

@@ -1061,14 +1061,14 @@
     },
     {
       "id": "E-083",
-      "claim": "La lección responde a lo que hace el alumno: la pestaña «Entrenar» se abre primero y cuenta lo hecho (n/N) sin abrirla; cumplir un objetivo por sí mismo se anuncia en un aviso que convive con el resultado del bloqueo que lo cumplió; lo que ya estaba cumplido con el primer cuadro de la lección —una observación sobre el estado inicial— se marca sin aviso, decidido por lista y no por reloj (una gracia de 5 s callaba al alumno que hacía su primer bloqueo nada más abrir); y una sesión importada no evalúa los objetivos del escenario que estaba abierto, porque no dice de qué escenario es.",
+      "claim": "Sólo se evalúa lo que el alumno ve: las prácticas guiadas antiguas quedan como datos para futuros casos y no cuentan objetivos ni los anuncian (un aviso de un objetivo invisible confundía); los casos clínicos se juzgan al entregar. Una sesión importada no se evalúa como el caso que estaba abierto, porque no dice de qué caso es: el panel lo avisa y ofrece reiniciar el caso en vez de Entregar.",
       "status": "P (didáctica; decisión del proyecto)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/ui/lesson.ts (tareasCumplidasAlAbrir, avisoDeObjetivo); src/ui/lessonTracker.ts (alAbrir, sessionImported); src/ui/instructorPanel.ts (loadScenario); index.html (pestaña Entrenar activa)",
+      "implemented": "src/ui/lessonTracker.ts (evaluate, sessionImported); src/ui/caseView.ts (caseBriefNodes, sesión importada); src/ui/caseSpace.ts (submitCase)",
       "tests": [
-        "tests/unit/leccion.test.ts (LEC-01, LEC-02)",
-        "tests/e2e/interaction.spec.ts (LEC · la lección responde)"
+        "tests/unit/uiDom.test.ts (sesiones importadas)",
+        "tests/e2e/interaction.spec.ts (IMP · sesión importada)"
       ]
     },
     {
@@ -1207,19 +1207,24 @@
     },
     {
       "id": "E-096",
-      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen sólo en Aula · Fundamentos · Ventilación, rotuladas «Gasometría (modelo)».",
+      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen en el panel lateral, bajo sus pestañas —al inicio, ahora y hacia dónde tienden con la ventilación actual, con la trayectoria de la PaCO₂ y el tiempo simulado que falta para el equilibrio (τ del almacén de CO₂)— y en Aula · Fundamentos · Ventilación, siempre rotuladas «modelo».",
       "status": "P (decisión de presentación para no atribuir al equipo una medición que no hace)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/ui/teachingView.ts (ventilacionHTML); index.html (pestaña Ventilación); tests/e2e/interaction.spec.ts (pantalla de ventilación)"
+      "implemented": "src/ui/gasView.ts (createGasView, minutosAlEquilibrio, estadoPh); src/ui/caseSpace.ts; src/ui/teachingView.ts (ventilacionHTML); index.html (#case-gas)",
+      "tests": [
+        "tests/unit/uiDom.test.ts (gasometría del panel)",
+        "tests/e2e/clinicalCases.spec.ts (el monitor no contiene educación)",
+        "tests/e2e/interaction.spec.ts (pantalla de ventilación)"
+      ]
     },
     {
       "id": "E-097",
-      "claim": "Caso clínico: escenario sintético con viñeta, pregunta y criterios de RESULTADO evaluados al entregar (varias soluciones válidas), no de acciones. Mientras no se entrega, la mecánica del paciente y sus eventos no se muestran; al entregar se revelan el veredicto por criterio, la verdad del modelo y la explicación. Cada caso lleva referencias temáticas visibles, abiertas y leídas en PubMed (registro en docs/08-casos-clinicos.md); los números de su viñeta salen del motor con esa mecánica y una prueba lo comprueba.",
+      "claim": "Caso clínico: escenario sintético con viñeta, pregunta y criterios de RESULTADO evaluados al entregar (varias soluciones válidas), no de acciones. Mientras no se entrega, la mecánica del paciente no se muestra (la pestaña Explorar sólo avisa y ofrece salir del caso); al entregar se revelan el veredicto por criterio, la verdad del modelo y la explicación. Cada caso lleva referencias temáticas visibles, abiertas y leídas en PubMed (registro en docs/08-casos-clinicos.md); los números de su viñeta salen del motor con esa mecánica y una prueba lo comprueba.",
       "status": "P (formato docente; los umbrales clínicos de cada criterio citan su fuente en el caso)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/scenarios/cases.ts; src/scenarios/index.ts (ClinicalCase); src/ui/caseEvaluation.ts; src/ui/caseView.ts; src/ui/caseProgress.ts; src/ui/classroom.ts (submitCase, bloqueo del panel); tests/unit/casosClinicos.test.ts; tests/e2e/clinicalCases.spec.ts"
+      "implemented": "src/scenarios/cases.ts; src/scenarios/index.ts (ClinicalCase); src/ui/caseEvaluation.ts; src/ui/caseView.ts; src/ui/caseProgress.ts; src/ui/caseSpace.ts (submitCase, bloqueo del panel); tests/unit/casosClinicos.test.ts; tests/e2e/clinicalCases.spec.ts"
     }
   ]
 }

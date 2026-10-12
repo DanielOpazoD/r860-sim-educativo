@@ -3,23 +3,12 @@
  * Cada caso reenvía a su rasgo; aquí sólo viven las acciones sin dueño propio (sesión, exportaciones, espera, O₂).
  */
 import { ENGINE_VERSION } from '../engine/version';
-import { SCENARIOS } from '../scenarios';
 import type { AlarmsUi } from './alarmsUi';
+import type { CaseResult } from './caseEvaluation';
+import type { CaseSpace, LearnBlock } from './caseSpace';
 import type { AppContext } from './context';
-import type { Classroom } from './classroom';
 import { CANCEL_BTN, CLOSE_BTN } from './dialogHost';
-import {
-  debriefText,
-  helpHTML,
-  menuHTML,
-  oxygenHTML,
-  patientHTML,
-  powerHTML,
-  scenariosHTML,
-  sessionHTML,
-  standbyHTML,
-  toolsHTML,
-} from './dialogs';
+import { debriefText, helpHTML, menuHTML, oxygenHTML, patientHTML, powerHTML, sessionHTML, standbyHTML, toolsHTML } from './dialogs';
 import { type CommandId, isCommandId } from './commands';
 import { $, btn } from './dom';
 import {
@@ -37,7 +26,7 @@ import { stamp, unitText } from './format';
 import { toggleHelp } from './helpPanels';
 import type { HoldPanel } from './holdPanel';
 import type { InstructorPanel } from './instructorPanel';
-import { displaySetting, modeLabel, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL } from './labels';
+import { displaySetting, isMobile, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL } from './labels';
 import { clearPrefs, savePrefs } from './prefs';
 import type { MetricsView } from './metricsView';
 import type { ModeDialog } from './modeDialog';
@@ -47,7 +36,7 @@ import type { AlarmLimits, SettingsKey, VentMode } from '../domain/types';
 import { segmentedValue } from './segmented';
 
 export interface Features {
-  classroom: Classroom;
+  cases: CaseSpace;
   quick: QuickEditor;
   hold: HoldPanel;
   modes: ModeDialog;
@@ -68,11 +57,20 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   const { quick, hold, modes, alarms, metrics, plots, instructor } = fx;
   const debriefInput = () => ({
     scenario: ctx.scenario,
-    tasks: ctx.scenario.lesson?.tasks ?? [],
-    done: ctx.lesson.done,
     simS: ctx.simS(),
-    breathCount: ctx.frame?.breathCount ?? 0,
+    result: (ctx.lesson.flags.caseResult as CaseResult | undefined) ?? null,
   });
+  /** Espacio educativo bajo el equipo. En móvil el panel es una hoja que lo taparía: se cierra antes de desplazarse. */
+  const learn = (block: LearnBlock): void => {
+    if (isMobile() && instructor.teacherVisible) instructor.toggleTeacher();
+    fx.cases.scrollTo(block);
+  };
+  /** Casos en el panel lateral: lo abre en la pestaña Caso y muestra la lista. */
+  const chooseCase = (): void => {
+    ctx.dialog.close();
+    instructor.showPanel('case');
+    fx.cases.list();
+  };
   function standbyDialog(): void {
     if (ctx.frame?.ventilation === 'standby') {
       void ctx.send({ type: 'startVentilation' });
@@ -144,17 +142,10 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   const openHelp = (tab: string): void => ctx.dialog.open('help', 'Guía del simulador', helpHTML(tab), CLOSE_BTN, 'wide');
 
   const handlers: Record<CommandId, () => void | Promise<unknown>> = {
-    classroom: () => fx.classroom.open('theory'),
-    cases: () => fx.classroom.open('library'),
-    caseObjectives: () => fx.classroom.open('lesson'),
-    submitCase: () => fx.classroom.submitCase(),
-    restartCase: () => {
-      instructor.loadScenario(ctx.scenario.id);
-      fx.classroom.open('lesson');
-    },
-    simulator: () => fx.classroom.simulator(),
-    practice: () => fx.classroom.practice(),
-    stopPractice: () => fx.classroom.stopPractice(),
+    classroom: () => learn('theory'),
+    caseDevelopment: () => learn('case'),
+    submitCase: () => fx.cases.submitCase(),
+    restartCase: () => instructor.loadScenario(ctx.scenario.id),
     palette: () => fx.openPalette(),
     home: () => {
       ctx.dialog.close();
@@ -163,29 +154,16 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     menu: () => ctx.dialog.open('menu', 'Menú', menuHTML()),
     modes: () => modes.openModes(),
     confirmModes: () => modes.confirmModes(),
-    scenarios: () => {
-      ctx.dialog.open(
-        'scenarios',
-        'Escenarios y paciente',
-        scenariosHTML(
-          SCENARIOS.filter((s) => !s.clinical),
-          ctx.scenario.id,
-          modeLabel,
-          Boolean(ctx.fixtureId),
-        ),
-        CLOSE_BTN,
-        'scenario-dialog',
-      );
+    // Los casos se eligen en el panel lateral; los escenarios guiados antiguos quedan como datos para futuros casos.
+    scenarios: () => chooseCase(),
+    // Salir de un caso es volver al banco pasivo, con el panel Explorar a mano.
+    freeExplore: () => {
+      instructor.loadScenario('SC-01');
+      instructor.showPanel('patient');
     },
     'welcome-free': () => ctx.dialog.close(),
-    'welcome-guided': () => {
-      ctx.dialog.close();
-      fx.classroom.open('library');
-    },
-    teacher: () => {
-      fx.classroom.simulator();
-      instructor.toggleTeacher();
-    },
+    'welcome-guided': () => chooseCase(),
+    teacher: () => instructor.toggleTeacher(),
     pause: () => {
       if (ctx.running) ctx.client.pause('usuario');
       else ctx.client.resume();
@@ -279,7 +257,6 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     csv: () => exportCSV(false),
     signalCSV: () => exportCSV(true),
     snapshot: () => snapshot(),
-    debrief: () => fx.classroom.open('results'),
     exportDebrief: () => {
       if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `Ventila_practica_${stamp()}.txt`);
     },
@@ -402,20 +379,12 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     });
     document.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
-        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-scenario],[data-scenario-view],[data-profile],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode],[data-mode-step],[data-phys-step],[data-limit-step]',
+        '[data-action],[data-view],[data-instructor],[data-setting-quick],[data-profile],[data-event],[data-metric],[data-help-tab],[data-help-target],[data-mode],[data-mode-step],[data-phys-step],[data-limit-step]',
       );
       if (!el) return;
       e.preventDefault();
       if (el.dataset.helpTarget) {
         toggleHelp(el);
-        return;
-      }
-      if (el.dataset.scenarioView) {
-        for (const view of ['start', 'all', 'profiles']) $('#scenario-' + view).hidden = view !== el.dataset.scenarioView;
-        $('#scenario-scope').hidden = el.dataset.scenarioView === 'profiles';
-        for (const button of document.querySelectorAll<HTMLElement>('[data-scenario-view]'))
-          button.setAttribute('aria-pressed', String(button.dataset.scenarioView === el.dataset.scenarioView));
-        $('#dialog-content').scrollTop = 0;
         return;
       }
       if (el.dataset.profile) {
@@ -444,10 +413,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       }
       if (el.dataset.view) ctx.switchView(el.dataset.view);
       if (el.dataset.instructor) instructor.switchInstructor(el.dataset.instructor);
-      if (el.dataset.settingQuick) quick.openQuick(el.dataset.settingQuick as SettingsKey, el);
-      if (el.dataset.scenario) instructor.loadScenario(el.dataset.scenario);
-      if (el.dataset.mode && !(el as HTMLButtonElement).disabled) modes.selectMode(el.dataset.mode as VentMode);
       if (el.dataset.event) void instructor.fault(el.dataset.event);
+      if (el.dataset.settingQuick) quick.openQuick(el.dataset.settingQuick as SettingsKey, el);
+      if (el.dataset.mode && !(el as HTMLButtonElement).disabled) modes.selectMode(el.dataset.mode as VentMode);
       if (el.dataset.metric) metrics.metricClick(el.dataset.metric);
       if (el.dataset.helpTab) openHelp(el.dataset.helpTab);
     });

@@ -220,19 +220,6 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         ),
       );
       put('#log-count', `${events.length} eventos visibles`);
-      $('#teacher-log').replaceChildren(
-        ...events
-          .filter((e) => e.kind !== 'breath')
-          .slice(0, 8)
-          .map((e) =>
-            element(
-              'div',
-              'teacher-event',
-              element('time', '', clock(e.simTimeMs / 1000)),
-              element('span', '', learnerText(eventSentence(e))),
-            ),
-          ),
-      );
     },
     resetLog() {
       logSignature = '';

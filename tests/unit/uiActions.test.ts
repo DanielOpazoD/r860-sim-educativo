@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { uiHarness } from '../uiHarness';
 import { $, element } from '../../src/ui/dom';
 import { createActions } from '../../src/ui/actions';
-import { createClassroom } from '../../src/ui/classroom';
+import { createCaseSpace } from '../../src/ui/caseSpace';
 import { createQuickEditor } from '../../src/ui/quickEditor';
 import { createHoldPanel } from '../../src/ui/holdPanel';
 import { createMetricsView } from '../../src/ui/metricsView';
@@ -44,11 +44,7 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
     const metrics = createMetricsView(ctx);
     const plots = createPlotsView(ctx, { teacherVisible: () => false });
     const instructor = createInstructorPanel(ctx, { quick, hold, metrics, plots, initialVisible: false });
-    const classroom = createClassroom(ctx, {
-      cancelQuick: quick.cancelQuick,
-      loadScenario: instructor.loadScenario,
-      estimateCount: () => 0,
-    });
+    const cases = createCaseSpace(ctx, { loadScenario: instructor.loadScenario, switchTab: instructor.switchInstructor });
     const palette = createCommandPalette(() => []);
     const actions = createActions(ctx, {
       quick,
@@ -56,7 +52,7 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
       metrics,
       plots,
       instructor,
-      classroom,
+      cases,
       modes: createModeDialog(ctx, { cancelQuick: quick.cancelQuick }),
       alarms: createAlarmsUi(ctx),
       openPalette: palette.open,
@@ -65,18 +61,20 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
     metrics.init();
     instructor.init();
     instructor.updateTeacher();
-    classroom.init();
+    cases.init();
     actions.bind();
     bindKeyboard(ctx, { quick, action: actions.action, palette });
 
     await actions.action('invalid-command');
     expect(ctx.toast).toHaveBeenLastCalledWith('Acción no disponible en esta versión.', true);
-    $('[data-action="classroom"]').click();
-    expect($('#classroom').hidden).toBe(false);
-    await actions.action('practice');
-    expect($('#practice-card').hidden).toBe(false);
-    await actions.action('stopPractice');
-    expect($('#practice-card').hidden).toBe(true);
+    // Elegir caso abre el panel lateral en la pestaña Caso con la lista; el Aula lleva al espacio educativo.
+    $('[data-action="scenarios"]').click();
+    expect($('#workspace').classList.contains('teacher-hidden')).toBe(false);
+    expect($('#instructor-case').classList.contains('active')).toBe(true);
+    expect($('#instructor-case').querySelectorAll('[data-case-id]').length).toBeGreaterThan(0);
+    await actions.action('classroom');
+    expect(ctx.lesson.flags.teaching).toBe(true);
+    expect($('#learn-theory').scrollIntoView).toHaveBeenCalled();
 
     $('#wave-options-button').click();
     expect($<HTMLDialogElement>('#wave-options').open).toBe(true);
@@ -128,7 +126,7 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
     expect(ctx.send).toHaveBeenLastCalledWith({ type: 'increaseO2Stop' });
     await actions.action('exam');
     expect(ctx.setExamMode).toHaveBeenLastCalledWith(true);
-    for (const command of ['menu', 'scenarios', 'session', 'patient', 'tools', 'help', 'model', 'standby', 'oxygen', 'powerInfo']) {
+    for (const command of ['menu', 'session', 'patient', 'tools', 'help', 'model', 'standby', 'oxygen', 'powerInfo']) {
       await actions.action(command);
       expect($<HTMLDialogElement>('#app-dialog').open).toBe(true);
       expect($('#dialog-content').childElementCount).toBeGreaterThan(0);

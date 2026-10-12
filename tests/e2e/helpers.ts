@@ -57,22 +57,27 @@ export async function open(page: Page, params: Record<string, string | number> =
   await page.goto(`/?${q.toString()}`);
   await page.waitForFunction(() => window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
 }
-export type AulaSection = 'lesson' | 'theory' | 'questions' | 'exam' | 'results' | 'library';
-export async function openAula(page: Page, section: AulaSection = 'lesson'): Promise<void> {
-  const classroom = page.locator('#classroom');
-  // Fundamentos y Reflexión viven en el Aula; el resto, en Casos.
-  const space = section === 'theory' || section === 'questions' ? '#space-classroom' : '#space-cases';
-  if ((await page.locator(space).getAttribute('aria-current')) !== 'page') await page.locator(space).click();
-  const tab = page.locator(`[data-aula-section="${section}"]`);
-  if ((await tab.getAttribute('aria-current')) !== 'page') await tab.click();
-  await expect(classroom).toBeVisible();
-  await expect(page.locator(`#aula-${section}`)).toBeVisible();
+/** Aula · Fundamentos: el espacio educativo bajo el equipo, al que se llega desde la paleta (carga diferida). */
+export async function openFundamentos(page: Page): Promise<void> {
+  await hidePanel(page);
+  await page.locator('.palette-trigger').click();
+  await page.locator('#palette-input').fill('Aula: fundamentos');
+  await page.locator('#palette-input').press('Enter');
+  await expect(page.locator('#learn-theory')).toBeInViewport();
+  await expect(page.locator('#teaching-body > *').first()).toBeVisible();
 }
-export async function openSimulator(page: Page): Promise<void> {
-  if (await page.locator('#classroom').isVisible()) await page.locator('#space-simulator').click();
-  await expect(page.locator('#workspace')).toBeVisible();
+/** Vuelve al ventilador desde el espacio educativo. */
+export async function backToMonitor(page: Page): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(page.locator('#monitor')).toBeInViewport();
 }
-export async function showPanel(page: Page, tab?: 'patient' | 'events'): Promise<void> {
+/** Activa o desactiva el modo examen desde el menú «…». */
+export async function toggleExam(page: Page): Promise<void> {
+  await page.locator('#more-button').click();
+  await page.locator('#exam-toggle').click();
+  await expect(page.locator('#more-menu')).toBeHidden();
+}
+export async function showPanel(page: Page, tab?: 'case' | 'patient'): Promise<void> {
   const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
   if (mobile) {
     const button = page.locator('#panel-button');

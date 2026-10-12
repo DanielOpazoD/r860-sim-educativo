@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs/promises';
-import { open, openAula } from './helpers';
+import { open, openFundamentos } from './helpers';
 import type { SessionFile } from '../../src/history/session';
 
 async function syntheticSession(page: Page): Promise<SessionFile> {
@@ -42,7 +42,7 @@ test('meseta estable con esfuerzo: el equipo muestra lo que mide y el Aula avisa
   await page.screenshot({ path: info.outputPath('esfuerzo-equipo.png'), fullPage: true });
   // El Aula sí conoce la verdad del modelo.
   await page.click('[data-action="closeHold"]');
-  await openAula(page, 'theory');
+  await openFundamentos(page);
   const meseta = page.locator('.edu-card').filter({ hasText: 'Presión meseta' });
   await expect(meseta).toContainText('no es mecánica pasiva');
   await page.screenshot({ path: info.outputPath('esfuerzo-aula.png'), fullPage: true });
@@ -93,7 +93,7 @@ test('pausa de ciclo: el equipo publica la meseta estable con o sin esfuerzo, si
   expect(errors).toEqual([]);
 });
 
-test('SC-18: bloqueo con esfuerzo permite completar el objetivo sin certificar PEEP pasiva', async ({ page }, info) => {
+test('SC-18: el bloqueo espiratorio con esfuerzo no delata el músculo en la cara del equipo', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await open(page, { scenario: 'SC-18', speed: 4 });
@@ -118,10 +118,5 @@ test('SC-18: bloqueo con esfuerzo permite completar el objetivo sin certificar P
   // El equipo informa sólo lo que ve en la presión; el músculo no aparece en su cara.
   await expect(page.locator('#hold-status')).not.toContainText('esfuerzo');
   await page.screenshot({ path: info.outputPath('sc18-bloqueo.png'), fullPage: true });
-  await openAula(page, 'lesson');
-  const task = page.locator('#lesson-tasks .task').filter({ hasText: 'solicita un bloqueo espiratorio de 2 s' });
-  await expect(task).toHaveClass(/complete/);
-  await expect(task).toContainText('una cola estable no demuestra');
-  await page.screenshot({ path: info.outputPath('sc18-objetivo.png'), fullPage: true });
   expect(errors).toEqual([]);
 });

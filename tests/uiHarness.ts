@@ -64,7 +64,6 @@ export function uiHarness(): { ctx: { -readonly [K in keyof AppContext]: AppCont
     lesson: {
       sessionImported: false,
       flags: {},
-      done: new Set(),
       reset: vi.fn(),
       render: vi.fn(),
       evaluate: vi.fn(),

@@ -1,10 +1,10 @@
 /** Plantillas HTML de los diálogos (puras: reciben datos, devuelven texto). El estado y la apertura viven en app.ts. */
 import type { EngineFrame } from '../engine/simulator';
-import type { LessonTask, Scenario } from '../scenarios';
-import { element, esc, icon, iconNode } from './dom';
+import type { Scenario } from '../scenarios';
+import type { CaseResult } from './caseEvaluation';
+import { esc, icon } from './dom';
 import { clock } from './format';
 import { modeLabel as etiquetaModo } from './labels';
-import { PATIENT_PROFILES, profileHint } from './patientProfiles';
 
 export const MENU_ENTRIES: [string, string, string, string][] = [
   ['modes', 'wave', 'Modo y ajustes', 'Volumen, límites de presión y sincronización'],
@@ -19,7 +19,7 @@ export const menuHTML = (): string =>
   ).join('')}</div>`;
 
 export const welcomeHTML = (): string =>
-  `<p class="welcome-intro">Un ventilador virtual para aprender mecánica respiratoria sin riesgo.</p><div class="scenario-grid welcome-choices"><button class="scenario-card welcome-choice" id="welcome-free" data-action="welcome-free"><h3>Explorar libremente</h3><p>Banco pasivo con todos los mandos a tu alcance.</p></button><button class="scenario-card welcome-choice" id="welcome-guided" data-action="welcome-guided"><h3>Práctica guiada</h3><p>Ocho prácticas cortas con objetivos claros.</p></button></div><p class="welcome-footnote">Simulador educativo: no es un equipo clínico ni usa datos de pacientes.</p>`;
+  `<p class="welcome-intro">Un ventilador virtual para aprender mecánica respiratoria sin riesgo.</p><div class="scenario-grid welcome-choices"><button class="scenario-card welcome-choice" id="welcome-free" data-action="welcome-free"><h3>Explorar libremente</h3><p>Banco pasivo con todos los mandos a tu alcance.</p></button><button class="scenario-card welcome-choice" id="welcome-guided" data-action="welcome-guided"><h3>Casos clínicos</h3><p>Ocho casos con viñeta, para resolver en el ventilador.</p></button></div><p class="welcome-footnote">Simulador educativo: no es un equipo clínico ni usa datos de pacientes.</p>`;
 
 export const toolsHTML = (): string =>
   `<div class="tools-grid">${[
@@ -43,7 +43,7 @@ export function sessionHTML(scenarioName: string, simS: number, engineVersion: s
       'Hasta 120 s de presión, flujo, volumen y esfuerzo, con cada muestra del motor (una cada 4 ms).',
     ],
     ['snapshot', 'camera', 'Captura PNG', 'Monitor renderizado con marca de simulación.'],
-    ['debrief', 'book', 'Resumen de práctica', 'Objetivos, ajustes y cronología de la sesión.'],
+    ['exportDebrief', 'book', 'Resumen de práctica TXT', 'Caso, resultado, ajustes y cronología de la sesión.'],
   ];
   return `<p class="dialog-lead">Los archivos contienen exclusivamente el escenario virtual y sus acciones. Todo se procesa en este navegador; no hay servidor ni telemetría.</p><div class="session-actions">${entries
     .map(
@@ -71,86 +71,22 @@ export function oxygenHTML(o2: EngineFrame['procedure']['o2'] | undefined, simTi
 export const powerHTML = (): string =>
   `<div class="info-box">Ejecución local en tu navegador. Sin conexión a un ventilador, red hospitalaria, USB ni puertos físicos.</div><p>Este icono conserva la referencia visual de alimentación. No simula baterías, consumo eléctrico ni autonomía.</p>`;
 
-export function scenariosHTML(scenarios: Scenario[], currentId: string, modeLabel: (mode: string) => string, fixture = false): string {
-  const summaries: Record<string, string> = {
-    'SC-01': 'Cambia la resistencia y compara presión pico y meseta.',
-    'SC-02': 'A los 20 s baja la distensibilidad: sube la presión para el mismo volumen.',
-    'SC-03': 'Observa el flujo espiratorio y mide la PEEP total.',
-    'SC-13': 'A los 30 s aumenta la resistencia: cae el volumen, no la presión.',
-    'SC-19': 'El esfuerzo dispara cada ciclo; cambia el soporte y observa el volumen.',
-    'SC-21': 'Baja el volumen y compara presión de distensión y potencia.',
-    'SC-22': 'Compara volumen inspirado y espirado: la fuga también puede autodisparar.',
-    'SC-23': 'Abre el circuito en Eventos: presión y volumen caen a cero.',
-  };
-  const recommended = Object.keys(summaries);
-  const card = (s: Scenario): string =>
-    `<button class="scenario-card ${currentId === s.id ? 'selected' : ''}" data-scenario="${esc(s.id)}" ${currentId === s.id ? 'aria-current="true"' : ''}><h3>${esc(s.name)}</h3><p>${esc(summaries[s.id] ?? s.observe)}</p><footer>${esc(modeLabel(String(s.settings?.mode ?? 'AC_VC')))} · Nivel ${s.level ?? 1}${currentId === s.id ? ' · Actual' : ''}</footer></button>`;
-  const cases = scenarios.filter((s) => s.id !== 'SC-P');
-  const categories = [...new Set(cases.map((s) => s.category ?? 'Escenario'))].sort((a, b) => a.localeCompare(b, 'es'));
-  return `<div class="scenario-picker"><div class="scenario-picker-tabs" role="group" aria-label="Escenarios y paciente"><button data-scenario-view="start" aria-controls="scenario-start" aria-pressed="true">Empezar</button><button data-scenario-view="all" aria-controls="scenario-all" aria-pressed="false">Explorar todos</button><button data-scenario-view="profiles" aria-controls="scenario-profiles" aria-pressed="false">Solo paciente</button></div><p id="scenario-scope" class="scenario-intro">Cada escenario reinicia la práctica con paciente, ventilador y objetivos preparados.</p><section id="scenario-start"><div class="scenario-grid">${recommended
-    .map((id) => scenarios.find((s) => s.id === id))
-    .filter((s): s is Scenario => !!s)
-    .map(card)
-    .join(
-      '',
-    )}</div></section><section id="scenario-all" hidden><label class="scenario-filter">Tema <select id="scenario-topic"><option value="">Todos los temas</option>${categories.map((category) => `<option value="${esc(category)}">${esc(category)}</option>`).join('')}</select></label>${categories
-    .map(
-      (category) =>
-        `<section class="scenario-group" data-scenario-topic="${esc(category)}"><h3>${esc(category)}</h3><div class="scenario-grid">${cases
-          .filter((s) => (s.category ?? 'Escenario') === category)
-          .map(card)
-          .join('')}</div></section>`,
-    )
-    .join('')}<section class="scenario-group scenario-reference"><h3>Referencia visual</h3><div class="scenario-grid">${scenarios
-    .filter((s) => s.id === 'SC-P')
-    .map(card)
-    .join(
-      '',
-    )}</div></section></section><section id="scenario-profiles" hidden><p class="scenario-intro">El perfil cambia la mecánica y el esfuerzo del paciente. Conserva la programación del ventilador y la práctica actual.</p><div class="scenario-grid">${PATIENT_PROFILES.map(
-    (profile) =>
-      `<button class="scenario-card patient-choice" data-profile="${profile.id}" ${fixture ? 'disabled' : ''}><h3>${esc(profile.label)}</h3><p>${esc(profileHint(profile))}</p><footer>Aplicar perfil ${icon('arrow')}</footer></button>`,
-  ).join(
-    '',
-  )}</div>${fixture ? '<p class="scenario-intro">Los perfiles están bloqueados en la referencia fotográfica.</p>' : ''}</section></div>`;
-}
-
 export interface DebriefInput {
   scenario: Scenario;
-  tasks: LessonTask[];
-  done: Set<string>;
   simS: number;
-  breathCount: number;
+  /** Resultado del caso clínico, si se entregó. */
+  result: CaseResult | null;
 }
-export function debriefNodes(d: DebriefInput): HTMLElement[] {
-  const stat = (value: string, label: string): HTMLElement => element('div', '', element('b', '', value), element('span', '', label));
-  return [
-    element(
-      'div',
-      'debrief-stat-grid',
-      stat(`${d.done.size}/${d.tasks.length}`, 'Objetivos de interfaz'),
-      stat(clock(d.simS), 'Tiempo simulado'),
-      stat(String(d.breathCount), 'Ciclos completos'),
-    ),
-    element('h3', '', d.scenario.lesson?.title ?? d.scenario.name),
-    element('p', 'notice-box', d.scenario.caution),
-    element(
-      'div',
-      'lesson-tasks',
-      ...d.tasks.map((task) =>
-        element(
-          'div',
-          `task ${d.done.has(task.id) ? 'complete' : ''}`,
-          element('span', 'task-check', iconNode(d.done.has(task.id) ? 'check' : 'minus')),
-          element('span', '', task.text),
-        ),
-      ),
-    ),
-    element('div', 'info-box', element('b', '', d.scenario.question ?? ''), element('p', '', d.scenario.answer ?? '')),
-    element('div', 'notice-box', 'Este resumen registra acciones del simulador; no puntúa seguridad clínica ni acredita competencia.'),
-  ];
+function resultadoTexto(d: DebriefInput): string {
+  const c = d.scenario.clinical;
+  if (!c) return 'Exploración libre (sin caso clínico).';
+  if (!d.result) return `Caso ${d.scenario.id} · ${c.theme}: sin entregar.`;
+  const lineas = c.criteria.map((cr) => `${d.result!.criteria.find((x) => x.id === cr.id)?.ok ? '[Cumplido]' : '[Pendiente]'} ${cr.text}`);
+  if (d.result.answer) lineas.push(`${d.result.answer.ok ? '[Cumplido]' : '[Pendiente]'} Respuesta elegida`);
+  return `Caso ${d.scenario.id} · ${c.theme}: ${d.result.passed ? 'resuelto' : 'entregado, por revisar'}.\n${lineas.join('\n')}`;
 }
 export function debriefText(d: DebriefInput, fr: EngineFrame): string {
-  return `VENTILA LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nLímites: ${d.scenario.caution}\nTiempo simulado: ${clock(d.simS)}\nModo: ${etiquetaModo(fr.settings.mode)}\nObjetivos de interfaz: ${d.done.size}/${d.tasks.length}\n\n${d.tasks.map((x) => `${d.done.has(x.id) ? '[Realizado]' : '[Pendiente]'} ${x.text}`).join('\n')}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
+  return `VENTILA LAB · RESUMEN DE PRÁCTICA\nSIMULACIÓN EDUCATIVA · NO USO CLÍNICO\n\nEscenario: ${d.scenario.name}\nLímites: ${d.scenario.caution}\nTiempo simulado: ${clock(d.simS)}\nModo: ${etiquetaModo(fr.settings.mode)}\n\n${resultadoTexto(d)}\n\nAJUSTES\n${JSON.stringify(fr.settings, null, 2)}\n\nMODELO SINTÉTICO\n${JSON.stringify(fr.truth.patient, null, 2)}\n\nÚLTIMOS EVENTOS\n${fr.eventsTail.map((e) => `${clock(e.simTimeMs / 1000)} ${e.kind}: ${JSON.stringify(e.payload)}`).join('\n')}\n\nNo evalúa competencia clínica ni seguridad de ventilación en pacientes.\n`;
 }
 
 /** Referencias de fisiología y mecánica que sostienen Fundamentos y los casos (abiertas y leídas al citarlas). */
@@ -180,8 +116,8 @@ const KEYS: [string, string][] = [
   ['Rueda sobre perilla', 'Modificar el parámetro seleccionado'],
 ];
 const HELP_TEXTS: Record<string, string> = {
-  start: `<p class="dialog-lead">Un ventilador virtual para explorar la relación entre lo que ajustas, lo que hace el pulmón sintético y lo que muestra el monitor.</p><div class="help-list"><div><b>01 · Ventila</b><p>La sesión ya está ventilando. Selecciona un parámetro de la barra inferior. Ajusta con el deslizador, el número, las flechas o la perilla y <b>confirma</b>. Cancelar conserva el valor previo. El cambio se aplica en la próxima respiración.</p></div><div><b>02 · Cambia el pulmón</b><p>Abre «Paciente» para controlar C, R, esfuerzo y sensor de O₂. Estos cambios actúan sobre el modelo, no sobre los ajustes del equipo. En «Eventos» puedes provocar y deshacer alteraciones.</p></div><div><b>03 · Mide y compara</b><p>Bloqueo insp/esp abre la maniobra; pulsa ▶ para solicitarla. El motor espera una fase elegible. Revisa el resultado, su validez y su hora. En Bucles, guarda un ciclo de referencia.</p></div><div><b>04 · Aprende y practica</b><p>El Aula es para comprender: Fundamentos y Reflexión. Casos es para practicar y evaluarte: Catálogo, Caso actual, Examen y Resultados. Inicia la práctica desde Caso actual; el objetivo te acompaña junto al ventilador. Guarda JSON para reproducir y CSV/PNG para analizar. No hay subida de archivos a internet.</p></div></div><div class="info-box"><b>Tres acciones distintas:</b> Pausar detiene el reloj; Congelar curvas conserva una imagen mientras el motor sigue; En espera suspende la ventilación virtual. Al ocultar la pestaña se pausa la simulación y se reanuda manualmente.</div>`,
-  model: `<p class="dialog-lead">Mecánica consistente, alcance explícitamente limitado.</p><div class="equation">Paw + Pmus = V / C + R × Q<br>τesp = Rexp × C</div><p>Un compartimento lineal con resistencia inspiratoria y espiratoria independientes; volumen pulmonar continuo (no se reinicia al cambiar PEEP); esfuerzo muscular periódico; sensor de O₂ con retardo. Integración a paso fijo de 4 ms con sub-pasos exactos en los eventos y localización de los cruces de Plimit/Pmáx dentro del paso; las curvas dibujan cada muestra, así que un evento de un solo paso también se ve.</p><p><b>Modos:</b> A/C VC, A/C PC y CPAP/PS adulto. En VC, Plimit sostiene la presión el resto de la inspiración y Pmáx la termina; en PC y en soporte la presión es la consigna; en CPAP/PS el paciente dispara y el flujo cicla, con frecuencia mínima, apnea y respaldo. Otros modos se incorporarán sólo tras sus pruebas de banco.</p><p><b>Mediciones estáticas:</b> esfuerzo, Pmáx, duración insuficiente o cancelación invalidan una maniobra; el resultado conserva su hora y su motivo. FR y VMesp usan las últimas ocho respiraciones.</p><p><b>Gasometría de modelo:</b> PaCO₂ y pH salen de la ventilación alveolar del pulmón (Aula · Fundamentos · Ventilación); el equipo no los muestra.</p><div class="notice-box"><b>No modela:</b> oxigenación, SpO₂, hemodinámica ni elemento de tubo; la fuga se modela en la pieza en Y, sin compensación. FiO₂ cambia su sensor virtual, no una saturación inventada. No predice respuestas de pacientes ni controla equipos.</div><p>Cada regla lleva su marca de evidencia (documentado / observado / propuesto / no resuelto) en los archivos evidence.json y gaps.json del proyecto.</p>`,
+  start: `<p class="dialog-lead">Un ventilador virtual para explorar la relación entre lo que ajustas, lo que hace el pulmón sintético y lo que muestra el monitor.</p><div class="help-list"><div><b>01 · Ventila</b><p>La sesión ya está ventilando. Selecciona un parámetro de la barra inferior. Ajusta con el deslizador, el número, las flechas o la perilla y <b>confirma</b>. Cancelar conserva el valor previo. El cambio se aplica en la próxima respiración.</p></div><div><b>02 · Cambia el pulmón</b><p>En el panel lateral, «Explorar» ofrece perfiles patológicos, controla C, R, esfuerzo y sensor de O₂, y provoca eventos (apnea, oclusión, fuga, desconexión…) que «Deshacer» revierte. Estos cambios actúan sobre el modelo, no sobre los ajustes del equipo. Arriba, la gasometría del modelo muestra cómo empezó, cómo está y hacia dónde va.</p></div><div><b>03 · Mide y compara</b><p>Bloqueo insp/esp abre la maniobra; pulsa ▶ para solicitarla. El motor espera una fase elegible. Revisa el resultado, su validez y su hora. En Bucles, guarda un ciclo de referencia.</p></div><div><b>04 · Resuelve casos</b><p>En «Casos», elige un caso clínico: el panel dice qué lograr y cómo se evalúa. Resuélvelo en el ventilador y pulsa Entregar. Bajo el equipo, con scroll, están el desarrollo del caso y el Aula (Fundamentos y Reflexión). El modo examen está en el menú «…». Guarda JSON para reproducir y CSV/PNG para analizar. No hay subida de archivos a internet.</p></div></div><div class="info-box"><b>Tres acciones distintas:</b> Pausar detiene el reloj; Congelar curvas conserva una imagen mientras el motor sigue; En espera suspende la ventilación virtual. Al ocultar la pestaña se pausa la simulación y se reanuda manualmente.</div>`,
+  model: `<p class="dialog-lead">Mecánica consistente, alcance explícitamente limitado.</p><div class="equation">Paw + Pmus = V / C + R × Q<br>τesp = Rexp × C</div><p>Un compartimento lineal con resistencia inspiratoria y espiratoria independientes; volumen pulmonar continuo (no se reinicia al cambiar PEEP); esfuerzo muscular periódico; sensor de O₂ con retardo. Integración a paso fijo de 4 ms con sub-pasos exactos en los eventos y localización de los cruces de Plimit/Pmáx dentro del paso; las curvas dibujan cada muestra, así que un evento de un solo paso también se ve.</p><p><b>Modos:</b> A/C VC, A/C PC y CPAP/PS adulto. En VC, Plimit sostiene la presión el resto de la inspiración y Pmáx la termina; en PC y en soporte la presión es la consigna; en CPAP/PS el paciente dispara y el flujo cicla, con frecuencia mínima, apnea y respaldo. Otros modos se incorporarán sólo tras sus pruebas de banco.</p><p><b>Mediciones estáticas:</b> esfuerzo, Pmáx, duración insuficiente o cancelación invalidan una maniobra; el resultado conserva su hora y su motivo. FR y VMesp usan las últimas ocho respiraciones.</p><p><b>Gasometría de modelo:</b> PaCO₂ y pH salen de la ventilación alveolar del pulmón (panel lateral y Aula · Fundamentos · Ventilación); el equipo no los muestra.</p><div class="notice-box"><b>No modela:</b> oxigenación, SpO₂, hemodinámica ni elemento de tubo; la fuga se modela en la pieza en Y, sin compensación. FiO₂ cambia su sensor virtual, no una saturación inventada. No predice respuestas de pacientes ni controla equipos.</div><p>Cada regla lleva su marca de evidencia (documentado / observado / propuesto / no resuelto) en los archivos evidence.json y gaps.json del proyecto.</p>`,
   keys: `<table class="info-table"><tbody>${KEYS.map(
     ([k, d]) => `<tr><td><kbd class="keyboard-key">${k}</kbd></td><td>${d}</td></tr>`,
   ).join(

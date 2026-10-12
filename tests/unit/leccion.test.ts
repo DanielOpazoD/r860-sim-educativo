@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
 import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
-import { scenariosHTML } from '../../src/ui/dialogs';
 import type { LessonContext } from '../../src/ui/lesson';
 import { avisoDeObjetivo, LESSON_TESTS, nextCompletedTask, tareasCumplidasAlAbrir } from '../../src/ui/lesson';
 
@@ -30,24 +29,6 @@ function primerCuadro(id: string): { tasks: { id: string; text: string; test: st
     ctx: { frame, scenarioId: e.id, lessonStartMs: frame.simTimeMs, patientChangeMs: -1, settingsChangeMs: -1, flags: {} },
   };
 }
-
-describe('Catálogo de escenarios', () => {
-  it('destaca ocho casos sin ocultar los demás ni mezclar la referencia fotográfica', () => {
-    const html = scenariosHTML(
-      SCENARIOS.filter((s) => !s.clinical),
-      'SC-01',
-      () => 'A/C VC',
-    );
-    const start = html.split('id="scenario-all"')[0]!;
-    expect(start.match(/data-scenario="SC-/g)).toHaveLength(8);
-    // Los casos clínicos viven en Casos, no en el selector rápido de prácticas.
-    expect(html.match(/data-scenario="SC-/g)).toHaveLength(SCENARIOS.filter((s) => !s.clinical).length + 8);
-    expect(html).not.toContain('data-scenario="CC-');
-    expect(html).toContain('data-scenario="SC-P"');
-    expect(html).toContain('id="scenario-topic"');
-    expect(html).toContain('data-scenario-view="all"');
-  });
-});
 
 describe('LEC-01 · cumplir un objetivo se anuncia, salvo lo que ya se cumplía al abrir', () => {
   const base = { numero: 2, total: 3, cumplidos: 2, texto: 'Duplica la resistencia inspiratoria hasta ≥ 20.' };

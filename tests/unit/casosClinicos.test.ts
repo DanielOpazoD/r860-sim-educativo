@@ -279,6 +279,19 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
     poco.correr(65_000);
     expect(poco.resultado().criteria.find((c) => c.id === 'vt')!.ok).toBe(false);
   });
+  it('EPOC hipercápnica: con soporte 20 ventila de más (alcalosis); con 12 vuelve a su equilibrio crónico', () => {
+    const inicio = caso('CC-06');
+    expect(inicio.gas.hco3).toBe(32);
+    expect(inicio.gas.paco2Target!).toBeLessThan(30);
+    expect(phEq(inicio)).toBeGreaterThan(7.6);
+    const bien = caso('CC-06');
+    bien.ajustar({ psupport: 12 });
+    bien.correr(65_000);
+    expect(bien.gas.paco2Target!).toBeGreaterThan(45);
+    expect(bien.gas.paco2Target!).toBeLessThan(60);
+    expect(phEq(bien)).toBeGreaterThan(7.35);
+    expect(phEq(bien)).toBeLessThan(7.45);
+  });
   it('antes de un minuto tras el último ajuste no se puede juzgar la sincronía', () => {
     const k = caso('CC-06');
     k.ajustar({ psupport: 12 });

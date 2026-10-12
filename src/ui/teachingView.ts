@@ -363,7 +363,7 @@ export function createTeachingView(ctx: AppContext): TeachingView {
 
   function render(): void {
     const fr = ctx.frame;
-    if (!fr || $('#classroom').hidden || $('#aula-theory').hidden) return;
+    if (!fr) return;
     montarNav();
     for (const b of $$('[data-edu-tab]')) {
       const activa = b.dataset.eduTab === pantalla;
