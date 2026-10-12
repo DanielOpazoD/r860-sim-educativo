@@ -346,7 +346,7 @@ export function createTeachingView(ctx: AppContext): TeachingView {
   let pantalla: 'presiones' | 'proteccion' | 'ventilacion' = 'presiones';
   let montado = false;
 
-  /** Dos pantallas breves en vez de una larga: el resumen tiene que caber de un vistazo. */
+  /** Pantallas breves en vez de una larga: el resumen tiene que caber de un vistazo. */
   function montarNav(): void {
     if (montado) return;
     montado = true;
@@ -406,5 +406,8 @@ export function createTeachingView(ctx: AppContext): TeachingView {
     $('#teaching-body').insertAdjacentHTML('afterbegin', `<p class="notice-box">${esc(ctx.scenario.caution)}</p>`);
   }
 
+  // Las pestañas están en el HTML desde el inicio: escucharlas al crear la vista, no al primer pintado. Si no, un clic
+  // entre la carga diferida del módulo y el primer cuadro se perdía y la pestaña elegida no se abría.
+  montarNav();
   return { render };
 }
