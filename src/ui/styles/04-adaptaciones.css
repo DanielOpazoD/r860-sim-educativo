@@ -141,19 +141,6 @@
   .reflection {
     font-size: var(--type-sm);
   }
-  .fault-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .safety-strip {
-    padding: 18px 17px 22px;
-    gap: 10px;
-    text-align: center;
-    line-height: 1.7;
-    margin-top: 0;
-  }
-  .safety-strip strong {
-    font-size: var(--type-2xs);
-  }
   .app-dialog {
     width: calc(100vw - 22px);
     border-radius: 9px;
@@ -288,16 +275,6 @@
     font-size: var(--type-2xs);
     min-width: 45px;
   }
-  .debrief-stat-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 11px;
-  }
-  .debrief-stat-grid > div {
-    padding: 12px;
-  }
-  .debrief-stat-grid strong {
-    font-size: 23px;
-  }
   .menu-entry {
     padding: 17px;
   }
@@ -330,7 +307,6 @@
   .app-top,
   .instructor,
   .signal-toolbar,
-  .safety-strip,
   .app-dialog,
   .toast-stack {
     display: none !important;
@@ -376,27 +352,8 @@
 .numeric-age:empty {
   display: none;
 }
-.teacher-event {
-  padding: 9px 0;
-  border-bottom: 1px solid var(--shell-line);
-  display: grid;
-  grid-template-columns: 38px 1fr;
-  gap: 9px;
-  line-height: 1.6;
-}
-.teacher-event time {
-  color: var(--shell-dim);
-  font-variant-numeric: tabular-nums;
-}
-.teacher-event span {
-  color: var(--shell-muted);
-}
 .hold-status.invalid {
   color: #ffdda5;
-}
-.fault-grid button.active {
-  border-color: var(--shell-warning);
-  background: var(--shell-warning-soft);
 }
 .alarm-edit-grid input {
   min-width: 0;

@@ -22,7 +22,7 @@ test.describe('NAV móvil · opciones de cabecera', () => {
     await page.locator('#more-button').click();
     await expect(page.locator('#more-menu')).toBeVisible();
     await expect(page.locator('#more-menu [data-action="session"]')).toBeVisible();
-    await expect(page.locator('#more-menu [role^="menuitem"]:visible')).toHaveCount(4);
+    await expect(page.locator('#more-menu [role^="menuitem"]:visible')).toHaveCount(5);
   });
 });
 
@@ -196,7 +196,9 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await expect(page.locator('.mobile-toolbar')).toHaveCount(0);
     await expect(page.locator('#panel-button')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('#instructor')).toBeHidden();
-    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1100);
+    // El espacio educativo empieza bajo el equipo: nada se interpone entre la cabecera y el ventilador.
+    const [equipo, aula] = await Promise.all([page.locator('#device-shell').boundingBox(), page.locator('#learn').boundingBox()]);
+    expect(aula!.y).toBeGreaterThan(equipo!.y + equipo!.height);
   });
 
   test('la hoja del panel docente abre, cierra con el botón o Escape y devuelve el foco', async ({ page }) => {
@@ -231,8 +233,10 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await showPanel(page, 'patient');
 
     await expect(page.locator('.advanced-patient')).not.toHaveAttribute('open', '');
-    const targets = page.locator('#patient-profiles .profile-chip, #patient-controls [data-phys-step]');
-    await expect(targets).toHaveCount(12);
+    const targets = page.locator(
+      '#patient-profiles .profile-chip, #patient-controls [data-phys-step], #fault-grid [data-event], #undo-event',
+    );
+    await expect(targets).toHaveCount(19);
     const heights = await targets.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
     expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
 
@@ -250,7 +254,7 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
     await expect(panel).toHaveCSS('position', 'fixed');
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(panel).toBeVisible();
-    await expect(panel).toHaveCSS('position', 'static');
+    await expect(panel).toHaveCSS('position', 'sticky');
     await expect(page.locator('#instructor-close')).toBeHidden();
   });
 
@@ -328,10 +332,5 @@ test.describe('NAV móvil · la barra de señal vive en la cabecera fija', () =>
     await expect(page.locator('#wave-options-button')).toBeInViewport();
     await page.locator('#sim-pause').click();
     await expect(page.locator('#sim-pause')).toContainText('Reanudar');
-
-    await page.click('#space-classroom');
-    await expect(toolbar).toBeHidden();
-    await page.click('#space-simulator');
-    await expect(toolbar).toBeVisible();
   });
 });

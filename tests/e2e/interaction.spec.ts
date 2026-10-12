@@ -6,13 +6,14 @@ import {
   frame,
   hidePanel,
   open,
-  openAula,
+  openFundamentos,
   openMoreParams,
   openPersonalization,
   openPresentation,
-  openSimulator,
+  backToMonitor,
   openTimeControls,
   showPanel,
+  toggleExam,
 } from './helpers';
 
 async function chooseRadio(page: Page, groupId: string, value: string) {
@@ -32,7 +33,7 @@ test.describe('NAV · opciones de cabecera y diálogos del equipo', () => {
     const menu = page.locator('#more-menu');
     await button.click();
     await expect(menu).toBeVisible();
-    await expect(menu.locator('[role^="menuitem"]:visible')).toHaveCount(4);
+    await expect(menu.locator('[role^="menuitem"]:visible')).toHaveCount(5);
     await expect(menu.locator('[data-action="session"]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
@@ -73,83 +74,15 @@ test.describe('NAV · opciones de cabecera y diálogos del equipo', () => {
 });
 
 test.describe('INT · selección, edición, confirmación y cancelación', () => {
-  test('el selector comienza con ocho prácticas y mantiene el catálogo completo filtrable', async ({ page }) => {
-    await open(page, { instructor: 0 });
-    await page.click('.app-context');
-    await expect(page.locator('[data-scenario-view]')).toHaveCount(3);
-    await expect(page.locator('[data-scenario-view="start"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#scenario-scope')).toHaveText(
-      'Cada escenario reinicia la práctica con paciente, ventilador y objetivos preparados.',
-    );
-    await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
-    await expect(page.locator('#scenario-all')).toBeHidden();
-    await page.click('[data-scenario-view="profiles"]');
-    await expect(page.locator('[data-scenario-view="profiles"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#scenario-profiles')).toBeVisible();
-    await expect(page.locator('#scenario-start')).toBeHidden();
-    await expect(page.locator('#scenario-all')).toBeHidden();
-    await expect(page.locator('#scenario-scope')).toBeHidden();
-    await page.click('[data-scenario-view="all"]');
-    await expect(page.locator('[data-scenario-view="all"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#scenario-all')).toBeVisible();
-    await expect(page.locator('#scenario-start')).toBeHidden();
-    await expect(page.locator('#scenario-profiles')).toBeHidden();
-    await expect(page.locator('#scenario-all .scenario-card')).toHaveCount(22);
-    await page.selectOption('#scenario-topic', 'Circuito');
-    await expect(page.locator('#scenario-all .scenario-group:visible .scenario-card')).toHaveCount(2);
-    await expect(page.locator('#scenario-all .scenario-reference')).toBeHidden();
-  });
-  test('el catálogo conserva dos columnas en escritorio', async ({ page, isMobile }) => {
-    test.skip(isMobile, 'sólo escritorio');
-    await open(page, { instructor: 0 });
-    await page.click('.app-context');
-    await page.click('[data-scenario-view="profiles"]');
-    const columns = await page.locator('#scenario-profiles .scenario-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns);
-    expect(columns.split(' ')).toHaveLength(2);
-  });
-  test('el selector móvil muestra una sola columna legible', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await open(page, { instructor: 0 });
-    await page.click('.app-context');
-    const columns = await page.locator('#scenario-start .scenario-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns);
-    expect(columns.split(' ')).toHaveLength(1);
-    await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
-  });
-  test('el diálogo de escenarios mantiene su caja, desplaza el cuerpo y ofrece Cerrar', async ({ page }) => {
-    await page.setViewportSize({ width: 844, height: 400 });
-    await open(page, { instructor: 0 });
-    await page.click('.app-context');
-    const dialog = page.locator('#app-dialog');
-    const body = page.locator('#dialog-content');
-    const boxes: { width: number; height: number }[] = [];
-    for (const view of ['start', 'all', 'profiles']) {
-      await page.locator(`[data-scenario-view="${view}"]`).click();
-      const box = await dialog.boundingBox();
-      expect(box).not.toBeNull();
-      boxes.push({ width: box!.width, height: box!.height });
-    }
-    for (const box of boxes) {
-      expect(box.width).toBeCloseTo(boxes[0]!.width, 0);
-      expect(box.height).toBeCloseTo(boxes[0]!.height, 0);
-    }
-    await page.locator('[data-scenario-view="start"]').click();
-    await body.evaluate((el) => {
-      el.scrollTop = el.scrollHeight;
-    });
-    await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-    await page.locator('[data-scenario-view="profiles"]').click();
-    await expect(body).toHaveJSProperty('scrollTop', 0);
-    const close = page.getByRole('button', { name: 'Cerrar', exact: true });
-    await expect(close).toBeVisible();
-    await close.click();
-    await expect(dialog).toBeHidden();
-  });
-  test('el contexto del encabezado muestra el escenario y abre el selector', async ({ page }) => {
+  test('el contexto del encabezado muestra el caso y abre la lista de casos en el panel, sin diálogo', async ({ page }) => {
     await open(page, { instructor: 0 });
     await expect(page.locator('.app-context #scenario-name')).not.toBeEmpty();
+    await expect(page.locator('#workspace')).toHaveClass(/teacher-hidden/);
     await page.click('.app-context');
-    await expect(page.locator('#app-dialog')).toBeVisible();
-    await expect(page.locator('#scenario-start')).toBeVisible();
+    await expect(page.locator('#app-dialog')).toBeHidden();
+    await expect(page.locator('#workspace')).not.toHaveClass(/teacher-hidden/);
+    await expect(page.locator('[data-instructor="case"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#instructor-case [data-case-id]')).toHaveCount(8);
   });
   test('el diálogo de personalización cierra con Escape y devuelve el foco', async ({ page }) => {
     await open(page);
@@ -404,7 +337,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       timeout: 20_000,
     });
     // Nueva oclusión sin reconocer y resolución: banda gris (resuelta, pendiente de reconocer) hasta reconocer.
-    await showPanel(page, 'events');
+    await showPanel(page, 'patient');
     await page.click('[data-event="obstruction"]');
     await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 20_000,
@@ -422,14 +355,11 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       timeout: 5000,
     });
   });
-  test('SC-09 · el objetivo de resolver la oclusión se completa con controles visibles', async ({ page }) => {
+  test('SC-09 · la oclusión se resuelve con controles visibles: reconocer y Restablecer mecánica', async ({ page }) => {
     await open(page, { scenario: 'SC-09', speed: 4 });
     await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 30_000,
     });
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-tasks')).toContainText('Restablece la mecánica');
-    await openSimulator(page);
     await page.click('[data-action="alarms"]');
     await page.click('[data-action="acknowledge"]');
     await page.keyboard.press('Escape');
@@ -448,8 +378,6 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
       await page.keyboard.press('Escape');
     }
     await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('3 de 3 objetivos');
   });
   test('SEC-01/02 · sin tráfico externo; marca de simulación discreta presente en todas las vistas y en el bisel', async ({ page }) => {
     const external: string[] = [];
@@ -510,7 +438,7 @@ test.describe('CFG · contrato de estado del ajuste', () => {
 test.describe('EDU · pestaña Resumen', () => {
   test('cada tarjeta deja como máximo un párrafo visible fuera de «Por qué»', async ({ page }) => {
     await open(page, { scenario: 'SC-02', instructor: 0 });
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     const visibleParagraphs = async (): Promise<number[]> =>
       page
         .locator('.edu-card, .edu-bloque')
@@ -534,14 +462,14 @@ test.describe('EDU · pestaña Resumen', () => {
 
   test('sin bloqueo no inventa números; con bloqueo enseña la cuenta con los del monitor', async ({ page }) => {
     await open(page, { speed: 4, instructor: 0 });
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     await expect(page.locator('#view-teaching')).toBeVisible();
     // La Ppico se lee siempre; la meseta y sus derivados exigen ocluir, y la pestaña lo dice en vez de rellenar.
     await expect(page.locator('.edu-card').first()).toContainText('Presión pico');
     await expect(page.locator('.edu-falta').first()).toContainText('bloqueo inspiratorio');
     await expect(page.locator('.edu-sub')).toHaveCount(0);
 
-    await openSimulator(page);
+    await backToMonitor(page);
     await page.click('[data-action="inspiratory"]');
     await page.click('[data-action="runHold"]');
     await page.waitForFunction(
@@ -551,7 +479,7 @@ test.describe('EDU · pestaña Resumen', () => {
     );
     await page.click('[data-action="closeHold"]');
     // El bloqueo lleva el monitor a las curvas, que es lo que se quiere ver durante la maniobra: se vuelve al resumen.
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     // Las cuatro tarjetas con su sustitución, y el número de la meseta es el mismo que publicó el bloqueo.
     await expect(page.locator('.edu-card')).toHaveCount(4);
     await expect(page.locator('.edu-formula b')).toHaveCount(4);
@@ -573,7 +501,7 @@ test.describe('EDU · pestaña Resumen', () => {
 
   test('la pantalla de ventilación muestra la gasometría del modelo y el monitor nunca la muestra', async ({ page }) => {
     await open(page, { speed: 8, instructor: 0 });
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     // Esperar al primer pintado de Fundamentos: la vista se carga bajo demanda.
     await expect(page.locator('#teaching-body .edu-card').first()).toBeVisible();
     await page.click('[data-edu-tab="ventilacion"]');
@@ -584,20 +512,20 @@ test.describe('EDU · pestaña Resumen', () => {
     await expect(bloque.locator('.edu-gases')).toContainText('pH');
     await expect(page.locator('.edu-bloque').nth(1)).toContainText('L/min');
     await expect(page.locator('.edu-pie')).toContainText('no del equipo');
-    await openSimulator(page);
+    await backToMonitor(page);
     await expect(page.locator('#monitor')).not.toContainText('PaCO');
   });
 
   test('la pantalla de protección lee el índice de estrés y construye la titulación con lo medido', async ({ page }) => {
     await open(page, { scenario: 'SC-15', speed: 8, instructor: 0 });
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     await page.click('[data-edu-tab="proteccion"]');
     // El índice se lee del ciclo actual; la titulación empieza vacía y dice cuántos puntos faltan.
     await expect(page.locator('.edu-siluetas .activa')).toHaveCount(1);
     await expect(page.locator('.edu-falta')).toContainText('0 de los 2 puntos');
 
     for (const peep of [8, 14]) {
-      await openSimulator(page);
+      await backToMonitor(page);
       await page.click('.monitor-nav [data-view="waves"]');
       // Hay que esperar a un bloqueo DISTINTO del anterior: el previo ya era válido y satisfacía la condición al
       // instante, así que la prueba cerraba el panel antes de que el nuevo terminara. De ahí venía su intermitencia.
@@ -637,9 +565,9 @@ test.describe('EDU · pestaña Resumen', () => {
         { timeout: 40_000 },
       );
       await page.click('[data-action="closeHold"]');
-      await openAula(page, 'theory');
+      await openFundamentos(page);
     }
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     await page.click('[data-edu-tab="proteccion"]');
     // Dos mediciones propias: la curva aparece con sus dos puntos y ninguno inventado.
     await expect(page.locator('.edu-titulacion')).toBeVisible({ timeout: 15_000 });
@@ -735,50 +663,9 @@ test.describe('CUR · medir sobre la curva congelada', () => {
   });
 });
 
-test.describe('LEC · la lección responde', () => {
-  test('la lección cuenta lo hecho y avisa al cumplir un objetivo durante la práctica', async ({ page }) => {
-    await open(page, { speed: 4 });
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('0 de 3 objetivos');
-    // SC-01: el primer objetivo es un bloqueo inspiratorio válido.
-    await page.click('[data-action="practice"]');
-    await page.click('[data-action="inspiratory"]');
-    await page.click('#hold-run');
-    const avisos = page.locator('#toast-stack .toast');
-    await expect(avisos.filter({ hasText: 'Objetivo 1 de 3 cumplido' })).toBeVisible({ timeout: 25_000 });
-    // El aviso del objetivo convive con el del resultado del bloqueo que lo cumplió.
-    await expect(avisos.filter({ hasText: 'Bloqueo medido' })).toBeVisible();
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos');
-  });
-
-  test('lo que ya se cumple al abrir se marca sin aviso', async ({ page }) => {
-    // SC-13: el primer objetivo es observar el VT inicial, y ya está cumplido con el primer cuadro.
-    await open(page, { scenario: 'SC-13', speed: 4 });
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos');
-    await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(1);
-    // Sin reintentos: un aviso dura 4 s y `toHaveCount(0)` esperaría a que se fuera solo.
-    const avisos = page.locator('#toast-stack .toast', { hasText: 'Objetivo' });
-    expect(await avisos.count(), 'el objetivo se marca en el mismo cuadro que anunciaría').toBe(0);
-    await page.waitForTimeout(1000);
-    expect(await avisos.count()).toBe(0);
-  });
-
-  test('una sesión importada no marca objetivos del escenario que estaba abierto', async ({ page }, info) => {
-    // Con la resistencia en 25, el objetivo «duplica la resistencia» de SC-01 se cumpliría con el primer cuadro de la
-    // sesión reproducida: sin la guarda aparecería marcado aunque nadie lo hubiera hecho en esa sesión.
-    await open(page, { speed: 4 });
-    await showPanel(page, 'patient');
-    await page.fill('[data-phys-number="resistance"]', '25');
-    await page.locator('[data-phys-number="resistance"]').dispatchEvent('change');
-    await page.waitForFunction(
-      () => (window.__ventila.frame as unknown as { truth: { patient: { rInsp: number } } }).truth.patient.rInsp >= 20,
-      null,
-      { timeout: 15_000 },
-    );
-    // El objetivo sí se cumple en la sesión original; se espera a que su aviso se retire para no confundirlo después.
-    await expect(page.locator('#toast-stack .toast', { hasText: 'Objetivo' })).toHaveCount(0, { timeout: 10_000 });
+test.describe('IMP · sesión importada', () => {
+  test('una sesión importada no evalúa el caso clínico que estaba abierto', async ({ page }, info) => {
+    await open(page, { scenario: 'CC-03', speed: 4 });
     await page.locator('.palette-trigger').click();
     await page.locator('#palette-input').fill('Sesión y archivos');
     await page.locator('#palette-input').press('Enter');
@@ -787,22 +674,19 @@ test.describe('LEC · la lección responde', () => {
     await descarga.saveAs(ruta);
     await page.keyboard.press('Escape');
     await page.setInputFiles('#session-input', ruta);
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('Sesión importada: sus objetivos no se evalúan', { timeout: 15_000 });
-    await page.waitForTimeout(1500);
-    await expect(page.locator('#lesson-tasks .task.complete')).toHaveCount(0);
-    expect(await page.locator('#toast-stack .toast', { hasText: 'Objetivo' }).count()).toBe(0);
-    await expect(page.locator('[data-action="practice"]')).toBeDisabled();
-    await expect(page.locator('#practice-card')).toBeHidden();
+    // La sesión no dice de qué caso es: el panel lo avisa y no ofrece entregar.
+    await showPanel(page, 'case');
+    await expect(page.locator('#instructor-case')).toContainText('Sesión importada', { timeout: 15_000 });
+    await expect(page.locator('#instructor-case [data-action="submitCase"]')).toHaveCount(0);
   });
 });
 
 test.describe('DESC · desconexión del circuito', () => {
-  test('abrir el circuito en «Eventos» dispara la alarma alta; deshacer la resuelve y reconocer devuelve la banda al azul', async ({
+  test('abrir el circuito en Eventos dispara la alarma alta; deshacer la resuelve y reconocer devuelve la banda al azul', async ({
     page,
   }) => {
     await open(page, { scenario: 'SC-23', speed: 4 });
-    await showPanel(page, 'events');
+    await showPanel(page, 'patient');
     await page.click('[data-event="disconnect"]');
     await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Paciente desconectado', { timeout: 20_000 });
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);
@@ -815,8 +699,6 @@ test.describe('DESC · desconexión del circuito', () => {
     await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
     await page.keyboard.press('Escape');
     await expect(page.locator('#alarm-label')).toHaveText('Sin alarmas');
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('3 de 3 objetivos', { timeout: 10_000 });
   });
 });
 
@@ -966,16 +848,15 @@ test.describe('CUR · comparación antes/después', () => {
 test.describe('EXM · modo examen', () => {
   test('los valores medidos se ocultan hasta que el alumno los estima', async ({ page }) => {
     await open(page, { speed: 4 });
-    await openAula(page, 'exam');
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
     const real = (await frame(page)).metrics.ppeak!.value;
     await expect(pico.locator('.numeric-value')).not.toHaveText('?');
-    await page.click('#exam-toggle');
-    await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await toggleExam(page);
+    await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#exam-toggle')).toHaveClass(/active/);
     await expect.poll(() => page.evaluate(() => window.__ventila.exam.active)).toBe(true);
-    await openSimulator(page);
+    await backToMonitor(page);
     // Las casillas con dato muestran «?»; las sin medición conservan el guion y explican el motivo debajo.
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
@@ -996,16 +877,11 @@ test.describe('EXM · modo examen', () => {
     await expect(filaVte).toContainText('?');
     await page.click('[data-view="waves"]');
     // Al apagar el modo examen todo vuelve; al encenderlo de nuevo la estimación ya hecha sigue visible.
-    await openAula(page, 'questions');
-    await openAula(page, 'exam');
     await expect(page.locator('#exam-toggle')).toHaveAttribute('aria-checked', 'true');
-    await page.click('#exam-toggle');
-    await openSimulator(page);
+    await toggleExam(page);
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).not.toHaveText('?');
-    await openAula(page, 'exam');
-    await page.click('#exam-toggle');
-    await openSimulator(page);
+    await toggleExam(page);
     await expect(page.locator('#numeric-grid [data-metric="vte"] .numeric-value')).toHaveText('?');
     await expect(pico.locator('.numeric-value')).toHaveText(String(Math.round(real!)));
   });
@@ -1013,10 +889,8 @@ test.describe('EXM · modo examen', () => {
   test('el campo vacío no vale como cero y el Resumen no revela las cifras tapadas', async ({ page }) => {
     // Auditoría: `Number('')` aceptaba el vacío como 0, y la pestaña Resumen mostraba lo que la columna tapaba.
     await open(page, { speed: 4 });
-    await openAula(page, 'exam');
     await expect.poll(async () => (await frame(page)).metrics.ppeak?.value, { timeout: 20_000 }).not.toBeNull();
-    await page.click('#exam-toggle');
-    await openSimulator(page);
+    await toggleExam(page);
     const pico = page.locator('#numeric-grid [data-metric="ppeak"]');
     await expect(pico.locator('.numeric-value')).toHaveText('?');
     await page.click('#numeric-grid [data-metric="ppeak"]');
@@ -1026,27 +900,27 @@ test.describe('EXM · modo examen', () => {
     await expect.poll(() => page.evaluate(() => window.__ventila.exam.estimates)).toBe(0);
     await page.click('[data-action="closeDialog"]');
     // El Resumen no filtra lo que la columna tapa: ni el valor de la tarjeta ni la fórmula sustituida.
-    await openAula(page, 'theory');
+    await openFundamentos(page);
     await expect(page.locator('.edu-card').first().locator('header b')).toContainText('?');
     await expect(page.locator('.edu-card').first()).not.toContainText(/\d+ = /);
-    // El control Examen vive en Entrenar y puede alternarse con cualquier vista del monitor.
-    await openAula(page, 'exam');
-    await page.click('#exam-toggle'); // al salir, la cifra y la sustitución vuelven
-    await openAula(page, 'theory');
+    // El modo examen vive en el menú «…» y se alterna desde cualquier lugar; al salir, la cifra y la sustitución vuelven.
+    await toggleExam(page);
+    await openFundamentos(page);
     await expect(page.locator('.edu-card').first().locator('header b')).not.toContainText('?');
   });
 });
 
 test.describe('EXM · ubicación del modo examen', () => {
-  test('el interruptor vive en Examen y no en el monitor', async ({ page }) => {
+  test('el interruptor vive en el menú «…» y no en el monitor', async ({ page }) => {
     await open(page);
     const button = page.locator('#exam-toggle');
-    expect(await button.evaluate((el) => el.closest('#aula-exam'))).not.toBeNull();
-    await expect(page.locator('#workspace #exam-toggle')).toHaveCount(0);
+    expect(await button.evaluate((el) => el.closest('#more-menu'))).not.toBeNull();
+    await expect(page.locator('#monitor #exam-toggle')).toHaveCount(0);
     expect(await button.evaluate((el) => el.closest('.signal-toolbar'))).toBeNull();
-    await openAula(page, 'exam');
+    await page.locator('#more-button').click();
+    await expect(button).toBeVisible();
     await expect(button).toContainText('Modo examen');
-    await expect(button).toContainText('Las mediciones se ocultan hasta que escribes tu estimación');
+    await expect(button).toHaveAttribute('aria-checked', 'false');
   });
 });
 
@@ -1211,15 +1085,15 @@ test.describe('RC · reclutamiento alveolar con histéresis (SC-25)', () => {
 });
 
 test.describe('PREF · bienvenida y memoria de preferencias', () => {
-  test('la primera visita ofrece explorar o una práctica guiada; la bienvenida no se repite', async ({ page }) => {
+  test('la primera visita ofrece explorar o casos clínicos; la bienvenida no se repite', async ({ page }) => {
     await open(page, {}, { firstRun: true });
     await expect(page.locator('#dialog-title')).toHaveText('Bienvenido a Ventila Lab');
     await expect(page.locator('#welcome-free')).toBeFocused();
     await expect(page.locator('#dialog-content')).toContainText('Un ventilador virtual para aprender mecánica respiratoria sin riesgo.');
-    // La práctica guiada lleva al catálogo de Casos.
+    // Casos clínicos lleva a la lista de casos, en el panel lateral.
     await page.click('#welcome-guided');
-    await expect(page.locator('#space-cases')).toHaveAttribute('aria-current', 'page');
-    await expect(page.locator('[data-aula-case="SC-01"]')).toBeVisible();
+    await expect(page.locator('#app-dialog')).toBeHidden();
+    await expect(page.locator('#instructor-case [data-case-id="CC-01"]')).toBeVisible();
     await page.reload();
     await page.waitForFunction(() => !!window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
     await expect(page.locator('#app-dialog')).toBeHidden();
@@ -1228,10 +1102,11 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
   test('restaura escenario, vista y ventana de curvas al recargar', async ({ page }) => {
     await open(page);
     await page.click('.app-context');
-    const card = page.locator('#scenario-start [data-scenario="SC-03"]');
-    const scenarioName = (await card.locator('h3').textContent())?.trim() ?? '';
+    const card = page.locator('#instructor-case [data-case-id="CC-03"]');
+    const scenarioName = (await card.locator('strong').textContent())?.trim() ?? '';
     await card.click();
     await expect(page.locator('#scenario-name')).toHaveText(scenarioName);
+    await hidePanel(page);
     await page.locator('.monitor-nav [data-view="loops"]').click();
     await expect(page.locator('#view-loops')).toHaveClass(/active/);
     await openPresentation(page);
@@ -1264,83 +1139,53 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
 });
 
 test.describe('PAT · perfiles del paciente', () => {
-  test('aplicar un perfil desde el catálogo cierra el diálogo y conserva sesión, tiempo y lección', async ({ page }) => {
+  test('aplicar un perfil en Paciente conserva sesión, tiempo, ajustes y lo hecho en la práctica', async ({ page }) => {
     await open(page, { scenario: 'SC-01', speed: 4 });
     await page.click('[data-action="inspiratory"]');
     await page.click('#hold-run');
-    await openAula(page, 'lesson');
-    await expect(page.locator('#lesson-count')).toHaveText('1 de 3 objetivos', { timeout: 25_000 });
-    await openSimulator(page);
+    await expect
+      .poll(() => page.evaluate(() => window.__ventila.frame?.procedure.last.inspHold?.quality ?? null), { timeout: 25_000 })
+      .toBe('valid');
+    await page.click('[data-action="closeHold"]');
     await page.locator('#sim-pause').click();
     await expect.poll(() => page.evaluate(() => window.__ventila.running)).toBe(false);
-    const before = await page.evaluate(() => {
-      const current = window.__ventila.frame as unknown as {
-        simTimeMs: number;
-        settings: unknown;
-        truth: { patient: unknown; effort: unknown };
-      };
-      return {
-        simTimeMs: current.simTimeMs,
-        settings: current.settings,
-        scenario: document.querySelector('#scenario-name')?.textContent,
-        lessonTitle: document.querySelector('#lesson-title')?.textContent,
-        lessonCount: document.querySelector('#lesson-count')?.textContent,
-        lessonTasks: [...document.querySelectorAll('#lesson-tasks .task')].map((task) => ({
-          text: task.textContent,
-          complete: task.classList.contains('complete'),
-        })),
-        lessonFlags: (window.__ventila as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
-      };
-    });
+    const estado = () =>
+      page.evaluate(() => {
+        const current = window.__ventila.frame as unknown as {
+          simTimeMs: number;
+          settings: unknown;
+          truth: { patient: unknown; effort: unknown };
+        };
+        return {
+          simTimeMs: current.simTimeMs,
+          settings: current.settings,
+          patient: current.truth.patient,
+          effort: current.truth.effort,
+          scenario: document.querySelector('#scenario-name')?.textContent,
+          lessonFlags: (window.__ventila as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
+        };
+      });
+    const before = await estado();
     const profile = PATIENT_PROFILES.find((item) => item.id === 'stiff')!;
     const expected = JSON.parse(JSON.stringify(profileState(profile))) as { patient: unknown; effort: unknown };
-    await page.click('.app-context');
-    await page.click('[data-scenario-view="profiles"]');
-    await page.locator('#scenario-profiles [data-profile="stiff"]').click();
-    await expect(page.locator('#app-dialog')).toBeHidden();
+    await showPanel(page, 'patient');
+    await page.locator('#patient-profiles [data-profile="stiff"]').click();
     await expect(page.locator('#toast-stack .toast').last()).toContainText('Perfil aplicado: Pulmón rígido');
-    const after = await page.evaluate(() => {
-      const current = window.__ventila.frame as unknown as {
-        simTimeMs: number;
-        settings: unknown;
-        truth: { patient: unknown; effort: unknown };
-      };
-      return {
-        simTimeMs: current.simTimeMs,
-        settings: current.settings,
-        patient: current.truth.patient,
-        effort: current.truth.effort,
-        scenario: document.querySelector('#scenario-name')?.textContent,
-        lessonTitle: document.querySelector('#lesson-title')?.textContent,
-        lessonCount: document.querySelector('#lesson-count')?.textContent,
-        lessonTasks: [...document.querySelectorAll('#lesson-tasks .task')].map((task) => ({
-          text: task.textContent,
-          complete: task.classList.contains('complete'),
-        })),
-        lessonFlags: (window.__ventila as unknown as { lessonFlags: Record<string, unknown> }).lessonFlags,
-      };
-    });
-    expect(after.patient).toEqual(expected.patient);
+    await expect.poll(async () => (await estado()).patient).toEqual(expected.patient);
+    const after = await estado();
     expect(after.effort).toEqual(expected.effort);
     expect(after.settings).toEqual(before.settings);
     expect(after.scenario).toBe(before.scenario);
     expect(after.simTimeMs).toBe(before.simTimeMs);
-    expect(after.lessonTitle).toBe(before.lessonTitle);
-    expect(after.lessonCount).toBe(before.lessonCount);
-    expect(after.lessonTasks).toEqual(before.lessonTasks);
     expect(after.lessonFlags).toEqual(before.lessonFlags);
   });
 
   test('los perfiles están deshabilitados en una referencia fotográfica', async ({ page }) => {
     await open(page, { fixture: 'P1' });
     await expect(page.locator('#scenario-name')).toContainText('Referencia fotográfica P1');
-    await page.click('.app-context');
-    await expect(page.locator('#app-dialog')).toBeVisible();
-    await page.click('[data-scenario-view="profiles"]');
-    const profiles = page.locator('#scenario-profiles [data-profile]');
-    await expect(profiles).toHaveCount(PATIENT_PROFILES.length);
-    await expect(page.locator('#scenario-profiles [data-profile]:disabled')).toHaveCount(PATIENT_PROFILES.length);
-    await expect(page.locator('#scenario-profiles')).toContainText('Los perfiles están bloqueados en la referencia fotográfica.');
+    await showPanel(page, 'patient');
+    await expect(page.locator('#patient-profiles [data-profile]')).toHaveCount(PATIENT_PROFILES.length);
+    await expect(page.locator('#patient-profiles [data-profile]:disabled')).toHaveCount(PATIENT_PROFILES.length);
   });
 
   test('aplica, deshace y restablece mecánica con perfiles completos', async ({ page }) => {
@@ -1372,13 +1217,12 @@ test.describe('PAT · perfiles del paciente', () => {
     await expect(page.locator('.profile-chip[aria-pressed="true"]')).toHaveCount(0);
     await expect(page.locator('#profile-status')).toHaveText('Personalizado');
 
-    await showPanel(page, 'events');
+    // Deshacer revierte el último perfil aplicado: vuelve el de partida, aunque luego se tocara un control a mano.
     await page.click('#undo-event');
     await expect(page.locator('[data-phys-number="compliance"]')).toHaveValue('50');
     await expect(healthy).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#profile-status')).toHaveText('');
 
-    await showPanel(page, 'patient');
     await page.locator('#patient-profiles [data-profile="recruitable"]').click();
     await expect(page.locator('#patient-profiles [data-profile="recruitable"]')).toHaveAttribute('aria-pressed', 'true');
     await page.click('[data-action="resetPatient"]');

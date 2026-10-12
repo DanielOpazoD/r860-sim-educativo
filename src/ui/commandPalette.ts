@@ -1,6 +1,6 @@
 export type PaletteCommand = {
   id: string;
-  group: 'Acciones' | 'Vistas' | 'Escenarios' | 'Perfiles';
+  group: 'Acciones' | 'Vistas' | 'Casos clínicos' | 'Perfiles';
   label: string;
   keywords?: string;
   shortcut?: string;

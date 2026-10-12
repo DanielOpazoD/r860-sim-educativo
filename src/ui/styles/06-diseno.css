@@ -40,21 +40,9 @@
   min-height: 34px;
   font-size: var(--type-sm);
 }
-.lesson-title {
-  font-size: 14px;
-  margin: 0 0 6px;
-}
-.lesson-text {
-  font-size: var(--type-xs);
-  line-height: 1.5;
-  margin: 0 0 10px;
-}
 .lesson-tasks {
   gap: 8px;
   margin-bottom: 12px;
-}
-.lesson-count {
-  font-size: var(--type-2xs);
 }
 .signal-toolbar {
   gap: 10px;

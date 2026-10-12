@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { uiHarness } from '../uiHarness';
 import { $, element, iconNode } from '../../src/ui/dom';
-import { createClassroom } from '../../src/ui/classroom';
+import { createCaseSpace } from '../../src/ui/caseSpace';
+import { estadoPh, minutosAlEquilibrio } from '../../src/ui/gasView';
 import { createMetricsView } from '../../src/ui/metricsView';
 import { createQuickEditor } from '../../src/ui/quickEditor';
 import { createHoldPanel } from '../../src/ui/holdPanel';
@@ -20,7 +21,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('Aula y texto recibido', () => {
+describe('Casos, Aula y texto recibido', () => {
   it('construye texto literal e iconos SVG sin convertir datos en etiquetas', () => {
     const node = element('div', 'test', hostile, iconNode('check'));
     expect(node.textContent).toBe(hostile);
@@ -29,82 +30,86 @@ describe('Aula y texto recibido', () => {
     expect(node.querySelector('use')?.getAttribute('href')).toBe('#i-check');
   });
 
-  it('busca y selecciona casos, preservando IDs, categorías y descripciones literales', async () => {
+  it('lista y elige casos en el panel, preservando IDs, temas y viñetas literales', () => {
     const { ctx } = harness;
-    const scenario = { ...ctx.scenario, id: hostile, name: hostile, category: hostile, description: hostile };
+    const base = SCENARIOS.find((s) => s.clinical?.kind === 'diagnostico')!;
+    const scenario = {
+      ...base,
+      id: hostile,
+      name: hostile,
+      clinical: {
+        ...base.clinical!,
+        theme: hostile,
+        vignette: hostile,
+        question: hostile,
+        reveal: hostile,
+        options: base.clinical!.options!.map((o) => ({ ...o, text: hostile })),
+      },
+    };
     SCENARIOS.push(scenario);
     try {
       const loadScenario = vi.fn();
-      const classroom = createClassroom(ctx, { cancelQuick: vi.fn(), loadScenario, estimateCount: () => 0 });
-      classroom.init();
-      classroom.open('library');
-      const search = $<HTMLInputElement>('#aula-search');
-      search.value = hostile;
-      search.dispatchEvent(new Event('input'));
-      await vi.waitFor(() => expect(document.querySelector('.aula-case')).not.toBeNull());
-      const card = $<HTMLButtonElement>('.aula-case');
-      expect(card.dataset.aulaCase).toBe(hostile);
+      const cases = createCaseSpace(ctx, { loadScenario, switchTab: vi.fn() });
+      cases.init();
+      // Sin caso clínico en curso, el panel ofrece la lista.
+      const card = [...document.querySelectorAll<HTMLButtonElement>('#instructor-case [data-case-id]')].find(
+        (b) => b.dataset.caseId === hostile,
+      )!;
       expect(card.querySelector('strong')?.textContent).toBe(hostile);
-      expect($('#aula-library-list').querySelector('img')).toBeNull();
+      expect($('#instructor-case').querySelector('img')).toBeNull();
+      expect($('#learn-case').hidden).toBe(true);
       card.click();
       expect(loadScenario).toHaveBeenCalledWith(hostile);
-      expect($('#aula-lesson').hidden).toBe(false);
-      classroom.open('library');
-      search.value = 'sin coincidencias zzz';
-      search.dispatchEvent(new Event('input'));
-      expect($('#aula-library-empty').hidden).toBe(false);
+
+      // Con el caso cargado, el panel dice qué lograr y oculta la mecánica hasta entregar.
+      ctx.scenario = scenario;
+      cases.render();
+      expect($('#instructor-case .case-title').textContent).toBe(hostile);
+      expect($('#instructor-case .case-vignette').textContent).toBe(hostile);
+      expect($('#instructor').classList.contains('case-locked')).toBe(true);
+      expect($('#learn-case').hidden).toBe(false);
+      expect($('#learn-case-body').textContent).toContain('Se revela al entregar');
+      expect($<HTMLButtonElement>('#instructor-case [data-action="submitCase"]').disabled).toBe(true);
+      $<HTMLButtonElement>('#instructor-case [data-case-option]').click();
+      expect(ctx.lesson.flags.caseAnswer).toBe(base.clinical!.options![0]!.id);
+      expect($<HTMLButtonElement>('#instructor-case [data-action="submitCase"]').disabled).toBe(false);
+
+      cases.submitCase();
+      expect(ctx.lesson.flags.caseResult).toMatchObject({ answer: { id: base.clinical!.options![0]!.id } });
+      expect($('#instructor').classList.contains('case-locked')).toBe(false);
+      expect($('#learn-case-body .case-reveal').textContent).toBe(hostile);
+      expect($('#learn-case-body').querySelector('img')).toBeNull();
+      expect($('#instructor-case [data-action="restartCase"]')).not.toBeNull();
+
+      // «Todos los casos» vuelve a la lista sin reiniciar el caso; elegirlo de nuevo vuelve a su ficha.
+      cases.list();
+      expect($('#instructor-case .case-item.current').dataset.caseId).toBe(hostile);
+      $<HTMLButtonElement>('#instructor-case .case-item.current').click();
+      expect(loadScenario).toHaveBeenCalledTimes(1);
+      expect($('#instructor-case .case-title').textContent).toBe(hostile);
     } finally {
       SCENARIOS.pop();
     }
   });
 
-  it('conecta lección, práctica y resultados y no evalúa sesiones importadas', () => {
+  it('muestra la gasometría del modelo, limpia la reflexión al cambiar de caso y no evalúa sesiones importadas', () => {
     const { ctx } = harness;
-    ctx.scenario.lesson = { title: hostile, text: hostile, tasks: [{ id: 'task', text: hostile, test: 'teaching' }] };
-    ctx.scenario.question = hostile;
-    ctx.scenario.answer = hostile;
-    ctx.lesson.reset();
-    expect($('#lesson-tasks').textContent).toContain(hostile);
-    expect($('#lesson-tasks').querySelector('img')).toBeNull();
-    const deps = { cancelQuick: vi.fn(), loadScenario: vi.fn(), estimateCount: vi.fn(() => 2) };
-    const classroom = createClassroom(ctx, deps);
-    classroom.init();
-    classroom.open('theory');
-    expect(ctx.lesson.flags.teaching).toBe(true);
-    expect($('#aula-theory-host').contains($('#view-teaching'))).toBe(true);
-    classroom.practice();
-    expect($('#classroom').hidden).toBe(true);
-    expect($('#practice-card').hidden).toBe(false);
-    expect($('#practice-objective').textContent).toBe(hostile);
-    ctx.lesson.done.add('task');
-    ctx.lesson.render();
-    classroom.render();
-    expect($('#lesson-tasks use').getAttribute('href')).toBe('#i-check');
-    expect($('#practice-link').dataset.action).toBe('debrief');
-    classroom.open('results');
-    const result = $('#aula-results-body');
-    expect(result.textContent).toContain(hostile);
-    expect(result.textContent).toContain('2 mediciones estimadas');
-    expect(result.querySelector('img')).toBeNull();
-    const first = result.firstChild;
-    classroom.render();
-    expect(result.firstChild).toBe(first);
-    deps.estimateCount.mockReturnValue(3);
-    classroom.render();
-    expect(result.textContent).toContain('3 mediciones estimadas');
-    ctx.lesson.setSessionImported(true);
-    classroom.render();
-    expect(result.textContent).toContain('Sesión importada');
-    expect(result.textContent).not.toContain('mediciones estimadas');
-    classroom.practice();
-    expect($('#practice-card').hidden).toBe(true);
-    ctx.lesson.setSessionImported(false);
-    ctx.scenario = { ...ctx.scenario, id: 'nuevo' };
+    const cases = createCaseSpace(ctx, { loadScenario: vi.fn(), switchTab: vi.fn() });
+    cases.init();
+    // Inicio, ahora y hacia dónde tiende, rotulado como del modelo.
+    expect([...document.querySelectorAll('#case-gas thead th')].map((th) => th.textContent)).toEqual(['Inicio', 'Ahora', 'Tiende a']);
+    expect($('#case-gas').textContent).toContain('PaCO₂');
+    expect($('#case-gas .gas-tag').textContent).toBe('modelo');
     $<HTMLTextAreaElement>('#reflection-notes').value = 'reflexión';
-    classroom.render();
+    ctx.scenario = { ...SCENARIOS.find((s) => s.clinical)!, question: hostile };
+    ctx.lesson.render();
+    cases.render();
     expect($<HTMLTextAreaElement>('#reflection-notes').value).toBe('');
-    classroom.stopPractice();
-    expect($('#practice-stop').hidden).toBe(true);
+    expect($('#reflection-question').textContent).toBe(hostile);
+    expect($('#reflection-question').querySelector('img')).toBeNull();
+    ctx.lesson.setSessionImported(true);
+    cases.submitCase();
+    expect(ctx.lesson.flags.caseResult).toBeUndefined();
   });
 });
 
@@ -215,7 +220,7 @@ describe('edición, medición y navegación de diálogos', () => {
     expect(metrics.examEstimateCount).toBe(0);
   });
 
-  it('conserva eventos literales, orden inverso, alarma destacada y ocho entradas docentes', () => {
+  it('conserva eventos literales, orden inverso y alarma destacada', () => {
     const { ctx, sim } = harness;
     for (let i = 0; i < 10; i++) sim.noteEvent('scenario', 'instructor', { scenarioId: 'importado', name: `${i} ${hostile}` });
     sim.noteEvent('alarm', 'system', { apnea: hostile });
@@ -223,9 +228,6 @@ describe('edición, medición y navegación de diálogos', () => {
     const metrics = createMetricsView(ctx);
     metrics.updateLogs();
     expect($('#device-event-log').firstElementChild?.classList.contains('alert-event')).toBe(true);
-    expect($('#teacher-log').children).toHaveLength(8);
-    expect($('#teacher-log').textContent).toContain(hostile);
-    expect($('#teacher-log').querySelector('img')).toBeNull();
     const rows = [...$('#device-event-log').children];
     expect(rows[1]?.textContent).toContain(`9 ${hostile}`);
     const first = rows[0];
@@ -237,16 +239,28 @@ describe('edición, medición y navegación de diálogos', () => {
     const { ctx, sim } = harness;
     while (sim.simTimeMs < 12_000) sim.step();
     ctx.frame = sim.frame();
-    const classroom = createClassroom(ctx, { cancelQuick: vi.fn(), loadScenario: vi.fn(), estimateCount: () => 0 });
-    classroom.init();
-    classroom.open('theory');
+    const cases = createCaseSpace(ctx, { loadScenario: vi.fn(), switchTab: vi.fn() });
+    cases.init();
+    cases.scrollTo('theory');
+    expect($('#aula-theory-host').contains($('#view-teaching'))).toBe(true);
     await vi.waitFor(() => expect($('#teaching-body').querySelector('svg')).not.toBeNull());
     $<HTMLButtonElement>('[data-edu-tab="proteccion"]').click();
     expect(ctx.lesson.flags['edu-proteccion']).toBe(true);
     expect($('#teaching-body').textContent).toContain('Potencia mecánica');
     ctx.examMode = true;
     ctx.examMasked = () => true;
-    classroom.render();
+    cases.render();
     expect($('#teaching-body').textContent).toContain('?');
+  });
+});
+
+describe('gasometría del panel', () => {
+  it('nombra el pH como lo haría un clínico y estima el tiempo al equilibrio con su constante de tiempo', () => {
+    expect(estadoPh(7.3)).toBe('acidemia');
+    expect(estadoPh(7.4)).toBeNull();
+    expect(estadoPh(7.5)).toBe('alcalemia');
+    expect(minutosAlEquilibrio(40, 40.5, 3)).toBe(0);
+    // A 12 mmHg del equilibrio con τ 3 min: 3 · ln 12 ≈ 7,5 min hasta quedar a 1 mmHg.
+    expect(minutosAlEquilibrio(40, 52, 3)).toBeCloseTo(3 * Math.log(12), 6);
   });
 });

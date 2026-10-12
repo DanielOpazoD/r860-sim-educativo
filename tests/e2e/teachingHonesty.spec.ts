@@ -1,18 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { open, openAula } from './helpers';
-test('SC-25 mantiene sus límites visibles en lección, interpretación y resultados', async ({ page }, info) => {
+import { open, openFundamentos } from './helpers';
+test('SC-25 mantiene sus límites visibles en los Fundamentos', async ({ page }, info) => {
   await open(page, { scenario: 'SC-25', paused: 1 });
-  await openAula(page, 'lesson');
-  await expect(page.locator('#lesson-caution')).toContainText('gases ni hemodinámica');
-  await expect(page.locator('#lesson-caution')).toBeVisible();
-  await page.screenshot({ path: info.outputPath('SC25-leccion.png'), fullPage: true });
-  await openAula(page, 'theory');
+  await openFundamentos(page);
+  await expect(page.locator('#teaching-body .notice-box')).toContainText('gases ni hemodinámica');
   await page.click('[data-edu-tab="proteccion"]');
   await expect(page.locator('#teaching-body')).toContainText('gases ni hemodinámica');
   await expect(page.locator('#teaching-body')).toContainText('no identifica una PEEP clínicamente segura');
   await page.screenshot({ path: info.outputPath('SC25-interpretacion.png'), fullPage: true });
-  await openAula(page, 'results');
-  await expect(page.locator('#aula-results-body')).toContainText('gases ni hemodinámica');
 });
 test('la ayuda del bloqueo anuncia la maniobra que está abierta', async ({ page }, info) => {
   await open(page, { paused: 1 });

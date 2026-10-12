@@ -15,7 +15,7 @@ import type { ProfileSpec } from '../domain/profile';
 import { defaultInit } from '../profiles';
 import { findScenario, SCENARIOS, type Scenario } from '../scenarios';
 import { createActions } from './actions';
-import { createClassroom } from './classroom';
+import { createCaseSpace } from './caseSpace';
 import { createAlarmsUi } from './alarmsUi';
 import { createCommandPalette, type PaletteCommand } from './commandPalette';
 import { PALETTE_COMMANDS, shortcutLabel } from './commands';
@@ -176,11 +176,9 @@ export function startApp(opts: AppOptions): void {
       return views.view;
     },
     switchView: (v) => {
-      if (v === 'teaching') classroom.open('theory');
-      else {
-        classroom.simulator();
-        views.switchView(v);
-      }
+      // Los Fundamentos ya no son una vista del equipo: viven en el espacio educativo, bajo el ventilador.
+      if (v === 'teaching') cases.scrollTo('theory');
+      else views.switchView(v);
     },
     get frozen() {
       return plots.frozen;
@@ -215,7 +213,6 @@ export function startApp(opts: AppOptions): void {
       const boton = $<HTMLButtonElement>('#exam-toggle');
       boton.classList.toggle('active', on);
       boton.setAttribute('aria-checked', String(on));
-      boton.setAttribute('aria-pressed', String(on));
       toast(on ? 'Modo examen: las mediciones se ocultan hasta que las estimas.' : 'Modo examen desactivado.');
       updateUI();
     },
@@ -253,10 +250,9 @@ export function startApp(opts: AppOptions): void {
     // Desplegado por omisión en escritorio; en móvil taparía el equipo. Una preferencia guardada manda.
     initialVisible: params.has('instructor') ? params.get('instructor') !== '0' : isMobile() ? false : (prefs?.instructorVisible ?? true),
   });
-  const classroom = createClassroom(ctx, {
-    cancelQuick: () => quick.cancelQuick(),
+  const cases = createCaseSpace(ctx, {
     loadScenario: (id) => instructor.loadScenario(id),
-    estimateCount: () => metrics.examEstimateCount,
+    switchTab: (tab) => instructor.switchInstructor(tab),
   });
   let openPalette = (): void => {};
   const actions = createActions(ctx, {
@@ -267,7 +263,7 @@ export function startApp(opts: AppOptions): void {
     metrics,
     plots,
     instructor,
-    classroom,
+    cases,
     openPalette: () => openPalette(),
   });
   const palette = createCommandPalette(() => {
@@ -284,12 +280,15 @@ export function startApp(opts: AppOptions): void {
         label: VIEW_LABELS[id] ?? id,
         run: () => ctx.switchView(id),
       })),
-      ...SCENARIOS.map((scenarioItem) => ({
+      ...SCENARIOS.filter((s) => s.clinical).map((scenarioItem) => ({
         id: `scenario-${scenarioItem.id}`,
-        group: 'Escenarios' as const,
+        group: 'Casos clínicos' as const,
         label: scenarioItem.name,
-        keywords: `${scenarioItem.id} ${scenarioItem.category ?? ''}`,
-        run: () => instructor.loadScenario(scenarioItem.id),
+        keywords: `${scenarioItem.id} ${scenarioItem.clinical?.theme ?? ''}`,
+        run: () => {
+          instructor.loadScenario(scenarioItem.id);
+          instructor.showPanel('case');
+        },
       })),
     ];
     if (!ctx.fixtureId) {
@@ -360,7 +359,7 @@ export function startApp(opts: AppOptions): void {
     instructor.updateTeacher();
     metrics.updateLogs();
     lesson.evaluate();
-    classroom.render();
+    cases.render();
   }
   function ingest(
     fr: EngineFrame,
@@ -524,7 +523,7 @@ export function startApp(opts: AppOptions): void {
   dockToolbar(mobileQuery.matches);
   mobileQuery.addEventListener('change', (e) => dockToolbar(e.matches));
   instructor.initChrome();
-  classroom.init();
+  cases.init();
   versionTag();
   dialog.bind();
   actions.bind();
@@ -540,7 +539,8 @@ export function startApp(opts: AppOptions): void {
     startEngine();
     const fx = params.get('fixture');
     if (fx === 'P1' || fx === 'P3') setTimeout(() => showFixture(fx), 80);
-    const v = params.get('view') ?? prefs?.view;
+    // Los Fundamentos ya no son una vista guardada: sólo la URL heredada ?view=teaching lleva a ellos al abrir.
+    const v = params.get('view') ?? (prefs?.view === 'teaching' ? undefined : prefs?.view);
     if (v) ctx.switchView(v);
     if (!params.has('scenario') && !params.has('fixture') && prefs?.welcomed && scenario.id !== 'SC-01')
       toast(`Continúas en: ${scenario.name}`);

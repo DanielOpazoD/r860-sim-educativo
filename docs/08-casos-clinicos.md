@@ -1,12 +1,12 @@
 # Casos clínicos
 
-Ocho casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlos (Casos · Catálogo · Casos clínicos). Complementan las prácticas guiadas: aquéllas acompañan paso a paso; un caso plantea una pregunta y juzga el resultado.
+Ocho casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlos. Se eligen en el panel lateral (pestaña Casos), que dice qué lograr y cómo se evalúa; el desarrollo se lee bajo el equipo. Las prácticas guiadas antiguas quedan como datos para escribir más casos.
 
 ## Formato
 
 - **Escenario sintético con bloque `clinical`** (`src/scenarios/cases.ts`): tema, viñeta, pregunta, tipo (`ajuste` o `diagnostico`), opciones con su porqué, criterios, explicación y referencias. Comparte la carga y el motor con los escenarios; no aparece en el selector rápido de prácticas.
 - **Criterios de resultado** (`src/ui/caseEvaluation.ts`): funciones puras sobre el cuadro con umbrales por caso (VT por kg de peso predicho, Pplat, presión motriz, pH de equilibrio, auto-PEEP verdadera, esfuerzos disparados, retraso de ciclado, autodisparo). Aceptan cualquier ajuste que logre el resultado. Un bloqueo cuenta si es válido como mecánica pasiva y posterior al último ajuste.
-- **Verdad oculta:** mientras el caso no se entrega, el panel Paciente/Eventos no se muestra (`case-locked`). Al entregar se revelan el veredicto por criterio, la respuesta correcta con su porqué, la explicación y «Lo que el modelo sabía» (C, R, auto-PEEP verdadera, esfuerzo, PaCO₂ y pH de equilibrio).
+- **Verdad oculta:** mientras el caso no se entrega, la pestaña Explorar (perfiles, mecánica y eventos) sólo muestra un aviso y la salida del caso (`case-locked`); la gasometría del modelo sí está a la vista, con su inicio, su valor actual y hacia dónde tiende, como la pediría un clínico. Al entregar se revelan el veredicto por criterio, la respuesta correcta con su porqué, la explicación y «Lo que el modelo sabía» (C, R, auto-PEEP verdadera, esfuerzo, PaCO₂ y pH de equilibrio).
 - **Referencias visibles:** en la tarjeta del catálogo (cita corta) y en el caso (cita completa con enlace a PubMed), antes y después de entregar.
 - **Fidelidad:** los números de cada viñeta salen del motor con la mecánica del caso; `tests/unit/casosClinicos.test.ts` lo comprueba caso por caso, junto con que la solución de referencia aprueba y una incorrecta no.
 
@@ -19,7 +19,7 @@ Ocho casos con viñeta que se resuelven en el ventilador y se entregan para eval
 | CC-03 · SDRA: VT protector | SDRA · ventilación protectora | VT ≤ 6,5 mL/kg PBW; Pplat ≤ 30; ΔP < 15; pH 7,30–7,45; FR ≤ 35 | VT 425, FR 28 (ΔP 20 → 14; pH 7,36). VT 425 con FR 16: pH 7,12 | ARDSNet 2000; Amato 2015; protocolo ARDSNet; Nuckton 2002 |
 | CC-04 · PEEP decremental | SDRA · reclutamiento y PEEP | Cstat antes de abrir; apertura; Cstat ≥ 1,3× a PEEP 9–12; PEEP final ≥ 10 | PEEP 5 → 20 (30 s) → 11: Cstat 30 → 46. Sin abrir: no | Suarez-Sipmann 2007; ART 2017 |
 | CC-05 · Hipercapnia | CO₂ · espacio muerto | PaCO₂ de equilibrio 35–45; VT ≤ 8 mL/kg PBW; PEEPi ≤ 2 | VT 500 FR 14 o VT 400 FR 22. FR 18 sola: 48 mmHg | Robertson 2015; protocolo ARDSNet |
-| CC-06 · Esfuerzos inefectivos | Asincronía · esfuerzos inefectivos | ≥ 95 % de esfuerzos disparados en el último minuto; VTe ≥ 5 mL/kg PBW | Soporte 12 (con 20 disparan 15 de 22). Soporte 6: VT insuficiente | Thille 2006; Blanch 2015; Georgopoulos 2006 |
+| CC-06 · Esfuerzos inefectivos | Asincronía · esfuerzos inefectivos | ≥ 95 % de esfuerzos disparados en el último minuto; VTe ≥ 5 mL/kg PBW | Soporte 12 (con 20 disparan 15 de 22; PaCO₂ 25 → 53, pH 7,74 → 7,40). Soporte 6: VT insuficiente | Thille 2006; Blanch 2015; Georgopoulos 2006 |
 | CC-07 · Autodisparo por fuga | Asincronía · autodisparo | Sin autodisparo tras el ajuste; disparo ≤ 6 L/min | Disparo 4 L/min (fuga ≈ 3 L/min a PEEP 5). 8 L/min: de más | Imanaka 2000; Al Otair y BaHammam 2020 |
 | CC-08 · Ciclado tardío | Asincronía · ciclado | Ti mecánico − Ti neural ≤ 0,3 s; ≥ 95 % de esfuerzos disparados | Ciclado 25 % (con 5 %: ≈ 1 s de más y la mitad sin disparar) | Tassaux 2005; Hess 2005 |
 
@@ -52,3 +52,5 @@ Cada referencia se abrió antes de citarla: los artículos, leyendo su resumen e
 | Hess DR. Ventilator waveforms and the physiology of pressure support. *Respir Care* 2005;50(2):166-86 | PMID 15691390 | Asincronía cuando el ciclado no coincide con el fin de la inspiración neural. |
 
 Durante la verificación se descartó un identificador que no correspondía al artículo buscado (PMID 21719755 es un estudio de fibrosis pulmonar, no la revisión de Marini, que es 21700908): por eso cada cita lleva su identificador comprobado.
+
+Los casos EPOC en presión de soporte (CC-06, CC-08) comparten el perfil de gases de CC-02 (HCO₃⁻ 32 mEq/L, espacio muerto 250 mL): con la gasometría del modelo siempre a la vista en el panel, un EPOC con bicarbonato normal habría mostrado una alcalosis respiratoria pura que no corresponde a su enfermedad. El esfuerzo sintético no responde a la PaCO₂ (sin control químico), así que con soporte de más la alcalosis de CC-06 llega a valores que un paciente real limitaría; el caso lo declara en sus límites.
