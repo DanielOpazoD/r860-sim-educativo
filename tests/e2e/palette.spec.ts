@@ -10,8 +10,8 @@ test.describe('Paleta de comandos', () => {
     await page.keyboard.press('Control+k');
     await expect(dialog).toBeVisible();
     await expect(input).toBeFocused();
-    await input.fill('rigido');
-    await expect(page.getByRole('option', { name: 'Perfil: Pulmón rígido' })).toBeVisible();
+    await input.fill('restrictivo');
+    await expect(page.getByRole('option', { name: 'Perfil: Restrictivo' })).toBeVisible();
     await input.press('Enter');
     await expect(dialog).not.toBeVisible();
     if (!isMobile) {

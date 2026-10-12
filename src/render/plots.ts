@@ -138,10 +138,10 @@ export function waveMarkers(
     { kind: 'cycle', t: cycle, label: 'Ciclado' },
     { kind: 'end', t: end, label: 'Fin esp.' },
   ];
-  if (ppeakPoint) markers.push({ kind: 'ppeak', t: ppeakPoint[0], label: `Ppico ${format(breath.ppeak, 1)}`, value: breath.ppeak });
+  if (ppeakPoint) markers.push({ kind: 'ppeak', t: ppeakPoint[0], label: `Ppico ${format(breath.ppeak, 0)}`, value: breath.ppeak });
   if (effortPoint) markers.push({ kind: 'effort', t: effortPoint[0], label: 'Esfuerzo' });
   if (hold?.breathId === breath.breathId && hold.startedAtMs !== null)
-    markers.push({ kind: 'pplat', t: hold.startedAtMs / 1000, label: `Pplat ${format(hold.pplat, 1)}`, value: hold.pplat });
+    markers.push({ kind: 'pplat', t: hold.startedAtMs / 1000, label: `Pplat ${format(hold.pplat, 0)}`, value: hold.pplat });
   return markers;
 }
 

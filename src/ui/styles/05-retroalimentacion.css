@@ -214,30 +214,6 @@ body {
   opacity: 0.8;
 }
 /* Datos del modelo (panel docente) plegados por omisión. */
-.truth-details {
-  margin: 8px 0 10px;
-  border-top: 1px solid var(--shell-line);
-}
-.truth-details > summary {
-  cursor: pointer;
-  font-size: var(--type-xs);
-  color: var(--shell-muted);
-  padding: 8px 0;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.truth-details > summary::before {
-  content: '▸';
-  font-size: var(--type-2xs);
-}
-.truth-details[open] > summary::before {
-  content: '▾';
-}
-.truth-details > summary::-webkit-details-marker {
-  display: none;
-}
 #teacher-toggle[aria-pressed='true'] {
   color: var(--shell-accent);
 }

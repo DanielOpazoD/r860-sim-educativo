@@ -500,17 +500,17 @@
   background: var(--shell-accent-soft);
 }
 .app-dialog .parameter-help,
-.instructor .parameter-help {
+:is(.instructor, .flyout) .parameter-help {
   background: var(--shell-raised);
   border-color: var(--shell-line);
   color: var(--shell-text);
 }
 .app-dialog .parameter-help h3,
-.instructor .parameter-help h3 {
+:is(.instructor, .flyout) .parameter-help h3 {
   color: var(--shell-text);
 }
 .app-dialog .parameter-help p,
-.instructor .parameter-help p {
+:is(.instructor, .flyout) .parameter-help p {
   color: var(--shell-muted);
 }
 .app-dialog .help-equation,
@@ -545,7 +545,7 @@
 }
 .profile-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 .profile-chip {
@@ -555,8 +555,8 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 8px;
+  gap: 1px;
+  padding: 5px 8px;
   border: 1px solid var(--shell-line);
   border-radius: var(--shell-radius-sm);
   background: var(--shell-raised);
@@ -564,16 +564,21 @@
   text-align: left;
 }
 .profile-chip b {
-  font-size: var(--type-sm);
-  line-height: 1.2;
+  max-width: 100%;
+  font-size: var(--type-xs);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .profile-chip small {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  max-width: 100%;
+  font-size: var(--type-2xs);
+  line-height: 1.25;
+  color: var(--shell-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .profile-chip.active,
 .profile-chip[aria-pressed='true'] {
@@ -1130,16 +1135,6 @@
     gap: 0;
   }
 }
-.phys-group-title {
-  margin: 16px 0 8px;
-  color: var(--shell-muted);
-  font-size: var(--type-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.phys-group:first-child > .phys-group-title {
-  margin-top: 0;
-}
 .step-button {
   display: inline-flex;
   align-items: center;
@@ -1244,20 +1239,20 @@
 #instructor-patient {
   padding: 12px;
 }
-#instructor-patient .phys-field {
+:is(#instructor-patient, .flyout) .phys-field {
   margin: 0 0 8px;
 }
-#instructor-patient .phys-field-header {
+:is(#instructor-patient, .flyout) .phys-field-header {
   gap: 8px;
   margin-bottom: 0;
 }
-#instructor-patient .parameter-label {
+:is(#instructor-patient, .flyout) .parameter-label {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;
 }
-#instructor-patient .parameter-label > label {
+:is(#instructor-patient, .flyout) .parameter-label > label {
   max-width: none;
   line-height: 1.25;
 }
@@ -1265,12 +1260,12 @@
   color: var(--shell-dim);
   font-size: var(--type-2xs);
 }
-#instructor-patient .phys-value {
+:is(#instructor-patient, .flyout) .phys-value {
   gap: 0;
   border: 1px solid var(--shell-line);
   border-radius: var(--shell-radius-sm);
 }
-#instructor-patient .phys-value > .step-button {
+:is(#instructor-patient, .flyout) .phys-value > .step-button {
   width: 32px;
   min-width: 32px;
   height: 32px;
@@ -1278,7 +1273,7 @@
   border: 0;
   background: transparent;
 }
-#instructor-patient .phys-value input {
+:is(#instructor-patient, .flyout) .phys-value input {
   width: 42px;
   min-height: 32px;
   padding: 2px 0;
@@ -1286,7 +1281,7 @@
   text-align: center;
   font-size: 14px;
 }
-#instructor-patient .phys-field input[type='range'] {
+:is(#instructor-patient, .flyout) .phys-field input[type='range'] {
   height: 24px;
   margin: 0;
   border-top: 10px solid transparent;
@@ -1295,37 +1290,26 @@
   background-clip: padding-box;
   outline-offset: 0;
 }
-#instructor-patient .phys-range-labels {
+:is(#instructor-patient, .flyout) .phys-range-labels {
   display: none;
-}
-#instructor-patient > :is(.advanced-patient, .truth-details) {
-  margin: 0;
-}
-#instructor-patient > :is(.advanced-patient, .truth-details) > summary {
-  min-height: 32px;
-  padding: 8px 0;
 }
 @media (max-width: 700px), (pointer: coarse) {
   .profile-chip {
     min-height: 44px;
   }
-  #instructor-patient .phys-value > .step-button {
+  :is(#instructor-patient, .flyout) .phys-value > .step-button {
     width: 44px;
     min-width: 44px;
     height: 44px;
     min-height: 44px;
   }
-  #instructor-patient .phys-value input {
+  :is(#instructor-patient, .flyout) .phys-value input {
     min-height: 44px;
   }
-  #instructor-patient .phys-field input[type='range'] {
+  :is(#instructor-patient, .flyout) .phys-field input[type='range'] {
     height: 44px;
     border-top-width: 20px;
     border-bottom-width: 20px;
-  }
-  #instructor-patient > :is(.advanced-patient, .truth-details) > summary {
-    min-height: 44px;
-    padding: 14px 0;
   }
 }
 

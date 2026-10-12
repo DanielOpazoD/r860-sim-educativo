@@ -20,8 +20,8 @@ describe('Paleta de comandos', () => {
   });
 
   it('encuentra texto con diacríticos ignorados', () => {
-    const profile = command('Perfil: Pulmón rígido', '', 'Perfiles');
-    expect(filterCommands([profile], 'pulmon')).toEqual([profile]);
+    const profile = command('Perfil: Esfuerzo débil', '', 'Perfiles');
+    expect(filterCommands([profile], 'debil')).toEqual([profile]);
   });
 
   it('requiere que coincidan todos los tokens', () => {

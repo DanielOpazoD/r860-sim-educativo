@@ -83,9 +83,6 @@
   .instructor {
     border-radius: 9px;
   }
-  .instructor-pane#instructor-patient.active {
-    display: block;
-  }
   .instructor-pane {
     padding: 20px;
   }
@@ -126,10 +123,6 @@
   }
   .truth-grid b small {
     font-size: var(--type-2xs);
-  }
-  .advanced-patient summary {
-    font-size: var(--type-xs);
-    padding: 15px 0;
   }
   .mini-muscle > div {
     font-size: var(--type-xs);
@@ -345,9 +338,6 @@
   min-height: 0;
   padding-top: 2px;
   padding-bottom: 1px;
-}
-.numeric-limits {
-  white-space: pre-line;
 }
 .numeric-age:empty {
   display: none;
@@ -711,10 +701,6 @@
   opacity: 0.5;
 }
 @media (max-width: 1020px) and (min-width: 701px) {
-  .instructor-pane#instructor-patient > .truth-help-panels {
-    grid-column: 2;
-    grid-row: 3;
-  }
   .phys-field-header > .parameter-label > label {
     max-width: none;
   }
@@ -829,16 +815,6 @@
   align-self: end;
   margin: 0;
   font-size: var(--type-sm);
-}
-.monitor .big-numeric .numeric-limits {
-  grid-column: 2;
-  grid-row: 2;
-  align-self: end;
-  margin: 0 0 8px 0;
-  font-size: var(--type-md);
-  color: #98dcff;
-  white-space: pre-line;
-  line-height: 1.15;
 }
 /* [adaptado] Dígitos algo más ligeros, como los del equipo. */
 .monitor .numeric-value,

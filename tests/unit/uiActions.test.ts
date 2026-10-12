@@ -82,18 +82,22 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
     tabs[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     expect(tabs.at(-1)!.getAttribute('aria-selected')).toBe('true');
     $('#view-options-close').click();
-    for (const id of ['variable-descriptions', 'wave-guides', 'wave-annotations']) {
+    for (const id of ['variable-descriptions', 'wave-annotations']) {
       const input = $<HTMLInputElement>('#' + id);
       input.checked = false;
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    // La curva de referencia es un botón de la barra: su estado se ve en el propio botón.
+    const guides = $<HTMLButtonElement>('#wave-guides-toggle');
+    plots.setWaveGuides(true);
+    guides.click();
     expect(loadPrefs()).toMatchObject({ variableDescriptions: false, waveGuides: false, waveAnnotations: false });
     expect($('#variable-legend').hidden).toBe(true);
     expect(plots.waveGuides).toBe(false);
+    expect(guides.getAttribute('aria-pressed')).toBe('false');
     ctx.fixtureId = 'P1';
-    const guides = $<HTMLInputElement>('#wave-guides');
-    guides.checked = true;
-    guides.dispatchEvent(new Event('change', { bubbles: true }));
+    guides.click();
+    expect(plots.waveGuides).toBe(true);
     expect(loadPrefs().waveGuides).toBe(false);
     ctx.fixtureId = null;
 
@@ -133,13 +137,10 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
       await actions.action('closeDialog');
     }
 
-    await instructor.fault('resistance');
-    expect(ctx.send).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'setPatient' }), 'instructor');
+    await instructor.fault('obstruction');
+    expect(ctx.send).toHaveBeenLastCalledWith({ type: 'setPatient', params: { rInsp: 400 } }, 'instructor');
     await instructor.undoEvent();
-    expect(ctx.send).toHaveBeenLastCalledWith(
-      { type: 'setPatient', params: { rInsp: ctx.frame!.truth.patient.rInsp, rExp: ctx.frame!.truth.patient.rExp } },
-      'instructor',
-    );
+    expect(ctx.send).toHaveBeenLastCalledWith({ type: 'setPatient', params: { rInsp: ctx.frame!.truth.patient.rInsp } }, 'instructor');
     await instructor.applyProfile('stiff');
     expect(ctx.send).toHaveBeenCalledWith(expect.objectContaining({ type: 'setPatient', replace: true }), 'instructor');
     const compliance = $<HTMLInputElement>('[data-phys-number="compliance"]');
@@ -199,7 +200,15 @@ it('los perfiles mantienen sus etiquetas como texto y sus botones conservan ARIA
     expect($('#patient-profiles b').textContent).toBe(profile.label);
     expect($('#patient-profiles').querySelector('img')).toBeNull();
     expect($('#patient-profiles button').getAttribute('aria-pressed')).toBe('false');
-    expect($('#fault-grid use').getAttribute('href')).toBe('#i-wave');
+    expect($('#fault-grid use').getAttribute('href')).toBe('#i-pause');
+    // Mecánica avanzada en pestañas: un grupo a la vista, los demás ocultos.
+    expect([...document.querySelectorAll('#advanced-tabs [data-group]')].map((t) => t.textContent)).toEqual([
+      'Esfuerzo',
+      'Vía aérea',
+      'Pulmón',
+      'Circuito',
+    ]);
+    expect(document.querySelectorAll('#patient-extra-controls [data-group]:not([hidden])')).toHaveLength(1);
   } finally {
     profile.label = original;
   }

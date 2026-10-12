@@ -13,7 +13,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
       await expect(page.locator('[data-instructor="patient"]')).toHaveText('Paciente');
       await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
       await expect(page.locator('#patient-profiles [data-profile]').first()).toBeVisible();
-      await expect(page.locator('#fault-grid [data-event]')).toHaveCount(6);
+      await expect(page.locator('#fault-grid [data-event]')).toHaveCount(4);
       await expect(page.locator('#undo-event')).toBeVisible();
       // La gasometría es del modelo, no una medición del equipo: está en el panel, rotulada, y nunca en el monitor.
       await expect(page.locator('#case-gas .gas-tag')).toHaveText('modelo');

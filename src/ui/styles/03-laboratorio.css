@@ -684,27 +684,6 @@
   .instructor-pane {
     padding: 20px 22px;
   }
-  .instructor-pane#instructor-patient.active {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 25px;
-  }
-  .instructor-pane#instructor-patient > .truth-grid {
-    grid-column: 2;
-    grid-row: 2;
-    align-content: start;
-  }
-  .instructor-pane#instructor-patient > .advanced-patient {
-    grid-column: 1;
-    grid-row: 3/6;
-  }
-  .instructor-pane#instructor-patient > .mini-muscle {
-    grid-column: 2;
-    grid-row: 4;
-  }
-  .instructor-pane#instructor-patient > .button {
-    grid-column: 1/-1;
-  }
   .instructor-tabs button {
     font-size: var(--type-md);
     padding: 13px;

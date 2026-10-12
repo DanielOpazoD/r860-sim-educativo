@@ -86,8 +86,8 @@ test('VIS · panel Paciente compacto a 1440 px: gases, perfiles, mecánica y eve
   const pane = page.locator('#instructor-patient');
   const profiles = page.locator('#patient-profiles .profile-chip');
   await expect(pane).toBeVisible();
-  await expect(page.locator('.advanced-patient')).not.toHaveAttribute('open', '');
-  await expect(profiles).toHaveCount(6);
+  await expect(page.locator('#flyout-advanced')).toBeHidden();
+  await expect(profiles).toHaveCount(5);
   await expect(page.locator('#patient-controls [data-phys-number]')).toHaveCount(3);
   await expect(page.locator('#patient-controls [data-phys-step]')).toHaveCount(6);
   for (const profile of await profiles.all()) await expect(profile).toBeInViewport();
@@ -135,9 +135,9 @@ test.describe('VIS · motor vivo con pausa automática determinista', () => {
     const vteMostrado = Number(await page.locator('#numeric-grid [data-metric="vte"] .numeric-value').textContent());
     expect(Math.abs(vteMostrado - 500)).toBeLessThanOrEqual(15);
     await expect(page.locator('#numeric-grid [data-metric="rr"] .numeric-value')).toHaveText('15');
-    // Sin bloqueo inspiratorio la Pplat no existe: el guion y el motivo ocupan líneas distintas.
+    // Sin bloqueo inspiratorio la Pplat no existe: sólo el guion, sin pista dentro de la casilla.
     await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-value')).toHaveText('—');
-    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-age')).toHaveText('Haz un bloqueo inspiratorio');
+    await expect(page.locator('#numeric-grid [data-metric="pplat"] .numeric-age')).toBeEmpty();
     for (const key of ['cstat', 'driving']) await expect(page.locator(`#numeric-grid [data-metric="${key}"] .numeric-age`)).toBeEmpty();
     await expect(page.locator('#numeric-grid [data-metric="pplat"]')).toHaveAttribute(
       'aria-label',

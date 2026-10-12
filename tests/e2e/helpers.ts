@@ -87,9 +87,20 @@ export async function showPanel(page: Page, tab?: 'case' | 'patient'): Promise<v
   }
   if (tab) await page.locator(`[data-instructor="${tab}"]`).click();
 }
-export async function openMoreParams(page: Page): Promise<void> {
-  const details = page.locator('.advanced-patient');
-  if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) await details.locator('summary').click();
+export type AdvancedGroup = 'esfuerzo' | 'via' | 'pulmon' | 'circuito';
+/** Abre «Mecánica avanzada» (panel lateral) en la pestaña del grupo pedido. */
+export async function openMoreParams(page: Page, group: AdvancedGroup): Promise<void> {
+  const panel = page.locator('#flyout-advanced');
+  if (await panel.isHidden()) await page.locator('[data-flyout="advanced"]').click();
+  await expect(panel).toBeVisible();
+  await page.locator(`#advanced-tabs [data-group="${group}"]`).click();
+  await expect(page.locator(`#patient-extra-controls [data-group="${group}"]`)).toBeVisible();
+}
+/** Abre «Datos del modelo» (panel lateral). */
+export async function openModelData(page: Page): Promise<void> {
+  const panel = page.locator('#flyout-model');
+  if (await panel.isHidden()) await page.locator('[data-flyout="model"]').click();
+  await expect(panel).toBeVisible();
 }
 async function selectViewTab(page: Page, tabName: 'aids' | 'monitor' | 'time'): Promise<void> {
   const dialog = page.locator('#wave-options');
@@ -120,6 +131,9 @@ export async function closePersonalization(page: Page): Promise<void> {
 }
 export async function hidePanel(page: Page): Promise<void> {
   const mobile = await page.evaluate(() => matchMedia('(max-width:700px)').matches);
+  // Un panel lateral abierto ocupa la pantalla en móvil: se cierra antes de cerrar la hoja.
+  const lateral = page.locator('.flyout:not([hidden]) [data-flyout-close]');
+  if (mobile && (await lateral.count())) await lateral.click();
   if (mobile && (await page.locator('#panel-button').getAttribute('aria-pressed')) === 'true') {
     await page.locator('#instructor-close').click();
   }
