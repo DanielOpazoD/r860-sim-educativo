@@ -207,6 +207,7 @@ describe('OBJ · las lecciones se pueden terminar', () => {
     expect(a.hechos.has('auto')).toBe(true);
     expect(a.hechos.has('trig')).toBe(false);
     expect(sim.command({ type: 'confirmSettings', changes: { flowTrigger: 4 / 60 } }).accepted).toBe(true);
+    a.settingsChangeMs = sim.simTimeMs; // como lessonTracker al confirmar un ajuste
     const antes = sim.breaths.length;
     runUntilBreath(sim, antes + 7);
     a.mirar(sim.frame());

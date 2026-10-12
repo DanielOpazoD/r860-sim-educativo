@@ -168,6 +168,9 @@ export class ProcedureManager {
       quality = 'invalid';
       reason = 'mesetaInestable';
     }
+    // La calidad es la del equipo: sólo juzga la forma de la presión. El esfuerzo muscular es verdad del modelo y va
+    // aparte, para la capa docente; una meseta estable con músculo activo se publica como la publicaría el ventilador.
+    const passiveMechanicsValid = !o.effortDuringHold;
     const values: Record<string, MetricSample> = {};
     if (o.kind === 'inspHold') {
       const pplat = quality === 'valid' ? o.pawEnd : null;
@@ -276,6 +279,7 @@ export class ProcedureManager {
       quality,
       reason,
       values,
+      passiveMechanicsValid,
       // La maniobra queda vinculada a la mecánica que la produjo: sólo las espiratorias válidas la llevan.
       ...(o.kind === 'expHold' && quality === 'valid' ? { contextSig: this.contextSig() } : {}),
     };

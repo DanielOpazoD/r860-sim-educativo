@@ -16,7 +16,13 @@ export interface FrameLike {
   procedure: {
     last: Record<
       string,
-      { procedureId: string; wallTimeMs: number | null; quality: string; values: Record<string, { value: number | null }> } | null
+      {
+        procedureId: string;
+        wallTimeMs: number | null;
+        quality: string;
+        passiveMechanicsValid?: boolean;
+        values: Record<string, { value: number | null }>;
+      } | null
     >;
     hold: unknown;
   };

@@ -127,7 +127,9 @@ function tarjetaHTML(t: Tarjeta, oculto: (k: string) => boolean): string {
     ? '<p class="edu-falta">En examen se revela al estimar la medición en la columna numérica.</p>'
     : t.valor === null
       ? `<p class="edu-falta">${esc(t.faltaPara)}</p>`
-      : null;
+      : t.aviso
+        ? `<p class="edu-falta">${esc(t.aviso)}</p>`
+        : null;
   const ref = t.referencia
     ? `<p class="edu-ref">Referencia <b>${esc(t.referencia.texto)}</b></p>`
     : '<p class="edu-ref edu-sinref">Sin rango de referencia</p>';
@@ -258,8 +260,8 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: 
   const mensajeCurva = puntos.length < 2 ? grafico : `${grafico}<p class="edu-nota">${tituloCurva}</p>`;
   const porQueCurva =
     puntos.length < 2
-      ? `${tituloCurva} El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.`
-      : 'El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.';
+      ? `${tituloCurva} El máximo es la mayor Cstat de los puntos medidos en este modelo; no identifica una PEEP clínicamente segura ni demuestra beneficio.`
+      : 'El máximo es la mayor Cstat de los puntos medidos en este modelo; no identifica una PEEP clínicamente segura ni demuestra beneficio.';
   return (
     `<div class="edu-prot">` +
     `<section class="edu-bloque">` +
@@ -381,8 +383,10 @@ export function createTeachingView(ctx: AppContext): TeachingView {
     const gases =
       g && pantalla === 'ventilacion' ? [g.paco2, g.ph, g.paco2Target, g.vaLMin, g.tauMin].map((x) => (x === null ? null : f(x, 2))) : null;
     const nueva = JSON.stringify([
+      ctx.scenario.id,
+      ctx.scenario.caution,
       pantalla,
-      t.map((x) => [x.valor, x.estado, x.sustituida]),
+      t.map((x) => [x.valor, x.estado, x.sustituida, x.aviso]),
       niveles(fr),
       estres(fr),
       puntos,
@@ -399,6 +403,7 @@ export function createTeachingView(ctx: AppContext): TeachingView {
         : pantalla === 'proteccion'
           ? proteccionHTML(fr, puntos, oculto)
           : ventilacionHTML(fr);
+    $('#teaching-body').insertAdjacentHTML('afterbegin', `<p class="notice-box">${esc(ctx.scenario.caution)}</p>`);
   }
 
   return { render };

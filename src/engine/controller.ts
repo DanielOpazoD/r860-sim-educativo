@@ -543,20 +543,20 @@ export class VcController {
           this.q = 0;
           p.integrateFlowSource(0, h, this.pmusAt(this.simT));
           this.occludeCircuit(h);
-          this.paw = p.hasSecond ? p.nodePressureForFlow(0, this.pmusAt(this.simT + h)) : p.pel() - this.pmusAt(this.simT + h);
+          this.paw = p.pawForFlow(0, this.pmusAt(this.simT + h));
           if (this.paw >= s.pmax) {
             this.transition = () => this.onPmax();
             return 0;
           }
           return h;
         }
-        const { dV, qEnd, qLeakEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
+        const { dV, dVLeak, qEnd, qLeakEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
         const delta = this.circuitTransfer(s.plimit, h, qEnd + qLeakEnd);
         if (this.breath) {
-          this.breath.vtInsp += dV + Math.max(0, delta);
+          this.breath.vtInsp += dV + dVLeak + Math.max(0, delta);
           this.breath.vtExp += Math.max(0, -delta);
         }
-        this.q = qEnd + delta / h;
+        this.q = qEnd + qLeakEnd + delta / h;
         this.paw = s.plimit;
         return h;
       }
@@ -564,13 +564,21 @@ export class VcController {
       case 'holdInsp':
       case 'holdExp': {
         this.q = 0;
-        p.integrateFlowSource(0, h, this.pmusAt(this.simT)); // oclusión: el volumen total no cambia, pero el elemento viscoelástico relaja y el gas se redistribuye entre unidades
+        const pmusStart = this.pmusAt(this.simT);
+        p.integrateFlowSource(0, h, pmusStart); // oclusión del ventilador: puede salir gas por fuga y redistribuirse entre unidades
         this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
         // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
-        this.paw = p.hasSecond ? p.nodePressureForFlow(0, this.pmusAt(this.simT + h)) : p.pel() - this.pmusAt(this.simT + h);
-        if (this.phase === 'inspPause' && this.breath) this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
+        const pmusEnd = this.pmusAt(this.simT + h);
+        this.paw = p.pawForFlow(0, pmusEnd);
+        const effortDuringOcclusion = Math.max(Math.abs(pmusStart), Math.abs(pmusEnd)) > 0.05;
+        if (this.phase === 'inspPause' && this.breath) {
+          this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
+          if (effortDuringOcclusion) this.breath.effortDuringPause = true;
+        }
         if (this.hold) {
           this.hold.samples.push({ t: this.tPhase + h, paw: this.paw });
+          // Toda la maniobra, incluido el arranque que el filtro de estabilidad descarta.
+          if (effortDuringOcclusion) this.hold.effortDuringHold = true;
           if (this.paw >= s.pmax) this.hold.pmaxHit = true;
         }
         if (this.phase === 'inspPause' && this.paw >= s.pmax) this.transition = () => this.onPmax();
@@ -838,7 +846,7 @@ export class VcController {
       return;
     }
     b.pplatCycle = this.paw;
-    b.pplatReason = null;
+    b.pplatReason = null; // el equipo publica la meseta estable; el esfuerzo queda en `effortDuringPause` (docente)
   }
 
   private beginHold(): void {
@@ -846,7 +854,15 @@ export class VcController {
     if (!req || !this.breath) return;
     this.holdRequest = null;
     this.triggerPending = null; // la oclusión anula un disparo detectado: no hay gas que servir
-    this.hold = { req, tStart: this.simT, pawStart: this.paw, samples: [], pmaxHit: false, peepeBefore: this.paw };
+    this.hold = {
+      req,
+      tStart: this.simT,
+      pawStart: this.paw,
+      samples: [],
+      pmaxHit: false,
+      peepeBefore: this.paw,
+      effortDuringHold: Math.abs(this.pmusAt(this.simT)) > 0.05,
+    };
     this.phase = req.kind === 'inspHold' ? 'holdInsp' : 'holdExp';
     this.tPhase = 0;
     this.events.push({ type: 'holdStarted', procedureId: req.procedureId, kind: req.kind, simTimeS: this.simT });
@@ -880,6 +896,7 @@ export class VcController {
       driftRate: calidad?.driftRate ?? Number.POSITIVE_INFINITY,
       reversal: calidad?.reversal ?? Number.POSITIVE_INFINITY,
       pmaxHit: hold.pmaxHit,
+      effortDuringHold: hold.effortDuringHold,
       cancelled,
       cancelReason,
       vtInspL: b.vtInsp,
@@ -942,6 +959,7 @@ export class VcController {
       plimitReached: false,
       pmaxReached: false,
       pauseSamples: [],
+      effortDuringPause: false,
       flowSamples: [],
       pawAtFlowEnd: this.paw,
       qAtFlowEnd: 0,
@@ -995,6 +1013,7 @@ export class VcController {
       pmaxReached: b.pmaxReached,
       energyInspJ: b.energyInsp * JOULES_PER_CMH2O_L,
       truthVStartL: b.vStart,
+      effortDuringPause: b.effortDuringPause,
     };
     this.events.push({ type: 'breathEnd', record });
   }

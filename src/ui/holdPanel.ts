@@ -74,6 +74,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     put('#hold-second-label', insp ? 'Cstat' : 'PEEPi');
     put('#hold-second-unit', insp ? 'mL/cmH₂O' : 'cmH₂O');
     const helpBtn = $('#hold-help-button');
+    helpBtn.setAttribute('aria-label', `Información sobre bloqueo ${insp ? 'inspiratorio' : 'espiratorio'}`);
     if (helpBtn.dataset.helpKey !== key) {
       helpBtn.dataset.helpKey = key;
       $('#hold-help').replaceChildren(...helpNodes(key));
@@ -87,11 +88,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     const tapar = ctx.examMode;
     put(
       '#hold-value',
-      tapar && h?.quality === 'valid'
-        ? '?'
-        : h?.quality === 'valid' && v1?.value !== null && v1?.value !== undefined
-          ? f(v1.value, 0)
-          : '—',
+      tapar && v1?.value !== null && v1?.value !== undefined ? '?' : v1?.value !== null && v1?.value !== undefined ? f(v1.value, 0) : '—',
     );
     put(
       '#hold-second',
@@ -131,7 +128,15 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
           : `No válida: ${humanReason(h.reason)} · ${wallDate(h.wallTimeMs ?? 0)}`;
     if (h && h.procedureId !== lastHoldToastId && (h.completedAtMs ?? 0) > holdOpenedAtMs) {
       lastHoldToastId = h.procedureId;
-      if (h.kind === 'inspHold' && h.quality === 'valid' && h.values.pplat?.value !== null && h.values.pplat?.value !== undefined) {
+      // La práctica sólo guarda mecánica pasiva: una meseta estable con músculo activo la muestra el equipo, pero no
+      // entra en la curva de titulación ni en los objetivos (verdad del modelo, `passiveMechanicsValid`).
+      if (
+        h.kind === 'inspHold' &&
+        h.quality === 'valid' &&
+        h.passiveMechanicsValid !== false &&
+        h.values.pplat?.value !== null &&
+        h.values.pplat?.value !== undefined
+      ) {
         const previos = (ctx.lesson.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
         ctx.lesson.flags.inspHolds = [...previos, { d: h.requestedDurationS ?? 0, p: h.values.pplat.value }];
         // Cada medición válida es un punto de la curva de titulación que el alumno construye por su cuenta: la PEEP a

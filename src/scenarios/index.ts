@@ -147,14 +147,18 @@ export const SCENARIOS: Scenario[] = [
       text: 'A los 20 s la R inspiratoria sube a 60. Con Plimit 30, el flujo deja de ser constante y el VT espirado cae a unos 350 mL: el ventilador sostiene la presión en vez de completar el volumen.',
       tasks: [
         { id: 'observe', text: 'Observa VTesp < VT programado tras los 20 s.', test: 'vteBelowSet' },
-        { id: 'plimit', text: 'Sube Plimit (menú de modo, apartado Avanzado) y confirma.', test: 'plimitChanged' },
+        {
+          id: 'plimit',
+          text: 'Practica cambiar Plimit (menú de modo, apartado Avanzado) y confirma; este objetivo registra el ajuste, no su efecto.',
+          test: 'plimitChanged',
+        },
         { id: 'hold', text: 'Realiza un bloqueo inspiratorio válido.', test: 'validInsp' },
       ],
     },
     question: '¿Qué diferencia hay entre Plimit y Pmáx?',
     answer:
       'Plimit sostiene la presión el resto de la inspiración (el volumen puede no completarse). Pmáx termina la inspiración de inmediato y activa la alarma.',
-    description: 'Rinsp = 40 desde t = 20 s: separación entre presión resistiva y elástica; efecto de Plimit.',
+    description: 'Rinsp = 60 desde t = 20 s: separación entre presión resistiva y elástica; efecto de Plimit.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
     effort: passive,
     sensors: idealSensors,
@@ -235,8 +239,8 @@ export const SCENARIOS: Scenario[] = [
         { id: 'ver', text: 'Observa en el registro las respiraciones asistidas seguidas de otra al poco tiempo.', test: 'assisted' },
         {
           id: 'peepi',
-          text: 'Tras la perturbación, mide la PEEP total con un bloqueo espiratorio de 2 s: el hueco entre dos esfuerzos dura 3 s y uno más largo sale perturbado.',
-          test: 'validExp',
+          text: 'Tras la perturbación, solicita un bloqueo espiratorio de 2 s y observa cómo el esfuerzo impide estimar PEEP total pasiva. Repite si el bloqueo cae íntegramente entre esfuerzos: una cola estable no demuestra que toda la maniobra fuera pasiva.',
+          test: 'expHoldWithEffort',
         },
         { id: 'trig', text: 'Baja el disparo por flujo a 1 L/min y comprueba si recupera alguna respiración.', test: 'trigger1' },
       ],
@@ -732,7 +736,7 @@ SCENARIOS.push({
       },
       {
         id: 'trig',
-        text: 'Sube el disparo por flujo a 4 L/min, por encima de la fuga a esta PEEP, y comprueba que el autodisparo cesa.',
+        text: 'Sube el disparo por flujo a 4 L/min o más, por encima de la fuga a esta PEEP, y comprueba en el registro que el autodisparo cesa.',
         test: 'trigger4',
       },
     ],
@@ -796,15 +800,15 @@ SCENARIOS.push({
   observe:
     'La Cstat medida a la misma PEEP cambia según el pasado: baja al principio, alta tras mantener PEEP 20 y volver a 10–12. El bucle P-V se ensancha y «Reclutamiento» en Datos del modelo muestra la fracción abierta.',
   caution:
-    'Un único umbral de apertura y cierre por compartimento: el pulmón real reparte el reclutamiento en un continuo de unidades con umbrales dispersos, no en un solo par de presiones.',
+    'La PEEP 20 y el 90 % de reclutamiento son condiciones de este modelo con umbrales únicos. El máximo de Cstat es un resultado mecánico: no identifica una PEEP clínicamente segura ni demuestra beneficio. El modelo no representa intercambio de gases ni hemodinámica.',
   lesson: {
     title: 'Medir dos veces la misma PEEP',
-    text: 'La tabla de PEEP decremental sólo encuentra la compliance ganada si antes hubo apertura: mide bajando, no subiendo.',
+    text: 'Explora la histéresis del modelo: compara la Cstat a la misma PEEP antes y después de la apertura. La secuencia describe mecánica simulada, no una pauta clínica.',
     tasks: [
       { id: 'base', text: 'Mide un bloqueo inspiratorio válido a la PEEP inicial: es la compliance dereclutada.', test: 'holdDereclutada' },
       {
         id: 'recluta',
-        text: 'Sube PEEP a 20 y mantén —o pide un bloqueo— hasta que «Reclutamiento» en Datos del modelo llegue al 90 %.',
+        text: 'En este modelo, sube PEEP a 20 y mantén —o pide un bloqueo— hasta que «Reclutamiento» en Datos del modelo llegue al 90 %.',
         test: 'recruitedFull',
       },
       {

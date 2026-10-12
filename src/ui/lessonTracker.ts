@@ -19,6 +19,7 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
     const l = scenario.lesson;
     put('#lesson-title', l?.title ?? scenario.name);
     put('#lesson-text', l?.text ?? scenario.description);
+    put('#lesson-caution', scenario.caution);
     put('#reflection-question', scenario.question ?? '¿Qué observar?');
     put('#reflection-answer', scenario.answer ?? scenario.observe);
     const tasks = l?.tasks ?? [];

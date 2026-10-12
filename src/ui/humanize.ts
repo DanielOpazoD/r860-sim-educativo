@@ -2,6 +2,7 @@
 import type { MetricSample, SessionEvent } from '../domain/types';
 
 const REASONS: Record<string, string> = {
+  volumenInspiradoInsuficiente: 'volumen inspirado insuficiente para calcular el porcentaje de fuga',
   noPause: 'sin pausa inspiratoria programada: requiere bloqueo',
   pauseTooShort: 'pausa demasiado corta para medir',
   insufficientSamples: 'muestras insuficientes',

@@ -16,6 +16,7 @@ export interface Referencia {
   min: number | null;
   /** Extremo superior, o null si sólo hay suelo. */
   max: number | null;
+  maxExclusive?: boolean;
   texto: string;
   fuente: string;
 }
@@ -37,6 +38,11 @@ export interface Tarjeta {
   estado: 'dentro' | 'fuera' | 'sinRango' | 'sinDato';
   /** Qué significa, o qué hay que hacer para medirlo. */
   nota: string;
+  /**
+   * Verdad del modelo que el equipo no ve: el bloqueo del que sale el número tuvo esfuerzo muscular. El valor es el que
+   * mostró el ventilador; el aviso dice que no es mecánica pasiva. null sin aviso.
+   */
+  aviso?: string | null;
 }
 
 const REF_PPLAT: Referencia = {
@@ -48,6 +54,7 @@ const REF_PPLAT: Referencia = {
 const REF_DRIVING: Referencia = {
   min: null,
   max: 15,
+  maxExclusive: true,
   texto: '< 15 cmH₂O',
   fuente: 'Amato, NEJM 2015',
 };
@@ -64,12 +71,17 @@ function metrica(fr: EngineFrame, clave: string): number | null {
   return m && m.quality === 'valid' ? m.value : null;
 }
 
+/** Lo que el equipo no puede saber y el Aula sí: hubo músculo activo durante la oclusión. */
+export const AVISO_ESFUERZO =
+  'Según el modelo hubo esfuerzo muscular durante este bloqueo: el ventilador lo midió como estable, pero no es mecánica pasiva.';
+
 /** Valor de un bloqueo inspiratorio válido, o null. Los tres derivados sólo existen tras una oclusión. */
-function delBloqueo(fr: EngineFrame, clave: string): { valor: number | null; motivo: string | null } {
+function delBloqueo(fr: EngineFrame, clave: string): { valor: number | null; motivo: string | null; aviso: string | null } {
   const h = fr.procedure.last.inspHold;
-  if (!h || h.quality !== 'valid') return { valor: null, motivo: null };
+  if (!h || h.quality !== 'valid') return { valor: null, motivo: null, aviso: null };
   const v = h.values[clave];
-  return v && v.quality === 'valid' ? { valor: v.value, motivo: v.reason } : { valor: null, motivo: v?.reason ?? null };
+  const aviso = h.passiveMechanicsValid === false ? AVISO_ESFUERZO : null;
+  return v && v.quality === 'valid' ? { valor: v.value, motivo: v.reason, aviso } : { valor: null, motivo: v?.reason ?? null, aviso: null };
 }
 
 /**
@@ -81,7 +93,7 @@ function estado(valor: number | null, decimales: number, ref: Referencia | null)
   if (!ref) return 'sinRango';
   const factor = 10 ** decimales;
   const v = Math.round(valor * factor) / factor;
-  if (ref.max !== null && v > ref.max) return 'fuera';
+  if (ref.max !== null && (ref.maxExclusive ? v >= ref.max : v > ref.max)) return 'fuera';
   if (ref.min !== null && v < ref.min) return 'fuera';
   return 'dentro';
 }
@@ -132,6 +144,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(ppico, 1, null),
     faltaPara: 'Haz un bloqueo inspiratorio para separar la parte resistiva de la elástica.',
     nota: 'Sin rango propio: sube con el flujo y con la resistencia.',
+    aviso: pplat.aviso,
   };
 
   const tarjetaPplat: Tarjeta = {
@@ -146,6 +159,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(pplat.valor, 1, REF_PPLAT),
     faltaPara: 'Se mide ocluyendo al final de la inspiración: bloqueo inspiratorio.',
     nota: 'Con flujo cero sólo queda carga elástica. Exige ocluir.',
+    aviso: pplat.aviso,
   };
 
   const tarjetaDriving: Tarjeta = {
@@ -160,6 +174,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(driving.valor, 1, REF_DRIVING),
     faltaPara: 'Necesita la meseta: bloqueo inspiratorio.',
     nota: 'El VT normalizado por la distensibilidad: ΔP = VT / Cstat. ' + denominador(cstat.motivo),
+    aviso: driving.aviso,
   };
 
   const cstatMl = cstat.valor === null ? null : cstat.valor * 1000;
@@ -176,6 +191,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     estado: estado(cstatMl, 0, REF_CSTAT),
     faltaPara: 'Necesita la meseta: bloqueo inspiratorio.',
     nota: 'Volumen admitido por cmH₂O elástico. Sólo vale con el paciente pasivo.',
+    aviso: cstat.aviso,
   };
 
   return [tarjetaPpico, tarjetaPplat, tarjetaDriving, tarjetaCstat];
@@ -223,7 +239,7 @@ export interface Estres {
 
 /**
  * Bandas del índice de estrés. Por debajo de 0,9 la distensibilidad mejora mientras entra el volumen; por encima de
- * 1,1 empeora. Entre medias la relación presión-volumen es recta dentro del volumen corriente, que es lo que se busca.
+ * 1,1 empeora. Entre medias la forma global es aproximadamente recta; no excluye procesos regionales simultáneos.
  */
 const ESTRES_BAJO = 0.9;
 const ESTRES_ALTO = 1.1;
@@ -264,7 +280,8 @@ export function estres(fr: EngineFrame): Estres {
     valor: b,
     motivo: null,
     regimen: 'recta',
-    lectura: 'La relación presión-volumen es recta dentro del volumen corriente: ni sigue reclutándose ni se sobredistiende.',
+    lectura:
+      'La relación presión-volumen global es aproximadamente recta dentro del volumen corriente; b ≈ 1 no excluye reclutamiento y sobredistensión regionales simultáneos.',
   };
 }
 
