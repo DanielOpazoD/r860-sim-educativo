@@ -54,3 +54,15 @@ La pasividad se vigila desde Pmus conocido del escenario durante toda la oclusi�
 SC-18 ya no exige obtener PEEP total pasiva mientras el músculo invalida la maniobra: enseña a reconocer esa limitación y permite repetir si la oclusión cae entre esfuerzos. La pausa de ciclo también advierte esfuerzo aunque su cola sea estable. No se tocaron reloj/autopausa ni otras lecciones.
 
 Validación clínica y educativa externa pendiente. La referencia primaria fue verificada por la auditoría del padre; esta sesión no la reabrió ni afirma haber superado el captcha. La validación del cierre anterior verifica el código de producto de 9f22643 y las pruebas del árbol final; las cifras históricas de 56e716ed permanecen identificadas por separado. No queda pendiente la ejecución de las cuatro regresiones ni de los E2E de SC-18/pausa. Persisten los límites del modelo y la validación externa pendiente.
+
+### Cierre: frontera de esfuerzo variable
+
+Se reproduce con semilla 1, amplitud 0.2 cmH₂O, 12/min, Ti neural 4 s,
+fase −4.198 s, riseRelax τ=2 s, variabilidad de amplitud 0.5 y pausa 20%.
+El período cambia a 0.802 s dentro del paso [0.800, 0.804]. Antes del ajuste,
+reconsultar el inicio después del final devuelve cero y la meseta queda válida;
+el Pmus inicial era 0.061046 cmH₂O. Se captura una sola vez antes de avanzar y
+se reutiliza para integración y vigilancia. La regresión falla antes (incluida
+la validez fisiológica) y pasa después; los 15 controles de fidelidad también.
+No se modifica el generador ni las ecuaciones. Evidencia: `pmus-boundary-red.log`
+y `pmus-boundary-green.log` en el directorio externo de evidencias de esta tarea.

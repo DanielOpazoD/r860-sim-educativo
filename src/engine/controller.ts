@@ -564,11 +564,13 @@ export class VcController {
       case 'holdInsp':
       case 'holdExp': {
         this.q = 0;
-        p.integrateFlowSource(0, h, this.pmusAt(this.simT)); // oclusión del ventilador: puede salir gas por fuga y redistribuirse entre unidades
+        const pmusStart = this.pmusAt(this.simT);
+        p.integrateFlowSource(0, h, pmusStart); // oclusión del ventilador: puede salir gas por fuga y redistribuirse entre unidades
         this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
         // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
-        this.paw = p.pawForFlow(0, this.pmusAt(this.simT + h));
-        const effortDuringOcclusion = Math.max(Math.abs(this.pmusAt(this.simT)), Math.abs(this.pmusAt(this.simT + h))) > 0.05;
+        const pmusEnd = this.pmusAt(this.simT + h);
+        this.paw = p.pawForFlow(0, pmusEnd);
+        const effortDuringOcclusion = Math.max(Math.abs(pmusStart), Math.abs(pmusEnd)) > 0.05;
         if (this.phase === 'inspPause' && this.breath) {
           this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
           if (effortDuringOcclusion) this.breath.effortDuringPause = true;
