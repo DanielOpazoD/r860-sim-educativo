@@ -1,7 +1,7 @@
 /** Estado de la lección (objetivos cumplidos, banderas y marcas de tiempo), su pintado en Aula y sus avisos. */
 import type { AppContext, LessonTracker } from './context';
 import { $, element, iconNode, put } from './dom';
-import { avisoDeObjetivo, nextCompletedTask, tareasCumplidasAlAbrir } from './lesson';
+import { avisoDeObjetivo, nextCompletedTask, tareasCumplidasAlAbrir, updateLessonFlags } from './lesson';
 
 export function createLessonTracker(ctx: AppContext): LessonTracker {
   const done = new Set<string>();
@@ -71,7 +71,12 @@ export function createLessonTracker(ctx: AppContext): LessonTracker {
     evaluate() {
       const frame = ctx.frame,
         scenario = ctx.scenario;
-      if (!frame || !scenario.lesson || ctx.fixtureId || sessionImported) return;
+      if (!frame || ctx.fixtureId || sessionImported) return;
+      // Un caso clínico no tiene objetivos que anunciar, pero sus criterios leen la historia (reclutamiento, disparos).
+      if (!scenario.lesson) {
+        if (scenario.clinical) updateLessonFlags(frame, flags);
+        return;
+      }
       const tasks = scenario.lesson.tasks;
       const task = nextCompletedTask(tasks, done, {
         frame,

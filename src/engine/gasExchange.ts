@@ -54,7 +54,7 @@ interface AlveolarBreath {
   vaL: number;
 }
 
-/** Ventana de las respiraciones con que se informa la V̇A del último minuto (s). */
+/** Antigüedad máxima de las respiraciones que cuentan para la V̇A actual (s). */
 const VA_WINDOW_S = 60;
 /**
  * Con PaCO₂ inicial de equilibrio, éste se fija con la ventilación de los primeros segundos y no sólo con la primera
@@ -67,7 +67,7 @@ export interface GasState {
   paco2: number;
   ph: number;
   hco3: number;
-  /** Ventilación alveolar del último minuto (L/min), o null antes de completar una respiración. */
+  /** Ventilación alveolar actual (L/min; últimas respiraciones), o null antes de completar una respiración. */
   vaLMin: number | null;
   /** Fracción de espacio muerto de la última respiración (VD/VT pulmonar), o null sin respiración. */
   vdVt: number | null;
@@ -106,8 +106,8 @@ export class GasExchange {
     while (this.breaths.length && this.breaths[0]!.endS < endS - VA_WINDOW_S) this.breaths.shift();
     if (this.pendingEquilibrium) {
       if (endS >= EQUILIBRIUM_WINDOW_S) this.pendingEquilibrium = false;
-      // La V̇A de todas las respiraciones hasta ahora (la primera, si es la única): el equilibrio de lo programado.
-      const va = this.breaths.length > 1 ? this.vaLMin(endS) : durationS > 0 ? (vaL * 60) / durationS : null;
+      // La V̇A de las últimas respiraciones (el atrapamiento ya asentado), o de la primera si es la única.
+      const va = this.vaLMin(endS);
       const target = va === null ? null : steadyPaco2(p.vco2MlMin, va);
       if (target !== null) {
         this.paco2 = target;
@@ -119,14 +119,15 @@ export class GasExchange {
   }
 
   /**
-   * V̇A del último minuto: el volumen alveolar de las respiraciones terminadas en la ventana sobre el tiempo que
-   * cubren, de modo que una ventilación regular da exactamente (VT − VD)·FR sin depender de la fase. Una respiración
-   * en curso no cuenta como pausa; si pasa más de un ciclo medio sin respiraciones (apnea), ese tiempo sí cuenta y la
-   * V̇A cae hasta 0 cuando las últimas salen de la ventana.
+   * V̇A actual: el volumen alveolar de las últimas respiraciones (hasta tres, terminadas en el último minuto) sobre el
+   * tiempo que cubren. Responde en pocas respiraciones a un cambio de programación —el equilibrio que se muestra y se
+   * evalúa es el de la ventilación de ahora, no un promedio con la anterior— y una ventilación regular da exactamente
+   * (VT − VD)·FR sin depender de la fase. Una respiración en curso no cuenta como pausa; si pasa más de un ciclo medio
+   * sin respiraciones (apnea), ese tiempo sí cuenta y la V̇A cae hasta 0 cuando la última sale del minuto.
    */
   vaLMin(nowS: number): number | null {
     if (!this.breaths.length) return null;
-    const recientes = this.breaths.filter((b) => b.endS >= nowS - VA_WINDOW_S);
+    const recientes = this.breaths.filter((b) => b.endS >= nowS - VA_WINDOW_S).slice(-3);
     if (!recientes.length) return 0;
     const desde = recientes[0]!.startS,
       cubierto = recientes.at(-1)!.endS - desde,

@@ -274,7 +274,7 @@ Simplificaciones declaradas: no hay inertancia ni ondas de presión; en las fase
 
 El motor deriva una PaCO₂ y un pH del paciente virtual a partir de la ventilación que **recibe el pulmón**. No es una medición del ventilador —el equipo no mide gases arteriales— y por eso no aparece en el monitor: se lee en Aula · Fundamentos · Ventilación, rotulada «Gasometría (modelo)» (E-096, P). No realimenta la mecánica: las curvas y las mediciones son idénticas con cualquier gasometría.
 
-**Ventilación alveolar.** En cada respiración cuenta el volumen que sale del pulmón (las dos unidades juntas, de modo que el pendelluft entre ellas no suma), menos el espacio muerto en serie: VA = máx(0, V_espirado_pulmón − VD). La fuga y el gas comprimido en el circuito pasan por el sensor del ventilador pero no por el alvéolo, así que no ventilan. La V̇A publicada es la suma de las respiraciones terminadas en el último minuto sobre el tiempo que cubren; en apnea ese tiempo crece y la V̇A cae hasta 0 (E-094, P).
+**Ventilación alveolar.** En cada respiración cuenta el volumen que sale del pulmón (las dos unidades juntas, de modo que el pendelluft entre ellas no suma), menos el espacio muerto en serie: VA = máx(0, V_espirado_pulmón − VD). La fuga y el gas comprimido en el circuito pasan por el sensor del ventilador pero no por el alvéolo, así que no ventilan. La V̇A publicada es la de las últimas respiraciones (hasta tres, del último minuto) sobre el tiempo que cubren, de modo que el equilibrio que se muestra y que evalúan los casos es el de la ventilación de ahora y responde en pocas respiraciones a un cambio; en apnea el tiempo sin respiraciones cuenta y la V̇A cae hasta 0 (E-094, P).
 
 **Equilibrio y cinética.** Un depósito equivalente de CO₂ de capacidad C:
 

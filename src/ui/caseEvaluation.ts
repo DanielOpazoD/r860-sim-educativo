@@ -65,6 +65,17 @@ export const CASE_TESTS: Record<string, CaseTest> = {
     const v = c.frame.truth.gas?.paco2Target ?? null;
     return v !== null && v >= p.min! && v <= p.max!;
   },
+  /**
+   * Hay una Cstat medida (bloqueo pasivo, anotado en la titulación) antes de la primera apertura completa. Se lee de la
+   * historia: al entregar, el último bloqueo ya es el posterior a la apertura.
+   */
+  cstatBeforeOpening: (c) => {
+    const hist = (c.flags.titulacion as { t?: number }[] | undefined) ?? [];
+    const tRec = c.flags.recruitedAltaMs as number | undefined;
+    return hist.some((p) => p.t !== undefined && p.t >= c.lessonStartMs && (tRec === undefined || p.t < tRec));
+  },
+  /** PEEP programada ≥ p.min. */
+  peepMin: (c, p) => c.frame.settings.peep !== 'off' && c.frame.settings.peep >= p.min!,
   /** Frecuencia programada ≤ p.max. */
   rrMax: (c, p) => c.frame.settings.rr <= p.max!,
   /** En el último minuto disparan al menos p.fraction de los esfuerzos del paciente. */

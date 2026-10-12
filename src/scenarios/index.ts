@@ -931,6 +931,14 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-115, -90], maxVolume: [280, 290] } },
   // Casos clínicos: Ppico = PEEP + R·Q + VT/C con la mecánica de cada caso.
   'CC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [27, 30], peakInspFlow: [27, 31], maxVolume: [440, 460] } },
+  'CC-02': { atSimTimeMs: 18_000, ranges: { ppeak: [29, 33], peakInspFlow: [29, 31], peakExpFlow: [-25, -17], maxVolume: [490, 510] } },
+  'CC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [33, 36], peakInspFlow: [27, 31], maxVolume: [590, 610] } },
+  'CC-04': { atSimTimeMs: 18_000, ranges: { ppeak: [20, 24], peakInspFlow: [20, 23], maxVolume: [390, 410] } },
+  'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
+  // Soporte de presión: Ppico = PEEP + soporte; el flujo y el volumen dependen del esfuerzo.
+  'CC-06': { atSimTimeMs: 18_000, ranges: { ppeak: [24, 26], peakInspFlow: [65, 95] } },
+  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 16], maxVolume: [300, 400] } },
+  'CC-08': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], peakInspFlow: [45, 58] } },
 };
 
 // Los casos clínicos son escenarios con bloque `clinical`: comparten la carga y el motor, no el catálogo guiado.
