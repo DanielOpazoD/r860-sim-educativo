@@ -18,22 +18,21 @@
     grid-template-columns: 330px minmax(0, 1fr);
   }
 }
-/* Mientras el caso no se entrega, la mecánica del paciente es lo que se diagnostica: Explorar sólo muestra el aviso. */
-.instructor.case-locked #instructor-patient,
-#instructor-case.active ~ .case-lock-note {
-  display: none;
-}
-.case-lock-note {
-  margin: 12px 16px 0;
-  padding: 10px 12px;
+/* Durante un caso sin entregar, el panel Paciente sigue operativo: una línea discreta recuerda que cambiarlo altera el caso. */
+.case-note {
+  margin: 0 0 10px;
+  padding: 6px 10px;
   border-radius: 8px;
-  background: var(--shell-raised);
-  color: var(--shell-muted);
-  font-size: var(--type-sm);
-  line-height: 1.5;
+  background: var(--shell-warning-soft);
+  color: var(--shell-warning);
+  font-size: var(--type-xs);
+  line-height: 1.45;
 }
-.case-lock-note p {
-  margin: 0 0 4px;
+.case-note .case-link {
+  font-size: var(--type-xs);
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
 }
 .aula-kicker {
   font-size: var(--type-xs);
@@ -50,101 +49,80 @@
   z-index: 2;
   background: var(--shell-surface);
 }
-/* Gasometría del modelo: inicio, ahora y hacia dónde tiende, con su trayectoria. Rotulada «modelo»: el equipo no la mide. */
+/* Gasometría del modelo en dos líneas: ahora e inicio, con su trayectoria. Rotulada «modelo»: el equipo no la mide. */
 .case-gas-host {
-  padding: 10px 16px 8px;
+  padding: 6px 16px;
   border-bottom: 1px solid var(--shell-line);
   background: var(--shell-raised);
+}
+.gas-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 2px 12px;
+  font-variant-numeric: tabular-nums;
 }
 .gas-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
 }
 .gas-title {
-  font-size: var(--type-xs);
+  font-size: var(--type-2xs);
   font-weight: 600;
   letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: var(--shell-muted);
 }
 .gas-tag {
   font-size: var(--type-2xs);
   color: var(--shell-muted);
-  padding: 0 6px;
+  padding: 0 5px;
   border: 1px solid var(--shell-line);
   border-radius: 999px;
 }
-.gas-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-variant-numeric: tabular-nums;
-}
-.gas-table thead th {
-  font-size: var(--type-2xs);
-  font-weight: 500;
-  color: var(--shell-muted);
-  text-align: right;
-  padding: 0 0 2px;
-}
-.gas-table tbody th {
-  text-align: left;
-  font-size: var(--type-sm);
-  font-weight: 600;
-  color: var(--shell-text);
-  padding: 1px 0;
-  white-space: nowrap;
-}
-.gas-table tbody th small {
-  font-size: var(--type-2xs);
-  font-weight: 400;
-  color: var(--shell-muted);
-  margin-left: 4px;
-}
-.gas-table td {
-  text-align: right;
-  font-size: var(--type-md);
-  color: var(--shell-muted);
-  padding: 1px 0 1px 10px;
-}
-.gas-table td.gas-now {
-  font-size: var(--type-lg);
-  font-weight: 600;
-  color: var(--shell-text);
-}
-.gas-table td.gas-target {
-  color: var(--shell-accent);
-  font-weight: 600;
-}
 .gas-trend {
+  justify-self: end;
   display: block;
-  width: 100%;
-  height: 34px;
-  margin: 4px 0 2px;
+  width: 120px;
+  height: 18px;
 }
 .gas-trend-line {
   fill: none;
   stroke: var(--shell-text);
-  stroke-width: 1.6;
+  stroke-width: 1.4;
   stroke-linejoin: round;
 }
 .gas-trend-now {
   fill: var(--shell-text);
 }
-.gas-trend-target {
-  stroke: var(--shell-accent);
-  stroke-width: 1.2;
-  stroke-dasharray: 4 3;
-}
-.gas-trend-label {
-  fill: var(--shell-accent);
-  font-size: var(--type-2xs);
-  font-weight: 600;
-}
 .gas-trend-change {
   stroke: var(--shell-muted);
   stroke-width: 1;
   stroke-dasharray: 2 2;
+}
+.gas-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+.gas-now {
+  color: var(--shell-text);
+  white-space: nowrap;
+}
+.gas-now small {
+  font-size: var(--type-2xs);
+  color: var(--shell-muted);
+}
+.gas-now b {
+  font-size: var(--type-lg);
+  font-weight: 600;
+}
+.gas-start {
+  font-size: var(--type-2xs);
+  color: var(--shell-muted);
+  white-space: nowrap;
 }
 
 /* Eventos: compactos, en una cuadrícula de tres; la descripción va en la ayuda emergente. */

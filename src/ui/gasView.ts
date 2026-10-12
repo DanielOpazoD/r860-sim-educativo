@@ -1,9 +1,9 @@
 /**
- * Gasometría del modelo en el panel lateral: cómo empezó, cómo está y hacia dónde va con la ventilación actual, con la
- * trayectoria de la PaCO₂ y la marca del último cambio. El equipo no la mide: se rotula «modelo» y nunca va al monitor.
+ * Gasometría del modelo en el panel lateral, en dos líneas: PaCO₂ y pH de ahora con su valor al inicio, y la trayectoria
+ * de la PaCO₂ con la marca del último cambio. El equipo no la mide: se rotula «modelo» y nunca va al monitor.
  */
 import { formatNumber as f } from '../domain/units';
-import { EQUILIBRIUM_WINDOW_S, phFrom } from '../engine/gasExchange';
+import { EQUILIBRIUM_WINDOW_S } from '../engine/gasExchange';
 import type { AppContext } from './context';
 import { $, element } from './dom';
 
@@ -23,33 +23,27 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string,
   return el;
 }
 
-/** Trayectoria de la PaCO₂: línea de lo ocurrido, punto de ahora, raya del equilibrio y marca del último cambio. */
-function tendencia(puntos: Punto[], objetivo: number | null, cambioS: number | null, resumen: string): SVGSVGElement {
-  const W = 300,
-    H = 34,
-    PAD = 4;
+/** Trayectoria de la PaCO₂ en miniatura: lo ocurrido, el punto de ahora y la marca del último cambio. */
+function tendencia(puntos: Punto[], cambioS: number | null, resumen: string): SVGSVGElement {
+  const W = 120,
+    H = 18,
+    PAD = 2;
   const raiz = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'gas-trend', role: 'img', 'aria-label': resumen });
   const t0 = puntos[0]!.t;
   const t1 = Math.max(puntos.at(-1)!.t, t0 + 60);
-  const valores = puntos.map((p) => p.paco2).concat(objetivo === null ? [] : [objetivo]);
-  const lo = Math.min(...valores) - 2,
-    hi = Math.max(...valores) + 2;
-  const x = (t: number): number => PAD + ((W - 2 * PAD - 34) * (t - t0)) / (t1 - t0);
+  const valores = puntos.map((p) => p.paco2);
+  const lo = Math.min(...valores) - 1,
+    hi = Math.max(...valores) + 1;
+  const x = (t: number): number => PAD + ((W - 2 * PAD) * (t - t0)) / (t1 - t0);
   const y = (v: number): number => H - PAD - ((H - 2 * PAD) * (v - lo)) / (hi - lo);
   if (cambioS !== null && cambioS > t0) {
-    raiz.append(svg('line', { x1: x(cambioS), x2: x(cambioS), y1: PAD, y2: H - PAD, class: 'gas-trend-change' }));
-  }
-  if (objetivo !== null) {
-    raiz.append(svg('line', { x1: PAD, x2: W - 34, y1: y(objetivo), y2: y(objetivo), class: 'gas-trend-target' }));
-    const etiqueta = svg('text', { x: W - 30, y: y(objetivo) + 3, class: 'gas-trend-label' });
-    etiqueta.textContent = f(objetivo, 0);
-    raiz.append(etiqueta);
+    raiz.append(svg('line', { x1: x(cambioS), x2: x(cambioS), y1: 0, y2: H, class: 'gas-trend-change' }));
   }
   raiz.append(
     svg('polyline', { points: puntos.map((p) => `${x(p.t).toFixed(1)},${y(p.paco2).toFixed(1)}`).join(' '), class: 'gas-trend-line' }),
   );
   const ultimo = puntos.at(-1)!;
-  raiz.append(svg('circle', { cx: x(ultimo.t), cy: y(ultimo.paco2), r: 2.6, class: 'gas-trend-now' }));
+  raiz.append(svg('circle', { cx: x(ultimo.t), cy: y(ultimo.paco2), r: 2, class: 'gas-trend-now' }));
   return raiz;
 }
 
@@ -98,50 +92,38 @@ export function createGasView(ctx: AppContext): { render(): void } {
       }
       return;
     }
-    const objetivo = g.paco2Target;
-    const phObjetivo = objetivo === null ? null : phFrom(g.hco3, objetivo);
     const contexto = ctx.lesson.context();
     const cambioMs = contexto ? Math.max(contexto.patientChangeMs, contexto.settingsChangeMs) : -1;
     const cambioS = cambioMs >= 0 ? cambioMs / 1000 : null;
-    const nueva = JSON.stringify([
-      f(inicio.paco2, 0),
-      f(inicio.ph, 2),
-      f(g.paco2, 0),
-      f(g.ph, 2),
-      objetivo === null ? null : f(objetivo, 0),
-      phObjetivo === null ? null : f(phObjetivo, 2),
-      puntos.length,
-      cambioS,
-    ]);
+    const nueva = JSON.stringify([f(inicio.paco2, 0), f(inicio.ph, 2), f(g.paco2, 0), f(g.ph, 2), puntos.length, cambioS]);
     if (nueva === firma) return;
     firma = nueva;
 
-    const celda = (texto: string, clase = ''): HTMLTableCellElement => element('td', clase, texto);
-    const fila = (nombre: string, unidad: string, a: string, b: string, c: string): HTMLTableRowElement => {
-      const th = element('th', '', nombre, unidad ? element('small', '', unidad) : '');
-      th.scope = 'row';
-      return element('tr', '', th, celda(a), celda(b, 'gas-now'), celda(c, 'gas-target'));
-    };
-    const cabecera = (texto: string): HTMLTableCellElement => {
-      const th = element('th', '', texto);
-      th.scope = 'col';
-      return th;
-    };
-    const tabla = element(
-      'table',
-      'gas-table',
-      element('thead', '', element('tr', '', element('td', ''), cabecera('Inicio'), cabecera('Ahora'), cabecera('Tiende a'))),
+    const valor = (nombre: string, ahora: string, unidad: string, alInicio: string): HTMLElement =>
       element(
-        'tbody',
-        '',
-        fila('PaCO₂', 'mmHg', f(inicio.paco2, 0), f(g.paco2, 0), objetivo === null ? '↑' : f(objetivo, 0)),
-        fila('pH', '', f(inicio.ph, 2), f(g.ph, 2), phObjetivo === null ? '↓' : f(phObjetivo, 2)),
-      ),
-    );
-    const resumen = `PaCO₂ de ${f(inicio.paco2, 0)} al inicio a ${f(g.paco2, 0)} mmHg ahora${objetivo === null ? ', subiendo' : `; tiende a ${f(objetivo, 0)}`}.`;
-    const cabeza = element('header', 'gas-head', element('span', 'gas-title', 'Gasometría'), element('small', 'gas-tag', 'modelo'));
+        'span',
+        'gas-item',
+        element(
+          'span',
+          'gas-now',
+          element('small', '', nombre),
+          ' ',
+          element('b', '', ahora),
+          unidad ? element('small', '', ` ${unidad}`) : '',
+        ),
+        element('small', 'gas-start', `inicio ${alInicio}`),
+      );
+    const resumen = `PaCO₂ de ${f(inicio.paco2, 0)} al inicio a ${f(g.paco2, 0)} mmHg ahora.`;
+    const cabeza = element('span', 'gas-head', element('span', 'gas-title', 'Gasometría'), element('small', 'gas-tag', 'modelo'));
     host.replaceChildren(
-      element('div', 'gas-card', cabeza, tabla, ...(puntos.length > 1 ? [tendencia(puntos, objetivo, cambioS, resumen)] : [])),
+      element(
+        'div',
+        'gas-card',
+        cabeza,
+        puntos.length > 1 ? tendencia(puntos, cambioS, resumen) : element('span', ''),
+        valor('PaCO₂', f(g.paco2, 0), 'mmHg', f(inicio.paco2, 0)),
+        valor('pH', f(g.ph, 2), '', f(inicio.ph, 2)),
+      ),
     );
   }
 

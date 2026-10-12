@@ -51,7 +51,7 @@ test.describe('CPAP/PS', () => {
     await open(page, { scenario: 'SC-19', speed: 4 });
     await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
     await expect.poll(async () => (await frame(page)).metrics.rrSpont?.value ?? 0, { timeout: 30_000 }).toBeGreaterThan(10);
-    // Apnea desde Eventos, en el panel Explorar: el esfuerzo se apaga; a los 20 s de tiempo simulado, alarma y respaldo.
+    // Apnea desde Eventos, en el panel Paciente: el esfuerzo se apaga; a los 20 s de tiempo simulado, alarma y respaldo.
     await showPanel(page, 'patient');
     await page.click('[data-event="apnea"]');
     await expect(page.locator('#event-apnea')).toHaveAttribute('aria-pressed', 'true');

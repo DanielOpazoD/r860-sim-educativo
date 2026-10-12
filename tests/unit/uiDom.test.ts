@@ -66,7 +66,9 @@ describe('Casos, Aula y texto recibido', () => {
       cases.render();
       expect($('#instructor-case .case-title').textContent).toBe(hostile);
       expect($('#instructor-case .case-vignette').textContent).toBe(hostile);
-      expect($('#instructor').classList.contains('case-locked')).toBe(true);
+      // El panel Paciente sigue operativo durante el caso; una línea avisa que cambiarlo altera el caso.
+      expect($('#case-lock-note').hidden).toBe(false);
+      expect($('#instructor-patient').contains($('#case-lock-note'))).toBe(true);
       expect($('#learn-case').hidden).toBe(false);
       expect($('#learn-case-body').textContent).toContain('Se revela al entregar');
       expect($<HTMLButtonElement>('#instructor-case [data-action="submitCase"]').disabled).toBe(true);
@@ -76,7 +78,7 @@ describe('Casos, Aula y texto recibido', () => {
 
       cases.submitCase();
       expect(ctx.lesson.flags.caseResult).toMatchObject({ answer: { id: base.clinical!.options![0]!.id } });
-      expect($('#instructor').classList.contains('case-locked')).toBe(false);
+      expect($('#case-lock-note').hidden).toBe(true);
       expect($('#learn-case-body .case-reveal').textContent).toBe(hostile);
       expect($('#learn-case-body').querySelector('img')).toBeNull();
       expect($('#instructor-case [data-action="restartCase"]')).not.toBeNull();
@@ -96,11 +98,12 @@ describe('Casos, Aula y texto recibido', () => {
     const { ctx } = harness;
     const cases = createCaseSpace(ctx, { loadScenario: vi.fn(), switchTab: vi.fn() });
     cases.init();
-    // Inicio, ahora y hacia dónde tiende, rotulado como del modelo.
-    expect([...document.querySelectorAll('#case-gas thead th')].map((th) => th.textContent)).toEqual(['Inicio', 'Ahora', 'Tiende a']);
+    // Ahora e inicio de PaCO₂ y pH, rotulados como del modelo; sin columna de equilibrio ni avisos.
+    expect($('#case-gas').querySelectorAll('.gas-item')).toHaveLength(2);
     expect($('#case-gas').textContent).toContain('PaCO₂');
+    expect($('#case-gas').textContent).toContain('inicio');
+    expect($('#case-gas').textContent).not.toContain('Tiende');
     expect($('#case-gas .gas-tag').textContent).toBe('modelo');
-    expect($('#case-gas').querySelector('.gas-note, .gas-state')).toBeNull();
     $<HTMLTextAreaElement>('#reflection-notes').value = 'reflexión';
     ctx.scenario = { ...SCENARIOS.find((s) => s.clinical)!, question: hostile };
     ctx.lesson.render();
