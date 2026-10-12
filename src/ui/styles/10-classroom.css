@@ -367,6 +367,7 @@
 .classroom .edu-bloque h3,
 .classroom .edu-bloque header b,
 .classroom .edu-formula b,
+.classroom .edu-gases dd,
 .classroom .edu-ref,
 .classroom .edu-more summary {
   color: var(--shell-text);
@@ -383,6 +384,9 @@
 .classroom .edu-pie,
 .classroom .edu-ref small,
 .classroom .edu-bloque p,
+.classroom .edu-bloque header b small,
+.classroom .edu-gases dt,
+.classroom .edu-gases dd small,
 .classroom .edu-card header b small {
   color: var(--shell-muted);
   font-size: var(--type-md);
