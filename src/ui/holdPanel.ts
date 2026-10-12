@@ -74,6 +74,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     put('#hold-second-label', insp ? 'Cstat' : 'PEEPi');
     put('#hold-second-unit', insp ? 'mL/cmH₂O' : 'cmH₂O');
     const helpBtn = $('#hold-help-button');
+    helpBtn.setAttribute('aria-label', `Información sobre bloqueo ${insp ? 'inspiratorio' : 'espiratorio'}`);
     if (helpBtn.dataset.helpKey !== key) {
       helpBtn.dataset.helpKey = key;
       $('#hold-help').replaceChildren(...helpNodes(key));

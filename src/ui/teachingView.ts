@@ -258,8 +258,8 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: 
   const mensajeCurva = puntos.length < 2 ? grafico : `${grafico}<p class="edu-nota">${tituloCurva}</p>`;
   const porQueCurva =
     puntos.length < 2
-      ? `${tituloCurva} El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.`
-      : 'El máximo es el compromiso entre reclutar lo que falta y no sobredistender lo que ya está abierto.';
+      ? `${tituloCurva} El máximo es la mayor Cstat de los puntos medidos en este modelo; no identifica una PEEP clínicamente segura ni demuestra beneficio.`
+      : 'El máximo es la mayor Cstat de los puntos medidos en este modelo; no identifica una PEEP clínicamente segura ni demuestra beneficio.';
   return (
     `<div class="edu-prot">` +
     `<section class="edu-bloque">` +
@@ -320,7 +320,16 @@ export function createTeachingView(ctx: AppContext): TeachingView {
     const tapadas = ctx.examMode
       ? ['ppeak', 'peepe', 'pplat', 'driving', 'cstat', 'vte', 'rr', 'mechPower', 'stressIndex'].filter(oculto)
       : [];
-    const nueva = JSON.stringify([pantalla, t.map((x) => [x.valor, x.estado, x.sustituida]), niveles(fr), estres(fr), puntos, tapadas]);
+    const nueva = JSON.stringify([
+      ctx.scenario.id,
+      ctx.scenario.caution,
+      pantalla,
+      t.map((x) => [x.valor, x.estado, x.sustituida]),
+      niveles(fr),
+      estres(fr),
+      puntos,
+      tapadas,
+    ]);
     if (nueva === firma) return;
     firma = nueva;
     $('#teaching-body').innerHTML =
@@ -329,6 +338,7 @@ export function createTeachingView(ctx: AppContext): TeachingView {
           `<p class="edu-pie">Las referencias valen para un paciente <b>pasivo</b> en ventilación controlada: con esfuerzo ` +
           `espontáneo la meseta y la presión motriz dejan de medir lo que se cree que miden.</p>`
         : proteccionHTML(fr, puntos, oculto);
+    $('#teaching-body').insertAdjacentHTML('afterbegin', `<p class="notice-box">${esc(ctx.scenario.caution)}</p>`);
   }
 
   return { render };

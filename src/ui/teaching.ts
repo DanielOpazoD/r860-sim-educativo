@@ -16,6 +16,7 @@ export interface Referencia {
   min: number | null;
   /** Extremo superior, o null si sólo hay suelo. */
   max: number | null;
+  maxExclusive?: boolean;
   texto: string;
   fuente: string;
 }
@@ -48,6 +49,7 @@ const REF_PPLAT: Referencia = {
 const REF_DRIVING: Referencia = {
   min: null,
   max: 15,
+  maxExclusive: true,
   texto: '< 15 cmH₂O',
   fuente: 'Amato, NEJM 2015',
 };
@@ -81,7 +83,7 @@ function estado(valor: number | null, decimales: number, ref: Referencia | null)
   if (!ref) return 'sinRango';
   const factor = 10 ** decimales;
   const v = Math.round(valor * factor) / factor;
-  if (ref.max !== null && v > ref.max) return 'fuera';
+  if (ref.max !== null && (ref.maxExclusive ? v >= ref.max : v > ref.max)) return 'fuera';
   if (ref.min !== null && v < ref.min) return 'fuera';
   return 'dentro';
 }
@@ -223,7 +225,7 @@ export interface Estres {
 
 /**
  * Bandas del índice de estrés. Por debajo de 0,9 la distensibilidad mejora mientras entra el volumen; por encima de
- * 1,1 empeora. Entre medias la relación presión-volumen es recta dentro del volumen corriente, que es lo que se busca.
+ * 1,1 empeora. Entre medias la forma global es aproximadamente recta; no excluye procesos regionales simultáneos.
  */
 const ESTRES_BAJO = 0.9;
 const ESTRES_ALTO = 1.1;
@@ -264,7 +266,8 @@ export function estres(fr: EngineFrame): Estres {
     valor: b,
     motivo: null,
     regimen: 'recta',
-    lectura: 'La relación presión-volumen es recta dentro del volumen corriente: ni sigue reclutándose ni se sobredistiende.',
+    lectura:
+      'La relación presión-volumen global es aproximadamente recta dentro del volumen corriente; b ≈ 1 no excluye reclutamiento y sobredistensión regionales simultáneos.',
   };
 }
 

@@ -167,7 +167,7 @@ export const LESSON_TESTS: Record<string, (c: LessonContext) => boolean> = {
   },
   /** SC-22: la fuga se ve en la tabla: más del 15 % del VT inspirado no vuelve. */
   leakSeen: (c) => (c.frame.metrics.leakPct?.value ?? 0) >= 0.15,
-  /** Disparo por flujo subido a 4 L/min o más: por encima de la fuga a la PEEP, el autodisparo cesa. */
+  /** Práctica del ajuste de disparo por flujo a 4 L/min o más; no evalúa el cese del autodisparo. */
   trigger4: (c) => !c.frame.settings.triggerByPressure && c.frame.settings.flowTrigger >= 4 / 60 - 1e-9,
   /** SC-23: se vio la alarma de desconexión. */
   disconnectSeen: (c) => !!c.flags.disconnectSeen,
