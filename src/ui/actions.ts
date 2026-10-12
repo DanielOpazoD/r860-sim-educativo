@@ -144,7 +144,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
   const openHelp = (tab: string): void => ctx.dialog.open('help', 'Guía del simulador', helpHTML(tab), CLOSE_BTN, 'wide');
 
   const handlers: Record<CommandId, () => void | Promise<unknown>> = {
-    classroom: () => fx.classroom.open(),
+    classroom: () => fx.classroom.open('theory'),
+    cases: () => fx.classroom.open('library'),
+    caseObjectives: () => fx.classroom.open('lesson'),
     simulator: () => fx.classroom.simulator(),
     practice: () => fx.classroom.practice(),
     stopPractice: () => fx.classroom.stopPractice(),
@@ -166,9 +168,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       );
     },
     'welcome-free': () => ctx.dialog.close(),
-    'welcome-guided': async () => {
+    'welcome-guided': () => {
       ctx.dialog.close();
-      await action('scenarios');
+      fx.classroom.open('library');
     },
     teacher: () => {
       fx.classroom.simulator();

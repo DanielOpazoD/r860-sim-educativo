@@ -1216,9 +1216,10 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await expect(page.locator('#dialog-title')).toHaveText('Bienvenido a Ventila Lab');
     await expect(page.locator('#welcome-free')).toBeFocused();
     await expect(page.locator('#dialog-content')).toContainText('Un ventilador virtual para aprender mecánica respiratoria sin riesgo.');
+    // La práctica guiada lleva al catálogo de Casos.
     await page.click('#welcome-guided');
-    await expect(page.locator('#dialog-title')).toHaveText('Escenarios y paciente');
-    await expect(page.locator('#scenario-start .scenario-card')).toHaveCount(8);
+    await expect(page.locator('#space-cases')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('[data-aula-case="SC-01"]')).toBeVisible();
     await page.reload();
     await page.waitForFunction(() => !!window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
     await expect(page.locator('#app-dialog')).toBeHidden();

@@ -13,8 +13,7 @@ test('el build carga Fundamentos y Biblioteca sólo al abrirlos y reutiliza sus 
   expect(html).not.toContain('%ENGINE_VERSION%');
   expect(modules).toEqual([]);
   await expect(page.locator('#version-tag')).toContainText(`v${ENGINE_VERSION}`);
-  await openAula(page, 'lesson');
-  expect(modules).toEqual([]);
+  // Casos se abre en su catálogo (que es la Biblioteca); por eso se entra primero al Aula, que no la carga.
   await openAula(page, 'theory');
   await expect(page.locator('#teaching-body svg').first()).toBeVisible();
   expect(modules.filter((url) => url.includes('teachingView-'))).toHaveLength(1);

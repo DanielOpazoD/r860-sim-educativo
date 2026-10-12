@@ -3,28 +3,29 @@ import { debriefNodes } from './dialogs';
 import { $, $$, element, put } from './dom';
 import { createLazyView } from './lazyView';
 
-const SECTIONS = ['lesson', 'theory', 'questions', 'exam', 'results', 'library'] as const;
+const SECTIONS = ['theory', 'questions', 'library', 'lesson', 'exam', 'results'] as const;
+/** Dos espacios con un mismo contenedor: el Aula para comprender, Casos para practicar y evaluarse. */
+const SPACE: Record<Section, 'aula' | 'casos'> = {
+  theory: 'aula',
+  questions: 'aula',
+  library: 'casos',
+  lesson: 'casos',
+  exam: 'casos',
+  results: 'casos',
+};
 const HEADINGS: Record<Section, { kicker: string; title: string; lead: string }> = {
-  lesson: {
-    kicker: 'VENTILA LAB · APRENDIZAJE',
-    title: 'Comprender. Practicar. Reflexionar.',
-    lead: 'Un espacio para aprender, conectado con tu simulación.',
-  },
-  theory: { kicker: 'FUNDAMENTOS', title: 'Las presiones que mides y lo que significan', lead: '' },
-  questions: { kicker: 'REFLEXIÓN', title: 'Observa y explica', lead: '' },
-  exam: { kicker: 'EXAMEN', title: 'Primero estima. Después compara.', lead: '' },
-  results: { kicker: 'RESULTADOS', title: 'Resumen de tu práctica', lead: '' },
-  library: {
-    kicker: 'BIBLIOTECA',
-    title: 'Casos para practicar',
-    lead: 'Elegir un caso prepara paciente, ajustes iniciales y objetivos nuevos.',
-  },
+  theory: { kicker: 'AULA · FUNDAMENTOS', title: 'Las presiones que mides y lo que significan', lead: '' },
+  questions: { kicker: 'AULA · REFLEXIÓN', title: 'Observa y explica', lead: '' },
+  library: { kicker: 'CASOS', title: 'Elige un caso', lead: 'Cada caso prepara el paciente, los ajustes iniciales y sus objetivos.' },
+  lesson: { kicker: 'CASOS · CASO ACTUAL', title: 'Objetivos del caso', lead: '' },
+  exam: { kicker: 'CASOS · EXAMEN', title: 'Primero estima. Después compara.', lead: '' },
+  results: { kicker: 'CASOS · RESULTADOS', title: 'Resumen de tu práctica', lead: '' },
 };
 type Section = (typeof SECTIONS)[number];
 
 export interface Classroom {
   init(): void;
-  open(section?: Section): void;
+  open(section: Section): void;
   simulator(): void;
   practice(): void;
   stopPractice(): void;
@@ -35,7 +36,7 @@ export function createClassroom(
   ctx: AppContext,
   deps: { cancelQuick(): void; loadScenario(id: string): void; estimateCount(): number },
 ): Classroom {
-  let section: Section = 'lesson';
+  let section: Section = 'theory';
   let practicing = false;
   let scenarioId = ctx.scenario.id;
   let resultsSignature = '';
@@ -68,8 +69,8 @@ export function createClassroom(
     put('#practice-progress', `${ctx.lesson.done.size}/${tasks.length} · ${next ? 'Práctica activa' : 'Práctica completada'}`);
     put('#practice-objective', next?.text ?? 'Objetivos completados. Revisa qué cambió en tus resultados.');
     const link = $<HTMLButtonElement>('#practice-link');
-    link.textContent = next ? 'Ver lección' : 'Ver resultados';
-    link.dataset.action = next ? 'classroom' : 'debrief';
+    link.textContent = next ? 'Ver objetivos' : 'Ver resultados';
+    link.dataset.action = next ? 'caseObjectives' : 'debrief';
     $('#practice-card').classList.toggle('complete', !next);
     for (const button of $$<HTMLButtonElement>('[data-action="practice"]'))
       button.disabled = ctx.lesson.sessionImported || !!ctx.fixtureId || !tasks.length;
@@ -100,7 +101,7 @@ export function createClassroom(
     }
   }
 
-  function open(next: Section = 'lesson'): void {
+  function open(next: Section): void {
     deps.cancelQuick();
     ctx.dialog.close();
     const entering = $('#classroom').hidden;
@@ -108,9 +109,14 @@ export function createClassroom(
     $('#workspace').hidden = true;
     $('#classroom').hidden = false;
     document.body.classList.add('in-classroom');
+    const space = SPACE[next];
     $('#space-simulator').removeAttribute('aria-current');
-    $('#space-classroom').setAttribute('aria-current', 'page');
+    $(space === 'aula' ? '#space-cases' : '#space-classroom').removeAttribute('aria-current');
+    $(space === 'aula' ? '#space-classroom' : '#space-cases').setAttribute('aria-current', 'page');
+    $('#aula-nav').setAttribute('aria-label', space === 'aula' ? 'Secciones del Aula' : 'Secciones de Casos');
+    // Cada espacio muestra sólo sus secciones: el Aula no ofrece evaluarse y Casos no repite la teoría.
     for (const button of $$('[data-aula-section]')) {
+      button.hidden = button.dataset.space !== space;
       if (button.dataset.aulaSection === next) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     }
@@ -120,7 +126,7 @@ export function createClassroom(
     put('#classroom-title', heading.title);
     put('#classroom-lead', heading.lead);
     $('#classroom-lead').hidden = !heading.lead;
-    $('#classroom').classList.toggle('compact', next !== 'lesson');
+    $('#classroom').classList.toggle('compact', next !== 'lesson' && next !== 'library');
     if (next === 'theory') ctx.lesson.flags.teaching = true;
     if (next === 'theory') void theory.open();
     if (next === 'library') void library.open();
@@ -136,6 +142,7 @@ export function createClassroom(
     $('#workspace').hidden = false;
     document.body.classList.remove('in-classroom');
     $('#space-classroom').removeAttribute('aria-current');
+    $('#space-cases').removeAttribute('aria-current');
     $('#space-simulator').setAttribute('aria-current', 'page');
     ctx.markDirty();
     if (leaving) $('#monitor').focus();

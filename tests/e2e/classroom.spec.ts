@@ -66,7 +66,7 @@ test.describe('AULA · aprendizaje fuera del monitor', () => {
     await openAula(page, 'lesson');
     await page.click('[data-action="practice"]');
     await expect(page.locator('#practice-card')).toBeVisible();
-    await expect(page.locator('#practice-link')).toHaveText('Ver lección');
+    await expect(page.locator('#practice-link')).toHaveText('Ver objetivos');
     const vp = page.viewportSize();
     if (vp && vp.width > 700) {
       await expect
