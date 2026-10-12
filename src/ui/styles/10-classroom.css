@@ -75,15 +75,6 @@
   border: 1px solid var(--shell-line);
   border-radius: 999px;
 }
-.gas-state {
-  margin-left: auto;
-  font-size: var(--type-2xs);
-  font-weight: 600;
-  padding: 1px 8px;
-  border-radius: 999px;
-  color: var(--shell-warning);
-  background: var(--shell-warning-soft);
-}
 .gas-table {
   width: 100%;
   border-collapse: collapse;
@@ -154,12 +145,6 @@
   stroke: var(--shell-muted);
   stroke-width: 1;
   stroke-dasharray: 2 2;
-}
-.gas-note {
-  margin: 0;
-  font-size: var(--type-2xs);
-  line-height: 1.45;
-  color: var(--shell-muted);
 }
 
 /* Eventos: compactos, en una cuadrícula de tres; la descripción va en la ayuda emergente. */
@@ -270,8 +255,35 @@
   color: var(--shell-accent);
 }
 
-/* Caso activo: qué lograr, cómo se evalúa, entrega y referencias */
-.case-back,
+/* Caso activo, compacto para leerse entero en el panel sin desplazarse. */
+.case-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.case-top .aula-kicker {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.case-back {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  background: var(--shell-surface);
+  color: var(--shell-muted);
+  font: inherit;
+  font-size: var(--type-sm);
+  line-height: 1;
+  padding: 0;
+}
+.case-back:hover {
+  color: var(--shell-accent);
+  border-color: var(--shell-accent);
+}
 .case-link {
   border: 0;
   background: none;
@@ -281,30 +293,30 @@
   font-weight: 600;
   padding: 4px 0;
 }
-.case-back {
-  margin-bottom: 10px;
-}
-.case-back:hover,
 .case-link:hover {
   text-decoration: underline;
 }
+/* El título cabe en una línea: los nombres de los casos son breves, y el corte es sólo un resguardo. */
 .case-title {
   font-size: var(--type-lg);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.3;
   letter-spacing: -0.01em;
   color: var(--shell-text);
-  margin: 4px 0 8px;
+  margin: 6px 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .case-vignette {
   color: var(--shell-muted);
-  font-size: var(--type-md);
-  line-height: 1.6;
+  font-size: var(--type-sm);
+  line-height: 1.5;
   margin: 0;
 }
 .case-goal {
-  margin: 14px 0;
-  padding: 10px 12px;
+  margin: 10px 0;
+  padding: 8px 10px;
   border-radius: 8px;
   background: var(--shell-accent-soft);
 }
@@ -312,27 +324,27 @@
   color: var(--shell-accent);
 }
 .case-goal p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--shell-text);
-  font-size: var(--type-md);
+  font-size: var(--type-sm);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 .case-options {
   display: grid;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 .case-option {
   text-align: left;
   font: inherit;
   font-size: var(--type-sm);
-  line-height: 1.45;
+  line-height: 1.35;
   color: var(--shell-text);
   background: var(--shell-surface);
   border: 1px solid var(--shell-line);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 10px;
 }
 .case-option:hover:not(:disabled),
 .case-option.chosen {
@@ -347,39 +359,83 @@
 }
 .case-option:disabled {
   cursor: default;
+  opacity: 1;
 }
-.case-criteria .lesson-tasks {
-  margin-top: 6px;
+/* Entregado: la correcta con ✓ y, si el alumno eligió otra, la suya con ×. */
+.case-option:disabled.correct::before {
+  content: '✓ ';
+  font-weight: 700;
 }
-.case-criteria .task {
+.case-option:disabled.chosen:not(.correct) {
+  border-color: var(--shell-warning);
+  box-shadow: inset 3px 0 0 var(--shell-warning);
+  color: var(--shell-text);
+}
+.case-option:disabled.chosen:not(.correct)::before {
+  content: '× ';
+  font-weight: 700;
+  color: var(--shell-warning);
+}
+.case-criteria {
+  margin: 0 0 10px;
+}
+.case-criteria .case-verdict {
+  margin: 0 0 4px;
   font-size: var(--type-sm);
-  padding: 5px 0;
+}
+.case-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.case-checks li {
+  display: flex;
+  gap: 6px;
+  font-size: var(--type-xs);
+  line-height: 1.45;
+  color: var(--shell-text);
+}
+.case-check {
+  flex: none;
+  width: 14px;
+  text-align: center;
+  font-weight: 700;
+}
+.case-check .icon {
+  width: 12px;
+  height: 12px;
+}
+.case-checks li.ok .case-check {
+  color: var(--shell-accent);
+}
+.case-checks li.no .case-check {
+  color: var(--shell-warning);
 }
 .case-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 14px;
-  margin: 16px 0 4px;
+  margin: 2px 0 0;
 }
 .case-actions .primary-button {
-  min-width: 112px;
+  min-width: 104px;
 }
 .case-refs {
-  margin-top: 18px;
-  padding-top: 12px;
+  margin: 10px 0 0;
+  padding-top: 8px;
   border-top: 1px solid var(--shell-line);
+  font-size: var(--type-xs);
+  line-height: 1.5;
+  color: var(--shell-muted);
 }
-.case-refs ul {
-  list-style: none;
-  padding: 0;
-  margin: 6px 0 0;
-  display: grid;
-  gap: 4px;
+.case-refs-label {
+  font-weight: 600;
 }
 .case-refs a {
   color: var(--shell-accent);
-  font-size: var(--type-sm);
   font-weight: 600;
   text-decoration: none;
 }
@@ -586,9 +642,12 @@
   /* Objetivos táctiles de 44 px, como el resto del panel en móvil. */
   .event-chip,
   .event-undo,
-  .case-back,
   .case-link {
     min-height: 44px;
+  }
+  .case-back {
+    width: 44px;
+    height: 44px;
   }
   .learn {
     margin: 32px 4px 24px;

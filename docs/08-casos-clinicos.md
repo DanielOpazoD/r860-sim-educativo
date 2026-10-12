@@ -1,6 +1,6 @@
 # Casos clínicos
 
-Ocho casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlos. Se eligen en el panel lateral (pestaña Casos), que dice qué lograr y cómo se evalúa; el desarrollo se lee bajo el equipo. Las prácticas guiadas antiguas quedan como datos para escribir más casos.
+Ocho casos con viñeta que se resuelven en el ventilador y se entregan para evaluarlos. Se eligen en el panel lateral (pestaña Casos), que los presenta enteros sin desplazarse: tema, título breve en una línea, viñeta, objetivo —cada consigna nombra sus criterios, que se marcan con ✓ o × al entregar— y referencias con autor y año; el desarrollo se lee bajo el equipo. Las prácticas guiadas antiguas quedan como datos para escribir más casos.
 
 ## Formato
 

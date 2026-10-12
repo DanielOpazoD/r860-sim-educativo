@@ -117,7 +117,7 @@ const PS_BASE = { mode: 'CPAP_PS' as const, peep: 5, flowTrigger: 2 / 60, minRat
 export const CLINICAL_CASES: Scenario[] = [
   {
     id: 'CC-01',
-    name: 'Presión pico alta: ¿resistencia o distensibilidad?',
+    name: 'Presión pico alta',
     synthetic: true,
     category: 'Mecánica respiratoria',
     level: 1,
@@ -180,7 +180,7 @@ export const CLINICAL_CASES: Scenario[] = [
   },
   {
     id: 'CC-02',
-    name: 'Atrapamiento aéreo en una exacerbación de EPOC',
+    name: 'Atrapamiento aéreo en EPOC',
     synthetic: true,
     category: 'Mecánica obstructiva',
     level: 2,
@@ -297,7 +297,7 @@ export const CLINICAL_CASES: Scenario[] = [
   },
   {
     id: 'CC-05',
-    name: 'Hipercapnia: ventilación alveolar y espacio muerto',
+    name: 'Hipercapnia con pulmones sanos',
     synthetic: true,
     category: 'Intercambio gaseoso',
     level: 2,
@@ -336,7 +336,7 @@ export const CLINICAL_CASES: Scenario[] = [
   },
   {
     id: 'CC-06',
-    name: 'Esfuerzos que no disparan en presión de soporte',
+    name: 'Esfuerzos que no disparan',
     synthetic: true,
     category: 'Sincronía',
     level: 2,

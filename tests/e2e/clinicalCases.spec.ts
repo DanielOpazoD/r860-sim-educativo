@@ -33,8 +33,8 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await page.locator('.app-context').click();
     await expect(page.locator('#instructor-case [data-case-id]')).toHaveCount(8);
     await page.locator('#instructor-case [data-case-id="CC-01"]').click();
-    await expect(page.locator('#instructor-case .case-title')).toHaveText('Presión pico alta: ¿resistencia o distensibilidad?');
-    await expect(page.locator('#scenario-name')).toHaveText('Presión pico alta: ¿resistencia o distensibilidad?');
+    await expect(page.locator('#instructor-case .case-title')).toHaveText('Presión pico alta');
+    await expect(page.locator('#scenario-name')).toHaveText('Presión pico alta');
     // Qué lograr y la referencia temática, a la vista en el panel.
     await expect(page.locator('#instructor-case .case-goal')).toBeVisible();
     await expect(page.locator('#instructor-case .case-refs a').first()).toHaveAttribute(
@@ -146,5 +146,36 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await expect(page.locator('#instructor')).not.toHaveClass(/case-locked/);
     await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#fault-grid [data-event]').first()).toBeVisible();
+  });
+
+  test('cada caso se lee entero en el panel sin desplazarse, con el título en una línea, antes y después de entregar', async ({
+    page,
+  }, info) => {
+    test.skip(info.project.name !== 'desktop-1440', 'medición de escritorio: una vez basta');
+    test.setTimeout(90_000);
+    for (const viewport of [
+      { width: 1440, height: 900 },
+      { width: 1200, height: 768 },
+    ]) {
+      await page.setViewportSize(viewport);
+      for (const id of ['CC-01', 'CC-02', 'CC-03', 'CC-04', 'CC-05', 'CC-06', 'CC-07', 'CC-08']) {
+        await open(page, { scenario: id, paused: 1 });
+        const titulo = page.locator('#instructor-case .case-title');
+        await expect(titulo).toBeVisible();
+        const cabe = () =>
+          page.evaluate(() => {
+            const panel = document.querySelector('#instructor') as HTMLElement;
+            const t = document.querySelector('#instructor-case .case-title') as HTMLElement;
+            return { panel: panel.scrollHeight <= panel.clientHeight + 1, titulo: t.scrollWidth <= t.clientWidth + 1 };
+          });
+        expect(await cabe(), `${id} a ${viewport.width}×${viewport.height}`).toEqual({ panel: true, titulo: true });
+        await expect(page.locator('#instructor-case .case-refs a').first()).toBeInViewport();
+        const opcion = page.locator('#instructor-case [data-case-option]').first();
+        if (await opcion.count()) await opcion.click();
+        await page.locator('#instructor-case [data-action="submitCase"]').click();
+        await expect(page.locator('#instructor-case .case-verdict')).toBeVisible();
+        expect(await cabe(), `${id} entregado a ${viewport.width}×${viewport.height}`).toEqual({ panel: true, titulo: true });
+      }
+    }
   });
 });

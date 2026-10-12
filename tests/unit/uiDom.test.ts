@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { uiHarness } from '../uiHarness';
 import { $, element, iconNode } from '../../src/ui/dom';
 import { createCaseSpace } from '../../src/ui/caseSpace';
-import { estadoPh, minutosAlEquilibrio } from '../../src/ui/gasView';
+import { refCorta } from '../../src/ui/caseView';
 import { createMetricsView } from '../../src/ui/metricsView';
 import { createQuickEditor } from '../../src/ui/quickEditor';
 import { createHoldPanel } from '../../src/ui/holdPanel';
@@ -100,6 +100,7 @@ describe('Casos, Aula y texto recibido', () => {
     expect([...document.querySelectorAll('#case-gas thead th')].map((th) => th.textContent)).toEqual(['Inicio', 'Ahora', 'Tiende a']);
     expect($('#case-gas').textContent).toContain('PaCO₂');
     expect($('#case-gas .gas-tag').textContent).toBe('modelo');
+    expect($('#case-gas').querySelector('.gas-note, .gas-state')).toBeNull();
     $<HTMLTextAreaElement>('#reflection-notes').value = 'reflexión';
     ctx.scenario = { ...SCENARIOS.find((s) => s.clinical)!, question: hostile };
     ctx.lesson.render();
@@ -254,13 +255,10 @@ describe('edición, medición y navegación de diálogos', () => {
   });
 });
 
-describe('gasometría del panel', () => {
-  it('nombra el pH como lo haría un clínico y estima el tiempo al equilibrio con su constante de tiempo', () => {
-    expect(estadoPh(7.3)).toBe('acidemia');
-    expect(estadoPh(7.4)).toBeNull();
-    expect(estadoPh(7.5)).toBe('alcalemia');
-    expect(minutosAlEquilibrio(40, 40.5, 3)).toBe(0);
-    // A 12 mmHg del equilibrio con τ 3 min: 3 · ln 12 ≈ 7,5 min hasta quedar a 1 mmHg.
-    expect(minutosAlEquilibrio(40, 52, 3)).toBeCloseTo(3 * Math.log(12), 6);
+describe('referencias del caso', () => {
+  it('muestran autor y año; sin año, la referencia tal cual', () => {
+    expect(refCorta('Hess, Respir Care 2014')).toBe('Hess 2014');
+    expect(refCorta('Mireles-Cabodevila y Chatburn, Eur Heart J Acute Cardiovasc Care 2025')).toBe('Mireles-Cabodevila y Chatburn 2025');
+    expect(refCorta('ARDSNet, resumen del protocolo')).toBe('ARDSNet, resumen del protocolo');
   });
 });

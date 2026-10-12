@@ -1207,13 +1207,13 @@
     },
     {
       "id": "E-096",
-      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen en el panel lateral, bajo sus pestañas —al inicio, ahora y hacia dónde tienden con la ventilación actual, con la trayectoria de la PaCO₂ y el tiempo simulado que falta para el equilibrio (τ del almacén de CO₂)— y en Aula · Fundamentos · Ventilación, siempre rotuladas «modelo».",
+      "claim": "La PaCO₂ y el pH son de una gasometría arterial, no mediciones del ventilador: nunca aparecen en la columna numérica ni en las vistas del monitor. Se leen en el panel lateral, bajo sus pestañas —al inicio, ahora y hacia dónde tienden con la ventilación actual, con la trayectoria de la PaCO₂ y la marca del último cambio— y en Aula · Fundamentos · Ventilación, siempre rotuladas «modelo». Sin avisos dinámicos ni etiquetas de acidemia o alcalemia: los números bastan.",
       "status": "P (decisión de presentación para no atribuir al equipo una medición que no hace)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/ui/gasView.ts (createGasView, minutosAlEquilibrio, estadoPh); src/ui/caseSpace.ts; src/ui/teachingView.ts (ventilacionHTML); index.html (#case-gas)",
+      "implemented": "src/ui/gasView.ts (createGasView); src/ui/caseSpace.ts; src/ui/teachingView.ts (ventilacionHTML); index.html (#case-gas)",
       "tests": [
-        "tests/unit/uiDom.test.ts (gasometría del panel)",
+        "tests/unit/uiDom.test.ts (gasometría del modelo)",
         "tests/e2e/clinicalCases.spec.ts (el monitor no contiene educación)",
         "tests/e2e/interaction.spec.ts (pantalla de ventilación)"
       ]
