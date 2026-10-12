@@ -129,7 +129,11 @@ export class MetricEngine {
     if (last) {
       const vtiM = last.vtInspMeasured ?? last.vtInsp;
       const leak = vtiM > 1e-6 ? Math.max(0, (vtiM - (last.vtExpMeasured ?? last.vtExp)) / vtiM) : null;
-      out.leakPct = sample('leakPct', leak, 'fraction', { ...base, source: 'derivedModel' });
+      out.leakPct = sample('leakPct', leak, 'fraction', {
+        ...base,
+        source: 'derivedModel',
+        ...(leak === null ? { quality: 'unavailable' as const, reason: 'volumenInspiradoInsuficiente' } : {}),
+      });
       if (last.pplatCycle !== null) out.pplatCycle = sample('pplatCycle', last.pplatCycle, 'cmH2O', base);
       else
         out.pplatCycle = sample('pplatCycle', null, 'cmH2O', {

@@ -277,6 +277,11 @@ export type ProcedureKind = 'inspHold' | 'expHold' | 'manualBreath' | 'increaseO
 export type ProcedurePhase = 'queued' | 'running' | 'completed' | 'cancelled' | 'invalid';
 
 export interface ProcedureResult {
+  /** Calidad de adquisición de la meseta, separada de su interpretación como mecánica pasiva. */
+  signalQuality?: Quality;
+  signalReason?: string | null;
+  /** Confusor conocido del escenario; no inferido sólo de la forma de Paw. */
+  passiveMechanicsValid?: boolean;
   procedureId: string;
   kind: ProcedureKind;
   phase: ProcedurePhase;

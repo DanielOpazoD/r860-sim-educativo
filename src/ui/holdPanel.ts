@@ -87,11 +87,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
     const tapar = ctx.examMode;
     put(
       '#hold-value',
-      tapar && h?.quality === 'valid'
-        ? '?'
-        : h?.quality === 'valid' && v1?.value !== null && v1?.value !== undefined
-          ? f(v1.value, 0)
-          : '—',
+      tapar && v1?.value !== null && v1?.value !== undefined ? '?' : v1?.value !== null && v1?.value !== undefined ? f(v1.value, 0) : '—',
     );
     put(
       '#hold-second',
@@ -128,7 +124,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
       text =
         h.quality === 'valid'
           ? `Medido · ${wallDate(h.wallTimeMs ?? 0)}`
-          : `No válida: ${humanReason(h.reason)} · ${wallDate(h.wallTimeMs ?? 0)}`;
+          : `No válida: ${humanReason(h.reason)}${h.signalQuality === 'valid' ? ' · señal estable; presión observada' : ''} · ${wallDate(h.wallTimeMs ?? 0)}`;
     if (h && h.procedureId !== lastHoldToastId && (h.completedAtMs ?? 0) > holdOpenedAtMs) {
       lastHoldToastId = h.procedureId;
       if (h.kind === 'inspHold' && h.quality === 'valid' && h.values.pplat?.value !== null && h.values.pplat?.value !== undefined) {

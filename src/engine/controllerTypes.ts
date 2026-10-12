@@ -24,6 +24,8 @@ export interface HoldOutcome {
   /** Mayor excursión contra la tendencia en toda la ventana: 0 en una relajación monótona, alta con esfuerzo. */
   reversal: number;
   pmaxHit: boolean;
+  /** Pmus sintético > 0.05 cmH2O en cualquier paso de la oclusión; umbral numérico, no clínico. */
+  effortDuringHold?: boolean;
   cancelled: boolean;
   /** Motivo de la cancelación (usuario o paso a espera). */
   cancelReason: 'user' | 'standby' | null;
@@ -101,4 +103,5 @@ export interface HoldRun {
   samples: { t: number; paw: number }[];
   pmaxHit: boolean;
   peepeBefore: number;
+  effortDuringHold: boolean;
 }

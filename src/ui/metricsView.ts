@@ -134,8 +134,14 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         } else {
           valor.classList.remove('sin-dato');
           put(valor, oculto(m.key) ? '?' : f(medido, m.decimals));
-          setAttributeIfChanged(el, 'title', `${m.label}: información y medición`);
-          setAttributeIfChanged(el, 'aria-label', `${m.label}. Información y medición`);
+          if (muestra?.quality === 'invalid') {
+            motivoCorto = 'Mecánica no válida';
+            setAttributeIfChanged(el, 'title', `${m.label}: presión observada · ${razon}`);
+            setAttributeIfChanged(el, 'aria-label', `${m.label}: presión observada · ${razon}`);
+          } else {
+            setAttributeIfChanged(el, 'title', `${m.label}: información y medición`);
+            setAttributeIfChanged(el, 'aria-label', `${m.label}. Información y medición`);
+          }
         }
         el.classList.toggle('exam-masked', !sinDato && oculto(m.key));
         put(el.querySelector('.numeric-limits'), limitPair(fr, m.key));
