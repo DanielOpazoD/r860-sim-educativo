@@ -71,6 +71,12 @@ const REF = {
       'Thille AW, Rodriguez P, Cabello B, Lellouche F, Brochard L. Patient-ventilator asynchrony during assisted mechanical ventilation. Intensive Care Med. 2006;32(10):1515-22.',
     url: pubmed('16896854'),
   },
+  thille2008: {
+    short: 'Thille, Intensive Care Med 2008',
+    citation:
+      'Thille AW, Cabello B, Galia F, Lyazidi A, Brochard L. Reduction of patient-ventilator asynchrony by reducing tidal volume during pressure-support ventilation. Intensive Care Med. 2008;34(8):1477-86.',
+    url: pubmed('18437356'),
+  },
   blanch2015: {
     short: 'Blanch, Intensive Care Med 2015',
     citation:
@@ -107,11 +113,22 @@ const REF = {
     url: pubmed('15691390'),
   },
 } as const;
+/**
+ * Gasometría del EPOC (CC-02, CC-06, CC-08): la misma vía aérea que el adulto de referencia y un espacio muerto
+ * alveolar mayor (unidades con V/Q alta), que da VDfis/VT ≈ 0,55–0,65 con VT de 6–7 mL/kg (P). Que lo alveolar escale
+ * con el VT y no sea todo en serie es lo que deja la PaCO₂ casi igual cuando el VT baja y la frecuencia sube, como
+ * midió Thille (2008). Bicarbonato de retención crónica de CO₂: con la gasometría a la vista, un EPOC con bicarbonato
+ * normal mostraría una alcalosis respiratoria pura que no corresponde a su enfermedad.
+ */
+const EPOC_GAS = { alveolarDeadspaceFrac: 0.3, hco3: 28 };
 /** Paciente EPOC en soporte: obstrucción espiratoria y esfuerzo propio (CC-06, CC-08). */
-// EPOC hipercápnica crónica, como CC-02: bicarbonato compensador y espacio muerto mayor. Con la gasometría siempre a la
-// vista, un EPOC con bicarbonato normal mostraría una alcalosis respiratoria pura que no corresponde a su enfermedad.
-const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0, gas: { hco3: 32, deadspaceL: 0.25 } };
+const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0, gas: EPOC_GAS };
 const ESFUERZO_EPOC: EffortParams = { enabled: true, amplitude: 6, ratePerMin: 22, tiS: 0.8, phaseS: 0.3, shape: 'riseRelax' };
+/**
+ * CC-06, calibrado con Thille (Intensive Care Med 2008): con soporte 20 casi la mitad de los esfuerzos no dispara y el
+ * VT ronda 10 mL/kg; con 13, disparan todos con ≈ 6 mL/kg. Frecuencia neural 26/min (26,5 en el estudio).
+ */
+const ESFUERZO_THILLE: EffortParams = { enabled: true, amplitude: 8, ratePerMin: 26, tiS: 1, phaseS: 0.3, shape: 'riseRelax' };
 const PS_BASE = { mode: 'CPAP_PS' as const, peep: 5, flowTrigger: 2 / 60, minRate: 'off' as const, pmax: 40 };
 
 export const CLINICAL_CASES: Scenario[] = [
@@ -203,13 +220,13 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'La constante de tiempo espiratoria de esta paciente es Rexp·C = 45 × 0,06 = 2,7 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP intrínseca de ≈ 8 cmH₂O. El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 (Te 4 s ≈ 1,5 τ) la PEEP intrínseca cae a ≈ 2,5. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32) baja su PaCO₂ por debajo de lo habitual para ella y la deja alcalémica: con la programación inicial el pH de equilibrio sería ≈ 7,55.',
+        'La constante de tiempo espiratoria de esta paciente es Rexp·C = 45 × 0,06 = 2,7 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP intrínseca de ≈ 8 cmH₂O. El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 (Te 4 s ≈ 1,5 τ) la PEEP intrínseca cae a ≈ 2,5. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32) baja su PaCO₂ por debajo de lo habitual para ella y la deja alcalémica: con la programación inicial el pH de equilibrio sería ≈ 7,56.',
       references: [REF.marini2011, REF.hess2014],
     },
     question: '¿Por qué bajar la frecuencia reduce el atrapamiento más que alargar sólo el I:E?',
     answer:
       'Porque el tiempo espiratorio depende de la duración del ciclo: a menor frecuencia, más segundos para vaciar el pulmón con la misma constante de tiempo.',
-    patient: { crs: 0.06, rInsp: 20, rExp: 45, r2: 0, p0: 0, gas: { hco3: 32, deadspaceL: 0.25 } },
+    patient: { crs: 0.06, rInsp: 20, rExp: 45, r2: 0, p0: 0, gas: { ...EPOC_GAS, hco3: 32 } },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 20, ie: 1 / 2, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
@@ -228,7 +245,7 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'SDRA · ventilación protectora',
       vignette:
-        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,42, PaCO₂ 39 mmHg.',
+        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,42, PaCO₂ 38 mmHg.',
       question:
         'Programa una ventilación protectora: VT ≈ 6 mL/kg de peso predicho (hasta 6,5), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.',
       kind: 'ajuste',
@@ -245,19 +262,21 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'ph', text: 'pH de equilibrio entre 7,30 y 7,45', test: 'phEqRange', params: { min: 7.3, max: 7.45 } },
         { id: 'fr', text: 'FR de 35 o menos', test: 'rrMax', params: { max: 35 } },
       ],
-      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Con una distensibilidad de 30 mL/cmH₂O, bajar el VT de 600 a 425 mL lleva la presión motriz de 20 a ≈ 14 cmH₂O —la variable que mejor estratificó la supervivencia en el análisis de Amato— y la Pplat a ≈ 24. El precio es la ventilación alveolar: con un espacio muerto de 250 mL (VD/VT ≈ 0,59, en el rango que Nuckton midió en el SDRA) la PaCO₂ de equilibrio subiría a ≈ 77 mmHg (pH 7,12) con FR 16. El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 28 el pH de equilibrio vuelve a ≈ 7,36.`,
+      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Con una distensibilidad de 30 mL/cmH₂O, bajar el VT de 600 a 425 mL lleva la presión motriz de 20 a ≈ 14 cmH₂O —la variable que mejor estratificó la supervivencia en el análisis de Amato— y la Pplat a ≈ 24. El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,60 con 425 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 64 mmHg (pH 7,20). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 22 el pH de equilibrio vuelve a ≈ 7,34 y con FR 28, a ≈ 7,44.`,
       references: [REF.ardsnet2000, REF.amato2015, REF.ardsnetCard, REF.nuckton2002],
     },
     question: '¿Por qué hay que subir la frecuencia al bajar el volumen corriente en un SDRA?',
-    answer: 'Porque el espacio muerto no cambia: un VT menor ventila menos el alvéolo y, sin más frecuencia, la PaCO₂ sube.',
-    patient: { crs: 0.03, rInsp: 10, rExp: 10, r2: 0, p0: 0, gas: { vco2MlMin: 250, deadspaceL: 0.25 } },
+    answer:
+      'Porque el espacio muerto de la vía aérea no cambia: con un VT menor pesa más, el alvéolo se ventila menos y, sin más frecuencia, la PaCO₂ sube.',
+    patient: { crs: 0.03, rInsp: 10, rExp: 10, r2: 0, p0: 0, gas: { alveolarDeadspaceFrac: 0.35 } },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.6, rr: 16, ie: 1 / 2, peep: 10, pmax: 50, plimit: 100, pausePct: 0 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Presión motriz alta con VT de 8,5 mL/kg.',
-    caution: 'Distensibilidad lineal y espacio muerto fijo: el SDRA real es heterogéneo y su espacio muerto cambia con la PEEP y el VT.',
+    caution:
+      'Distensibilidad lineal y fracción de espacio muerto alveolar constante: el SDRA real es heterogéneo y su espacio muerto cambia con la PEEP y el VT.',
   },
   {
     id: 'CC-04',
@@ -305,7 +324,7 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'CO₂ · espacio muerto',
       vignette:
-        'Hombre de 58 años, 175 cm, sin enfermedad pulmonar, en el posoperatorio de una cirugía abdominal y aún sedado. Programa: VT 400 mL, FR 10. Lleva un intercambiador de calor y humedad y un alargador en la pieza en Y. Suena la alarma de volumen minuto bajo. Gasometría: pH 7,07, PaCO₂ 86 mmHg, HCO₃⁻ 24 mEq/L.',
+        'Hombre de 58 años, 175 cm, sin enfermedad pulmonar, en el posoperatorio de una cirugía abdominal y aún sedado. Programa: VT 400 mL, FR 10. Lleva un intercambiador de calor y humedad y un alargador en la pieza en Y. Suena la alarma de volumen minuto bajo. Gasometría: pH 7,06, PaCO₂ 88 mmHg, HCO₃⁻ 24 mEq/L.',
       question: 'Normaliza la PaCO₂ de equilibrio (35–45 mmHg) sin superar 8 mL/kg de peso predicho y sin provocar atrapamiento.',
       kind: 'ajuste',
       criteria: [
@@ -319,20 +338,22 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'peepi', text: 'Sin atrapamiento: PEEP intrínseca de 2 cmH₂O o menos', test: 'autoPeepMax', params: { max: 2 } },
       ],
       reveal:
-        'La PaCO₂ depende de la ventilación alveolar, no del volumen minuto: V̇A = (VT − VD) × FR. Con un espacio muerto de 200 mL (anatómico más el del intercambiador y el alargador), 400 mL × 10 dan 4 L/min de volumen minuto pero sólo 2 L/min de ventilación alveolar (VD/VT 0,5). Subir la FR a 18 ventila 3,6 L/min de alvéolo y deja la PaCO₂ en ≈ 48. Con VT 500 y FR 14 —casi el mismo volumen minuto, 7 frente a 7,2 L/min— la ventilación alveolar es 4,2 L/min y la PaCO₂ ≈ 41: con un VT mayor se desperdicia una fracción menor. En la cabecera, retirar el espacio muerto instrumental innecesario logra lo mismo sin tocar el ventilador. Y la PaCO₂ tarda minutos en llegar al nuevo equilibrio: la gasometría de control se pide a los 20–30 min.',
+        'La PaCO₂ depende de la ventilación alveolar, no del volumen minuto: V̇A = (VT − VD) × (1 − f) × FR, con VD el espacio muerto de la vía aérea y f la pequeña fracción alveolar de un pulmón sano (0,12). Con 200 mL de vía aérea (la anatómica y el tubo, más el intercambiador y el alargador), 400 mL × 10 dan 4 L/min de volumen minuto pero sólo 1,8 L/min de ventilación alveolar (VD/VT 0,56). Subir la FR a 18 ventila 3,2 L/min de alvéolo y deja la PaCO₂ en ≈ 49. Con VT 500 y FR 14 —casi el mismo volumen minuto, 7 frente a 7,2 L/min— la ventilación alveolar es 3,7 L/min y la PaCO₂ ≈ 42: con un VT mayor se desperdicia una fracción menor. En la cabecera, retirar el espacio muerto instrumental innecesario logra lo mismo sin tocar el ventilador. Y la PaCO₂ tarda minutos en llegar al nuevo equilibrio: la gasometría de control se pide a los 20–30 min.',
       references: [REF.robertson2015, REF.ardsnetCard],
     },
     question: '¿Por qué, a igual volumen minuto, un VT mayor baja más la PaCO₂?',
     answer:
       'Porque el espacio muerto se paga en cada respiración: con menos respiraciones de más volumen, la fracción desperdiciada (VD/VT) es menor.',
-    patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, gas: { deadspaceL: 0.2 } },
+    // Sedado: VCO₂ algo menor que la de un adulto despierto en reposo (≈ 2,5 mL/kg/min, P).
+    patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, gas: { deadspaceL: 0.2, vco2MlMin: 180 } },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.4, rr: 10, ie: 1 / 2, peep: 5, pmax: 40, plimit: 100, pausePct: 0 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Volumen minuto bajo y fracción de espacio muerto alta.',
-    caution: 'Espacio muerto en serie y fijo; sin mezcla parcial ni oxigenación. La gasometría es del modelo, no del equipo.',
+    caution:
+      'Espacio muerto de la vía aérea fijo y fracción alveolar constante; sin oxigenación. La gasometría es del modelo, no del equipo.',
   },
   {
     id: 'CC-06',
@@ -344,7 +365,7 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'Asincronía · esfuerzos inefectivos',
       vignette:
-        'Hombre de 66 años, 170 cm, con EPOC, en destete con presión de soporte 20 cmH₂O y PEEP 5. Respira con esfuerzo: cuentas 22 esfuerzos por minuto en el tórax, pero el ventilador marca una frecuencia menor y avisa de un volumen espirado alto.',
+        'Hombre de 66 años, 170 cm, con EPOC, en destete con presión de soporte 20 cmH₂O y PEEP 5. Respira con esfuerzo: cuentas 26 esfuerzos por minuto en el tórax, pero el ventilador marca una frecuencia menor y avisa de un volumen espirado alto.',
       question:
         'Ajusta el soporte para que todos los esfuerzos disparen el ventilador sin dejar un volumen corriente insuficiente (≥ 5 mL/kg de peso predicho). Espera un minuto tras tu último cambio antes de entregar.',
       kind: 'ajuste',
@@ -363,21 +384,21 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'Con soporte 20 el volumen corriente es grande (≈ 630 mL) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: queda PEEP intrínseca y el paciente tiene que vencerla antes de que el ventilador detecte nada. Un tercio de sus esfuerzos no dispara. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. Bajar el soporte a 10–14 cmH₂O acorta el volumen, baja la PEEP intrínseca y todos los esfuerzos disparan con VT ≈ 350–430 mL. Además ventila de más: con soporte 20 la PaCO₂ de equilibrio cae a ≈ 25 mmHg y, con el bicarbonato alto de su EPOC, el pH pasa de 7,7; con soporte 12 vuelve a su equilibrio crónico (≈ 53 mmHg, pH 7,40). En las curvas se reconocen como una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
-      references: [REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
+        'Con soporte 20 el volumen corriente es grande (≈ 690 mL, 10,5 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. Cuatro de cada diez esfuerzos se pierden. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 10–14 cmH₂O disparan todos con VT ≈ 335–385 mL. La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador sube porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 31 mmHg (pH 7,58); con 12–13, en ≈ 45–48 (pH 7,39–7,42), su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
+      references: [REF.thille2008, REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
     },
     question: '¿Por qué más soporte puede significar peor sincronía?',
     answer:
       'Porque un VT mayor deja menos tiempo para vaciar el pulmón: la PEEP intrínseca resultante se interpone entre el esfuerzo y el disparo.',
-    patient: EPOC_PS,
-    effort: ESFUERZO_EPOC,
+    patient: { ...EPOC_PS, rExp: 28 },
+    effort: ESFUERZO_THILLE,
     sensors: idealSensors,
     settings: { ...PS_BASE, psupport: 20, expTriggerPct: 0.25 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Frecuencia del ventilador menor que la del paciente.',
     caution:
-      'Esfuerzo sintético periódico; un compartimento lineal sin limitación al flujo. La frecuencia de esfuerzos no responde a la PaCO₂: un paciente real con tanta alcalosis bajaría su impulso.',
+      'Esfuerzo sintético periódico de frecuencia fija; un compartimento lineal sin limitación al flujo. En el estudio de Thille la PaCO₂ no cambió al bajar el soporte; aquí sube algo más porque la frecuencia del esfuerzo no responde a la PaCO₂.',
   },
   {
     id: 'CC-07',

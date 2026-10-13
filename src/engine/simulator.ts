@@ -142,9 +142,10 @@ export class Simulator {
   readonly metrics = new MetricEngine();
   /** CO₂ arterial de modelo: lo alimenta el volumen pulmonar verdadero, no el sensor del ventilador. */
   readonly gas = new GasExchange();
-  /** Volumen que el pulmón espiró en la respiración en curso (L) y volumen pulmonar del paso anterior. */
-  private lungExpiredL = 0;
+  /** Volumen pulmonar del paso anterior (L). */
   private lungVPrev = 0;
+  /** Segundos de bloqueo (inspiratorio o espiratorio) dentro de la respiración en curso. */
+  private breathHoldS = 0;
   readonly alarms: AlarmEngine;
   readonly procedures: ProcedureManager;
   readonly ring: SampleRing;
@@ -330,10 +331,10 @@ export class Simulator {
         this.gas.onBreath(
           ev.record.endSimTimeMs / 1000,
           (ev.record.endSimTimeMs - ev.record.startSimTimeMs) / 1000,
-          this.lungExpiredL,
           gasParams(this.patient.params.gas),
+          this.breathHoldS,
         );
-        this.lungExpiredL = 0;
+        this.breathHoldS = 0;
         this.metrics.onBreath(ev.record);
         this.lastMetrics = this.metrics.compute(this.metricContext());
         this.trends.push({
@@ -391,6 +392,7 @@ export class Simulator {
       case 'holdStarted':
       case 'holdEnded':
       case 'rejected':
+        if (ev.type === 'holdEnded') this.breathHoldS += ev.outcome.actualDurationS;
         this.procedures.onControllerEvent(ev, t);
         this.logEvent(
           'procedure',
@@ -429,9 +431,10 @@ export class Simulator {
     this.controller.step(dtS);
     // El gas que sale del pulmón (ambas unidades: el pendelluft entre ellas no cuenta) alimenta la gasometría.
     const vLung = this.patient.vTotal;
-    if (vLung < this.lungVPrev) this.lungExpiredL += this.lungVPrev - vLung;
+    const gp = gasParams(this.patient.params.gas);
+    this.gas.move(vLung - this.lungVPrev, gp);
     this.lungVPrev = vLung;
-    this.gas.step(dtS, gasParams(this.patient.params.gas));
+    this.gas.step(dtS, gp);
     this.clock.tick(); // el reloj representa el FIN del paso cuando se procesan los eventos
     this.o2.step(dtS);
     this.drainController();

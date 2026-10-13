@@ -152,12 +152,12 @@ const caso = (id: string): Caso => new Caso(findScenario(id)!);
 const phEq = (k: Caso): number => phFrom(k.gas.hco3, k.gas.paco2Target!);
 
 describe('CAS-02 · EPOC: atrapamiento', () => {
-  it('la viñeta: PEEP intrínseca ≈ 8 y alcalemia de equilibrio ≈ 7,55; no se resuelve sin tocar nada', () => {
+  it('la viñeta: PEEP intrínseca ≈ 8 y alcalemia de equilibrio ≈ 7,56; no se resuelve sin tocar nada', () => {
     const k = caso('CC-02');
     k.correr(40_000);
     expect(k.sim.frame().truth.peepiEndExp).toBeGreaterThan(6.5);
     expect(k.sim.frame().truth.peepiEndExp).toBeLessThan(9);
-    expect(phEq(k)).toBeCloseTo(7.55, 1);
+    expect(phEq(k)).toBeCloseTo(7.56, 1);
     k.bloqueo('expHold');
     expect(k.resultado().passed).toBe(false);
   });
@@ -180,7 +180,7 @@ describe('CAS-02 · EPOC: atrapamiento', () => {
     vtBajo.ajustar({ vt: 0.4, rr: 14, ie: 1 / 4 });
     vtBajo.correr(60_000);
     vtBajo.bloqueo('expHold');
-    // El espacio muerto se paga: con VT 400 la acidosis de equilibrio sale del rango.
+    // El espacio muerto de la vía aérea se paga: con VT 400 la acidosis de equilibrio sale del rango.
     expect(vtBajo.resultado().criteria.find((c) => c.id === 'ph')!.ok).toBe(false);
   });
 });
@@ -206,8 +206,11 @@ describe('CAS-03 · SDRA: VT protector', () => {
     sinFr.ajustar({ vt: 0.425 });
     sinFr.correr(30_000);
     sinFr.bloqueo('inspHold');
-    expect(sinFr.gas.paco2Target!).toBeCloseTo(77, -1);
+    expect(sinFr.gas.paco2Target!).toBeCloseTo(64, -1);
     expect(sinFr.resultado().criteria.find((c) => c.id === 'ph')!.ok).toBe(false);
+    // VD/VT en el rango que Nuckton midió en el SDRA (0,58 ± 0,09): más alto con el VT protector.
+    expect(sinFr.gas.vdVt!).toBeGreaterThan(0.55);
+    expect(sinFr.gas.vdVt!).toBeLessThan(0.65);
   });
 });
 
@@ -238,10 +241,10 @@ describe('CAS-04 · PEEP decremental', () => {
 });
 
 describe('CAS-05 · hipercapnia', () => {
-  it('la viñeta: PaCO₂ 86 y pH 7,07 de equilibrio', () => {
+  it('la viñeta: PaCO₂ 88 y pH 7,06 de equilibrio', () => {
     const k = caso('CC-05');
-    expect(k.gas.paco2Target!).toBeCloseTo(86, -1);
-    expect(phEq(k)).toBeCloseTo(7.07, 1);
+    expect(k.gas.paco2Target!).toBeCloseTo(88, -1);
+    expect(phEq(k)).toBeCloseTo(7.06, 1);
     expect(k.resultado().passed).toBe(false);
   });
   it('VT 500 con FR 14 o VT 400 con FR 22 lo resuelven; FR 18 sola no basta; VT 600 se pasa de 8 mL/kg', () => {
@@ -254,7 +257,7 @@ describe('CAS-05 · hipercapnia', () => {
     expect(res({ vt: 0.5, rr: 14 }).resultado().passed).toBe(true);
     expect(res({ vt: 0.4, rr: 22 }).resultado().passed).toBe(true);
     const fr18 = res({ rr: 18 });
-    expect(fr18.gas.paco2Target!).toBeCloseTo(48, -1);
+    expect(fr18.gas.paco2Target!).toBeCloseTo(49, -1);
     expect(fr18.resultado().passed).toBe(false);
     expect(
       res({ vt: 0.6 })
@@ -265,32 +268,46 @@ describe('CAS-05 · hipercapnia', () => {
 });
 
 describe('CAS-06 · esfuerzos inefectivos', () => {
-  it('con soporte 20 un tercio de los esfuerzos no dispara; con 12 disparan todos con VT suficiente; con 6 el VT no alcanza', () => {
-    const inicio = caso('CC-06');
-    inicio.ajustar({});
-    inicio.correr(65_000);
-    expect(inicio.resultado().criteria.find((c) => c.id === 'disparo')!.ok).toBe(false);
-    const bien = caso('CC-06');
-    bien.ajustar({ psupport: 12 });
-    bien.correr(65_000);
-    expect(bien.resultado().passed).toBe(true);
-    const poco = caso('CC-06');
-    poco.ajustar({ psupport: 6 });
-    poco.correr(65_000);
-    expect(poco.resultado().criteria.find((c) => c.id === 'vt')!.ok).toBe(false);
+  /** Respiraciones, VT espirado medio (mL/kg de peso predicho) y V̇A del último minuto con un soporte dado. */
+  const conSoporte = (psupport: number | null) => {
+    const k = caso('CC-06');
+    k.ajustar(psupport === null ? {} : { psupport });
+    k.correr(65_000);
+    const ultimas = k.sim.frame().trends.filter((t) => t.tMs > k.sim.simTimeMs - 60_000);
+    const vt = ultimas.reduce((s, t) => s + t.vte, 0) / ultimas.length;
+    return { k, disparan: ultimas.length / k.sim.frame().truth.effort.ratePerMin, mlKg: (vt * 1000) / pbw170, va: k.gas.vaLMin! };
+  };
+  const pbw170 = 50 + 0.91 * (170 - 152.4);
+  it('como en Thille: con soporte 20 casi la mitad de los esfuerzos no dispara con VT ≈ 10 mL/kg; con 13 disparan todos con ≈ 6', () => {
+    const inicio = conSoporte(null);
+    expect(1 - inicio.disparan).toBeGreaterThan(0.36);
+    expect(1 - inicio.disparan).toBeLessThan(0.52);
+    expect(inicio.mlKg).toBeGreaterThan(9);
+    expect(inicio.mlKg).toBeLessThan(11.5);
+    expect(inicio.k.resultado().criteria.find((c) => c.id === 'disparo')!.ok).toBe(false);
+    const bien = conSoporte(13);
+    expect(bien.disparan).toBe(1);
+    expect(bien.mlKg).toBeGreaterThan(5);
+    expect(bien.mlKg).toBeLessThan(6.7);
+    expect(bien.k.resultado().passed).toBe(true);
+    const poco = conSoporte(6);
+    expect(poco.k.resultado().criteria.find((c) => c.id === 'vt')!.ok).toBe(false);
   });
-  it('EPOC hipercápnica: con soporte 20 ventila de más (alcalosis); con 12 vuelve a su equilibrio crónico', () => {
-    const inicio = caso('CC-06');
-    expect(inicio.gas.hco3).toBe(32);
-    expect(inicio.gas.paco2Target!).toBeLessThan(30);
-    expect(phEq(inicio)).toBeGreaterThan(7.6);
-    const bien = caso('CC-06');
-    bien.ajustar({ psupport: 12 });
-    bien.correr(65_000);
-    expect(bien.gas.paco2Target!).toBeGreaterThan(45);
-    expect(bien.gas.paco2Target!).toBeLessThan(60);
-    expect(phEq(bien)).toBeGreaterThan(7.35);
-    expect(phEq(bien)).toBeLessThan(7.45);
+  it('la ventilación alveolar cambia mucho menos que el VT: con 12–13 queda en su equilibrio de EPOC y con 20 sólo algo más baja', () => {
+    const inicio = conSoporte(null),
+      bien = conSoporte(13);
+    expect(bien.mlKg / inicio.mlKg).toBeLessThan(0.6);
+    expect(bien.va / inicio.va).toBeGreaterThan(0.65);
+    expect(inicio.k.gas.hco3).toBe(28);
+    expect(inicio.k.gas.paco2Target!).toBeGreaterThan(28);
+    expect(inicio.k.gas.paco2Target!).toBeLessThan(34);
+    expect(phEq(inicio.k)).toBeLessThan(7.62);
+    for (const k of [bien.k, conSoporte(12).k]) {
+      expect(k.gas.paco2Target!).toBeGreaterThan(42);
+      expect(k.gas.paco2Target!).toBeLessThan(50);
+      expect(phEq(k)).toBeGreaterThan(7.36);
+      expect(phEq(k)).toBeLessThan(7.45);
+    }
   });
   it('antes de un minuto tras el último ajuste no se puede juzgar la sincronía', () => {
     const k = caso('CC-06');

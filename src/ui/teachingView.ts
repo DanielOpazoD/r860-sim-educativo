@@ -301,12 +301,12 @@ function ventilacionHTML(fr: EngineFrame): string {
   if (!g) return `<p class="edu-pie">Esta referencia fotográfica no tiene motor: no hay gasometría que calcular.</p>`;
   const gp = fr.truth.patient.gas ?? {};
   const vd = (gp.deadspaceL ?? DEFAULT_GAS.deadspaceL) * 1000,
+    alveolar = gp.alveolarDeadspaceFrac ?? DEFAULT_GAS.alveolarDeadspaceFrac,
     vco2 = gp.vco2MlMin ?? DEFAULT_GAS.vco2MlMin;
-  const vtPulmon = g.vdVt !== null && g.vdVt > 0 ? vd / g.vdVt : null;
   const rr = fr.metrics.rr?.value ?? null;
   const sustitucion =
-    g.vaLMin !== null && vtPulmon !== null && rr !== null
-      ? `(VT ${f(vtPulmon, 0)} − VD ${f(vd, 0)}) mL × ${f(rr, 0)}/min ≈ ${f(g.vaLMin, 1)} L/min`
+    g.vaLMin !== null && g.vtL !== null && rr !== null
+      ? `(VT ${f(g.vtL * 1000, 0)} − VD ${f(vd, 0)}) mL × ${f(1 - alveolar, 2)} × ${f(rr, 0)}/min ≈ ${f(g.vaLMin, 1)} L/min`
       : 'Aparece al completar la primera respiración.';
   const ecuacion =
     g.vaLMin !== null && g.vaLMin > 0 && g.paco2Target !== null
@@ -333,8 +333,10 @@ function ventilacionHTML(fr: EngineFrame): string {
     `<p class="edu-nota">${esc(sustitucion)}</p>` +
     `<p class="edu-nota">${esc(ecuacion)}</p>` +
     `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">Sólo ventila el alvéolo lo que pasa del espacio ` +
-    `muerto: con el mismo volumen minuto, un VT más bajo a más frecuencia elimina menos CO₂. Cuenta el gas que sale del ` +
-    `pulmón, no el que mide el ventilador: la fuga y el gas del circuito no ventilan.</p></details>` +
+    `muerto de la vía aérea (VD): con el mismo volumen minuto, un VT más bajo a más frecuencia elimina menos CO₂. Del ` +
+    `gas que llega al alvéolo, una fracción va a unidades sin perfusión (espacio muerto alveolar: ${f(alveolar, 2)} aquí) ` +
+    `y tampoco elimina CO₂; esa parte crece con la enfermedad, no con el VT. Cuenta el gas que sale del pulmón, no el ` +
+    `que mide el ventilador: la fuga y el gas del circuito no ventilan.</p></details>` +
     `</section>` +
     `</div>` +
     `<p class="edu-pie">Gasometría del <b>modelo</b>, no del equipo: el ventilador no mide PaCO₂ ni pH. Producción de CO₂, ` +
