@@ -25,7 +25,7 @@ Capturas propias: `docs/capturas/aud-01-pc-sc13-curvas.png` y `docs/capturas/aud
 
 | Diferencia | Equipo | Simulador | Por qué |
 | --- | --- | --- | --- |
-| Límites de alarma junto a cada valor | Sí (los dos números pequeños a la derecha) | No; se ajustan en «Config. de alarmas» | Decisión docente (docs/02, «Pantalla única y monitor más limpio») |
+| Límites de alarma junto a cada valor | Opcional: la casilla «Alarm Limits» de la configuración de alarmas los muestra u oculta (URM 8-6; las pantallas del manual la tienen activada) | Ocultos; se ajustan en «Config. de alarmas» | Decisión docente (docs/02, «Pantalla única y monitor más limpio»), equivalente a esa casilla desactivada |
 | Colores de las curvas | Configurables en el equipo: blanco, verde, rojo, amarillo o azul (URM 23-6) | Los de la transcripción de P1 | El manual no fija un color: no hay discrepancia |
 | Rótulos | Inglés en el manual | Español, como en las fotografías P1 y P3 del equipo localizado (E-025) | Observado (O) |
 

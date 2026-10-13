@@ -1,8 +1,25 @@
 import type { BreathRecord, MetricSample, Quality } from '../domain/types';
 import { MS_PER_S, S_PER_MIN, sToMs } from '../domain/units';
 
-/** Número de respiraciones de la ventana móvil de FR y VMesp (P). */
-export const BREATH_WINDOW = 8;
+/**
+ * Ventana de FR, VMesp (y sus variantes espontáneas) y potencia mecánica: «running value for the last one minute + one
+ * breath» (D, URM SW10 2065490-001, 13-23 y 13-24, columna Filtering Technique). Se toman respiraciones desde la última
+ * hacia atrás hasta cubrir un minuto, incluida la que cruza el borde. Antes eran las 8 últimas (P, U-08).
+ */
+export const MINUTE_WINDOW_MS = 60_000;
+/** Respiraciones guardadas: un minuto a la FR más alta que mide el equipo (120 /min) y una más. */
+const MAX_RECORDS = 130;
+function ventanaDeUnMinuto(records: readonly BreathRecord[]): BreathRecord[] {
+  const out: BreathRecord[] = [];
+  let duracion = 0;
+  for (let i = records.length - 1; i >= 0; i--) {
+    const r = records[i] as BreathRecord;
+    out.unshift(r);
+    duracion += r.endSimTimeMs - r.startSimTimeMs;
+    if (duracion >= MINUTE_WINDOW_MS) break;
+  }
+  return out;
+}
 
 export interface MetricContext {
   simTimeMs: number;
@@ -57,7 +74,7 @@ export function guardFiniteness(
 /**
  * Motor de métricas (P · dossier §15). Todo estimador publica su ventana y su calidad.
  * - Ppico, PEEPe, Pmedia, VTesp, VTinsp, Fuga %: última respiración completa.
- * - FR y VMesp: ventana de las últimas 8 respiraciones (Σ VTesp / Σ periodo × 60); no VT programado × FR programada.
+ * - FR y VMesp: el último minuto más una respiración, como el equipo (Σ VTesp / Σ periodo × 60); no VT × FR programados.
  * - Pplat de ciclo: sólo con pausa válida; null con motivo.
  * - Espontáneas: las respiraciones de soporte de CPAP/PS. FR espont y VMesp espont se cuentan sobre la MISMA ventana que
  *   FR y VMesp (0 cuando no hay ninguna: conteo real, no dato ausente); VTesp espont es el de la última espontánea.
@@ -69,7 +86,7 @@ export class MetricEngine {
 
   onBreath(record: BreathRecord): void {
     this.records.push(record);
-    if (this.records.length > 64) this.records.shift();
+    if (this.records.length > MAX_RECORDS) this.records.shift();
     this.lastEndMs = record.endSimTimeMs;
   }
 
@@ -163,8 +180,8 @@ export class MetricEngine {
       out.stressIndex = sample('stressIndex', null, 'index', base);
       out.tauExp = sample('tauExp', null, 's', base);
     }
-    // Ventana de respiraciones para FR y VMesp.
-    const win = this.records.slice(-BREATH_WINDOW);
+    // Ventana de FR y VMesp: el último minuto más una respiración.
+    const win = ventanaDeUnMinuto(this.records);
     const sumPeriodMs = win.reduce((a, r) => a + (r.endSimTimeMs - r.startSimTimeMs), 0);
     if (win.length >= 2 && sumPeriodMs > 0) {
       const sumVte = win.reduce((a, r) => a + (r.vtExpMeasured ?? r.vtExp), 0);

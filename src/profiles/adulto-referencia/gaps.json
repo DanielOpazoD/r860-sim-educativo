@@ -70,8 +70,8 @@
     {
       "id": "U-08",
       "question": "Ventanas y filtros de métricas.",
-      "policy": "Estimadores propios: última respiración; FR y VMesp con ventana de 8 respiraciones; calidad y ventana publicadas en cada muestra. El manual SW10 define cada dato (9-2 a 9-5) pero no publica la ventana de promedio de FR y VMesp: sigue P.",
-      "status": "abierta",
+      "policy": "Las del equipo (E-109, URM SW10 13-22 a 13-24): última respiración para presiones y volúmenes; FR y VMesp con el último minuto más una respiración; FiO2 con media móvil de 10 s; calidad y ventana publicadas en cada muestra.",
+      "status": "cerrada (manual SW10, especificaciones de monitorización)",
       "blocks": []
     },
     {

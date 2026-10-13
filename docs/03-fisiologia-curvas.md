@@ -344,7 +344,7 @@ Simplificaciones declaradas: un solo depósito (sin los compartimentos rápido y
 | No habilitadas durante un bloqueo | Apnea, VMesp bajo y FR baja; Ppico baja en el espiratorio |
 | Filtros | La desconexión retira la apnea, Ppico baja, VTesp bajo, VMesp bajo, FR baja y FiO₂ baja; la apnea, las de volumen y FR baja; Ppico alta, Ppico baja. La condición se sigue evaluando: sólo sale de la lista y de la banda |
 
-Lo que sigue siendo P: la ventana de 8 respiraciones de FR y VMesp (el manual no la publica, U-08) y los enclavamientos (U-11).
+**Números del monitor** (E-109; URM SW10 13-22 a 13-24). Ppico, Pplat, Pmedia, PEEPe y los volúmenes son los de la última respiración. FR y VMesp, con sus variantes espontáneas, son el valor corrido del último minuto más una respiración, como en el equipo; antes eran las 8 últimas respiraciones. Así, tras un cambio, tardan un minuto en asentarse, y una respiración ocluida pesa en ellos ese minuto, que es por qué el equipo retiene 60 s sus alarmas tras un bloqueo. La resolución es la de la pantalla del equipo: VMesp en pasos de 0,01 L/min hasta 1 y de 0,1 desde ahí; VT en pasos de 0,1 mL bajo 50. Sigue siendo P el enclavamiento de las alarmas (U-11).
 
 ## Fuentes verificadas
 
