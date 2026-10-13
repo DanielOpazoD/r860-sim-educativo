@@ -512,7 +512,7 @@ export const SCENARIOS: Scenario[] = [
     level: 3,
     lesson: {
       title: 'La máquina que dispara al paciente',
-      text: 'Este paciente sedado no inicia ninguna respiración: todas son de la máquina. Pero la insuflación evoca una contracción diafragmática 0,5 s después de arrancar, que muere antes del ciclado. A los 40 s la latencia pasa a 1,4 s: la contracción sobrevive al ciclado y dispara ella misma la siguiente respiración.',
+      text: 'Este paciente con SDRA, sedado, no inicia ninguna respiración: todas son de la máquina. Pero la insuflación evoca una contracción diafragmática 0,5 s después de arrancar: empieza durante la insuflación y alcanza su máximo ya en la espiración. A los 40 s la latencia pasa a 0,7 s: la contracción arranca al final de la insuflación, sobrevive al ciclado y dispara ella misma una segunda respiración, apilada sobre la anterior.',
       tasks: [
         {
           id: 'fase',
@@ -531,8 +531,9 @@ export const SCENARIOS: Scenario[] = [
     answer:
       'Porque el disparo reverso no es una decisión del paciente: la insuflación pasiva evoca una contracción diafragmática a una latencia fija (entrainment). Mientras esa contracción muere antes del ciclado no se ve nada; cuando sobrevive al ciclado, su demanda cruza el umbral del disparo y la máquina entrega una segunda respiración apilada sobre la anterior.',
     description:
-      'Paciente sedado con contracción evocada por cada respiración mandatoria (Pmus 8, latencia 0,5 s). A los 40 s la latencia pasa a 1,4 s y aparecen respiraciones apiladas.',
-    patient: { crs: 0.045, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
+      'SDRA sedado con contracción evocada por cada respiración mandatoria (Pmus 7, latencia 0,5 s). A los 40 s la latencia pasa a 0,7 s y aparecen respiraciones apiladas.',
+    // Mecánica y programación de la mediana de Baedorf Kassis (2021): elastancia 29 cmH₂O/L, VT 450, FR 30, PEEP 14.
+    patient: { crs: 0.034, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
     effort: {
       enabled: true,
       amplitude: 0,
@@ -541,15 +542,15 @@ export const SCENARIOS: Scenario[] = [
       phaseS: 0,
       shape: 'riseRelax',
       relaxTauS: 0.2,
-      reverse: { amplitude: 8, delayS: 0.5 },
+      reverse: { amplitude: 7, delayS: 0.5 },
     },
     sensors: idealSensors,
     settings: {
       vt: 0.45,
-      rr: 14,
+      rr: 30,
       ie: 1 / 2,
-      peep: 5,
-      pmax: 45,
+      peep: 14,
+      pmax: 50,
       plimit: 100,
       pausePct: 0,
       assistControl: true,
@@ -557,9 +558,10 @@ export const SCENARIOS: Scenario[] = [
       biasFlow: 4 / 60,
     },
     initialV: 'equilibrium',
-    perturbations: [{ atSimTimeMs: 40_000, effort: { reverse: { amplitude: 8, delayS: 1.4 } }, note: 'latencia evocada 0,5 → 1,4 s' }],
+    perturbations: [{ atSimTimeMs: 40_000, effort: { reverse: { amplitude: 7, delayS: 0.7 } }, note: 'latencia evocada 0,5 → 0,7 s' }],
     observe: 'Pmus fase-bloqueada tras cada insuflación; tras la perturbación, respiraciones asistidas apiladas.',
-    caution: 'El disparo reverso es un fenómeno propuesto (P): la latencia y el acoplamiento son valores del simulador, no del equipo.',
+    caution:
+      'Latencias y Pmus de Baedorf Kassis (2021): 0,47 s y 6,7 cmH₂O sin apilamiento, 0,68 s y 7,4 con apilamiento. El umbral entre ambos sale de la mecánica del modelo, no se programa. Pulso evocado de forma fija y acoplamiento 1:1.',
   },
 ];
 
@@ -920,7 +922,7 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'SC-14': { atSimTimeMs: 18_000, ranges: { ppeak: [26, 30], peakExpFlow: [-115, -90], maxVolume: [490, 510] } },
   'SC-10': { atSimTimeMs: 18_000, ranges: { ppeak: [11, 14], minPressure: [-2, 1], maxVolume: [490, 510] } },
   'SC-12': { atSimTimeMs: 22_000, ranges: { ppeak: [19, 21], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
-  'SC-24': { atSimTimeMs: 52_000, ranges: { ppeak: [20, 30], minVolume: [-350, -200], maxVolume: [440, 460] } },
+  'SC-24': { atSimTimeMs: 52_000, ranges: { ppeak: [37, 43], minVolume: [-230, -180], maxVolume: [440, 460] } },
   'SC-13': { atSimTimeMs: 42_000, ranges: { ppeak: [14, 16], peakInspFlow: [23, 30], maxVolume: [280, 340] } },
   'SC-19': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [55, 75], maxVolume: [550, 700] } },
   'SC-20': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], maxVolume: [300, 400] } },

@@ -984,11 +984,11 @@ test.describe('DEN · densidad de la columna numérica', () => {
 });
 
 test.describe('RT · disparo reverso (SC-24)', () => {
-  test('cargar SC-24 muestra la amplitud evocada 8 en el panel del paciente', async ({ page }) => {
+  test('cargar SC-24 muestra la amplitud evocada 7 en el panel del paciente', async ({ page }) => {
     await open(page, { scenario: 'SC-24' });
     await showPanel(page, 'patient');
     await openMoreParams(page, 'esfuerzo');
-    await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('8');
+    await expect(page.locator('[data-phys-number="reverseAmp"]')).toHaveValue('7');
     await expect(page.locator('[data-phys-number="reverseDelay"]')).toHaveValue('0.5');
   });
 });
