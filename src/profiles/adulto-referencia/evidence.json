@@ -1452,6 +1452,19 @@
         "tests/unit/metricasEquipo.test.ts (MON)",
         "tests/unit/objetivos.test.ts (SC-21)"
       ]
+    },
+    {
+      "id": "E-110",
+      "claim": "Soporte y presión control con las definiciones y los valores de fábrica del equipo. La rampa es el tiempo hasta el 90 % de la presión programada: τ = riseMs / ln 10 (antes se tomaba el 95 %, τ = riseMs/3). El equipo tiene dos rampas, Rise Time en PC y PS Rise Time en soporte (100 y 50 ms de fábrica); el simulador tiene una «Rampa» que en el diálogo de cada modo hace de la suya, con el valor que traiga el escenario. La inspiración soportada termina por flujo (porcentaje del pico), si la presión pasa de PEEP + PS + 2,5 cmH₂O (la válvula inspiratoria no admite flujo de vuelta: algo que empuja el gas de vuelta más rápido de lo que el flujo cae bajo el umbral hace subir la Pva), o a los 4 s (Tsupp de adulto; antes 3 s, P). Con esfuerzos fisiológicos el flujo cae bajo el 5 % antes de invertirse y el ciclado por presión no aparece: es el corte de seguridad del equipo. Valores iniciales de fábrica del perfil: flujo de base 3 L/min (antes 2), Tinsp de respaldo 1,7 s (antes 1) y tiempo de apnea 30 s (antes 20).",
+      "status": "D (definición de la rampa, criterios de fin del soporte y valores de fábrica, R21) / P (forma exponencial de la rampa; una sola rampa por modo)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 5-3 (Rise Time, PS Rise Time, Tsupp), 5-4 (Pressure support: fin de la inspiración), 11-9 y 11-10 (Factory default settings)",
+      "implemented": "src/engine/controller.ts (RISE_TIME_TAU_FRACTION, PS_PRESSURE_CYCLE_CMH2O, SUPPORT_TI_MAX_S); src/engine/patient.ts (válvula de un solo sentido como tope); src/profiles/adulto-referencia/settings.ts (biasFlow, backupTinspS, apneaTimeS); src/domain/types.ts (CyclingCause 'pressure')",
+      "tests": [
+        "tests/unit/soporte.test.ts (SUP-URM)",
+        "tests/unit/rampa.test.ts",
+        "tests/unit/sync.test.ts (SYN-05)"
+      ]
     }
   ]
 }

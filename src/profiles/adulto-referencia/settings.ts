@@ -53,7 +53,7 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
       sourceId: 'R03',
       locator: 'p.2 «Tiempo de Rampa: 0 a 500 ms … Activo en … A/C PC … (incrementos de 50 ms)»',
       status: 'D',
-      note: 'Forma exponencial de primer orden (≈95 % en riseMs) servida por el lazo de presión de E-100: P (JB72469XX sólo dice «alto flujo inicial… luego disminuye»).',
+      note: 'Tiempo hasta el 90 % de la presión (URM SW10 5-3, D); forma exponencial de primer orden servida por el lazo de presión de E-100: P (JB72469XX sólo dice «alto flujo inicial… luego disminuye»).',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },
@@ -162,7 +162,7 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
       sourceId: 'R23',
       locator: 'tabla «CPAP/PS … Backup Tinsp»; ficha 2014 p.2 «Tiempo inspiratorio: 0.1 a 10 seg»',
       status: 'D',
-      note: 'Existencia D; tramo adulto 0,25–4 s en pasos de 0,05: P (subconjunto del rango de la ficha).',
+      note: 'Existencia D; tramo adulto 0,25–4 s en pasos de 0,05: P (subconjunto del rango de la ficha). Valor inicial 1,7 s: el de fábrica (URM SW10 11-9); antes 1.',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },
@@ -183,7 +183,7 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
       sourceId: 'R03',
       locator: 'p.3 «Alarma de apnea: 5 a 60 seg»',
       status: 'D',
-      note: 'Valor inicial 20 s: P. Sólo se evalúa en CPAP/PS: en A/C la frecuencia programada garantiza respiraciones (P).',
+      note: 'Valor inicial 30 s: el de fábrica en adultos (URM SW10 11-10); antes 20 (P). Sólo se evalúa en CPAP/PS: en A/C la frecuencia programada garantiza respiraciones (P).',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración; la cuenta corre desde el inicio de la última respiración.' },
   },
@@ -363,7 +363,10 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
     dependencies: ['flowTrigger'],
     applyPolicy: 'nextBreath',
     evidence: { sourceId: 'R03', locator: 'p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»', status: 'D' },
-    policyEvidence: { status: 'P', note: 'Valor inicial 2 L/min no documentado; siguiente respiración.' },
+    policyEvidence: {
+      status: 'D',
+      note: 'Valor inicial 3 L/min: el de fábrica en adultos (URM SW10 11-9); antes 2 (P). Siguiente respiración.',
+    },
   },
   triggerByPressure: {
     key: 'triggerByPressure',
@@ -500,7 +503,7 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
   pausePct: 0,
   assistControl: true,
   flowTrigger: 2 / 60,
-  biasFlow: 2 / 60,
+  biasFlow: 3 / 60,
   triggerByPressure: false,
   pressureTrigger: -2,
   pinsp: 10,
@@ -509,8 +512,8 @@ export const DEFAULT_VC_SETTINGS: VcSettings = {
   expTriggerPct: 0.25,
   minRate: 'off',
   backupPinsp: 10,
-  backupTinspS: 1,
-  apneaTimeS: 20,
+  backupTinspS: 1.7,
+  apneaTimeS: 30,
 };
 
 /**

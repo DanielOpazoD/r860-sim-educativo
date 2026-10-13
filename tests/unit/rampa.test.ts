@@ -3,7 +3,7 @@ import type { VcSettings } from '../../src/domain/types';
 import { BENCH_SETTINGS, benchSim } from '../helpers';
 import type { Simulator } from '../../src/engine/simulator';
 
-// Rampa de primer orden en PC/PS: riseMs es el tiempo hasta ≈95 % del escalón (τ = riseMs/3).
+// Rampa de primer orden en PC: riseMs es el tiempo hasta el 90 % del escalón (URM SW10 5-3; τ = riseMs / ln 10).
 const PC: VcSettings = { ...BENCH_SETTINGS, mode: 'AC_PC', pinsp: 10, peep: 5, riseMs: 200, pmax: 40 };
 
 /** Paw durante la primera inspiración, por tiempo desde el inicio de la fase inspiratoria. */
@@ -24,12 +24,11 @@ const cerca = (tr: { t: number; paw: number }[], t: number): number =>
   tr.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a)).paw;
 
 describe('Rampa exponencial en PC', () => {
-  it('riseMs 200: ≈95 % del escalón a los 0,2 s, ≈63 % a τ = 0,067 s, sin sobrepasar PEEP + Pinsp', () => {
+  it('riseMs 200: 90 % del escalón a los 0,2 s, ≈63 % a τ = 0,087 s, sin sobrepasar PEEP + Pinsp', () => {
     const tr = inspiracion(benchSim({ settings: PC }));
     const en02 = cerca(tr, 0.2);
-    expect(en02).toBeGreaterThanOrEqual(5 + 0.93 * 10);
-    expect(en02).toBeLessThanOrEqual(15.01);
-    expect(Math.abs(cerca(tr, 0.067) - (5 + 10 * (1 - Math.exp(-1))))).toBeLessThanOrEqual(0.6);
+    expect(Math.abs(en02 - (5 + 0.9 * 10))).toBeLessThanOrEqual(0.15);
+    expect(Math.abs(cerca(tr, 0.2 / Math.LN10) - (5 + 10 * (1 - Math.exp(-1))))).toBeLessThanOrEqual(0.6);
     expect(Math.max(...tr.map((s) => s.paw))).toBeLessThanOrEqual(15.01);
   });
 

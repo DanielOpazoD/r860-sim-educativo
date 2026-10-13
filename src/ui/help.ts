@@ -75,7 +75,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Rampa de presión',
     text: [
       'Tiempo que tarda la presión en subir desde PEEP hasta el objetivo en modos de presión y soporte.',
-      'Un tiempo menor produce una subida más rápida y mayor flujo inicial. Un tiempo mayor suaviza el ascenso. El modelo usa una subida exponencial que llega al 95 % en ese tiempo; aun con 0 ms la válvula tarda unas decenas de milisegundos en servir lo que pide el paciente, y más cuanto más fuerte tira.',
+      'Un tiempo menor produce una subida más rápida y mayor flujo inicial. Un tiempo mayor suaviza el ascenso. El tiempo de rampa es el que tarda la presión en llegar al 90 % del objetivo, como lo define el equipo; el modelo usa una subida exponencial. En CPAP/PS esta rampa hace de la del soporte (en el equipo, PS Rise Time, 50 ms de fábrica; en PC, 100); aun con 0 ms la válvula tarda unas decenas de milisegundos en servir lo que pide el paciente, y más cuanto más fuerte tira.',
     ],
   },
   'setting.pause': {
@@ -166,7 +166,7 @@ export const HELP: Record<string, HelpEntry> = {
   'setting.backupTinsp': {
     title: 'Tinsp de respaldo',
     text: [
-      'Duración de las respiraciones de respaldo. Las que dispara el paciente no la usan: terminan cuando el flujo cae al porcentaje de ciclaje o, como tope, a los 3 s.',
+      'Duración de las respiraciones de respaldo. Las que dispara el paciente no la usan: terminan cuando el flujo cae al porcentaje de ciclaje, si la presión pasa de PEEP + PS + 2,5 cmH₂O o, como tope, a los 4 s (Tsupp del equipo).',
     ],
   },
   'setting.backupRR': {
