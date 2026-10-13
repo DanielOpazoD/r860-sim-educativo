@@ -19,7 +19,7 @@ import {
   TRIGGER_MIN_PEEP_DROP_CMH2O,
   TRIGGER_PEEP_DWELL_S,
   TRIGGER_REFRACTORY_S,
-  triggerDelayS,
+  TRIGGER_DELAY_S,
 } from './trigger';
 
 /**
@@ -665,8 +665,7 @@ export class VcController {
           this.triggerPending = {
             atS: this.simT + h,
             next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted',
-            // El retardo se congela al detectar: un cambio del tipo de disparo a mitad de espera no lo altera.
-            delayS: triggerDelayS(s.triggerByPressure),
+            delayS: TRIGGER_DELAY_S,
           };
           this.lastTriggerDetectedS = this.simT + h;
           this.events.push({ type: 'trigger', breathId: this.breath?.breathId ?? '', simTimeS: this.simT + h, qLps: qEnd });

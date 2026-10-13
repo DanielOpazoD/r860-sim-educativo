@@ -88,7 +88,7 @@
     {
       "id": "U-10",
       "question": "Trigger, sincronización y compensaciones precisas.",
-      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s y retardo 80 ms (P); fuga lineal en la Y y desconexión modeladas desde v0.4.2 (E-088), sin compensación de fuga ni de disparo; sin compensación de tubo.",
+      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s y retardo 40 ms (P; banco de Thille 2009, C04); fuga lineal en la Y y desconexión modeladas desde v0.4.2 (E-088), sin compensación de fuga ni de disparo; sin compensación de tubo.",
       "status": "parcialmente cerrada (v0.4.2): fuga y desconexión modeladas; compensaciones no",
       "blocks": [
         "Leak Comp",
@@ -423,8 +423,8 @@
     {
       "id": "U-53",
       "question": "Tiempo de respuesta del disparo del R860 (detección, decisión y apertura de válvula) y ancho de banda de su regulador de PEEP durante ese lapso; no publicados en las fuentes leídas.",
-      "policy": "P: retardo por tipo de disparo — 80 ms por flujo y 110 ms por presión (la caída debe propagarse y medirse en la rama), dentro del rango de banco ICU (60–100 ms flujo, 100–150 ms presión), con el regulador de PEEP de ancho de banda finito (U-43). La caída resultante es del orden de la publicada en bancos; no reproduce la cifra del equipo.",
-      "status": "revisada (v0.4.7)",
+      "policy": "P: retardo de respuesta de 40 ms tras el cruce del umbral, el mismo por flujo y por presión, calibrado con el banco de ventiladores de UCI de Thille 2009 (C04: del inicio del esfuerzo a la presurización, media 58 ms y < 50 con el Engström de GE; el modelo da ≈ 44–52 ms con disparo por flujo de 1 L/min). El disparo por presión es más lento por la física del umbral, sin retardo propio. El ancho de banda del regulador de PEEP sigue en U-43. No reproduce la cifra del R860, que no está publicada.",
+      "status": "revisada (Thille 2009)",
       "blocks": []
     },
     {

@@ -159,6 +159,12 @@
       "title": "Espacio muerto fisiológico del adulto intubado y ventilado: Fletcher R, Jonson B, Cumming G, Brew J. Br J Anaesth 1981;53:77–88 (PMID 6779846); Fletcher R, Jonson B. Br J Anaesth 1984;56:109–19 (PMID 6419753); Morán I et al. Intensive Care Med 2006;32:524–31 (PMID 16498531); Hinkson CR et al. Respir Care 2006;51:1140–4 (PMID 17005059)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Fletcher 1981: el espacio muerto fisiológico es la suma del de la vía aérea (gas entre los labios y la interfase alveolar) y el alveolar (desajuste V/Q dentro y entre unidades). Fletcher y Jonson 1984: en adultos anestesiados con ventilación mecánica, VDphys/VT mediana 0,44 con VT 0,45 L y 0,31 con VT 0,75 L; la vía aérea no cambió con el VT y la fracción alveolar bajó con el VT mayor. Morán: cambiar el intercambiador de calor y humedad por un humidificador activo bajó el VD fisiológico de 352 a 310 mL (≈ 42 mL). Hinkson: quitar el intercambiador y luego el codo flexible de 15 cm bajó VD/VT ≈ 6 % y otro ≈ 5 %. Se usa para el espacio muerto por omisión (vía aérea 0,165 L y fracción alveolar 0,12), no para ningún ajuste."
+    },
+    {
+      "id": "C04",
+      "title": "Banco de ventiladores de UCI: Thille AW, Lyazidi A, Richard JC, Galia F, Brochard L. A bench study of intensive-care-unit ventilators: new versus old and turbine-based versus compressed gas-based ventilators. Intensive Care Med 2009;35:1368–76 (PMID 19352622, PMC2873304, acceso abierto)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Trece ventiladores de 2006, entre ellos el Engström de GE, en un pulmón de dos compartimentos con esfuerzos de P0,1 2, 6 y 13 cmH₂O, PS 5–20, con y sin PEEP 5, disparo en la máxima sensibilidad sin autodisparo (0,8 ± 0,3 L/min; 1,3 ± 0,8 con PEEP). Retardo de disparo (inicio del esfuerzo → comienzo de la presurización): media 58 ms (42–88); menos de 50 ms con el Engström; 69 ± 31 ms con esfuerzo débil frente a 52 ± 14 con fuerte. Retardo inspiratorio (Pva bajo la basal): media 94 ms (54–177), < 70 con el Engström. Se usa para el retardo de respuesta del disparo (40 ms tras el cruce del umbral), no para ningún ajuste."
     }
   ],
   "claims": [
@@ -1107,11 +1113,11 @@
     },
     {
       "id": "E-086",
-      "claim": "Retardo de respuesta del disparo por tipo: 80 ms por flujo y 110 ms por presión (la caída de Pva debe propagarse y medirse en la rama; bancos ICU 60–100 vs 100–150 ms). El retardo se congela al detectar para que un cambio del ajuste a mitad no lo altere, y durante él la espiración continúa y el paciente tira del flujo de base con el regulador de PEEP de U-43: en cuanto su demanda supera ese flujo la Pva cae bajo la PEEP. Medido: ≈ 2 cmH2O con Pmus 8 y flujo de base 4 L/min; > 3 con disparo por presión a −2 (ya 2 por debajo al detectar, más el retardo mayor). Una oclusión en cola anula el disparo detectado; un temporizador del modo que venza antes sirve la respiración igualmente como del paciente. El doble disparo pasa de Ti + 0,25 s a Ti + 0,33 s por flujo.",
-      "status": "P (U-53)",
-      "source": "—",
-      "locator": "—",
-      "implemented": "src/engine/trigger.ts (TRIGGER_DELAY_FLOW_S, TRIGGER_DELAY_PRESSURE_S, triggerDelayS); src/engine/controller.ts (triggerPending.delayS, fase exp y su temporizador)",
+      "claim": "Retardo de respuesta del disparo: 40 ms desde el cruce del umbral hasta la apertura de la válvula inspiratoria, el mismo por flujo y por presión. Con el banco de Thille 2009 (PS 10, PEEP 5, disparo por flujo de 1 L/min, esfuerzo en rampa de P0,1 2 y 6 cmH₂O) el tiempo del inicio del esfuerzo al comienzo de la presurización sale ≈ 52 ms con esfuerzo débil y ≈ 44 con fuerte (banco: media 58, 42–88; Engström < 50; 69 frente a 52 ms). El disparo por presión es más lento sin otro retardo: el esfuerzo tiene que hundir la Pva hasta el umbral (≈ 112 ms con −1 y esfuerzo débil). Con 80 ms por flujo y 110 por presión el modelo daba 84–92 ms por flujo, en el extremo lento del banco. El retardo se congela al detectar y durante él la espiración continúa: el paciente tira del flujo de base con el regulador de PEEP de U-43 y, si su demanda lo supera, la Pva cae bajo la PEEP. Medido: ≈ 1 cmH₂O con Pmus 8 y flujo de base 4 L/min; ≈ 3 con disparo por presión a −2. Una oclusión en cola anula el disparo detectado; un temporizador del modo que venza antes sirve la respiración igualmente como del paciente. El doble disparo llega en Ti + refractario (0,25 s) + 40 ms.",
+      "status": "P (U-53: el tiempo de respuesta propio del R860 no está publicado); D para el rango de banco de ventiladores de UCI y el del Engström de GE (C04)",
+      "source": "C04",
+      "locator": "Thille 2009, Resultados · Trigger function: DT medio 58 ms (42–88); < 50 ms con Engström; débil 69 ± 31 frente a fuerte 52 ± 14 ms; disparo a 0,8–1,3 L/min",
+      "implemented": "src/engine/trigger.ts (TRIGGER_DELAY_S); src/engine/controller.ts (triggerPending.delayS, fase exp y su temporizador)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-04)",
         "tests/unit/asynchrony.test.ts (ASI-01)"

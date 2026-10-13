@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIGGER_DELAY_FLOW_S, TRIGGER_DELAY_PRESSURE_S } from '../../src/engine/trigger';
+import { TRIGGER_DELAY_S } from '../../src/engine/trigger';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 import { validateVcSettings } from '../../src/domain/validation';
 import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
@@ -153,28 +153,51 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
     return out;
   }
 
-  it('la respiración empieza 80 ms después de cruzar el umbral, y en ese lapso la Pva cae ≈ 2 cmH₂O con Pmus 8 y flujo de base 4', () => {
-    const d = disparos({});
-    expect(d.length).toBeGreaterThanOrEqual(5);
-    for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_FLOW_S * 1000)).toBeLessThanOrEqual(4);
-    for (const x of d.slice(2)) {
-      expect(x.caida).toBeGreaterThan(1);
-      expect(x.caida).toBeLessThan(3);
+  it('la respiración empieza 40 ms después de cruzar el umbral, por flujo o por presión; en ese lapso la Pva cae bajo PEEP', () => {
+    for (const over of [{}, { triggerByPressure: true, pressureTrigger: -2 }]) {
+      const d = disparos(over);
+      expect(d.length).toBeGreaterThanOrEqual(5);
+      for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_S * 1000)).toBeLessThanOrEqual(4);
+    }
+    for (const x of disparos({}).slice(2)) {
+      expect(x.caida).toBeGreaterThan(0.3);
+      expect(x.caida).toBeLessThan(2);
     }
   });
 
-  it('el disparo por presión es más lento que el de flujo: la respiración empieza ≈ 110 ms tras cruzar el umbral', () => {
-    const d = disparos({ triggerByPressure: true, pressureTrigger: -2 });
-    expect(d.length).toBeGreaterThanOrEqual(5);
-    for (const x of d) expect(Math.abs(x.retardoMs - TRIGGER_DELAY_PRESSURE_S * 1000)).toBeLessThanOrEqual(4);
+  it('del inicio del esfuerzo a la presurización, como el banco de Thille 2009: < 50 ms con esfuerzo fuerte, más con débil o por presión', () => {
+    // Banco de Thille: PS 10, PEEP 5, disparo por flujo en su máxima sensibilidad (≈ 1 L/min); esfuerzo débil P0,1 2 y
+    // fuerte P0,1 6 cmH₂O (rampa casi lineal: aquí un cuarto de seno de 0,5 s). Media de 13 equipos 58 ms (42–88), Engström < 50.
+    const retardo = (amplitude: number, over: Partial<typeof BENCH_SETTINGS> = {}): number => {
+      const ef = { enabled: true, amplitude, ratePerMin: 15, tiS: 0.5, phaseS: 0.5, shape: 'riseRelax' as const };
+      const sim = benchSim({
+        effort: ef,
+        settings: { ...BENCH_SETTINGS, mode: 'CPAP_PS', psupport: 10, peep: 5, flowTrigger: 1 / 60, minRate: 'off', ...over },
+      });
+      sim.run(30_000);
+      const dts = sim.breaths
+        .filter((b) => b.startSimTimeMs > 8000)
+        .map((b) => {
+          const t = b.startSimTimeMs / 1000;
+          return (t - (ef.phaseS + Math.floor((t - ef.phaseS) / 4) * 4)) * 1000;
+        });
+      return dts.reduce((s, x) => s + x, 0) / dts.length;
+    };
+    const fuerte = retardo(19),
+      debil = retardo(6.4),
+      presion = retardo(6.4, { triggerByPressure: true, pressureTrigger: -1 });
+    expect(fuerte).toBeLessThan(50);
+    expect(debil).toBeGreaterThan(fuerte);
+    expect(debil).toBeLessThan(70);
+    expect(presion).toBeGreaterThan(debil + 30);
   });
 
-  it('más flujo de base o menos esfuerzo, menos trabajo de disparo; el disparo por presión lo duplica', () => {
+  it('más flujo de base o menos esfuerzo, menos trabajo de disparo; el disparo por presión lo multiplica', () => {
     const base = disparos({}).at(-1)!.caida;
     expect(disparos({ biasFlow: 10 / 60 }).at(-1)!.caida).toBeLessThan(base - 0.5);
     expect(disparos({}, 4).at(-1)!.caida).toBeLessThan(base - 0.5);
     // Con disparo por presión a −2 la Pva ya está 2 por debajo al detectar y sigue cayendo durante el retardo.
-    expect(disparos({ triggerByPressure: true, pressureTrigger: -2 }).at(-1)!.caida).toBeGreaterThan(3);
+    expect(disparos({ triggerByPressure: true, pressureTrigger: -2 }).at(-1)!.caida).toBeGreaterThan(2 * base);
   });
 
   it('sin disparo asistido la espiración termina por el temporizador y la caída del esfuerzo queda contenida', () => {

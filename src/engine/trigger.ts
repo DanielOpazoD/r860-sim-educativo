@@ -1,21 +1,15 @@
 /** Periodo refractario tras el inicio de la espiración antes de admitir disparo (P; inspirado en Texp mínimo 0.25 s, D). */
 export const TRIGGER_REFRACTORY_S = 0.25;
 /**
- * Retardo de respuesta del disparo por FLUJO (s), P (U-53): del cruce del umbral a la apertura de la válvula
- * inspiratoria. 80 ms está dentro del rango de banco de los ventiladores de cuidados intensivos (60–100 ms por flujo).
+ * Retardo de respuesta del disparo (s): del cruce del umbral a la apertura de la válvula inspiratoria, el mismo para
+ * flujo y presión. Thille (Intensive Care Med 2009, banco de 13 ventiladores de UCI) midió del inicio del esfuerzo al
+ * comienzo de la presurización 58 ms de media (42–88), menos de 50 ms con el Engström de GE, y más con esfuerzos
+ * débiles (69 frente a 52 ms). Ese tiempo es el que tarda el esfuerzo en cruzar el umbral más este retardo: con 40 ms el
+ * modelo da ≈ 44 ms con esfuerzo fuerte y ≈ 52 con débil (disparo por flujo de 1 L/min). Con 80 ms daba 84–92, en el
+ * extremo lento del banco. El disparo por presión es más lento sin necesitar otro retardo: el esfuerzo tiene que hundir
+ * la Pva hasta el umbral antes de que haya nada que detectar.
  */
-export const TRIGGER_DELAY_FLOW_S = 0.08;
-/**
- * Retardo de respuesta del disparo por PRESIÓN (s), P (U-53): la caída de Pva debe propagarse por el circuito y medirse
- * en la rama antes de decidir, así que es más lento que el de flujo (bancos ICU: ≈ 100–150 ms por presión frente a
- * 60–100 ms por flujo). En ese lapso mayor el paciente tira más tiempo del flujo de base y la caída crece: el trabajo
- * de disparo por presión es mayor, como en el equipo real.
- */
-export const TRIGGER_DELAY_PRESSURE_S = 0.11;
-/** Retardo de respuesta según el tipo de disparo programado. */
-export function triggerDelayS(byPressure: boolean): number {
-  return byPressure ? TRIGGER_DELAY_PRESSURE_S : TRIGGER_DELAY_FLOW_S;
-}
+export const TRIGGER_DELAY_S = 0.04;
 /**
  * Caída de la Pva espiratoria por cada L/s de demanda del paciente que el regulador de PEEP aún no ha compensado
  * (cmH2O·s/L), P (U-43). El regulador real tiene ancho de banda finito: ante una demanda REPENTINA la Pva hunde

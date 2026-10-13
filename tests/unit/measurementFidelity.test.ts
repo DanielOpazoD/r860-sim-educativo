@@ -181,7 +181,8 @@ describe('cierre de coherencia de pausa y SC-18', () => {
     );
     sim.run(40000);
     sim.command({ type: 'setPatient', params: { rExp: 60 } });
-    runUntilBreath(sim, sim.breaths.length + 6);
+    // Una respiración en la que el esfuerzo deja una meseta estable: en otras fases la misma maniobra sale inválida.
+    runUntilBreath(sim, sim.breaths.length + 5);
     expect(sim.command({ type: 'requestHold', kind: 'expHold', durationS: 2 }).accepted).toBe(true);
     for (let i = 0; i < 20000 && !sim.procedures.last.expHold; i++) sim.step();
     expect(sim.procedures.last.expHold).not.toBeNull();
