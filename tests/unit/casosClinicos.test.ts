@@ -206,31 +206,70 @@ describe('CAS-02b · EPOC con limitación al flujo: la PEEP externa hasta la pre
 });
 
 describe('CAS-03 · SDRA: VT protector', () => {
-  it('la viñeta: ΔP ≈ 20 (19,5) y pH 7,42 con VT 600', () => {
+  /** Meseta, presión motriz y Cstat de un bloqueo de 3 s tras 30 s con el ajuste dado. */
+  const medir = (ajuste: Record<string, number>) => {
+    const k = caso('CC-03');
+    k.ajustar(ajuste);
+    k.correr(30_000);
+    k.bloqueo('inspHold');
+    const h = k.sim.procedures.last.inspHold!;
+    return { k, pplat: h.values.pplat!.value!, dp: h.values.driving!.value!, cstat: h.values.cstat!.value! };
+  };
+  it('la viñeta: con VT 600 la meseta pasa el codo superior (Pplat ≈ 33, ΔP ≈ 23) y el pH es 7,40', () => {
     const k = caso('CC-03');
     k.bloqueo('inspHold');
-    expect(k.sim.procedures.last.inspHold!.values.driving!.value!).toBeCloseTo(19.5, 0);
-    expect(phEq(k)).toBeCloseTo(7.42, 1);
+    const h = k.sim.procedures.last.inspHold!;
+    expect(h.values.pplat!.value!).toBeGreaterThan(32);
+    expect(h.values.pplat!.value!).toBeLessThan(35);
+    expect(h.values.driving!.value!).toBeCloseTo(23.3, 0);
+    expect(phEq(k)).toBeCloseTo(7.4, 1);
     expect(k.resultado().passed).toBe(false);
   });
-  it('VT 425 con FR 28 lo resuelve; VT 425 sin subir la FR deja acidosis', () => {
-    const bien = caso('CC-03');
-    bien.ajustar({ vt: 0.425, rr: 28 });
-    bien.correr(30_000);
-    bien.bloqueo('inspHold');
-    const h = bien.sim.procedures.last.inspHold!;
-    expect(h.values.driving!.value!).toBeCloseTo(14.6, 0);
-    expect(h.values.pplat!.value!).toBeCloseTo(24.7, 0);
-    expect(bien.resultado().passed).toBe(true);
+  it('6 mL/kg todavía deja la presión motriz en 15 o más (Terragni); 400 mL con FR 28 lo resuelve; sin subir la FR, acidosis', () => {
+    const seis = medir({ vt: 0.425, rr: 28 });
+    expect(seis.dp).toBeGreaterThan(15.1);
+    expect(seis.k.resultado().criteria.find((c) => c.id === 'dp')!.ok).toBe(false);
+    const bien = medir({ vt: 0.4, rr: 28 });
+    expect(bien.dp).toBeCloseTo(14.3, 0);
+    expect(bien.dp).toBeLessThan(14.8);
+    expect(bien.pplat).toBeCloseTo(24.4, 0);
+    expect(bien.k.resultado().passed).toBe(true);
     const sinFr = caso('CC-03');
-    sinFr.ajustar({ vt: 0.425 });
+    sinFr.ajustar({ vt: 0.4 });
     sinFr.correr(30_000);
     sinFr.bloqueo('inspHold');
-    expect(sinFr.gas.paco2Target!).toBeCloseTo(64, -1);
+    expect(sinFr.gas.paco2Target!).toBeGreaterThan(68);
     expect(sinFr.resultado().criteria.find((c) => c.id === 'ph')!.ok).toBe(false);
     // VD/VT en el rango que Nuckton midió en el SDRA (0,58 ± 0,09): más alto con el VT protector.
     expect(sinFr.gas.vdVt!).toBeGreaterThan(0.55);
-    expect(sinFr.gas.vdVt!).toBeLessThan(0.65);
+    expect(sinFr.gas.vdVt!).toBeLessThan(0.67);
+  });
+  it('curva no lineal: la Cstat cae al subir el VT o la PEEP, y la PEEP alta sube la presión motriz (Roupie, Grasso)', () => {
+    const v600 = medir({}),
+      v400 = medir({ vt: 0.4, rr: 28 }),
+      peep14 = medir({ vt: 0.4, rr: 28, peep: 14 });
+    // En un pulmón lineal la Cstat no depende del VT ni de la PEEP y la presión motriz no cambia con la PEEP.
+    expect(v400.cstat - v600.cstat).toBeGreaterThan(0.0015);
+    expect(v400.cstat - peep14.cstat).toBeGreaterThan(0.003);
+    expect(peep14.dp - v400.dp).toBeGreaterThan(2);
+    // Bajar la PEEP no es un atajo: sin oxigenación en el modelo, el caso exige la de la viñeta.
+    const atajo = medir({ vt: 0.425, rr: 28, peep: 8 });
+    expect(atajo.dp).toBeLessThan(15);
+    expect(atajo.k.resultado().criteria.find((c) => c.id === 'peep')!.ok).toBe(false);
+  });
+  it('el índice de estrés sube con el VT y con la PEEP, y con el latido se lee igual que sin él', () => {
+    const indice = (k: ReturnType<typeof caso>) => k.sim.frame().metrics.stressIndex!.value!;
+    const v600 = medir({}),
+      v400 = medir({ vt: 0.4, rr: 28 }),
+      peep14 = medir({ vt: 0.4, rr: 28, peep: 14 });
+    expect(indice(v600.k)).toBeGreaterThan(indice(v400.k) + 0.02);
+    expect(indice(peep14.k)).toBeGreaterThan(indice(v400.k) + 0.02);
+    // Rango normal de Grasso (0,9–1,1) con el VT protector.
+    expect(indice(v400.k)).toBeGreaterThan(0.95);
+    expect(indice(v400.k)).toBeLessThan(1.1);
+    // Respiración a respiración no salta con la fase del latido.
+    const ultimos = v400.k.sim.breaths.slice(-6).map((b) => b.stressIndex!);
+    expect(Math.max(...ultimos) - Math.min(...ultimos)).toBeLessThan(0.03);
   });
 });
 

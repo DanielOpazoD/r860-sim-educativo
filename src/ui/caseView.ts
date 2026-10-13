@@ -135,8 +135,15 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
   const t = frame.truth;
   const p = t.patient;
   const g = t.gas;
+  const s = p.sigmoid && p.sigmoid.b > 0 ? p.sigmoid : null;
   const filas = [
-    fila('Distensibilidad', `${f(p.crs * 1000, 0)} mL/cmH₂O`),
+    // Con curva sigmoidea no hay una sola distensibilidad: se dice la máxima y dónde empieza a caer.
+    s
+      ? fila(
+          'Distensibilidad',
+          `no lineal · máxima ${f((s.b / (4 * s.d)) * 1000, 0)} mL/cmH₂O; cae sobre ≈ ${f(s.c + 1.317 * s.d, 0)} cmH₂O`,
+        )
+      : fila('Distensibilidad', `${f(p.crs * 1000, 0)} mL/cmH₂O`),
     fila('Resistencia insp / esp', `${f(p.rInsp, 0)} / ${f(p.rExp, 0)} cmH₂O·s/L`),
     fila('Auto-PEEP verdadera', `${f(t.peepiEndExp, 1)} cmH₂O`),
   ];

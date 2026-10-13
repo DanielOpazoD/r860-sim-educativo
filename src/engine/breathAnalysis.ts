@@ -126,7 +126,7 @@ export function expiratoryTimeConstant(
   return Number.isFinite(tau) && tau > 0 ? { tau, r2 } : null;
 }
 
-/** Mínimos cuadrados por ecuaciones normales con eliminación de Gauss (k ≤ 4 columnas); null si es singular. */
+/** Mínimos cuadrados por ecuaciones normales con eliminación de Gauss (k ≤ 6 columnas); null si es singular. */
 function minimosCuadrados(filas: { x: number[]; y: number }[], k: number): number[] | null {
   const A = Array.from({ length: k }, () => new Array<number>(k + 1).fill(0));
   for (const f of filas)
@@ -164,12 +164,15 @@ function minimosCuadrados(filas: { x: number[]; y: number }[], k: number): numbe
  * Devuelve null cuando la forma no significa lo que se cree: pocas muestras, presión recortada por un techo, o un
  * esfuerzo del paciente durante la rampa —entonces la curva es del paciente y del ventilador, no del pulmón—.
  */
-export function stressIndex(muestras: { t: number; paw: number }[]): number | null {
+export function stressIndex(muestras: { t: number; paw: number }[], omegaCardiaca = 0): number | null {
   if (muestras.length < 12) return null;
   const t0 = muestras[0]!.t;
   const c = muestras[0]!.paw;
   const tFin = muestras[muestras.length - 1]!.t - t0;
   if (!(tFin > 0)) return null;
+  // Con latido y al menos 0,8 de ciclo cardíaco de rampa, el latido se estima y se descuenta antes (véase abajo). Con
+  // menos rampa la sinusoide se confunde con la curvatura y el índice se acerca a 1 (con medio ciclo, hasta 0,15).
+  if (omegaCardiaca > 0 && tFin >= (0.8 * 2 * Math.PI) / omegaCardiaca) return indiceConLatido(muestras, omegaCardiaca);
   // Se descarta el primer 10 % del tramo: ahí el logaritmo es singular y el escalón resistivo aún se está formando.
   let n = 0,
     sx = 0,
@@ -193,6 +196,37 @@ export function stressIndex(muestras: { t: number; paw: number }[]): number | nu
   if (Math.abs(den) < 1e-12) return null;
   const b = (n * sxy - sx * sy) / den;
   return Number.isFinite(b) ? b : null;
+}
+
+/**
+ * Índice de estrés con oscilación cardiogénica. El latido mueve la rampa ±0,45 cmH₂O y, sin descontarlo, el índice de
+ * una misma mecánica salta entre 0,93 y 1,10 según la fase del latido en que empiece la respiración. Se estima la
+ * sinusoide a la frecuencia cardíaca junto con una línea de base cúbica —flexible para cualquier forma suave de la
+ * rampa, sin suponer la potencia—, se resta y se aplica el método de siempre, con c en la presión al abrirse el flujo:
+ * el resultado no depende de la fase y, con un ciclo cardíaco de rampa o más, queda a ≤ 0,02 del índice de la misma
+ * curva sin latido (con 0,8 de ciclo, ≤ 0,06 en curvaturas extremas y ≤ 0,01 en las del motor).
+ */
+function indiceConLatido(muestras: { t: number; paw: number }[], omega: number): number | null {
+  const t0 = muestras[0]!.t;
+  const tFin = muestras[muestras.length - 1]!.t - t0;
+  const filas = muestras
+    .filter((m) => m.t - t0 >= 0.1 * tFin)
+    .map((m) => {
+      const t = m.t - t0,
+        s = t / tFin;
+      return { x: [1, s, s * s, s * s * s, Math.sin(omega * t), Math.cos(omega * t)], y: m.paw };
+    });
+  if (filas.length < 12) return null;
+  const coef = minimosCuadrados(filas, 6);
+  if (!coef) return null;
+  const a = coef[4]!,
+    b = coef[5]!;
+  // Se resta el latido relativo al inicio de la rampa, así la primera muestra (c) queda como estaba.
+  const limpias = muestras.map((m) => {
+    const t = m.t - t0;
+    return { t: m.t, paw: m.paw - a * Math.sin(omega * t) - b * (Math.cos(omega * t) - 1) };
+  });
+  return stressIndex(limpias);
 }
 
 /**

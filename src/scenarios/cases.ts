@@ -49,6 +49,24 @@ const REF = {
       'Nuckton TJ, Alonso JA, Kallet RH, et al. Pulmonary dead-space fraction as a risk factor for death in the acute respiratory distress syndrome. N Engl J Med. 2002;346(17):1281-6.',
     url: pubmed('11973365'),
   },
+  roupie1995: {
+    short: 'Roupie, Am J Respir Crit Care Med 1995',
+    citation:
+      'Roupie E, Dambrosio M, Servillo G, et al. Titration of tidal volume and induced hypercapnia in acute respiratory distress syndrome. Am J Respir Crit Care Med. 1995;152(1):121-8.',
+    url: pubmed('7599810'),
+  },
+  terragni2007: {
+    short: 'Terragni, Am J Respir Crit Care Med 2007',
+    citation:
+      'Terragni PP, Rosboch G, Tealdi A, et al. Tidal hyperinflation during low tidal volume ventilation in acute respiratory distress syndrome. Am J Respir Crit Care Med. 2007;175(2):160-6.',
+    url: pubmed('17038660'),
+  },
+  grasso2007: {
+    short: 'Grasso, Am J Respir Crit Care Med 2007',
+    citation:
+      'Grasso S, Stripoli T, De Michele M, et al. ARDSnet ventilatory protocol and alveolar hyperinflation: role of positive end-expiratory pressure. Am J Respir Crit Care Med. 2007;176(8):761-7.',
+    url: pubmed('17656676'),
+  },
   suarez2007: {
     short: 'Suarez-Sipmann, Crit Care Med 2007',
     citation:
@@ -142,6 +160,14 @@ const tejido = (id: string) => {
 const INTUBADO_H = { r2: k2('id80'), ...tejido('healthy'), cardiac: CARDIAC_REFERENCE };
 const INTUBADA_M = { r2: k2('id75'), ...tejido('healthy'), cardiac: CARDIAC_REFERENCE };
 const SDRA_TEJIDO = { eVisc: 2 * tejido('healthy').eVisc, tauViscS: 1.0, cardiac: CARDIAC_REFERENCE };
+/**
+ * SDRA focal por neumonía, poco reclutable (Grasso 2007): curva presión-volumen sigmoidea (Venegas) sin codo inferior
+ * útil y con el superior en ≈ 22 cmH₂O, a ≈ 400 mL sobre una PEEP de 10. Roupie (1995) encontró el codo superior en
+ * todos sus SDRA, a 26 ± 6 cmH₂O y 610 ± 235 mL sobre la PEEP. Por encima, cada mililitro cuesta más presión: la Cstat
+ * cae al subir el VT o la PEEP, y la presión motriz de 6 mL/kg roza 15, como en los pacientes «menos protegidos» de
+ * Terragni (2007). Los valores son P, dentro de esos rangos.
+ */
+const SDRA_FOCAL = { b: 2.2, c: 4, d: 14 };
 /**
  * Limitación al flujo espiratorio del EPOC (resistor de Starling): Armaganidis (Crit Care Med 2000) la encontró en 11 de
  * 13 pacientes ventilados por una insuficiencia de origen pulmonar, con PEEPi estática 7,1 ± 2,8 frente a 1,2 sin
@@ -304,13 +330,13 @@ export const CLINICAL_CASES: Scenario[] = [
     synthetic: true,
     category: 'Ventilación protectora',
     level: 2,
-    description: 'VT de 8,5 mL/kg y presión motriz de 20 en un SDRA. Protege el pulmón sin perder el control del CO₂.',
+    description: 'VT de 8,5 mL/kg y presión motriz de 23 en un SDRA. Protege el pulmón sin perder el control del CO₂.',
     clinical: {
       theme: 'SDRA · ventilación protectora',
       vignette:
-        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,42, PaCO₂ 38 mmHg.',
+        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,40, PaCO₂ 40 mmHg.',
       question:
-        'Programa una ventilación protectora: VT ≈ 6 mL/kg de peso predicho (hasta 6,5), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.',
+        'Programa una ventilación protectora sin bajar la PEEP: VT de 6 mL/kg de peso predicho o menos (hasta 6,5), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.',
       kind: 'ajuste',
       criteria: [
         {
@@ -324,14 +350,24 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'dp', text: 'Presión motriz < 15 cmH₂O', test: 'drivingBelow', params: { max: 15 } },
         { id: 'ph', text: 'pH de equilibrio entre 7,30 y 7,45', test: 'phEqRange', params: { min: 7.3, max: 7.45 } },
         { id: 'fr', text: 'FR de 35 o menos', test: 'rrMax', params: { max: 35 } },
+        { id: 'peep', text: 'PEEP de 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
       ],
-      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Con una distensibilidad de ≈ 31 mL/cmH₂O, bajar el VT de 600 a 425 mL lleva la presión motriz de ≈ 20 a ≈ 15 cmH₂O —la variable que mejor estratificó la supervivencia en el análisis de Amato— y la Pplat a ≈ 25. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,60 con 425 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 64 mmHg (pH 7,24, ya con el bicarbonato que sube ≈ 2 mEq/L en la hipercapnia aguda). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 22 el pH de equilibrio vuelve a ≈ 7,35 y con FR 28, a ≈ 7,43.`,
-      references: [REF.ardsnet2000, REF.amato2015, REF.ardsnetCard, REF.nuckton2002],
+      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Este pulmón no es lineal: su curva presión-volumen tiene el codo superior en ≈ 22 cmH₂O (Roupie lo encontró en todos sus SDRA, a 26 ± 6). Con 600 mL la meseta pasa el codo: Pplat ≈ 33, presión motriz ≈ 23 y una Cstat de ≈ 26 mL/cmH₂O, que es la de la parte alta de la curva. Bajar a 425 mL (6 mL/kg) sube la Cstat a ≈ 28, pero la presión motriz se queda en ≈ 15,5, todavía no baja de 15, la variable que mejor estratificó la supervivencia en el análisis de Amato. Terragni mostró que en los SDRA con más pulmón no aireado 6 mL/kg y Pplat ≤ 30 no bastan para evitar la hiperinsuflación, y el protocolo ARDSNet permite bajar hasta 4 mL/kg: con 400 mL (5,7 mL/kg) la presión motriz queda en ≈ 14 y la Pplat en ≈ 24. Subir la PEEP no ayuda en este pulmón poco reclutable: a 14 la presión motriz sube a ≈ 17, porque el volumen corriente cae más arriba en la curva (Grasso). El índice de estrés, la forma de la rampa de presión, va de ≈ 1,08 con 600 mL a ≈ 1,04 con 400: dentro del rango normal, pero subiendo con el VT y con la PEEP. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,62 con 400 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 74 mmHg (pH 7,19, ya con el bicarbonato que sube en la hipercapnia aguda). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 28 el pH de equilibrio vuelve a ≈ 7,32.`,
+      references: [REF.ardsnet2000, REF.amato2015, REF.ardsnetCard, REF.nuckton2002, REF.roupie1995, REF.terragni2007, REF.grasso2007],
     },
     question: '¿Por qué hay que subir la frecuencia al bajar el volumen corriente en un SDRA?',
     answer:
       'Porque el espacio muerto de la vía aérea no cambia: con un VT menor pesa más, el alvéolo se ventila menos y, sin más frecuencia, la PaCO₂ sube.',
-    patient: { crs: 0.032, rInsp: 10, rExp: 10, p0: 0, r2: INTUBADO_H.r2, ...SDRA_TEJIDO, gas: { alveolarDeadspaceFrac: 0.35 } },
+    patient: {
+      crs: 0.028,
+      rInsp: 10,
+      rExp: 10,
+      p0: 0,
+      r2: INTUBADO_H.r2,
+      ...SDRA_TEJIDO,
+      sigmoid: SDRA_FOCAL,
+      gas: { alveolarDeadspaceFrac: 0.35 },
+    },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.6, rr: 16, ie: 1 / 2, peep: 10, pmax: 50, plimit: 100, pausePct: 0 },
@@ -339,7 +375,7 @@ export const CLINICAL_CASES: Scenario[] = [
     perturbations: [],
     observe: 'Presión motriz alta con VT de 8,5 mL/kg.',
     caution:
-      'Distensibilidad lineal y fracción de espacio muerto alveolar constante: el SDRA real es heterogéneo y su espacio muerto cambia con la PEEP y el VT.',
+      'Curva presión-volumen fija, sin reclutamiento, y fracción de espacio muerto alveolar constante: el SDRA real es heterogéneo, recluta o colapsa según la PEEP y su espacio muerto cambia con la PEEP y el VT. Sin modelo de oxigenación el caso fija la PEEP.',
   },
   {
     id: 'CC-04',
