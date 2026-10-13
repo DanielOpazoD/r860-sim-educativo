@@ -337,8 +337,8 @@ export const HELP: Record<string, HelpEntry> = {
   'patient.leak': {
     title: 'Fuga del circuito',
     text: [
-      'Flujo que se pierde fuera del circuito, expresado a una presión de referencia de 20 cmH₂O. En el modelo, la pérdida aumenta con la presión.',
-      'Puede disminuir el volumen que vuelve al sensor y hacer caer la presión durante una oclusión. El volumen trazado integra el sensor, no el volumen anatómico del pulmón.',
+      'Flujo que se pierde fuera del circuito a 10 cmH₂O. Crece con la presión como un orificio, no en proporción: a 5 cmH₂O se pierde ≈ 68 % de ese valor y a 20, ≈ 147 %.',
+      'Disminuye el volumen que vuelve al sensor, puede impedir que se sostenga la PEEP y hace caer la presión durante una oclusión.',
     ],
   },
   'patient.circuitCompliance': {

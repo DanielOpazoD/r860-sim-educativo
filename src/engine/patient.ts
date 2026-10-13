@@ -50,6 +50,12 @@ export function sigmoidCompliance(s: SigmoidPV, p0: number, v: number): number {
 /** Volumen de equilibrio pasivo a una presión dada, con el modelo elástico que declare el paciente. */
 /** Conductancia con la que se representa el circuito abierto (L/s por cmH2O): 0,5 L/s bajan el nodo a 0,25 cmH2O (P). */
 export const DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O = 2;
+/**
+ * Exponente de la ley del orificio de la fuga, Q = Q10·(P/10)^n. Un orificio turbulento ideal da n = 0,5 (Bernoulli);
+ * los orificios calibrados de las mascarillas ResMed AirFit F20 y N20 (curvas presión-flujo de sus guías, 2017) se
+ * ajustan con n = 0,562 y 0,557, con error ≤ 1,8 % entre 3 y 40 cmH2O, cuando una ley lineal yerra en más del 50 %.
+ */
+export const LEAK_ORIFICE_EXPONENT = 0.56;
 
 export function equilibriumVolumeFor(
   params: { crs: number; p0: number; sigmoid?: SigmoidPV; recruit?: { frac: number } },
@@ -315,19 +321,28 @@ export class PatientModel {
   get hasSecond(): boolean {
     return !!this.params.second && this.params.second.crs > 0;
   }
-  /**
-   * Conductancia de la fuga en la pieza en Y (L/s por cmH2O): Qfuga = G · Py, lineal con la presión del nodo (P). El
-   * instructor la fija como litros por minuto a 10 cmH2O; la desconexión es una fuga tan grande que el nodo queda a
-   * presión ambiente sea cual sea el flujo que entregue el ventilador.
-   */
-  get leakG(): number {
-    if (this.params.disconnected) return DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O;
-    const lpm = this.params.leakLpmAt10 ?? 0;
-    return lpm > 0 ? lpm / 60 / 10 : 0;
+  /** Hay fuga en la pieza en Y (o el circuito está abierto). */
+  get hasLeak(): boolean {
+    return !!this.params.disconnected || (this.params.leakLpmAt10 ?? 0) > 0;
   }
-  /** Flujo que escapa por la fuga a la presión de nodo dada (L/s; negativo si el nodo queda bajo el ambiente). */
+  /**
+   * Conductancia LINEAL de la fuga (L/s por cmH2O): sólo la desconexión, una fuga tan grande que el nodo queda a presión
+   * ambiente sea cual sea el flujo que entregue el ventilador. La fuga del paciente sigue la ley del orificio y no
+   * cabe en las soluciones cerradas del nodo: para ella vale 0 y se resuelve por bisección con `leakFlow`.
+   */
+  private get leakLinearG(): number {
+    return this.params.disconnected ? DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O : 0;
+  }
+  /**
+   * Flujo que escapa por la fuga a la presión de nodo dada (L/s; negativo si el nodo queda bajo el ambiente y entra
+   * aire). El instructor la fija como litros por minuto a 10 cmH2O, como se especifica una mascarilla; con la presión
+   * crece como un orificio, Q10·(|P|/10)^n: a PEEP 5 escapa el 68 % de lo de 10 (no la mitad) y a 20, el 147 % (no el doble).
+   */
   leakFlow(py: number): number {
-    return this.leakG * py;
+    if (this.params.disconnected) return DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O * py;
+    const q10 = (this.params.leakLpmAt10 ?? 0) / 60;
+    if (!(q10 > 0) || py === 0) return 0;
+    return Math.sign(py) * q10 * Math.pow(Math.abs(py) / 10, LEAK_ORIFICE_EXPONENT);
   }
   /** Compliance del circuito (L/cmH2O); 0 o ausente = tubuladura incompresible. */
   get circuitComplianceL(): number {
@@ -389,7 +404,6 @@ export class PatientModel {
     v2: number = this.v2,
     minFlow: number = Number.NEGATIVE_INFINITY,
   ): { py: number; q1: number; q2: number; qLeak: number; clamped: boolean } {
-    const g = this.leakG;
     const ramas = (py: number): { q1: number; q2: number } => ({
       q1: this.branch1Flow(py, pmus, v),
       q2: this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0,
@@ -402,7 +416,7 @@ export class PatientModel {
       py = this.nodePressureForFlow(qTotal, pmus, v, v2);
       ({ q1, q2 } = ramas(py));
     };
-    const qVent = q1 + q2 + g * py;
+    const qVent = q1 + q2 + this.leakFlow(py);
     if (qVent > maxFlow) {
       clamped = true;
       fijarTotal(maxFlow);
@@ -412,7 +426,7 @@ export class PatientModel {
     } else if (nonNegativeFlow && qVent < 0) {
       fijarTotal(0); // válvula inspiratoria de un solo sentido: el circuito queda ocluido (lo que sale del pulmón se va por la fuga)
     }
-    return { py, q1, q2, qLeak: g * py, clamped };
+    return { py, q1, q2, qLeak: this.leakFlow(py), clamped };
   }
 
   /** Las dos ramas son lineales por tramos en la presión del nodo: entonces el nodo se resuelve en forma cerrada. */
@@ -471,14 +485,18 @@ export class PatientModel {
   /** Presión del nodo cuando el circuito interpone una resistencia en serie: por ella pasa el flujo total de las ramas. */
   nodePressureWithSeries(paw: number, pmus: number, rSeries: number, v: number = this.v, v2: number = this.v2): number {
     if (!(rSeries > 0)) return paw;
-    const gFuga = this.leakG;
-    if (this.hasSecond || gFuga > 0) {
+    const gFuga = this.leakLinearG;
+    // La fuga del orificio no es lineal: con ella el nodo se resuelve por bisección.
+    const orificio = this.hasLeak && !this.params.disconnected;
+    if ((this.hasSecond || gFuga > 0) && !orificio) {
       const exacto = this.solveNodeLinear(pmus, v, v2, 1 / rSeries + gFuga, -paw / rSeries, 0);
       if (exacto !== null) return exacto;
     }
     const g = (py: number): number => {
       this.solverEvals++;
-      return this.branch1Flow(py, pmus, v) + (this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0) + gFuga * py - (paw - py) / rSeries;
+      return (
+        this.branch1Flow(py, pmus, v) + (this.hasSecond ? this.branch2Flow(py, pmus, v2) : 0) + this.leakFlow(py) - (paw - py) / rSeries
+      );
     };
     let lo = Math.min(paw, this.pel(v), this.hasSecond ? this.pel2(v2) : paw) - pmus - 1;
     let hi = Math.max(paw, this.pel(v), this.hasSecond ? this.pel2(v2) : paw) - pmus + 1;
@@ -497,14 +515,15 @@ export class PatientModel {
    * no lineales (Rohrer, limitación al flujo), pero el flujo total crece de forma monótona con la presión del nodo.
    */
   nodePressureForFlow(qTotal: number, pmus: number, v: number = this.v, v2: number = this.v2): number {
-    const gFuga = this.leakG;
-    if (this.hasSecond || gFuga > 0) {
+    const gFuga = this.leakLinearG;
+    const orificio = this.hasLeak && !this.params.disconnected;
+    if ((this.hasSecond || gFuga > 0) && !orificio) {
       const exacto = this.solveNodeLinear(pmus, v, v2, gFuga, 0, qTotal);
       if (exacto !== null) return exacto;
     }
     const f = (py: number): number => {
       this.solverEvals++;
-      return this.branch1Flow(py, pmus, v) + this.branch2Flow(py, pmus, v2) + gFuga * py;
+      return this.branch1Flow(py, pmus, v) + this.branch2Flow(py, pmus, v2) + this.leakFlow(py);
     };
     let lo = Math.min(this.pel(v), this.pel2(v2)) - pmus - 1;
     let hi = Math.max(this.pel(v), this.pel2(v2)) - pmus + 1;
@@ -521,7 +540,7 @@ export class PatientModel {
   /** Paw resultante para un flujo impuesto (fuente de flujo). */
   pawForFlow(q: number, pmus: number, v: number = this.v): number {
     // Con dos unidades, con limitación al flujo o con fuga la relación no es invertible en forma cerrada: se resuelve el nodo.
-    if (this.hasSecond || this.params.efl || this.leakG > 0) return this.nodePressureForFlow(q, pmus, v);
+    if (this.hasSecond || this.params.efl || this.hasLeak) return this.nodePressureForFlow(q, pmus, v);
     const r = this.r1For(q, v) + this.params.r2 * Math.abs(q);
     return this.pel(v) + r * q - pmus;
   }
@@ -562,7 +581,7 @@ export class PatientModel {
     // Con dos unidades o con fuga el nodo se resuelve primero (circuito, fuga y tope del ventilador) y después se reparte.
     const nodo = (pm: number, vv: number, vv2: number): { py: number; q1: number; q2: number; qLeak: number; clamped: boolean } =>
       this.nodeState(paw, pm, rSeries, maxFlow, nonNegativeFlow, vv, vv2, minFlow);
-    const porNodo = this.hasSecond || this.leakG > 0;
+    const porNodo = this.hasSecond || this.hasLeak;
     let clampedAlguna = false;
     let dVLeak = 0;
     for (let i = 0; i < nSub; i++) {
@@ -616,7 +635,7 @@ export class PatientModel {
    */
   integrateFlowSource(q: number, dt: number, pmus = 0): { dV: number } {
     if (!(dt > 0)) return { dV: 0 };
-    if (!this.hasSecond && this.leakG <= 0) {
+    if (!this.hasSecond && !this.hasLeak) {
       const v0 = this.v;
       const dV = q * dt;
       this.v += dV;

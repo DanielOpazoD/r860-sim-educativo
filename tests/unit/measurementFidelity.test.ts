@@ -95,8 +95,9 @@ describe('fidelidad de medición: señal, validez y canales', () => {
     runUntilBreath(sim, 1);
     expect(sim.breaths[0]!.vtInsp).toBeCloseTo(delivered, 9);
     if (plimit === 12) {
-      expect(limitedLeak).toBeCloseTo(0.071364, 5);
-      expect(delivered).toBeCloseTo(0.406286, 5);
+      // Valores de regresión con la fuga del orificio (E-104); con la ley lineal eran 0,071364 y 0,406286.
+      expect(limitedLeak).toBeCloseTo(0.067498, 5);
+      expect(delivered).toBeCloseTo(0.400067, 5);
     } else expect(delivered).toBeCloseTo(0.5, 6);
   });
 
@@ -124,7 +125,16 @@ describe('fidelidad de medición: señal, validez y canales', () => {
     while (sim.controller.phase !== 'holdInsp') sim.step();
     const vStart = sim.patient.vTotal;
     sim.run(100);
-    const expected = sim.patient.pel() / (1 + (BENCH_PATIENT.rExp * leakLpmAt10) / 600);
+    // Nodo de la oclusión: lo que sale del pulmón por Rexp es lo que escapa por la fuga, (Pel − Py)/Rexp = Qfuga(Py).
+    const pel = sim.patient.pel();
+    let lo = 0,
+      hi = pel;
+    for (let i = 0; i < 80; i++) {
+      const mid = (lo + hi) / 2;
+      if ((pel - mid) / BENCH_PATIENT.rExp > sim.patient.leakFlow(mid)) lo = mid;
+      else hi = mid;
+    }
+    const expected = (lo + hi) / 2;
     expect(sim.controller.paw).toBeCloseTo(expected, 6);
     expect(sim.controller.q).toBe(0);
     if (leakLpmAt10) expect(sim.patient.vTotal).toBeLessThan(vStart);

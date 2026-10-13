@@ -213,6 +213,19 @@
       "title": "SDRA no lineal: Roupie E et al. Titration of tidal volume and induced hypercapnia in ARDS. Am J Respir Crit Care Med 1995;152:121–8 (PMID 7599810); Terragni PP et al. Tidal hyperinflation during low tidal volume ventilation in ARDS. Am J Respir Crit Care Med 2007;175:160–6 (PMID 17038660); Grasso S et al. ARDSnet ventilatory protocol and alveolar hyperinflation: role of PEEP. Am J Respir Crit Care Med 2007;176:761–7 (PMID 17656676); Grasso S et al. Airway pressure-time curve profile (stress index) detects tidal recruitment/hyperinflation in experimental acute lung injury. Crit Care Med 2004;32:1018–27 (PMID 15071395)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Resúmenes leídos en PubMed. Roupie: en la curva P-V estática de todos los SDRA (25 pacientes) hubo codo superior, a 26 ± 6 cmH₂O y 610 ± 235 mL sobre la PEEP (850 ± 200 sobre la FRC); en los controles sólo uno, a 23. Terragni: con 6 mL/kg, los pacientes con más pulmón no aireado hiperinsuflaban (Pplat 28–30 frente a 25–26 en los «más protegidos»): 6 mL/kg y Pplat ≤ 30 pueden no bastar. Grasso 2007: en el SDRA focal (poco reclutable) la PEEP de la tabla ARDSnet produjo hiperinsuflación por índice de estrés en todos los pacientes, y bajar la PEEP la normalizó. Grasso 2004: el índice de estrés (b de Paw = a·t^b + c a flujo constante) corresponde a reclutamiento corriente con b < 1 e hiperinsuflación con b > 1 en la TC. Se usan para la curva de CC-03 (E-102), no para ningún ajuste."
+    },
+    {
+      "id": "C13",
+      "title": "Curvas presión-flujo de orificios calibrados: ResMed AirFit F20, guía de usuario EUR1 (638036/4, 2017-11) y AirFit N20 Classic, guía ROW (638123/2, 2017-11), «Technical specifications · Pressure-flow curve»",
+      "kind": "pdf",
+      "url": "https://document.resmed.com/documents/products/mask/airfit-f20/user-guide/airfit-f20_user-guide_eur1_eng.pdf ; https://document.resmed.com/documents/products/mask/airfit-n20-classic/user-guide/airfit-n20-classic_user-guide_row_eng.pdf",
+      "access": {
+        "date": "2026-10-13",
+        "method": "descarga directa + pdftotext -layout",
+        "sha256": "4f21ead5c63552e7c7d1aa7b8d80b2332605944b82ac5bfea7e4c61772957441 ; a3d24649ef8341cbccdf98ab7bf800db86e695e429e738a32904d36491378261",
+        "readFully": false
+      },
+      "note": "NO es documentación del R860 ni de una fuga de paciente: son los orificios de ventilación de dos mascarillas, medidos por el fabricante entre 3 y 40 cmH₂O (F20: 3→19, 10→37, 20→54, 30→69, 40→82 L/min; N20: 4→20, 11→35, 20→49, 30→61). Se usan como dato de cómo crece con la presión el flujo por un orificio real: Q = K·P^n con n = 0,562 (F20) y 0,557 (N20), error ≤ 1,8 %; una ley lineal yerra en más del 50 % en el mismo rango."
     }
   ],
   "claims": [
@@ -1199,11 +1212,11 @@
     },
     {
       "id": "E-088",
-      "claim": "Fuga en la pieza en Y como conductancia lineal con la presión del nodo (declarada como L/min a 10 cmH2O) y desconexión como fuga tan grande que el nodo queda a presión ambiente. Consecuencias: el VTi de pantalla es lo entregado (fuga incluida) y el VTe la integral con signo del flujo del sensor durante la espiración (E-101); la fuga volumétrica los compara y en régimen recoge toda la fuga del ciclo; el flujo mostrado y el que evalúa el disparo son los del sensor del ventilador (paciente más fuga), así que la fuga dispara sola si supera el umbral; la válvula espiratoria sostiene la PEEP sólo mientras el flujo de base cubra la fuga; el ciclado por flujo del soporte ve la fuga como flujo que no cae. La espiración sólo evalúa el disparo si demostró sostener la PEEP (0,15 s continuos dentro de 3 cmH2O de la programada): con el circuito abierto nunca lo hace, y como el criterio no mira la Pva del instante un esfuerzo que la hunde dispara con cualquier umbral admitido — antes el guard era sobre la Pva instantánea y dejaba inertes los umbrales ≤ −3. Alarma «Paciente desconectado» (D existencia, QRG 2020) con condición P: Ppico < 3 cmH2O y VTe < 20 mL en una respiración; se resuelve con la primera respiración normal. Sin compensación de fuga ni de disparo (D existencia de Leak Comp/Trigger Comp; U-10).",
+      "claim": "Fuga en la pieza en Y con la ley del orificio sobre la presión del nodo (declarada como L/min a 10 cmH2O, E-104) y desconexión como fuga tan grande que el nodo queda a presión ambiente. Consecuencias: el VTi de pantalla es lo entregado (fuga incluida) y el VTe la integral con signo del flujo del sensor durante la espiración (E-101); la fuga volumétrica los compara y en régimen recoge toda la fuga del ciclo; el flujo mostrado y el que evalúa el disparo son los del sensor del ventilador (paciente más fuga), así que la fuga dispara sola si supera el umbral; la válvula espiratoria sostiene la PEEP sólo mientras el flujo de base cubra la fuga; el ciclado por flujo del soporte ve la fuga como flujo que no cae. La espiración sólo evalúa el disparo si demostró sostener la PEEP (0,15 s continuos dentro de 3 cmH2O de la programada): con el circuito abierto nunca lo hace, y como el criterio no mira la Pva del instante un esfuerzo que la hunde dispara con cualquier umbral admitido — antes el guard era sobre la Pva instantánea y dejaba inertes los umbrales ≤ −3. Alarma «Paciente desconectado» (D existencia, QRG 2020) con condición P: Ppico < 3 cmH2O y VTe < 20 mL en una respiración; se resuelve con la primera respiración normal. Sin compensación de fuga ni de disparo (D existencia de Leak Comp/Trigger Comp; U-10).",
       "status": "P (física y umbrales) / D (existencia de la alarma y de las compensaciones, R02)",
       "source": "R02",
       "locator": "QRG 2020 p.13 «Patient disconnected, RR low, MVexp low, Vtexp low, Apnea and other alarms may occur»; p.7 «Select Assist Control, Leak Comp or Trigger Comp»",
-      "implemented": "src/engine/patient.ts (leakG, leakFlow, nodeState, integratePressureSource, integrateFlowSource, DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O); src/engine/controller.ts (flujo medido, VTi/VTe de pantalla, peepDemostrada con dwell TRIGGER_PEEP_DWELL_S); src/engine/trigger.ts (TRIGGER_MIN_PEEP_DROP_CMH2O, TRIGGER_PEEP_DWELL_S); src/engine/alarms.ts (disconnect); src/ui/patientControls.ts (deslizador y eventos); src/scenarios/index.ts (SC-22, SC-23)",
+      "implemented": "src/engine/patient.ts (hasLeak, leakFlow, LEAK_ORIFICE_EXPONENT, nodeState, integratePressureSource, integrateFlowSource, DISCONNECT_CONDUCTANCE_LPS_PER_CMH2O); src/engine/controller.ts (flujo medido, VTi/VTe de pantalla, peepDemostrada con dwell TRIGGER_PEEP_DWELL_S); src/engine/trigger.ts (TRIGGER_MIN_PEEP_DROP_CMH2O, TRIGGER_PEEP_DWELL_S); src/engine/alarms.ts (disconnect); src/ui/patientControls.ts (deslizador y eventos); src/scenarios/index.ts (SC-22, SC-23)",
       "tests": [
         "tests/unit/fuga.test.ts (LEAK-01..05)",
         "tests/unit/sync.test.ts (SYN-02)",
@@ -1360,6 +1373,20 @@
         "tests/unit/proteccion.test.ts (PROT-01)",
         "tests/unit/latido.test.ts (LAT)",
         "tests/unit/casosClinicos.test.ts (CAS-03)"
+      ]
+    },
+    {
+      "id": "E-104",
+      "claim": "Fuga en la pieza en Y con la ley del orificio: Q = Q10·(|Py|/10)^0,56 con el signo de Py (entra aire si el nodo queda bajo el ambiente). Un orificio turbulento ideal da 0,5 (Bernoulli); los orificios calibrados de dos mascarillas ResMed se ajustan con 0,557–0,562 y error ≤ 1,8 % entre 3 y 40 cmH₂O, cuando la ley lineal anterior yerra en más del 50 %. El instructor sigue fijándola como L/min a 10 cmH₂O: a PEEP 5 escapa el 68 % de ese valor (antes el 50 %) y a 20 cmH₂O el 147 % (antes el 200 %), así que la fuga pesa más en la espiración y menos en la presión pico. SC-22 y CC-07 pasan de 6 a 4,4 L/min a 10 cmH₂O para conservar ≈ 3 L/min a la PEEP, que es lo que enseñan: el autodisparo y el umbral que lo calla siguen igual. Con menos fuga en la inspiración devuelven 267–278 mL (antes < 250, con la alarma de VT espirado bajo). Una fuga grande que el flujo de base no cubre vacía el pulmón más que con la ley lineal, porque el orificio pierde caudal más despacio al bajar la presión: con 30 L/min a 10 cmH₂O y base 2 el nodo llega casi a la presión ambiente. La desconexión sigue siendo una conductancia lineal muy grande. Con fuga, el nodo se resuelve por bisección (las soluciones cerradas sólo valen con elementos lineales).",
+      "status": "D (forma de la ley y exponente de orificios reales, C13; física del orificio) / P (que la fuga de un paciente siga el mismo exponente; valores de los escenarios)",
+      "source": "C13",
+      "locator": "Guías ResMed AirFit F20 y N20, Technical specifications · Pressure-flow curve",
+      "implemented": "src/engine/patient.ts (LEAK_ORIFICE_EXPONENT, hasLeak, leakFlow, nodeState, nodePressureWithSeries, nodePressureForFlow); src/scenarios/index.ts (SC-22); src/scenarios/cases.ts (CC-07)",
+      "tests": [
+        "tests/unit/fuga.test.ts (LEAK-01..04)",
+        "tests/unit/measurementFidelity.test.ts",
+        "tests/unit/casosClinicos.test.ts (CAS-07)",
+        "tests/unit/objetivos.test.ts (SC-22, ALM)"
       ]
     }
   ]

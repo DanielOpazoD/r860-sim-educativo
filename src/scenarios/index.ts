@@ -761,8 +761,8 @@ SCENARIOS.push({
   category: 'Circuito',
   level: 2,
   description:
-    'A/C VC con una fuga de 6 L/min a 10 cmH2O en la pieza en Y, paciente pasivo, flujo de base 4 y disparo 2 L/min. El VT espirado queda por debajo del inspirado y la fuga dispara respiraciones que nadie pidió.',
-  patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, leakLpmAt10: 6 },
+    'A/C VC con una fuga en la pieza en Y de 4,4 L/min a 10 cmH2O (≈ 3 a la PEEP de 5), paciente pasivo, flujo de base 4 y disparo 2 L/min. El VT espirado queda por debajo del inspirado y la fuga dispara respiraciones que nadie pidió.',
+  patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, leakLpmAt10: 4.4 },
   effort: passive,
   sensors: idealSensors,
   settings: {
@@ -780,7 +780,7 @@ SCENARIOS.push({
   initialV: 'equilibrium',
   perturbations: [],
   observe: 'VTi y VTe en la tabla, la fuga volumétrica, y respiraciones «asistidas» con el esfuerzo apagado.',
-  caution: 'Fuga lineal con la presión y sin compensación de fuga: la del equipo real es otra (U-10).',
+  caution: 'Fuga que crece con la presión como un orificio y sin compensación de fuga: la del equipo real es otra (U-10).',
   lesson: {
     title: 'La fuga se ve tres veces',
     text: 'Con el circuito perdiendo gas, el ventilador entrega más de lo que vuelve, la PEEP depende de que el flujo de base cubra la fuga, y el sensor de flujo ve salir gas de forma continua. Antes de mirar el registro, predice de qué tipo serán las respiraciones con el esfuerzo apagado.',
@@ -937,7 +937,7 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'SC-19': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [55, 75], maxVolume: [550, 700] } },
   'SC-20': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], maxVolume: [300, 400] } },
   'SC-21': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-93, -72], maxVolume: [490, 510] } },
-  'SC-22': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 16], maxVolume: [300, 400] } },
+  'SC-22': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 18], maxVolume: [300, 400] } },
   'SC-23': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakExpFlow: [-50, -38], maxVolume: [490, 510] } },
   'SC-25': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 28], maxVolume: [490, 510] } },
   'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-80, -60], maxVolume: [280, 290] } },
@@ -949,7 +949,7 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 17], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
   // Soporte de presión: Ppico = PEEP + soporte; el flujo y el volumen dependen del esfuerzo.
   'CC-06': { atSimTimeMs: 18_000, ranges: { ppeak: [24, 26], peakInspFlow: [52, 70] } },
-  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 17], maxVolume: [300, 400] } },
+  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [15, 19], maxVolume: [300, 400] } },
   'CC-08': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], peakInspFlow: [35, 47] } },
 };
 

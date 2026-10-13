@@ -535,7 +535,7 @@ export const CLINICAL_CASES: Scenario[] = [
     question: '¿Cómo distinguir un autodisparo de una respiración del paciente?',
     answer:
       'En el autodisparo no hay deflexión negativa de presión ni esfuerzo previo, y aparece aunque el paciente esté sedado y sin esfuerzo.',
-    patient: { crs: 0.05, rInsp: 10, rExp: 10, p0: 0, ...INTUBADA_M, leakLpmAt10: 6 },
+    patient: { crs: 0.05, rInsp: 10, rExp: 10, p0: 0, ...INTUBADA_M, leakLpmAt10: 4.4 },
     effort: passive,
     sensors: idealSensors,
     settings: {
@@ -553,7 +553,7 @@ export const CLINICAL_CASES: Scenario[] = [
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Respiraciones asistidas con el esfuerzo apagado.',
-    caution: 'Fuga lineal en la pieza en Y y sin compensación de fugas.',
+    caution: 'Fuga en la pieza en Y que crece con la presión como un orificio, sin compensación de fugas.',
   },
   {
     id: 'CC-08',

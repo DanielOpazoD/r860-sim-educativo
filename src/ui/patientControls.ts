@@ -386,7 +386,7 @@ export const PATIENT_GROUPS: { id: string; title: string; keys: string[]; preset
     id: 'circuito',
     title: 'Circuito',
     keys: ['expValve', 'leak', 'circuitCompliance', 'o2Tau', 'o2Bias'],
-    note: 'La fuga se modela en la pieza en Y, lineal con la presión; sin compensación de fuga ni distensibilidad del circuito.',
+    note: 'La fuga se modela en la pieza en Y como un orificio: crece con la raíz de la presión, sin compensación de fuga ni distensibilidad del circuito.',
   },
 ];
 export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
