@@ -138,6 +138,13 @@ export class VcController {
   private lastTriggerDetectedS: number | null = null;
   /** CPAP/PS: se declaró apnea y el ventilador está entregando respaldo hasta que el paciente vuelva a disparar. */
   private apnea = false;
+  /**
+   * CPAP/PS: el equipo pasó a su modo de respaldo, A/C PC con los ajustes de respaldo, por apnea o porque el VMesp cayó
+   * bajo la mitad de su límite bajo. A diferencia de la apnea, no termina cuando el paciente vuelve a disparar: sigue
+   * hasta que se confirma un modo (D, URM SW10 5-11 y la alarma «Backup ventilation on», 8-9). Los disparos del paciente
+   * son entonces respiraciones asistidas por presión, no de soporte.
+   */
+  private respaldo: 'apnea' | 'vmesp' | null = null;
   private events: ControllerEvent[] = [];
   private transition: (() => void) | null = null;
 
@@ -159,6 +166,23 @@ export class VcController {
   get currentBreathId(): string | null {
     return this.breath?.breathId ?? null;
   }
+  /** Causa del respaldo en curso (CPAP/PS), o null si el equipo ventila en su modo. */
+  get respaldoActivo(): 'apnea' | 'vmesp' | null {
+    return this.respaldo;
+  }
+  /** Pasa al respaldo (sólo en CPAP/PS y si no lo estaba ya). */
+  entrarEnRespaldo(causa: 'apnea' | 'vmesp'): void {
+    if (this.settings.mode !== 'CPAP_PS' || this.respaldo) return;
+    this.respaldo = causa;
+    this.events.push({ type: 'backupStarted', simTimeS: this.simT, cause: causa });
+  }
+  /** Confirmar un modo termina el respaldo: se vuelve a los ajustes del modo programado. */
+  salirDeRespaldo(): void {
+    if (!this.respaldo) return;
+    this.respaldo = null;
+    this.events.push({ type: 'backupEnded', simTimeS: this.simT });
+  }
+
   get currentBreathSequence(): number {
     return this.breathSeq;
   }
@@ -214,6 +238,8 @@ export class VcController {
     this.settings = { ...this.settings, ...changes };
     this.timing = deriveVcTiming(this.settings);
     this.events.push({ type: 'settingsApplied', changes, simTimeS: this.simT, breathId });
+    // Fuera de CPAP/PS no hay respaldo que mantener.
+    if (this.settings.mode !== 'CPAP_PS') this.salirDeRespaldo();
   }
 
   startVentilation(): void {
@@ -252,6 +278,7 @@ export class VcController {
     this.manualRequested = false;
     this.breath = null; // la respiración en curso se descarta (causa standby); no se registra como completa
     this.apnea = false;
+    this.respaldo = null;
     this.triggerPending = null;
     this.qDemandFilt = 0;
     this.expPawTrace = [];
@@ -846,18 +873,19 @@ export class VcController {
   private plazoDeRespaldo(): number {
     const s = this.settings;
     const minimo = s.minRate === 'off' ? Number.POSITIVE_INFINITY : 60 / s.minRate;
-    return Math.min(minimo, this.apnea ? 60 / APNEA_BACKUP_RATE_PER_MIN : s.apneaTimeS);
+    return Math.min(minimo, this.respaldo ? 60 / APNEA_BACKUP_RATE_PER_MIN : s.apneaTimeS);
   }
 
   /** Venció un plazo de la espiración en CPAP/PS: apnea (alarma y respaldo) o frecuencia mínima (respiración por presión). */
   private onPlazoDeRespaldo(): void {
     const elapsed = this.tBreath + this.tPhase;
-    const plazoApnea = this.apnea ? 60 / APNEA_BACKUP_RATE_PER_MIN : this.settings.apneaTimeS;
+    const plazoApnea = this.respaldo ? 60 / APNEA_BACKUP_RATE_PER_MIN : this.settings.apneaTimeS;
     if (elapsed + EPS >= plazoApnea) {
-      if (!this.apnea) {
+      if (!this.apnea && !this.respaldo) {
         this.apnea = true;
         this.events.push({ type: 'apnea', simTimeS: this.simT, apneaS: this.settings.apneaTimeS });
       }
+      this.entrarEnRespaldo('apnea');
       this.endExpiration('backup');
     } else this.endExpiration('mandatory');
   }
@@ -1049,7 +1077,9 @@ export class VcController {
       return;
     }
     // Un disparo resuelto en un modo y entregado en otro (el cambio de modo se aplica aquí) lleva el nombre del modo que lo entrega.
-    if (cpap && type === 'assisted') type = 'spontaneous';
+    // En respaldo el equipo ventila en A/C PC: un disparo del paciente es una respiración asistida por presión.
+    if (cpap && this.respaldo && type === 'spontaneous') type = 'assisted';
+    else if (cpap && !this.respaldo && type === 'assisted') type = 'spontaneous';
     else if (!cpap && type === 'spontaneous') type = 'assisted';
     else if (!cpap && type === 'backup') type = 'mandatory';
     this.breathSeq += 1;

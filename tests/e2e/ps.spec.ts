@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { frame, open, showPanel } from './helpers';
+import { frame, hidePanel, open, showPanel } from './helpers';
 
 type FrameLike = {
   settings: { mode: string; psupport: number };
@@ -48,7 +48,9 @@ test.describe('CPAP/PS', () => {
     await expect(page.locator('#phase-status')).toContainText(/Inspiración · soporte|Espiración/);
   });
 
-  test('SC-19: apnea provocada → alarma alta y respaldo; al deshacerla el paciente vuelve y la alarma se resuelve', async ({ page }) => {
+  test('SC-19: apnea provocada → alarma alta y respaldo; al deshacerla la apnea se resuelve y el respaldo sigue hasta confirmar el modo', async ({
+    page,
+  }) => {
     await open(page, { scenario: 'SC-19', speed: 4 });
     await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
     await expect.poll(async () => (await frame(page)).metrics.rrSpont?.value ?? 0, { timeout: 30_000 }).toBeGreaterThan(10);
@@ -63,11 +65,21 @@ test.describe('CPAP/PS', () => {
         timeout: 20_000,
       })
       .toBeGreaterThanOrEqual(1);
-    // Deshacer: el esfuerzo vuelve, la primera espontánea resuelve la apnea (queda gris hasta reconocer).
+    await expect(page.locator('#quick-mode')).toHaveText('Respaldo A/C PC');
+    // Deshacer: el esfuerzo vuelve y el primer disparo resuelve la apnea, pero el equipo sigue en respaldo (URM SW10 8-9).
     await page.click('[data-action="undoEvent"]');
     await expect
       .poll(async () => (await frame(page)).alarms.find((a) => a.id === 'apnea')?.conditionActive, { timeout: 30_000 })
       .toBe(false);
+    await expect(page.locator('#alarm-label')).toHaveText('Prioridad media · Respaldo activo');
+    await expect(page.locator('#quick-mode')).toHaveText('Respaldo A/C PC');
+    // Confirmar el modo en el diálogo de modos termina el respaldo y vuelven las espontáneas.
+    await hidePanel(page);
+    await page.locator('[data-action="modes"]').first().click();
+    await expect(page.locator('#mode-timing')).toContainText('Respaldo activo');
+    await page.click('[data-action="confirmModes"]');
+    await expect.poll(async () => (await frame(page)).live.respaldo, { timeout: 15_000 }).toBeNull();
+    await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
     await expect(page.locator('#alarm-label')).toHaveText('Alarmas resueltas');
   });
 });

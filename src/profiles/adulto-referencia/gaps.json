@@ -416,7 +416,7 @@
     {
       "id": "U-52",
       "question": "CPAP/PS: tiempo inspiratorio máximo de una respiración soportada, cadencia y salida del respaldo por apnea, y si el tiempo de apnea del equipo cuenta también las respiraciones de respaldo o sólo las del paciente.",
-      "policy": "D: Ti máximo 4 s (Tsupp de adulto) y corte por presión sobre PEEP + PS + 2,5 (E-110). P: respaldo a 12/min mientras dura la apnea, que termina con el primer disparo del paciente; la apnea se cuenta desde la última respiración de cualquier tipo y sólo en CPAP/PS. Los rangos (PS, trigger espiratorio, apnea, frecuencia mínima) son D (E-084); la lógica es P (E-085).",
+      "policy": "D: Ti máximo 4 s (Tsupp de adulto) y corte por presión sobre PEEP + PS + 2,5 (E-110). D: respaldo del equipo, A/C PC con los ajustes de respaldo (12/min), por apnea o VMesp bajo la mitad del límite bajo, que sigue hasta confirmar el modo (E-111). P: la apnea se cuenta desde la última respiración de cualquier tipo y sólo en CPAP/PS. Los rangos (PS, trigger espiratorio, apnea, frecuencia mínima) son D (E-084); la lógica es P (E-085).",
       "status": "nueva (v0.4.0)",
       "blocks": []
     },

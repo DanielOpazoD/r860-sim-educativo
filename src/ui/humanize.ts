@@ -212,7 +212,10 @@ function eventSentenceBody(e: SessionEvent): string {
     case 'alarm':
       if (p.pmaxReached !== undefined) return `Alarma: Pmáx alcanzada (${(p.pmaxReached as number).toFixed(1)} cmH₂O)`;
       if (p.apnea !== undefined) return `Alarma: apnea (sin respiración en ${String(p.apnea)} s) · respaldo por presión`;
-      if (p.apneaEnded !== undefined) return 'Apnea terminada: el paciente volvió a disparar';
+      if (p.apneaEnded !== undefined) return 'Apnea terminada: el paciente volvió a disparar (el respaldo sigue hasta confirmar el modo)';
+      if (p.backupStarted !== undefined)
+        return `Respaldo activo (${p.backupStarted === 'apnea' ? 'apnea' : 'VMesp bajo la mitad del límite bajo'}): A/C PC con los ajustes de respaldo`;
+      if (p.backupEnded !== undefined) return 'Respaldo terminado: se confirmó el modo';
       if (p.acknowledge) return `${who} reconoció las alarmas`;
       if (p.limits) return `${who} cambió límites de alarma`;
       return 'Alarma';

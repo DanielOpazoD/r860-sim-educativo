@@ -4,7 +4,7 @@ import fs from 'node:fs';
 export const T0 = '2026-08-18T21:04:05-04:00';
 export interface FrameLike {
   simTimeMs: number;
-  live: { paw: number; phase: string; plimitLimited: boolean };
+  live: { paw: number; phase: string; plimitLimited: boolean; respaldo: string | null };
   wallTimeMs: number;
   ventilation: string;
   settings: Record<string, unknown>;

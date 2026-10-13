@@ -1465,6 +1465,17 @@
         "tests/unit/rampa.test.ts",
         "tests/unit/sync.test.ts (SYN-05)"
       ]
+    },
+    {
+      "id": "E-111",
+      "claim": "Respaldo como el del equipo en CPAP/PS. Entra por la alarma de apnea o porque el VMesp medido cae bajo el 50 % de su límite bajo, con los mismos retardos que esa alarma (tras un bloqueo o al empezar a ventilar). El equipo ventila entonces en su modo de respaldo, A/C PC con los ajustes de respaldo (Pinsp, Tinsp; 12/min, P). Los disparos del paciente son respiraciones asistidas por presión, no de soporte. Y no termina cuando el paciente vuelve a disparar: eso sólo resuelve la alarma de apnea. Termina al confirmar un modo en el diálogo de modos (aunque sea el mismo), como «Confirm the current mode» o «Select Previous Mode» del equipo; un ajuste rápido como la FiO2 no lo termina. Mientras dura, alarma «Respaldo activo», de prioridad media («Backup ventilation on»), y la tecla de modo muestra «Respaldo A/C PC». Antes el respaldo cesaba con el primer disparo del paciente (P).",
+      "status": "D (entrada, modo de respaldo, salida al confirmar el modo y prioridad de la alarma, R21) / P (que la tecla de modo lo muestre así; 12/min fijo del respaldo)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 5-11 «Backup mode»; 8-9 «Backup ventilation on» (prioridad Medium y acciones); 8-27 retardos «Backup ventilation on (due to MVexp)»",
+      "implemented": "src/engine/controller.ts (respaldo, entrarEnRespaldo, salirDeRespaldo, startBreath); src/engine/simulator.ts (respaldo por VMesp, live.respaldo, eventos); src/engine/alarms.ts (alarma backup); src/engine/commandHandlers.ts (confirmar el modo); src/ui/modeDialog.ts y src/ui/app.ts",
+      "tests": [
+        "tests/unit/soporte.test.ts (PHY-03b)"
+      ]
     }
   ]
 }

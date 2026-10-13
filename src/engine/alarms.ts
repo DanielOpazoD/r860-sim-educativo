@@ -40,6 +40,18 @@ export const ALARM_RULES: Record<string, RuleDef> = {
     latching: true,
     source: 'ventilator.paw',
   },
+  /**
+   * Respaldo activo: el equipo ventila en su modo de respaldo por apnea o por VMesp bajo, hasta que se confirma un modo
+   * («Backup ventilation on», prioridad media, D URM SW10 8-9).
+   */
+  backup: {
+    id: 'backup',
+    priority: 'medium',
+    message: 'Respaldo activo',
+    responseAction: 'none',
+    latching: true,
+    source: 'ventilator.flow',
+  },
   /** Apnea: ninguna respiración en el tiempo programado (D ficha 2014 «Alarma de apnea: 5 a 60 seg»; prioridad alta P). */
   apnea: { id: 'apnea', priority: 'high', message: 'Apnea', responseAction: 'enterBackup', latching: true, source: 'ventilator.flow' },
   vteLow: { id: 'vteLow', priority: 'medium', message: 'VTesp bajo', responseAction: 'none', latching: true, source: 'ventilator.flow' },
@@ -270,6 +282,18 @@ export class AlarmEngine {
   /** El controlador declaró apnea: ninguna respiración en `apneaS` segundos. La condición dura hasta que el paciente vuelve a disparar. */
   onApnea(simTimeMs: number, apneaS: number): void {
     this.activate('apnea', simTimeMs, apneaS, apneaS, apneaS, `sin respiración en ${apneaS} s`);
+  }
+
+  /** El equipo entró en su respaldo (por apnea o por VMesp bajo) y sale al confirmar un modo. */
+  onBackupStarted(simTimeMs: number, causa: 'apnea' | 'vmesp'): void {
+    this.activate('backup', simTimeMs, null, null, null, causa === 'apnea' ? 'apnea detectada' : 'VMesp bajo la mitad del límite bajo');
+  }
+  onBackupEnded(simTimeMs: number): void {
+    this.resolve('backup', simTimeMs);
+  }
+  /** ¿Está retenida por un retardo del equipo (o deshabilitada por un bloqueo) la alarma dada? */
+  alarmaRetenida(id: string, simTimeMs: number): boolean {
+    return this.retenida(id, simTimeMs);
   }
 
   /** Una respiración disparada por el paciente termina la apnea (las de respaldo no: son la respuesta a ella). */

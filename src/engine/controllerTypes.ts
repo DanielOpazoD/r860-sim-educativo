@@ -50,6 +50,8 @@ export type ControllerEvent =
   | { type: 'trigger'; breathId: string; simTimeS: number; qLps: number }
   | { type: 'apnea'; simTimeS: number; apneaS: number }
   | { type: 'apneaEnded'; simTimeS: number; breathId: string }
+  | { type: 'backupStarted'; simTimeS: number; cause: 'apnea' | 'vmesp' }
+  | { type: 'backupEnded'; simTimeS: number }
   | { type: 'holdStarted'; procedureId: string; kind: HoldKind; simTimeS: number }
   | { type: 'holdEnded'; outcome: HoldOutcome }
   | { type: 'settingsApplied'; changes: Partial<VcSettings>; simTimeS: number; breathId: string }

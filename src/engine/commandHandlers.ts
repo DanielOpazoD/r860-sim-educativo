@@ -61,6 +61,9 @@ export const COMMAND_HANDLERS: Handlers = {
     for (const k of Object.keys(cmd.changes) as (keyof VcSettings)[]) (old as Record<string, unknown>)[k] = ctx.controller.settings[k];
     if ('fio2' in cmd.changes && cmd.changes.fio2 !== undefined && actor === 'learner') ctx.procedures.noteUserFio2Edit();
     ctx.controller.applySettings(cmd.changes);
+    // Confirmar un modo en el diálogo de modos termina el respaldo (URM SW10 8-9: «Confirm the current mode in Mode
+    // Settings…», «Select Previous Mode…»); un ajuste rápido como la FiO2 no.
+    if ('mode' in cmd.changes) ctx.controller.salirDeRespaldo();
     ctx.logEvent('setting', actor, { changes: cmd.changes, old, policy: 'nextBreath salvo Pmáx/FiO2 inmediato (P)', derived: v.derived });
     return ok;
   },

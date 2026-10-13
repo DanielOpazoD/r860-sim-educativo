@@ -3,7 +3,7 @@ import type { VcSettings } from '../../src/domain/types';
 import { validateVcSettings } from '../../src/domain/validation';
 import { APNEA_BACKUP_RATE_PER_MIN, SUPPORT_TI_MAX_S } from '../../src/engine/controller';
 import { exportSession, importSession } from '../../src/history/session';
-import { VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
+import { DEFAULT_ALARM_LIMITS, VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // PHY-03 · CPAP/PS: esfuerzo, disparo, ciclaje y respaldo. Banco propio del modo antes de habilitarlo en el perfil.
@@ -131,22 +131,56 @@ describe('PHY-03b · respaldo: apnea con alarma y respiraciones por presión; fr
     expect(sim.breaths.at(-1)!.endSimTimeMs - b[0]!.startSimTimeMs).toBeCloseTo(5000, -3);
   });
 
-  it('cuando el paciente vuelve a disparar, la respiración es espontánea, la apnea se resuelve y el respaldo cesa', () => {
+  it('cuando el paciente vuelve a disparar, la apnea se resuelve pero el respaldo sigue hasta que se confirma el modo', () => {
+    // Como el equipo (URM SW10 5-11 y 8-9): el respaldo es A/C PC con los ajustes de respaldo; los disparos del paciente son
+    // asistidas por presión, no soporte, hasta que alguien confirma el modo en el diálogo de modos.
     const sim = benchSim({ settings: PS });
     sim.run(31_000); // apnea a los 20 s, dos de respaldo (20 s y 25 s), la tercera a los 30 s
     expect(sim.breaths.filter((b) => b.type === 'backup').length).toBeGreaterThanOrEqual(2);
+    expect(sim.alarms.get('backup')!.conditionActive).toBe(true);
+    expect(sim.alarms.get('backup')!.priority).toBe('medium');
     sim.command({ type: 'setEffort', params: { ...esfuerzo } });
     const antes = sim.breaths.length;
     sim.run(12_000);
     const nuevas = sim.breaths.slice(antes);
     expect(nuevas.length).toBeGreaterThanOrEqual(2);
-    expect(nuevas.some((b) => b.type === 'spontaneous')).toBe(true);
+    // El paciente dispara y la apnea se resuelve, pero sus respiraciones son asistidas a PEEP + Pinsp de respaldo.
     const a = sim.alarms.get('apnea')!;
     expect(a.conditionActive).toBe(false);
     expect(a.resolvedAtMs).not.toBeNull();
-    // Desde la primera espontánea no hay más respaldo mientras el paciente respira.
-    const primeraEspont = nuevas.findIndex((b) => b.type === 'spontaneous');
-    expect(nuevas.slice(primeraEspont).every((b) => b.type === 'spontaneous')).toBe(true);
+    expect(nuevas.some((b) => b.type === 'assisted')).toBe(true);
+    expect(nuevas.some((b) => b.type === 'spontaneous')).toBe(false);
+    for (const b of nuevas.filter((x) => x.type === 'assisted')) expect(b.ppeak).toBeCloseTo(5 + 12, 0);
+    expect(sim.frame().live.respaldo).toBe('apnea');
+    // Confirmar el modo termina el respaldo: vuelven las espontáneas a PEEP + PS.
+    expect(sim.command({ type: 'confirmSettings', changes: { mode: 'CPAP_PS' } }).accepted).toBe(true);
+    const tras = sim.breaths.length;
+    sim.run(12_000);
+    expect(sim.frame().live.respaldo).toBeNull();
+    expect(sim.alarms.get('backup')!.conditionActive).toBe(false);
+    const despues = sim.breaths.slice(tras + 1);
+    expect(despues.length).toBeGreaterThanOrEqual(2);
+    expect(despues.every((b) => b.type === 'spontaneous')).toBe(true);
+  });
+
+  it('un ajuste rápido (FiO2) no termina el respaldo: sólo confirmar el modo', () => {
+    const sim = benchSim({ settings: PS });
+    sim.run(31_000);
+    sim.command({ type: 'confirmSettings', changes: { fio2: 0.4 } });
+    sim.run(6_000);
+    expect(sim.frame().live.respaldo).toBe('apnea');
+  });
+
+  it('respaldo por VMesp: en CPAP/PS, un VMesp bajo la mitad de su límite bajo pasa al respaldo aunque haya disparos', () => {
+    // Paciente que dispara poco y con poco volumen: VMesp ≈ 1,7 L/min frente a un límite bajo de 4 (la mitad, 2).
+    const sim = benchSim({
+      effort: { ...esfuerzo, amplitude: 3, ratePerMin: 6 },
+      settings: { ...PS, psupport: 4 },
+      alarmLimits: { ...DEFAULT_ALARM_LIMITS, mveLow: 4 },
+    });
+    sim.run(90_000);
+    expect(sim.frame().live.respaldo).toBe('vmesp');
+    expect(sim.alarms.get('backup')!.conditionActive).toBe(true);
   });
 
   it('frecuencia mínima 10/min con paciente a 6/min: entran obligatorias por presión entre las espontáneas y no hay apnea', () => {
