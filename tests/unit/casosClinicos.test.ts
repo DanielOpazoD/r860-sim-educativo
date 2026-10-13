@@ -25,7 +25,7 @@ const contexto = (sim: Simulator, settingsChangeMs = -1): CaseContext => ({
   flags: {},
 });
 function bloqueoInspiratorio(sim: Simulator): void {
-  sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 2 });
+  sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 3 }); // 3 s, lo que ofrece el panel por omisión
   for (let i = 0; i < 5000 && !sim.procedures.last.inspHold; i++) sim.step();
 }
 
@@ -123,7 +123,7 @@ class Caso {
   /** Bloqueo como el panel: si es válido y pasivo, anota el punto de titulación. */
   bloqueo(kind: 'inspHold' | 'expHold'): void {
     const previo = this.sim.procedures.last[kind];
-    this.sim.command({ type: 'requestHold', kind, durationS: 2 });
+    this.sim.command({ type: 'requestHold', kind, durationS: 3 }); // 3 s, lo que ofrece el panel por omisión
     for (let i = 0; i < 6000 && this.sim.procedures.last[kind] === previo; i++) this.sim.step();
     const h = this.sim.procedures.last[kind]!;
     const cstat = h.values.cstat?.value;
@@ -186,10 +186,10 @@ describe('CAS-02 · EPOC: atrapamiento', () => {
 });
 
 describe('CAS-03 · SDRA: VT protector', () => {
-  it('la viñeta: ΔP 20 y pH 7,42 con VT 600', () => {
+  it('la viñeta: ΔP ≈ 20 (19,5) y pH 7,42 con VT 600', () => {
     const k = caso('CC-03');
     k.bloqueo('inspHold');
-    expect(k.sim.procedures.last.inspHold!.values.driving!.value!).toBeCloseTo(20, 0);
+    expect(k.sim.procedures.last.inspHold!.values.driving!.value!).toBeCloseTo(19.5, 0);
     expect(phEq(k)).toBeCloseTo(7.42, 1);
     expect(k.resultado().passed).toBe(false);
   });
@@ -199,8 +199,8 @@ describe('CAS-03 · SDRA: VT protector', () => {
     bien.correr(30_000);
     bien.bloqueo('inspHold');
     const h = bien.sim.procedures.last.inspHold!;
-    expect(h.values.driving!.value!).toBeCloseTo(14.2, 0);
-    expect(h.values.pplat!.value!).toBeCloseTo(24.2, 0);
+    expect(h.values.driving!.value!).toBeCloseTo(14.6, 0);
+    expect(h.values.pplat!.value!).toBeCloseTo(24.7, 0);
     expect(bien.resultado().passed).toBe(true);
     const sinFr = caso('CC-03');
     sinFr.ajustar({ vt: 0.425 });
@@ -299,13 +299,13 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
       bien = conSoporte(13);
     expect(bien.mlKg / inicio.mlKg).toBeLessThan(0.6);
     expect(bien.va / inicio.va).toBeGreaterThan(0.6);
-    expect(inicio.k.gas.hco3).toBe(28);
-    expect(inicio.k.gas.paco2Target!).toBeGreaterThan(28);
-    expect(inicio.k.gas.paco2Target!).toBeLessThan(34);
+    expect(inicio.k.gas.hco3).toBe(32);
+    expect(inicio.k.gas.paco2Target!).toBeGreaterThan(31);
+    expect(inicio.k.gas.paco2Target!).toBeLessThan(39);
     expect(phEq(inicio.k)).toBeLessThan(7.62);
     for (const k of [bien.k, conSoporte(12).k]) {
-      expect(k.gas.paco2Target!).toBeGreaterThan(42);
-      expect(k.gas.paco2Target!).toBeLessThan(52);
+      expect(k.gas.paco2Target!).toBeGreaterThan(46);
+      expect(k.gas.paco2Target!).toBeLessThan(58);
       expect(phEq(k)).toBeGreaterThan(7.36);
       expect(phEq(k)).toBeLessThan(7.45);
     }

@@ -1,7 +1,8 @@
 /** Controles del panel docente: mecánica del paciente virtual, esfuerzo y sensor de O₂ (especificación + plantilla HTML). */
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
-import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
+import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
+import { DEFAULT_EXP_BRANCH_R_CMH2O_S_L } from '../engine/controller';
 
 export interface PhysSpec {
   label: string;
@@ -51,7 +52,7 @@ export const PHYS: Record<string, PhysSpec> = {
     max: 6,
     step: 0.5,
     help: 'patient.expValve',
-    get: (fr) => fr.truth.patient.rExpValve ?? 0,
+    get: (fr) => fr.truth.patient.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L,
     cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
   },
   leak: {

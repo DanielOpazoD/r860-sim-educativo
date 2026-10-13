@@ -71,7 +71,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await expect(page.locator('#instructor-case .case-criteria')).toContainText('Caso resuelto');
     await expect(page.locator('#case-lock-note')).toBeHidden();
     await expect(page.locator('#learn-case .case-verdict')).toHaveText('Caso resuelto');
-    await expect(page.locator('#learn-case .case-truth')).toContainText('30 / 20');
+    await expect(page.locator('#learn-case .case-truth')).toContainText('25 / 20');
     await page.locator('#instructor-case [data-action="caseDevelopment"]').click();
     await expect(page.locator('#learn-case .case-reveal')).toBeInViewport();
     await showPanel(page, 'case');

@@ -221,7 +221,7 @@ export const SCENARIOS: Scenario[] = [
     level: 3,
     lesson: {
       title: 'Esfuerzos que no disparan',
-      text: 'Pmus de 0.4 cmH2O con disparo por flujo de 3 L/min: el esfuerzo mueve algo más de 1 L/min y no llega al umbral. Observa la curva de Pmus en el panel docente.',
+      text: 'Pmus de 0.6 cmH2O con disparo por flujo de 3 L/min: el esfuerzo mueve algo más de 1 L/min y no llega al umbral. Observa la curva de Pmus en el panel docente.',
       tasks: [
         { id: 'trig', text: 'Baja el trigger de flujo a 1 L/min en el menú de modo.', test: 'trigger1' },
         { id: 'assisted', text: 'Consigue al menos una respiración asistida: el registro la marca como «asistida».', test: 'assisted' },
@@ -230,9 +230,9 @@ export const SCENARIOS: Scenario[] = [
     },
     question: '¿Ausencia de disparo significa ausencia de esfuerzo?',
     answer: 'No. El esfuerzo existe en el modelo (curva de Pmus del panel docente) aunque no supere el umbral del trigger.',
-    description: 'Pmus 0.4 cmH2O a 18/min: los esfuerzos no disparan con 3 L/min.',
+    description: 'Pmus 0.6 cmH2O a 18/min: los esfuerzos no disparan con 3 L/min.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-    effort: { enabled: true, amplitude: 0.4, ratePerMin: 18, tiS: 0.7, phaseS: 0.3, shape: 'riseRelax' },
+    effort: { enabled: true, amplitude: 0.6, ratePerMin: 18, tiS: 0.7, phaseS: 0.3, shape: 'riseRelax' },
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 12, ie: 1 / 3, peep: 5, pmax: 40, plimit: 100, pausePct: 0, flowTrigger: 3 / 60, biasFlow: 4 / 60 },
     initialV: 'equilibrium',
@@ -512,7 +512,7 @@ export const SCENARIOS: Scenario[] = [
     level: 3,
     lesson: {
       title: 'La máquina que dispara al paciente',
-      text: 'Este paciente con SDRA, sedado, no inicia ninguna respiración: todas son de la máquina. Pero la insuflación evoca una contracción diafragmática 0,5 s después de arrancar: empieza durante la insuflación y alcanza su máximo ya en la espiración. A los 40 s la latencia pasa a 0,7 s: la contracción arranca al final de la insuflación, sobrevive al ciclado y dispara ella misma una segunda respiración, apilada sobre la anterior.',
+      text: 'Este paciente con SDRA, sedado, no inicia ninguna respiración: todas son de la máquina. Pero la insuflación evoca una contracción diafragmática 0,5 s después de arrancar: empieza durante la insuflación y alcanza su máximo ya en la espiración. A los 40 s la latencia pasa a 0,8 s: la contracción arranca después de la insuflación, sobrevive al ciclado y dispara ella misma una segunda respiración, apilada sobre la anterior.',
       tasks: [
         {
           id: 'fase',
@@ -531,7 +531,7 @@ export const SCENARIOS: Scenario[] = [
     answer:
       'Porque el disparo reverso no es una decisión del paciente: la insuflación pasiva evoca una contracción diafragmática a una latencia fija (entrainment). Mientras esa contracción muere antes del ciclado no se ve nada; cuando sobrevive al ciclado, su demanda cruza el umbral del disparo y la máquina entrega una segunda respiración apilada sobre la anterior.',
     description:
-      'SDRA sedado con contracción evocada por cada respiración mandatoria (Pmus 7, latencia 0,5 s). A los 40 s la latencia pasa a 0,7 s y aparecen respiraciones apiladas.',
+      'SDRA sedado con contracción evocada por cada respiración mandatoria (Pmus 8, latencia 0,5 s). A los 40 s la latencia pasa a 0,8 s y aparecen respiraciones apiladas.',
     // Mecánica y programación de la mediana de Baedorf Kassis (2021): elastancia 29 cmH₂O/L, VT 450, FR 30, PEEP 14.
     patient: { crs: 0.034, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
     effort: {
@@ -542,7 +542,7 @@ export const SCENARIOS: Scenario[] = [
       phaseS: 0,
       shape: 'riseRelax',
       relaxTauS: 0.2,
-      reverse: { amplitude: 7, delayS: 0.5 },
+      reverse: { amplitude: 8, delayS: 0.5 },
     },
     sensors: idealSensors,
     settings: {
@@ -558,10 +558,10 @@ export const SCENARIOS: Scenario[] = [
       biasFlow: 4 / 60,
     },
     initialV: 'equilibrium',
-    perturbations: [{ atSimTimeMs: 40_000, effort: { reverse: { amplitude: 7, delayS: 0.7 } }, note: 'latencia evocada 0,5 → 0,7 s' }],
+    perturbations: [{ atSimTimeMs: 40_000, effort: { reverse: { amplitude: 8, delayS: 0.8 } }, note: 'latencia evocada 0,5 → 0,8 s' }],
     observe: 'Pmus fase-bloqueada tras cada insuflación; tras la perturbación, respiraciones asistidas apiladas.',
     caution:
-      'Latencias y Pmus de Baedorf Kassis (2021): 0,47 s y 6,7 cmH₂O sin apilamiento, 0,68 s y 7,4 con apilamiento. El umbral entre ambos sale de la mecánica del modelo, no se programa. Pulso evocado de forma fija y acoplamiento 1:1.',
+      'Latencias y Pmus de Baedorf Kassis (2021): 0,47 s y 6,7 cmH₂O sin apilamiento, 0,68 s y 7,4 con apilamiento. El umbral entre ambos sale de la mecánica del modelo, no se programa: con la rama espiratoria del equipo cae entre 0,7 y 0,8 s con Pmus 8, algo más tarde que en el estudio. Pulso evocado de forma fija y acoplamiento 1:1.',
   },
 ];
 
@@ -909,38 +909,38 @@ export interface ScenarioWaveformContract {
 }
 
 export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContract> = {
-  'SC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakInspFlow: [29, 31], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
-  'SC-02': { atSimTimeMs: 32_000, ranges: { ppeak: [34, 36], peakExpFlow: [-155, -125], maxVolume: [490, 510] } },
+  'SC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakInspFlow: [29, 31], peakExpFlow: [-50, -38], maxVolume: [490, 510] } },
+  'SC-02': { atSimTimeMs: 32_000, ranges: { ppeak: [34, 36], peakExpFlow: [-112, -88], maxVolume: [490, 510] } },
   'SC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [25, 30], peakExpFlow: [-45, -25], maxVolume: [490, 510] } },
   'SC-04': { atSimTimeMs: 32_000, ranges: { ppeak: [29, 31], maxVolume: [330, 380] } },
   'SC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [17, 22], minVolume: [-20, 5], maxVolume: [490, 510] } },
   'SC-09': { atSimTimeMs: 24_000, ranges: { ppeak: [39, 41], maxVolume: [-5, 30] } },
   'SC-18': { atSimTimeMs: 60_000, ranges: { ppeak: [20, 35], peakExpFlow: [-30, -10], minVolume: [-30, 10] } },
-  'SC-17': { atSimTimeMs: 18_000, ranges: { ppeak: [18, 22], peakExpFlow: [-170, -120], maxVolume: [490, 510] } },
+  'SC-17': { atSimTimeMs: 18_000, ranges: { ppeak: [18, 22], peakExpFlow: [-100, -76], maxVolume: [490, 510] } },
   'SC-16': { atSimTimeMs: 18_000, ranges: { ppeak: [22, 27], peakExpFlow: [-45, -25], maxVolume: [490, 510] } },
   'SC-15': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 18], maxVolume: [290, 310] } },
-  'SC-14': { atSimTimeMs: 18_000, ranges: { ppeak: [26, 30], peakExpFlow: [-115, -90], maxVolume: [490, 510] } },
+  'SC-14': { atSimTimeMs: 18_000, ranges: { ppeak: [26, 30], peakExpFlow: [-83, -63], maxVolume: [490, 510] } },
   'SC-10': { atSimTimeMs: 18_000, ranges: { ppeak: [11, 14], minPressure: [-2, 1], maxVolume: [490, 510] } },
-  'SC-12': { atSimTimeMs: 22_000, ranges: { ppeak: [19, 21], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
+  'SC-12': { atSimTimeMs: 22_000, ranges: { ppeak: [19, 21], peakExpFlow: [-50, -38], maxVolume: [490, 510] } },
   'SC-24': { atSimTimeMs: 52_000, ranges: { ppeak: [37, 43], minVolume: [-230, -180], maxVolume: [440, 460] } },
   'SC-13': { atSimTimeMs: 42_000, ranges: { ppeak: [14, 16], peakInspFlow: [23, 30], maxVolume: [280, 340] } },
   'SC-19': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [55, 75], maxVolume: [550, 700] } },
   'SC-20': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], maxVolume: [300, 400] } },
-  'SC-21': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-130, -100], maxVolume: [490, 510] } },
+  'SC-21': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-93, -72], maxVolume: [490, 510] } },
   'SC-22': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 16], maxVolume: [300, 400] } },
-  'SC-23': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakExpFlow: [-65, -50], maxVolume: [490, 510] } },
+  'SC-23': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakExpFlow: [-50, -38], maxVolume: [490, 510] } },
   'SC-25': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 28], maxVolume: [490, 510] } },
-  'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-115, -90], maxVolume: [280, 290] } },
-  // Casos clínicos: Ppico = PEEP + R·Q + VT/C con la mecánica de cada caso.
+  'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-80, -60], maxVolume: [280, 290] } },
+  // Casos clínicos: Ppico = PEEP + (R + K₂·Q)·Q + VT/C más la carga viscoelástica, con la mecánica intubada de cada caso.
   'CC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [27, 30], peakInspFlow: [27, 31], maxVolume: [440, 460] } },
-  'CC-02': { atSimTimeMs: 18_000, ranges: { ppeak: [29, 33], peakInspFlow: [29, 31], peakExpFlow: [-25, -17], maxVolume: [490, 510] } },
-  'CC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [33, 36], peakInspFlow: [27, 31], maxVolume: [590, 610] } },
-  'CC-04': { atSimTimeMs: 18_000, ranges: { ppeak: [20, 24], peakInspFlow: [20, 23], maxVolume: [390, 410] } },
+  'CC-02': { atSimTimeMs: 18_000, ranges: { ppeak: [31, 36], peakInspFlow: [29, 31], peakExpFlow: [-26, -18], maxVolume: [490, 510] } },
+  'CC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [35, 39], peakInspFlow: [27, 31], maxVolume: [590, 610] } },
+  'CC-04': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 27], peakInspFlow: [20, 23], maxVolume: [390, 410] } },
   'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
   // Soporte de presión: Ppico = PEEP + soporte; el flujo y el volumen dependen del esfuerzo.
-  'CC-06': { atSimTimeMs: 18_000, ranges: { ppeak: [24, 26], peakInspFlow: [65, 95] } },
+  'CC-06': { atSimTimeMs: 18_000, ranges: { ppeak: [24, 26], peakInspFlow: [52, 70] } },
   'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 16], maxVolume: [300, 400] } },
-  'CC-08': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], peakInspFlow: [45, 58] } },
+  'CC-08': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], peakInspFlow: [35, 47] } },
 };
 
 // Los casos clínicos son escenarios con bloque `clinical`: comparten la carga y el motor, no el catálogo guiado.

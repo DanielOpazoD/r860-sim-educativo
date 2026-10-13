@@ -34,7 +34,7 @@ function correr(sim: Simulator, ms: number): { t: Float64Array; pmus: number[] }
 }
 
 describe('BM-RT · disparo reverso en SC-24', () => {
-  it('el umbral del apilamiento sale de la mecánica: latencia entre 0,6 y 0,7 s y Pmus ≥ 7, como los fenotipos de Baedorf Kassis', () => {
+  it('el umbral del apilamiento sale de la mecánica: con la rama espiratoria del equipo, latencia entre 0,7 y 0,8 s con Pmus 8–9', () => {
     // Baedorf Kassis 2021 (tabla 2): RT a mitad del ciclo con latencia 0,47 s (0,42–0,52) y Pmus 6,7, sin apilar; con
     // apilamiento, 0,68 s (0,63–0,73) y Pmus 7,4 (5,8–9,0). Mecánica de su mediana: elastancia 29, VT 450, FR 30, PEEP 14.
     const apiladas = (amplitude: number, delayS: number): number => {
@@ -43,10 +43,11 @@ describe('BM-RT · disparo reverso en SC-24', () => {
       correr(sim, 20_000);
       return sim.breaths.filter((b) => b.type === 'assisted').length;
     };
-    expect(apiladas(6.5, 0.7)).toBe(0);
-    for (const amplitude of [7, 7.5]) {
-      expect(apiladas(amplitude, 0.6), `Pmus ${amplitude}`).toBe(0);
-      expect(apiladas(amplitude, 0.7), `Pmus ${amplitude}`).toBeGreaterThan(3);
+    // Pmus 7 todavía no apila con 0,8 s; 8 y 9 sí (Baedorf Kassis: 7,4, IC 5,8–9,0).
+    expect(apiladas(7, 0.8)).toBe(0);
+    for (const amplitude of [8, 9]) {
+      expect(apiladas(amplitude, 0.7), `Pmus ${amplitude}`).toBe(0);
+      expect(apiladas(amplitude, 0.8), `Pmus ${amplitude}`).toBeGreaterThan(3);
     }
   });
 
@@ -64,16 +65,16 @@ describe('BM-RT · disparo reverso en SC-24', () => {
           vMax = pmus[i]!;
           iMax = i;
         }
-      expect(vMax).toBeCloseTo(7, 1);
+      expect(vMax).toBeCloseTo(8, 1);
       expect(Math.abs(t[iMax]! - (b.startSimTimeMs / 1000 + 0.5 + 0.8))).toBeLessThanOrEqual(0.02);
     }
     expect(sim.breaths.every((b) => b.type === 'mandatory')).toBe(true);
   });
 
-  it('con latencia 0,7 s (apilamiento, Baedorf Kassis 0,68) aparecen asistidas que entran sobre un pulmón sin vaciar', () => {
+  it('con latencia 0,8 s (apilamiento; Baedorf Kassis 0,68) aparecen asistidas que entran sobre un pulmón sin vaciar', () => {
     const sim = simSC24();
     correr(sim, 5_000); // unas respiraciones mandatory con delay 0,5
-    sim.command({ type: 'setEffort', params: { reverse: { amplitude: 7, delayS: 0.7 } } });
+    sim.command({ type: 'setEffort', params: { reverse: { amplitude: 8, delayS: 0.8 } } });
     correr(sim, 30_000);
     const asistidas = sim.breaths.filter((b) => b.type === 'assisted');
     expect(asistidas.length).toBeGreaterThanOrEqual(1);
@@ -83,7 +84,7 @@ describe('BM-RT · disparo reverso en SC-24', () => {
   });
 
   it('sin `reverse` las trazas de Pva son idénticas a las del esfuerzo apagado sin reverse', () => {
-    const con = simSC24(); // reverse {7, 0.5} no toca a un paciente que no evoca…
+    const con = simSC24(); // reverse {8, 0.5} no toca a un paciente que no evoca…
     con.command({ type: 'setEffort', params: { reverse: undefined } });
     const e = SCENARIOS.find((s) => s.id === 'SC-24')!;
     const base = defaultInit({});

@@ -173,7 +173,7 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
     // La señal pierde de golpe lo resistivo (Ppico → presión alveolar) y luego baja con la válvula abriéndose.
     // La afirmación es que hay un descenso con valores intermedios, no un salto a PEEP. Si el primer fotograma tras
     // el cambio de fase ya está en PEEP puede ser un salto real o una bajada entera perdida entre fotogramas:
-    // se distingue por el tiempo simulado entre las dos muestras — la bajada dura ~100–200 ms, así que un salto
+    // se distingue por el tiempo simulado entre las dos muestras — la bajada dura ~110–200 ms, así que un salto
     // en menos de 80 ms es una caída real instantánea (se evalúa y reprueba) y uno mayor es un hueco del
     // muestreo (se espera la siguiente transición).
     let elegido: { senal: number[]; bajada: number[] } | null = null;
@@ -194,7 +194,10 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
     const { senal, bajada } = elegido!;
     expect(senal[0], 'todavía por encima de PEEP').toBeGreaterThan(5.5);
     expect(new Set(senal.map((v) => Math.round(v))).size, 'la bajada pasa por valores intermedios').toBeGreaterThan(1);
-    expect(senal.at(-1)).toBeLessThan(6); // en menos de 200 ms ya está en PEEP
+    // En ≈ 200 ms queda cerca de la PEEP: lo que sobra es la caída en la rama espiratoria del equipo mientras sale gas
+    // (R_rama·|Q|, ≈ 2 cmH₂O al principio de la espiración), no la válvula todavía cerrada.
+    expect(senal.at(-1)).toBeLessThan(8);
+    expect(senal.at(-1)).toBeLessThan(senal[0]!);
     // La columna sigue esa bajada amortiguada, escalón a escalón.
     expect(bajada[0]).toBeGreaterThan(12);
     expect(bajada.at(-1)).toBeLessThan(bajada[0]!);

@@ -1,3 +1,4 @@
+import { DEFAULT_EXP_BRANCH_R_CMH2O_S_L } from '../../src/engine/controller';
 import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
 import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
@@ -117,21 +118,22 @@ describe('MEC-03 · la constante de tiempo se lee en la curva, y sólo si la cur
     return sim.frame().metrics.tauExp;
   }
 
-  it('en un compartimento lineal sale exactamente Rexp × C, sin ninguna maniobra', () => {
-    // SC-01: Rexp 10, C 0,05 → 0,5 s. El número está en la rama espiratoria del bucle: no hace falta ocluir nada.
+  it('en un compartimento lineal sale exactamente (Rexp + Rrama) × C, sin ninguna maniobra', () => {
+    // SC-01: Rexp 10 del paciente + 3 de la rama espiratoria del equipo, C 0,05 → 0,65 s. El equipo mide el sistema
+    // que vacía, circuito incluido. El número está en la rama espiratoria del bucle: no hace falta ocluir nada.
     const m = tau('SC-01');
     expect(m?.quality).toBe('valid');
-    expect(m?.value as number).toBeCloseTo(0.5, 2);
+    expect(m?.value as number).toBeCloseTo((10 + DEFAULT_EXP_BRANCH_R_CMH2O_S_L) * 0.05, 2);
   });
 
   it('en el obstructivo sale la resistencia espiratoria, que es el triple de la inspiratoria', () => {
-    // SC-03: Rinsp 10, Rexp 30, C 0,05 → 1,5 s. Y el tiempo espiratorio programado no llega a tres constantes: por eso
-    // ese escenario atrapa aire. Ése es el enlace entre el número y el fenómeno.
+    // SC-03: Rinsp 10, Rexp 30 (+ 3 de la rama), C 0,05 → 1,65 s. Y el tiempo espiratorio programado no llega a tres
+    // constantes: por eso ese escenario atrapa aire. Ése es el enlace entre el número y el fenómeno.
     const sim = deEscenario('SC-03');
     runUntilBreath(sim, 8);
     const m = sim.frame().metrics.tauExp;
     expect(m?.quality).toBe('valid');
-    expect(m?.value as number).toBeCloseTo(1.5, 1);
+    expect(m?.value as number).toBeCloseTo((30 + DEFAULT_EXP_BRANCH_R_CMH2O_S_L) * 0.05, 1);
     const tExp = sim.breaths[sim.breaths.length - 1]!.tExpS;
     expect(tExp / (m?.value as number), 'menos de tres constantes: no termina de vaciar').toBeLessThan(3);
   });
