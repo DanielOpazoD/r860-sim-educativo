@@ -288,7 +288,17 @@ export class VcController {
    * métrica Ppico publicaba un valor que no aparecía en ninguna muestra de la pantalla. Con Pmáx 7 y PEEP 5 el equipo
    * mostraba Ppico 7 con la curva plana en 5. Aquí se recogen esos instantes para que el simulador los dibuje.
    */
-  readonly substepSamples: { tS: number; paw: number; q: number; vAbsL: number }[] = [];
+  readonly substepSamples: { tS: number; paw: number; q: number; vAbsL: number; vMedidoL: number }[] = [];
+
+  /**
+   * Volumen que mide el equipo desde el inicio de la respiración en curso (L): la integral con signo del flujo de su
+   * sensor, lo entregado menos lo que vuelve (VTi − VTe acumulados). Es lo que dibuja la curva de volumen del ventilador
+   * (URM SW10, 9-8: las curvas muestran los datos que recibe el ventilador). Con fuga la rama espiratoria no vuelve a
+   * cero y el equipo la reinicia al empezar la respiración siguiente; sin fuga ni circuito es el volumen del pulmón.
+   */
+  get volumenMedidoL(): number {
+    return this.breath ? this.breath.vtInsp - this.breath.vtExp : 0;
+  }
 
   /** Avanza un paso fijo dt (s). Los eventos programados se resuelven con sub-pasos exactos. */
   step(dt: number): void {
@@ -307,7 +317,8 @@ export class VcController {
       this.account(used);
       remaining -= used;
       // Sólo los cortes interiores: el final del paso lo publica el simulador como muestra regular.
-      if (remaining > EPS) this.substepSamples.push({ tS: this.simT, paw: this.paw, q: this.q, vAbsL: this.patient.vTotal });
+      if (remaining > EPS)
+        this.substepSamples.push({ tS: this.simT, paw: this.paw, q: this.q, vAbsL: this.patient.vTotal, vMedidoL: this.volumenMedidoL });
       if (this.transition) {
         const fn = this.transition;
         this.transition = null;

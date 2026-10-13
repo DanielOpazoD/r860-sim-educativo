@@ -92,6 +92,34 @@ describe('LEAK-06 · la fuga es un orificio: crece con la raíz de la presión, 
   });
 });
 
+describe('LEAK-07 · la curva de volumen es la del equipo: con fuga no vuelve a cero', () => {
+  it('sube a lo entregado, termina la espiración en VTi − VTe y se reinicia al empezar la respiración siguiente', () => {
+    const sim = benchSim({ patient: FUGA, settings: { ...BENCH_SETTINGS, assistControl: false, biasFlow: 4 / 60 } });
+    runUntilBreath(sim, 5);
+    let max = -Infinity,
+      ultimo = 0,
+      finEsp = 0;
+    const n = sim.breaths.length;
+    while (sim.breaths.length === n) {
+      finEsp = ultimo;
+      sim.step();
+      ultimo = sim.frame().live.volTidalL;
+      max = Math.max(max, ultimo);
+    }
+    const b = sim.breaths.at(-1)!;
+    expect(max).toBeCloseTo(b.vtInsp, 3); // la curva llega a lo que entregó el ventilador, fuga incluida
+    // Al empezar la respiración siguiente la curva ya se reinició; un paso antes valía lo que no volvió.
+    expect(ultimo).toBeLessThan(0.01);
+    expect(finEsp).toBeCloseTo(b.vtInsp - b.vtExp, 2);
+    expect(finEsp).toBeGreaterThan(0.15);
+    // Sin fuga, la curva vuelve a cero: es el volumen del pulmón.
+    const sin = benchSim({ settings: { ...BENCH_SETTINGS, assistControl: false } });
+    runUntilBreath(sin, 5);
+    const bs = sin.breaths.at(-1)!;
+    expect(bs.vtInsp - bs.vtExp).toBeLessThan(0.001);
+  });
+});
+
 describe('LEAK-02 · la PEEP se sostiene mientras el flujo de base cubra la fuga', () => {
   it('con base 4 L/min y fuga de 3 a la PEEP la Pva espiratoria queda en 5; con base 2 cae por debajo de 4', () => {
     // Sin disparo asistido: se mira la espiración entera (con umbral ≤ fuga la fuga dispararía y la cortaría antes).
@@ -175,6 +203,8 @@ describe('LEAK-05 · desconexión: sin presión, sin volumen, alarma alta que se
     expect(a.priority).toBe('high');
     expect(sim.alarms.bar().color).toBe('red');
     expect(sim.alarms.get('vteLow')!.conditionActive).toBe(true);
+    // El equipo la retira de la lista: la desconexión la explica (URM SW10 8-26, «Alarm filters»).
+    expect(sim.frame().alarms.find((x) => x.id === 'vteLow')!.filteredBy).toBe('disconnect');
     expect(sim.command({ type: 'setPatient', params: { disconnected: false } }).accepted).toBe(true);
     runUntilBreath(sim, 9);
     expect(sim.alarms.get('disconnect')!.conditionActive).toBe(false);

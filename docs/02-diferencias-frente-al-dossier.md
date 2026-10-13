@@ -13,7 +13,7 @@ Referencia: dossier v1.0 (06-09-2026). Se listan sólo desviaciones o precisione
 | Guía de resolución de problemas JB79437XX (2020) leída íntegra | Plimit impide entregar todo el VT en VC; Pmax limita en adaptativos; alarma de Ppico evaluada antes de refrescar pantalla; auto-disparo por fuga | Evaluación de Pmáx sobre valor bruto por sub-paso (ALM-05) |
 | Curso «Modos de ventilación invasiva» JB72469XX (ES, 2020, 49 diapositivas) — no citado en el dossier | En VC, al alcanzar el límite el flujo baja para sostener la presión; el ventilador ajusta el flujo en las respiraciones siguientes; cotas de PRVC (PEEP+Pmin…Pmax−2; ±3/resp; −0,5 tras alarma); compensación de tubo limitada a Pmax−5 | Nueva brecha U-19 (adaptación de flujo no implementada); cotas guardadas para la etapa de adaptativos |
 | Guía SW10 (ManualMachine) | HTTP 403 | Sus citas quedan «D-secundario» (fin de inspiración por Pmáx) |
-| URM Rev F (GE/ASPR) | HTTP 502 | U-17 confirmada |
+| URM Rev F (GE/ASPR) | HTTP 502 el 06-09-2026; leído el 13-10-2026 desde la captura oficial archivada en el Internet Archive (2024-08-08; 510 pp; sha256 en `evidence.json`, R21) | Prioridades, retardos y filtros de alarma (8-8 a 8-27), curvas como datos medidos (9-8), System Check y compliance del sistema respiratorio adulto 1,977–2,411 mL/cmH₂O (6-5, 13-21): E-105 a E-107 |
 
 ## Desviaciones respecto a propuestas del dossier
 

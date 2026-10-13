@@ -371,7 +371,9 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
     // límite de 250, aunque pierden ≈ 45 % del VTi; la fuga se ve en la tabla y en el autodisparo. CC-08 tampoco: con
     // el lazo de presión del equipo el soporte no hace el pico de flujo inicial de la fuente ideal, el ciclado por
     // flujo deja de cortar antes de tiempo las respiraciones de esfuerzo débil y ninguna sale bajo 250 mL.
-    expect(ruidosos.sort()).toEqual(['CC-05: mveLow', 'CC-06: vteHigh', 'SC-18: ppeakLow,vteHigh,vteLow']);
+    // SC-18 ya no da VTesp bajo: sus respiraciones apiladas bajan del límite una a una, nunca tres seguidas, y el equipo
+    // exige tres (URM SW10 8-25).
+    expect(ruidosos.sort()).toEqual(['CC-05: mveLow', 'CC-06: vteHigh', 'SC-18: ppeakLow,vteHigh']);
   });
 });
 

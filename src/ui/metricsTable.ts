@@ -173,5 +173,5 @@ export function metricStatus(frame: EngineFrame | null, spec: MetricSpec): Metri
 /** ¿Alguna alarma activa afecta a esta medición? */
 export function metricInAlarm(fr: EngineFrame, key: string): boolean {
   const ids = ALARM_IDS_BY_METRIC[key];
-  return !!ids && fr.alarms.some((a) => a.conditionActive && ids.includes(a.id));
+  return !!ids && fr.alarms.some((a) => a.conditionActive && !a.filteredBy && ids.includes(a.id));
 }

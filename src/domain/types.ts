@@ -361,6 +361,12 @@ export interface AlarmState {
   responseAction: AlarmResponse;
   /** Requiere reconocimiento del usuario tras resolverse (P: alta y media). */
   latching: boolean;
+  /**
+   * Alarma activa que el equipo retira de la lista porque otra la explica (URM SW10, 8-25 «Alarm filters»): la apnea
+   * retira las de volumen y FR baja; la desconexión, la apnea y las de volumen; Ppico alta, Ppico baja. La condición se
+   * sigue evaluando; sólo deja de mostrarse y de contar en la banda. null si no está filtrada.
+   */
+  filteredBy?: string | null;
 }
 
 export type VentilationState = 'standby' | 'ventilating';

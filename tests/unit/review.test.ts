@@ -77,7 +77,7 @@ describe('H3 · espera durante un bloqueo espiratorio en curso', () => {
 describe('H4 · poner un límite en Off resuelve la alarma activa (Off = no se evalúa, no estado congelado)', () => {
   it('VTesp bajo activa → Off → resuelta y reconocida; banda verde', () => {
     const sim = benchSim({ alarmLimits: { ...DEFAULT_ALARM_LIMITS, vteLow: 0.6 } });
-    runUntilBreath(sim, 2);
+    runUntilBreath(sim, 3); // VTesp bajo exige tres respiraciones bajo el límite (URM SW10 8-25)
     expect(sim.alarms.get('vteLow')!.conditionActive).toBe(true);
     sim.command({ type: 'setAlarmLimits', changes: { vteLow: 'off' } });
     runUntilBreath(sim, 4);
