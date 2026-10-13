@@ -342,10 +342,10 @@ export const HELP: Record<string, HelpEntry> = {
     ],
   },
   'patient.circuitCompliance': {
-    title: 'Compliance del circuito',
+    title: 'Compliance del circuito no compensada',
     text: [
-      'Volumen de gas que la tubuladura comprime a cada presión (mL por cmH₂O). En el equipo real parte del gas entregado se queda comprimido en el circuito y nunca llega al pulmón.',
-      'El flujo mostrado es el del sensor del ventilador, así que el VTi se mantiene, pero la meseta baja: la Cstat medida por bloqueo sale como C + compliance del circuito. En espiración el gas comprimido vuelve por la válvula.',
+      'El equipo mide el circuito en el System Check (fuga, compliance y resistencia) y usa esos datos en todas sus compensaciones; los circuitos adultos recomendados tienen 2,0–2,4 mL/cmH₂O. Con 0, el circuito es el verificado y no se nota.',
+      'Este control es la parte que el equipo no compensa, como un circuito cambiado después del System Check: parte del gas entregado se queda comprimido en la tubuladura, el VTi se mantiene pero la meseta baja y la Cstat del bloqueo sale como C + esta compliance. Es el aviso del manual: VT, compliance y resistencia dejan de ser exactos.',
     ],
   },
   'metric.ppeak': {

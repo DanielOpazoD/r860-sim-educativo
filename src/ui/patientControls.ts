@@ -74,7 +74,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { leakLpmAt10: v } }),
   },
   circuitCompliance: {
-    label: 'Compliance del circuito',
+    label: 'Compliance no compensada',
     unit: 'mL/cmH₂O',
     min: 0,
     max: 5,

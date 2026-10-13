@@ -665,10 +665,10 @@
     },
     {
       "id": "E-041",
-      "claim": "El sistema respiratorio (rama + válvula espiratoria) añade una resistencia en serie con la vía aérea para el gas que SALE del paciente: la Pva en la pieza en Y queda en PEEP + R·|Q| mientras se espira. Lo que el paciente inhala durante la espiración le llega del flujo de base por la rama inspiratoria y no la atraviesa (lo representa el regulador de PEEP, E-091). Lineal, 0–6 cmH₂O·s/L (techo que cita el manual), 3 por omisión: el producto presión-tiempo sobre la PEEP que dejó el Carescape en el banco de Pinède 2021 (2,4 cmH₂O·s con VT 0,8 L) dividido por el volumen espirado. 0 en el banco analítico de las pruebas. Con ella la τ espiratoria que se lee en la curva es (Rexp + Rrama)·C.",
-      "status": "D (techo normativo; tiempo y producto presión-tiempo del Carescape en banco, C07) / P (linealidad y la derivación R ≈ PTP/VT)",
+      "claim": "El sistema respiratorio (rama + válvula espiratoria) añade una resistencia en serie con la vía aérea para el gas que SALE del paciente: la Pva en la pieza en Y queda en PEEP + R·|Q| mientras se espira. Lo que el paciente inhala durante la espiración le llega del flujo de base por la rama inspiratoria y no la atraviesa (lo representa el regulador de PEEP, E-091). Lineal, 0–6 cmH₂O·s/L (techo que cita el manual), 3 por omisión: el producto presión-tiempo sobre la PEEP que dejó el Carescape en el banco de Pinède 2021 (2,4 cmH₂O·s con VT 0,8 L) dividido por el volumen espirado. 0 en el banco analítico de las pruebas. Con ella la τ espiratoria que se lee en la curva es (Rexp + Rrama)·C. El manual SW10 publica la resistencia espiratoria del sistema respiratorio con los circuitos adultos recomendados: 3,04–6,54 cmH₂O·s/L a 60 L/min (inspiratoria 3,00–5,93; R21, 13-21); los 3 por omisión, derivados del banco de Pinède con el Carescape, quedan en el borde inferior de ese rango.",
+      "status": "D (techo normativo; rango del sistema respiratorio del R860, R21; tiempo y producto presión-tiempo del Carescape en banco, C07) / P (linealidad y la derivación R ≈ PTP/VT)",
       "source": "R21 (extracto vía buscador), R03, C07",
-      "locator": "URM SW10 §especificaciones del sistema respiratorio (techo 6 cmH2O); Pinède 2021, resumen: PTP 2,4 (2,1–2,4) cmH2O·s con el Carescape a PEEP 5",
+      "locator": "URM SW10 §especificaciones del sistema respiratorio (techo 6 cmH2O); Pinède 2021, resumen: PTP 2,4 (2,1–2,4) cmH2O·s con el Carescape a PEEP 5; URM SW10 13-21 «Ventilator breathing system compliance and resistance»",
       "implemented": "src/domain/types.ts (PatientParams.rExpValve); src/engine/patient.ts (rSeries); src/engine/controller.ts (fase exp); src/ui/patientControls.ts (deslizador)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-03)"
@@ -1427,6 +1427,18 @@
       "tests": [
         "tests/unit/fuga.test.ts (LEAK-07)",
         "tests/unit/curvas.test.ts (SC-22, CC-07)"
+      ]
+    },
+    {
+      "id": "E-108",
+      "claim": "Circuito del equipo: el R860 mide en el System Check la fuga (a 25 cmH₂O), la compliance y la resistencia del circuito con los accesorios que se usarán, y usa esos datos en todas sus compensaciones internas; si el System Check no se hizo con el circuito actual usa los del último, con posible inexactitud de entrega y monitorización. Los circuitos adultos recomendados tienen 1,977–2,411 mL/cmH₂O y el equipo admite hasta 8. En el simulador Cc = 0 es el circuito verificado y compensado; el control del instructor, ahora «Compliance no compensada», representa la parte que el equipo no compensa (un circuito cambiado tras el System Check), con los efectos que el manual anuncia: VT, compliance y resistencia inexactos (la Cstat del bloqueo sale ≈ C + Cc).",
+      "status": "D (System Check, compensación y rango de compliance, R21) / P (algoritmo de compensación, no publicado)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 6-5 a 6-7 «System Check» y «Circuit Setup»; 5-13 fila «VT, compliance and resistance values are not accurate»; 13-21 «Ventilator breathing system compliance and resistance»",
+      "implemented": "src/engine/patient.ts (circuitComplianceL); src/engine/controller.ts (circuitTransfer, occludeCircuit); src/ui/patientControls.ts y src/ui/help.ts (control y ayuda)",
+      "tests": [
+        "tests/bench/circuito.test.ts (BM-CC)",
+        "tests/unit/circuitoIdentidad.test.ts (CIR)"
       ]
     }
   ]

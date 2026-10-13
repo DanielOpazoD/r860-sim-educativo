@@ -295,7 +295,7 @@
     {
       "id": "U-35",
       "question": "Resistencia de la válvula espiratoria y cota del flujo espiratorio pico del equipo.",
-      "policy": "CERRADA (E-041): resistencia de la rama espiratoria como parámetro 0–6 cmH₂O·s/L (techo normativo ≤ 6 cmH₂O), 0 por omisión; acota el flujo espiratorio pico y eleva la Pva sobre PEEP durante la espiración. Queda U el valor real del R860 con su circuito.",
+      "policy": "CERRADA (E-041): resistencia de la rama espiratoria como parámetro 0–6 cmH₂O·s/L (techo normativo ≤ 6 cmH₂O), 3 por omisión desde el bloque A (E-041, U-42; 0 en el banco analítico); acota el flujo espiratorio pico y eleva la Pva sobre PEEP durante la espiración. El rango real del sistema respiratorio del R860 con los circuitos recomendados está publicado: 3,04–6,54 cmH₂O·s/L a 60 L/min (URM SW10 13-21, E-041).",
       "status": "cerrada (v0.3.2)",
       "blocks": [
         "flujo espiratorio pico realista con R de válvula"
