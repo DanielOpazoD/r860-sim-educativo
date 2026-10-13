@@ -717,8 +717,10 @@ export class VcController {
         this.qDemandFilt += Math.min(1, h / PEEP_REGULATOR_TAU_S) * (qVent - this.qDemandFilt);
         // El gas comprimido en el circuito vuelve por la válvula como un flujo más: lo ve el sensor de la máquina.
         const delta = this.circuitTransfer(pyEnd, h, qEnd + qLeakEnd);
-        // VTe de pantalla: lo que vuelve por la válvula espiratoria, que es lo que sale del pulmón menos lo que se va por la fuga.
-        if (this.breath) this.breath.vtExp += Math.max(0, -dV - dVLeak) + Math.max(0, -delta);
+        // VTe de pantalla: la integral del flujo que ve el sensor de la máquina durante la espiración, con su signo. Lo que el
+        // paciente inhala en la espiración (latido, esfuerzo que no dispara) y la fuga que se lleva el flujo de base se
+        // restan, como en un sensor diferencial; antes cada paso de 4 ms se rectificaba y esos tramos se perdían.
+        if (this.breath) this.breath.vtExp += -dV - dVLeak - delta;
         // Flujo de pantalla: el del sensor del ventilador, que ve la fuga como si fuera el paciente.
         this.q = qEnd + qLeakEnd + delta / h;
         // La presión mostrada es la del nodo (pieza en Y): con resistencia de rama queda sobre la PEEP mientras sale gas.
@@ -1096,7 +1098,8 @@ export class VcController {
       peepe: b.peepeEnd,
       pmean: b.pawIntegral / duration,
       vtInsp: b.vtInsp,
-      vtExp: b.vtExp,
+      // Con más gas entrando que saliendo en toda la espiración (fuga grande) el equipo no muestra un VT espirado negativo.
+      vtExp: Math.max(0, b.vtExp),
       plimitReached: b.plimitReached,
       pmaxReached: b.pmaxReached,
       energyInspJ: b.energyInsp * JOULES_PER_CMH2O_L,

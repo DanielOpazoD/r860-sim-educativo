@@ -54,7 +54,7 @@ describe('BM-EA espiración activa', () => {
     expect(qa).toBeGreaterThan(qp * 1.15);
   });
 
-  it('en estado estable VTe ≥ VTi·0,99 y el pulmón vacía por debajo de su FRC pasiva', () => {
+  it('en estado estable VTe ≈ VTi y el pulmón vacía por debajo de su FRC pasiva', () => {
     const pasivo = simEa(0),
       activo = simEa(8),
       fuerte = simEa(15);
@@ -63,11 +63,15 @@ describe('BM-EA espiración activa', () => {
     runUntilBreath(fuerte, 5);
     const ba = activo.breaths.at(-1)!;
     expect(ba.vtExp).toBeGreaterThanOrEqual(ba.vtInsp * 0.99);
-    // El pulmón baja de la FRC durante el pulso espiratorio; el sensor no lo ve porque el pulmón se relena después.
+    expect(ba.vtExp).toBeLessThanOrEqual(ba.vtInsp * 1.01);
+    // El pulmón baja de la FRC durante el pulso espiratorio; el VT espirado no lo ve porque el pulmón se rellena del
+    // flujo de base antes del siguiente disparo y el sensor integra ese gas con su signo. Lo que se ve es el flujo.
     expect(expStats(activo).vMin).toBeLessThan(expStats(pasivo).vMin);
-    // Con un esfuerzo fuerte el VTe mostrado sí supera al pasivo (el gas extra sale por la válvula).
+    // Con un esfuerzo fuerte tampoco: en régimen sale lo que entró. Antes el VT espirado rectificaba el flujo cada
+    // paso, contaba el gas extra que sale y no el que vuelve a entrar, y daba un 5 % más de lo insuflado.
     const bf = fuerte.breaths.at(-1)!;
-    expect(bf.vtExp).toBeGreaterThan(bf.vtInsp * 1.05);
+    expect(Math.abs(bf.vtExp / bf.vtInsp - 1)).toBeLessThan(0.01);
+    expect(Math.abs(expStats(fuerte).qMin)).toBeGreaterThan(Math.abs(expStats(pasivo).qMin));
   });
 
   it('con limitación al flujo espiratorio, a igual volumen el flujo activo no supera al pasivo en más de 3 % (Starling)', () => {

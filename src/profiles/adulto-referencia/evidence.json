@@ -1193,7 +1193,7 @@
     },
     {
       "id": "E-088",
-      "claim": "Fuga en la pieza en Y como conductancia lineal con la presión del nodo (declarada como L/min a 10 cmH2O) y desconexión como fuga tan grande que el nodo queda a presión ambiente. Consecuencias: el VTi de pantalla es lo entregado (fuga incluida) y el VTe lo que vuelve por la válvula espiratoria; la fuga volumétrica los compara; el flujo mostrado y el que evalúa el disparo son los del sensor del ventilador (paciente más fuga), así que la fuga dispara sola si supera el umbral; la válvula espiratoria sostiene la PEEP sólo mientras el flujo de base cubra la fuga; el ciclado por flujo del soporte ve la fuga como flujo que no cae. La espiración sólo evalúa el disparo si demostró sostener la PEEP (0,15 s continuos dentro de 3 cmH2O de la programada): con el circuito abierto nunca lo hace, y como el criterio no mira la Pva del instante un esfuerzo que la hunde dispara con cualquier umbral admitido — antes el guard era sobre la Pva instantánea y dejaba inertes los umbrales ≤ −3. Alarma «Paciente desconectado» (D existencia, QRG 2020) con condición P: Ppico < 3 cmH2O y VTe < 20 mL en una respiración; se resuelve con la primera respiración normal. Sin compensación de fuga ni de disparo (D existencia de Leak Comp/Trigger Comp; U-10).",
+      "claim": "Fuga en la pieza en Y como conductancia lineal con la presión del nodo (declarada como L/min a 10 cmH2O) y desconexión como fuga tan grande que el nodo queda a presión ambiente. Consecuencias: el VTi de pantalla es lo entregado (fuga incluida) y el VTe la integral con signo del flujo del sensor durante la espiración (E-101); la fuga volumétrica los compara y en régimen recoge toda la fuga del ciclo; el flujo mostrado y el que evalúa el disparo son los del sensor del ventilador (paciente más fuga), así que la fuga dispara sola si supera el umbral; la válvula espiratoria sostiene la PEEP sólo mientras el flujo de base cubra la fuga; el ciclado por flujo del soporte ve la fuga como flujo que no cae. La espiración sólo evalúa el disparo si demostró sostener la PEEP (0,15 s continuos dentro de 3 cmH2O de la programada): con el circuito abierto nunca lo hace, y como el criterio no mira la Pva del instante un esfuerzo que la hunde dispara con cualquier umbral admitido — antes el guard era sobre la Pva instantánea y dejaba inertes los umbrales ≤ −3. Alarma «Paciente desconectado» (D existencia, QRG 2020) con condición P: Ppico < 3 cmH2O y VTe < 20 mL en una respiración; se resuelve con la primera respiración normal. Sin compensación de fuga ni de disparo (D existencia de Leak Comp/Trigger Comp; U-10).",
       "status": "P (física y umbrales) / D (existencia de la alarma y de las compensaciones, R02)",
       "source": "R02",
       "locator": "QRG 2020 p.13 «Patient disconnected, RR low, MVexp low, Vtexp low, Apnea and other alarms may occur»; p.7 «Select Assist Control, Leak Comp or Trigger Comp»",
@@ -1315,6 +1315,19 @@
       "tests": [
         "tests/unit/sync.test.ts (SYN-05)",
         "tests/unit/objetivos.test.ts (ALM)"
+      ]
+    },
+    {
+      "id": "E-101",
+      "claim": "VT espirado de pantalla = integral, con su signo, del flujo que ve el sensor de la máquina durante la espiración (pulmón, fuga y gas del circuito). Lo que el paciente vuelve a inhalar del flujo de base en ese tramo —oscilación cardiogénica, esfuerzo que no dispara, rellenado tras una espiración activa— se resta, y la fuga que se lleva el flujo de base también. Antes cada paso de 4 ms se rectificaba (sólo sumaban los tramos de salida): en régimen sin fuga el VTe superaba al VTi (CC-05 con latido: 409 mL con VT 400; SC-10: 527 con VT 500; espiración activa fuerte: +5 %), lo que rompe el balance de masa. Ahora ΣVTi − ΣVTe = ΔV pulmonar en todos los escenarios sin fuga (< 0,5 %), y con fuga VTi − VTe es toda la fuga del ciclo (LEAK-01: dentro del 3 % de ∫G·Py). Un VTe neto negativo (fuga mayor que lo espirado) se muestra como 0.",
+      "status": "P (el algoritmo de integración del R860 no está publicado; integración con signo, la de un sensor diferencial) / D (R23: el volumen exhalado del paciente puede diferir del medido por las fugas)",
+      "source": "R23",
+      "locator": "JB72469XX, diapositiva «Compensación de Fugas»: «El volumen exhalado del paciente puede diferir del volumen exhalado medido debido a fugas»",
+      "implemented": "src/engine/controller.ts (fase exp: vtExp += −dV − dVLeak − delta; finishBreath: VTe ≥ 0)",
+      "tests": [
+        "tests/unit/measurementFidelity.test.ts (MED-VTE)",
+        "tests/unit/fuga.test.ts (LEAK-01)",
+        "tests/bench/espiracionActiva.test.ts (BM-EA)"
       ]
     }
   ]

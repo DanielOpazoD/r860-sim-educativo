@@ -207,3 +207,58 @@ describe('cierre de coherencia de pausa y SC-18', () => {
     expect(LESSON_TESTS[task.test]!(context)).toBe(false);
   });
 });
+
+describe('MED-VTE · el VT espirado es la integral con signo del flujo que ve el sensor', () => {
+  /**
+   * Suma de VTi y VTe de las respiraciones que terminan entre los 20 y los 60 s de un escenario cargado como en la
+   * aplicación, y lo que cambió el volumen pulmonar entre el inicio de la primera y el final de la última (con
+   * respiraciones apiladas la ventana puede cortar a mitad de un apilamiento).
+   */
+  function balance(id: string): { vti: number; vte: number; n: number; dV: number } {
+    const sc = SCENARIOS.find((s) => s.id === id)!;
+    const base = defaultInit();
+    const sim = new Simulator(
+      defaultInit({
+        patient: sc.patient,
+        effort: sc.effort,
+        sensors: sc.sensors,
+        settings: { ...base.settings, ...sc.settings },
+        initialV: sc.initialV ?? 'equilibrium',
+      }),
+      REFERENCE_PROFILE,
+    );
+    // Las dos fronteras de la ventana caen justo al terminar una respiración.
+    const hastaFinDeRespiracion = (): void => {
+      const n = sim.breaths.length;
+      while (sim.breaths.length === n) sim.step();
+    };
+    sim.run(20_000);
+    hastaFinDeRespiracion();
+    const n0 = sim.breaths.length;
+    const v0 = sim.patient.vTotal;
+    sim.run(40_000);
+    hastaFinDeRespiracion();
+    const nFin = sim.breaths.length;
+    const v1 = sim.patient.vTotal;
+    const b = sim.breaths.slice(n0, nFin);
+    return { vti: b.reduce((s, r) => s + r.vtInsp, 0), vte: b.reduce((s, r) => s + r.vtExp, 0), n: b.length, dV: v1 - v0 };
+  }
+
+  it('sin fuga, en régimen sale lo que entró: con latido, esfuerzos que no disparan o espiración activa', () => {
+    // Antes cada paso de 4 ms se rectificaba: el gas que el paciente vuelve a inhalar durante la espiración no se
+    // restaba y el VT espirado superaba al insuflado (CC-05 con latido: 409 mL con VT 400; SC-10: 527 con VT 500).
+    const sinFuga = SCENARIOS.filter((s) => !(s.patient.leakLpmAt10 ?? 0) && !s.patient.disconnected);
+    expect(sinFuga.length).toBeGreaterThan(20);
+    for (const sc of sinFuga) {
+      const { vti, vte, n, dV } = balance(sc.id);
+      expect(n, sc.id).toBeGreaterThan(2);
+      expect(Math.abs(vti - vte - dV) / vti, sc.id).toBeLessThan(0.005);
+    }
+  });
+
+  it('con el VT programado, el paciente del caso con latido devuelve exactamente lo insuflado', () => {
+    const { vti, vte, n } = balance('CC-05');
+    expect((vte / n) * 1000).toBeCloseTo(400, 0);
+    expect(vte / vti).toBeCloseTo(1, 3);
+  });
+});
