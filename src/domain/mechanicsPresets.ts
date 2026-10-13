@@ -38,3 +38,11 @@ export const TUBE_PRESETS: TubePreset[] = [
   { id: 'id70', label: 'TET 7,0 mm', r2: 9.2 },
   { id: 'id65', label: 'TET 6,5 mm', r2: 12.8 },
 ];
+
+/**
+ * Oscilación cardiogénica de los pacientes de los casos: 80 latidos/min y 0,45 cmH₂O de amplitud, que con una mecánica
+ * típica (C 50 mL/cmH₂O, R 10 más la rama) mueve ≈ ±1,7 L/min de flujo en la vía aérea al final de la espiración.
+ * Imanaka (Crit Care Med 2000) midió tras cirugía cardíaca una fluctuación del flujo inspiratorio de 2,0 ± 0,9 L/min en
+ * los que no se autodisparaban con 1 L/min y de 4,7 ± 1,3 en los que sí. P la forma sinusoidal y la frecuencia.
+ */
+export const CARDIAC_REFERENCE = { hz: 80 / 60, amplitude: 0.45 };

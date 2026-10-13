@@ -195,6 +195,18 @@
       "title": "Limitación al flujo espiratorio en ventilados: Armaganidis A et al. Crit Care Med 2000;28:3837–42 (PMID 11153623); Ranieri VM et al. Am Rev Respir Dis 1993;147:5–13 (PMID 8420430); Tobin MJ, Lodato RF. PEEP, auto-PEEP, and waterfalls. Chest 1989 (PMID 2670461)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Armaganidis: limitación al flujo (prueba de presión espiratoria negativa) en 12 de 32 pacientes ventilados, 11 de los 13 con insuficiencia de origen pulmonar; PEEPi estática 7,1 ± 2,8 frente a 1,2 ± 0,9 sin limitación. Ranieri: en nueve EPOC en ventilación controlada con PEEPi 9,8 ± 0,5, PEEP de 5 y 10 no cambiaron el volumen pulmonar ni la PEEP total; por encima del 85 % de la PEEPi (presión crítica) hubo hiperinflación y efectos hemodinámicos. Se usa para la presión crítica de CC-02 y CC-06 (9 cmH₂O) y para el criterio de PEEP total de CC-02."
+    },
+    {
+      "id": "C10",
+      "title": "Oscilación cardiogénica: Imanaka H, Nishimura M, Takeuchi M, Kimball WR, Yahagi N, Kumon K. Autotriggering caused by cardiogenic oscillation during flow-triggered mechanical ventilation. Crit Care Med 2000;28:402–7 (PMID 10708174)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. 104 adultos tras cirugía cardíaca, paralizados, disparo por flujo de 1 L/min: 22 % se autodisparaba (> 5/min). Fluctuación del flujo inspiratorio por el latido 4,67 ± 1,26 L/min en el grupo con autodisparo y 2,03 ± 0,86 sin él; el grupo con autodisparo tenía más gasto cardíaco, corazón mayor y menos resistencia respiratoria. Se usa para la amplitud de la oscilación cardiogénica de los casos."
+    },
+    {
+      "id": "C11",
+      "title": "Variabilidad del patrón respiratorio: Tobin MJ et al. Variability of resting respiratory drive and timing in healthy subjects. J Appl Physiol 1988;65:309–17 (PMID 3403474); Wysocki M et al. Reduced breathing variability as a predictor of unsuccessful patient separation from mechanical ventilation. Crit Care Med 2006;34:2076–83 (PMID 16755257)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Tobin: en 65 sanos en reposo, CV respiración a respiración de la frecuencia 20,8 ± 11,5 %, Ti/Ttot 17,9 ± 6,5 %, VT 33 ± 14,9 % y VT/Ti 31,6 ± 12,6 %. Wysocki: en una prueba de respiración espontánea, todos los que se separaron con éxito tenían CV de VT/Ti ≥ 19 % y de Ti/Ttot ≥ 10 %; los que fracasaron, menos. Se usa para la variabilidad del esfuerzo de SC-19 (éxito) y de CC-06/CC-08 (destete difícil)."
     }
   ],
   "claims": [
@@ -1268,6 +1280,30 @@
       "source": "—",
       "locator": "—",
       "implemented": "src/scenarios/cases.ts; src/scenarios/index.ts (ClinicalCase); src/ui/caseEvaluation.ts; src/ui/caseView.ts; src/ui/caseProgress.ts; src/ui/caseSpace.ts (submitCase, bloqueo del panel); tests/unit/casosClinicos.test.ts; tests/e2e/clinicalCases.spec.ts"
+    },
+    {
+      "id": "E-098",
+      "claim": "Oscilación cardiogénica en los pacientes de los casos clínicos: presión sinusoidal de 0,45 cmH₂O a 80/min en el pulmón, que no cuenta como esfuerzo. Mueve ≈ ±2 L/min el flujo de la vía aérea al final de la espiración (Imanaka: 2,0 ± 0,9 L/min sin autodisparo). Las maniobras la descuentan: la meseta y la PEEP total son la media del último ciclo cardíaco y la constante de tiempo se ajusta con una sinusoide a esa frecuencia. En CC-07 la fuga y el latido se suman en el flujo que ve el sensor: el autodisparo cesa con 6 L/min. Los escenarios de lección no laten (en el pulmón didáctico de dos unidades el latido bombeaba volumen por la asimetría de resistencias entre la rama espiratoria y el regulador de PEEP).",
+      "status": "D (amplitud del flujo, C10) / P (forma sinusoidal, frecuencia, lectura promediada)",
+      "source": "C10",
+      "locator": "Imanaka 2000, resumen: fluctuación del flujo inspiratorio 2,03 ± 0,86 L/min sin autodisparo, 4,67 ± 1,26 con",
+      "implemented": "src/domain/mechanicsPresets.ts (CARDIAC_REFERENCE); src/engine/controller.ts (cardiacAt, effortAt, sinLatido, omegaCardiaca); src/engine/breathAnalysis.ts (expiratoryTimeConstant con latido); src/scenarios/cases.ts",
+      "tests": [
+        "tests/unit/latido.test.ts (LAT)",
+        "tests/unit/casosClinicos.test.ts (CAS-07)"
+      ]
+    },
+    {
+      "id": "E-099",
+      "claim": "Variabilidad respiración a respiración del esfuerzo según el paciente: SC-19 (respira bien con soporte) ±35 % de amplitud y ±20 % de período (CV ≈ 20 % y 12 %, el rango de quien supera la prueba en Wysocki); CC-06 y CC-08 (destete difícil) ±12 % de amplitud (CV ≈ 7 %, menor que el 19 % que separó a quienes fracasaban) con la frecuencia fija para que los criterios de sincronía cuenten esfuerzos. Los escenarios de demostración (SC-05, SC-10, SC-18) siguen periódicos.",
+      "status": "D (rangos de CV, C11) / P (valores elegidos dentro de ellos; distribución uniforme del generador)",
+      "source": "C11",
+      "locator": "Tobin 1988 y Wysocki 2006, resúmenes",
+      "implemented": "src/scenarios/index.ts (SC-19); src/scenarios/cases.ts (VARIABILIDAD_DESTETE)",
+      "tests": [
+        "tests/unit/casosClinicos.test.ts (CAS-06, CAS-08)",
+        "tests/unit/objetivos.test.ts (SC-19)"
+      ]
     }
   ]
 }

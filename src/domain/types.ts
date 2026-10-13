@@ -187,6 +187,12 @@ export interface PatientParams {
    */
   expValveOpenMs?: number;
   /**
+   * Oscilación cardiogénica: el latido desplaza volumen torácico y aparece en el flujo y la presión de la vía aérea
+   * como una presión sinusoidal a la frecuencia cardíaca. Ausente o amplitud 0 = sin latido (banco y escenarios de
+   * lección). No es esfuerzo: el equipo no la cuenta como músculo.
+   */
+  cardiac?: { hz: number; amplitude: CmH2O };
+  /**
    * Gasometría de modelo (P): producción de CO₂, espacio muerto, bicarbonato y depósito. No realimenta la mecánica y
    * su resultado nunca se muestra en el monitor del equipo. Ausente = adulto de referencia (DEFAULT_GAS del motor).
    */

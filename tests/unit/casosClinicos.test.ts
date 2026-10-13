@@ -122,7 +122,8 @@ class Caso {
   /** Bloqueo como el panel: si es válido y pasivo, anota el punto de titulación. */
   bloqueo(kind: 'inspHold' | 'expHold'): void {
     const previo = this.sim.procedures.last[kind];
-    this.sim.command({ type: 'requestHold', kind, durationS: 3 }); // 3 s, lo que ofrece el panel por omisión
+    // Inspiratorio de 3 s (lo que ofrece el panel); espiratorio de 4: con latido y tejido viscoelástico 3 no se asienta.
+    this.sim.command({ type: 'requestHold', kind, durationS: kind === 'expHold' ? 4 : 3 });
     for (let i = 0; i < 6000 && this.sim.procedures.last[kind] === previo; i++) this.sim.step();
     const h = this.sim.procedures.last[kind]!;
     const cstat = h.values.cstat?.value;
@@ -297,13 +298,13 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
     return { k, disparan: ultimas.length / k.sim.frame().truth.effort.ratePerMin, mlKg: (vt * 1000) / pbw170, va: k.gas.vaLMin! };
   };
   const pbw170 = 50 + 0.91 * (170 - 152.4);
-  it('como en Thille: con soporte 20 la mitad de los esfuerzos no dispara con VT ≈ 12 mL/kg; con 13 disparan todos con ≈ 6', () => {
+  it('como en Thille: con soporte 20 cerca de la mitad de los esfuerzos no dispara con VT ≈ 10 mL/kg; con 13 disparan todos con ≈ 6', () => {
     // Thille 2008: inefectivos 45 % (RIC 36–52) y VT 10,2 mL/kg (7,2–11,5) con soporte 20; 0 % y 5,9 (4,9–6,7) con 13.
     const inicio = conSoporte(null);
     expect(1 - inicio.disparan).toBeGreaterThan(0.36);
     expect(1 - inicio.disparan).toBeLessThanOrEqual(0.52);
-    expect(inicio.mlKg).toBeGreaterThan(9);
-    expect(inicio.mlKg).toBeLessThan(12.5);
+    expect(inicio.mlKg).toBeGreaterThan(7.2);
+    expect(inicio.mlKg).toBeLessThan(11.5);
     expect(inicio.k.resultado().criteria.find((c) => c.id === 'disparo')!.ok).toBe(false);
     const bien = conSoporte(13);
     expect(bien.disparan).toBe(1);
@@ -316,7 +317,7 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
   it('la ventilación alveolar cambia mucho menos que el VT: con 12–13 queda en su equilibrio de EPOC y con 20 sólo algo más baja', () => {
     const inicio = conSoporte(null),
       bien = conSoporte(13);
-    expect(bien.mlKg / inicio.mlKg).toBeLessThan(0.6);
+    expect(bien.mlKg / inicio.mlKg).toBeLessThan(0.65);
     expect(bien.va / inicio.va).toBeGreaterThan(0.6);
     expect(inicio.k.sc.patient.gas?.hco3).toBe(32);
     expect(inicio.k.gas.paco2Target!).toBeGreaterThan(33);
@@ -338,11 +339,15 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
 });
 
 describe('CAS-07 · autodisparo por fuga', () => {
-  it('con 4 L/min cesa el autodisparo; con 8 L/min también, pero se insensibiliza de más', () => {
+  it('fuga y latido: con 5 L/min sigue el autodisparo, con 6 cesa; con 8 L/min también, pero se insensibiliza de más', () => {
     const inicio = caso('CC-07');
     expect(inicio.sim.breaths.some((b) => b.type === 'assisted')).toBe(true);
+    const corto = caso('CC-07');
+    corto.ajustar({ flowTrigger: 5 / 60 });
+    corto.correr(30_000);
+    expect(corto.resultado().criteria.find((c) => c.id === 'auto')!.ok).toBe(false);
     const bien = caso('CC-07');
-    bien.ajustar({ flowTrigger: 4 / 60 });
+    bien.ajustar({ flowTrigger: 6 / 60 });
     bien.correr(30_000);
     expect(bien.resultado().passed).toBe(true);
     const demas = caso('CC-07');

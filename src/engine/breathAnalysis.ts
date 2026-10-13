@@ -78,7 +78,10 @@ export const TAU_EXP_FIT_TO = 0.95;
  * ajusta perfectamente: lo medido es la constante de LO QUE SE ESTÁ VACIANDO. Es la misma limitación que tiene la
  * medida de cabecera, y la unidad lenta se delata por otro camino —la meseta que sigue bajando al alargar la oclusión—.
  */
-export function expiratoryTimeConstant(muestras: { vAbsL: number; qLps: number }[]): { tau: number; r2: number } | null {
+export function expiratoryTimeConstant(
+  muestras: { vAbsL: number; qLps: number; tS?: number }[],
+  omegaCardiaca = 0,
+): { tau: number; r2: number } | null {
   if (muestras.length < 12) return null;
   const vInicio = (muestras[0] as { vAbsL: number }).vAbsL;
   const vFinal = (muestras[muestras.length - 1] as { vAbsL: number }).vAbsL;
@@ -89,30 +92,60 @@ export function expiratoryTimeConstant(muestras: { vAbsL: number; qLps: number }
     return f >= TAU_EXP_FIT_FROM && f <= TAU_EXP_FIT_TO && m.qLps < 0;
   });
   if (tramo.length < 6) return null;
-  // Regresión de Q sobre el volumen que queda: Q = pendiente · restante, con pendiente = −1/tau.
+  // Regresión de Q sobre el volumen que queda: Q = pendiente · restante (+ latido), con pendiente = −1/tau.
+  const conLatido = omegaCardiaca > 0 && tramo.every((m) => typeof m.tS === 'number');
+  const filas = tramo.map((m) => {
+    const fila = [m.vAbsL - vFinal, 1];
+    if (conLatido) fila.push(Math.sin(omegaCardiaca * m.tS!), Math.cos(omegaCardiaca * m.tS!));
+    return { x: fila, y: m.qLps };
+  });
+  const k = filas[0]!.x.length;
+  const coef = minimosCuadrados(filas, k);
+  if (!coef) return null;
+  const pendiente = coef[0]!;
+  if (!(pendiente < -1e-9)) return null; // pendiente no negativa: no es un vaciamiento
+  // Bondad del ajuste de la recta sobre el flujo sin el latido ajustado.
+  const limpio = filas.map((f) => ({ x: f.x[0]!, y: f.y - (conLatido ? coef[2]! * f.x[2]! + coef[3]! * f.x[3]! : 0) }));
+  const n = limpio.length;
   let sx = 0,
     sy = 0,
     sxx = 0,
     sxy = 0,
     syy = 0;
-  const n = tramo.length;
-  for (const m of tramo) {
-    const x = m.vAbsL - vFinal;
-    const y = m.qLps;
-    sx += x;
-    sy += y;
-    sxx += x * x;
-    sxy += x * y;
-    syy += y * y;
+  for (const m of limpio) {
+    sx += m.x;
+    sy += m.y;
+    sxx += m.x * m.x;
+    sxy += m.x * m.y;
+    syy += m.y * m.y;
   }
-  const den = n * sxx - sx * sx;
-  if (Math.abs(den) < 1e-12) return null;
-  const pendiente = (n * sxy - sx * sy) / den;
-  if (!(pendiente < -1e-9)) return null; // pendiente no negativa: no es un vaciamiento
-  const varY = n * syy - sy * sy;
-  const r2 = varY > 1e-12 ? Math.pow(n * sxy - sx * sy, 2) / (den * varY) : 0;
+  const den = n * sxx - sx * sx,
+    varY = n * syy - sy * sy;
+  const r2 = den > 1e-12 && varY > 1e-12 ? Math.pow(n * sxy - sx * sy, 2) / (den * varY) : 0;
   const tau = -1 / pendiente;
   return Number.isFinite(tau) && tau > 0 ? { tau, r2 } : null;
+}
+
+/** Mínimos cuadrados por ecuaciones normales con eliminación de Gauss (k ≤ 4 columnas); null si es singular. */
+function minimosCuadrados(filas: { x: number[]; y: number }[], k: number): number[] | null {
+  const A = Array.from({ length: k }, () => new Array<number>(k + 1).fill(0));
+  for (const f of filas)
+    for (let i = 0; i < k; i++) {
+      for (let j = 0; j < k; j++) A[i]![j]! += f.x[i]! * f.x[j]!;
+      A[i]![k]! += f.x[i]! * f.y;
+    }
+  for (let c = 0; c < k; c++) {
+    let piv = c;
+    for (let r = c + 1; r < k; r++) if (Math.abs(A[r]![c]!) > Math.abs(A[piv]![c]!)) piv = r;
+    if (Math.abs(A[piv]![c]!) < 1e-14) return null;
+    [A[c], A[piv]] = [A[piv]!, A[c]!];
+    for (let r = 0; r < k; r++) {
+      if (r === c) continue;
+      const f = A[r]![c]! / A[c]![c]!;
+      for (let j = c; j <= k; j++) A[r]![j]! -= f * A[c]![j]!;
+    }
+  }
+  return A.map((fila, i) => fila[k]! / fila[i]!);
 }
 
 /**
