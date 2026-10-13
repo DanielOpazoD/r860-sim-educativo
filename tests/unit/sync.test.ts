@@ -192,27 +192,6 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
     expect(presion).toBeGreaterThan(debil + 30);
   });
 
-  it('la Pva queda bajo PEEP menos de 70 ms al disparar, como el Engström en el banco de Thille 2009 (media de 13 equipos: 94 ms)', () => {
-    // Retardo inspiratorio del banco: tiempo con la presión de vía aérea bajo la basal desde el inicio del esfuerzo.
-    for (const amplitude of [6.4, 19]) {
-      const ef = { enabled: true, amplitude, ratePerMin: 15, tiS: 0.5, phaseS: 0.5, shape: 'riseRelax' as const };
-      const sim = benchSim({
-        effort: ef,
-        settings: { ...BENCH_SETTINGS, mode: 'CPAP_PS', psupport: 10, peep: 5, flowTrigger: 1 / 60, biasFlow: 2 / 60, minRate: 'off' },
-      });
-      sim.run(8000);
-      while (sim.simTimeMs < 8500 - 4) sim.step(); // inicio del esfuerzo de las 8,5 s
-      const t0 = sim.simTimeMs;
-      let bajoPeepMs = 0;
-      while (sim.simTimeMs - t0 < 600) {
-        sim.step();
-        if (sim.frame().live.paw < 5 - 0.05) bajoPeepMs = sim.simTimeMs - t0;
-      }
-      expect(bajoPeepMs).toBeGreaterThan(30);
-      expect(bajoPeepMs).toBeLessThan(70);
-    }
-  });
-
   it('más flujo de base o menos esfuerzo, menos trabajo de disparo; el disparo por presión lo multiplica', () => {
     const base = disparos({}).at(-1)!.caida;
     expect(disparos({ biasFlow: 10 / 60 }).at(-1)!.caida).toBeLessThan(base - 0.5);
@@ -236,5 +215,77 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
     // el regulador no entra en juego y la vía es idéntica a la del regulador ideal: la Pva no baja de PEEP. La caída
     // de U-43 aparece cuando el esfuerzo tira gas de verdad (véase BM-RP y ASI-02).
     expect(pawMin).toBeCloseTo(5, 6);
+  });
+});
+
+describe('SYN-05 · presurización del soporte como en el banco de Thille 2009: el lazo de presión tiene ganancia finita', () => {
+  // Banco de Thille (Intensive Care Med 2009): pulmón de C 100 mL/cmH₂O y R 5, PEEP 5, disparo por flujo en su máxima
+  // sensibilidad (≈ 1 L/min), presurización en la más rápida, soporte 5–20 y tres esfuerzos que piden un flujo
+  // decreciente de 0,1, 0,6 y 1,2 L/s desde el inicio. Aquí el esfuerzo sube en 0,1 s y relaja en 0,4 s, con la amplitud
+  // que pide ese mismo flujo pico; la rama y la válvula espiratorias son las del equipo, no las del banco analítico.
+  const ESFUERZOS = [0.56, 3.4, 6.8] as const;
+  const SOPORTES = [5, 10, 15, 20] as const;
+  /** Retardo inspiratorio (ms con la Pva bajo PEEP desde el inicio del esfuerzo) y PTP de 0,3 s (cmH₂O·s), por esfuerzo. */
+  function banco(ps: number, amplitude: number, pressureLoopGain?: number): { di: number; dt: number; ptp: number } {
+    const ef = { enabled: true, amplitude, ratePerMin: 15, tiS: 0.1, relaxTauS: 0.4, phaseS: 0.5, shape: 'riseRelax' as const };
+    const sim = benchSim({
+      patient: { crs: 0.1, rInsp: 5, rExp: 5, r2: 0, p0: 0, ...(pressureLoopGain === undefined ? {} : { pressureLoopGain }) },
+      effort: ef,
+      settings: { ...BENCH_SETTINGS, mode: 'CPAP_PS', psupport: ps, peep: 5, flowTrigger: 1 / 60, biasFlow: 2 / 60, riseMs: 0 },
+    });
+    sim.run(8000);
+    const r = { di: 0, dt: 0, ptp: 0 };
+    for (let k = 0; k < 3; k++) {
+      const inicio = ef.phaseS + (Math.floor((sim.simTimeMs / 1000 - ef.phaseS) / 4) + 1) * 4;
+      while (sim.simTimeMs / 1000 < inicio - 0.002) sim.step();
+      const t0 = sim.simTimeMs;
+      let di = 0,
+        dt = -1,
+        ptp = 0;
+      while (sim.simTimeMs - t0 < 300) {
+        sim.step();
+        const f = sim.frame();
+        ptp += (f.live.paw - 5) * 0.004;
+        if (f.live.paw < 5 - 0.05) di = sim.simTimeMs - t0;
+        if (dt < 0 && f.live.phase !== 'exp') dt = sim.simTimeMs - t0;
+      }
+      r.di = Math.max(r.di, di);
+      r.dt = Math.max(r.dt, dt);
+      r.ptp += ptp / 3;
+    }
+    return r;
+  }
+  const tabla = SOPORTES.map((ps) => ESFUERZOS.map((a) => banco(ps, a)));
+  const media = (f: (x: { di: number; dt: number; ptp: number }) => number): number =>
+    tabla.flat().reduce((s, x) => s + f(x), 0) / tabla.flat().length;
+
+  it('retardo inspiratorio medio bajo 70 ms y bajo 100 ms en el peor caso, como el Engström (media de 13 equipos: 94 ms)', () => {
+    expect(media((x) => x.di)).toBeLessThan(70);
+    expect(media((x) => x.di)).toBeGreaterThan(54); // el mejor equipo del banco
+    expect(tabla[0]![2]!.di).toBeLessThan(100); // soporte 5 con esfuerzo muy fuerte
+  });
+
+  it('la Pva tarda más en volver sobre la PEEP cuanto más tira el paciente y menos cuanto mayor es el soporte', () => {
+    for (const fila of tabla) expect(fila[2]!.di).toBeGreaterThanOrEqual(fila[1]!.di);
+    expect(tabla[0]![2]!.di).toBeGreaterThan(tabla[0]![1]!.di + 10);
+    // Con el esfuerzo fuerte y el muy fuerte el retardo cae al subir el soporte (Thille: 122 ms con 5, 80 con 20).
+    for (const e of [1, 2]) expect(tabla[0]![e]!.di).toBeGreaterThan(tabla[3]![e]!.di);
+    // Lo que se alarga es la presurización tras el disparo, no el disparo: con esfuerzo muy fuerte y soporte 5
+    // la presión sigue bajo PEEP decenas de ms después de que empezó la respiración.
+    expect(tabla[0]![2]!.di - tabla[0]![2]!.dt).toBeGreaterThan(25);
+  });
+
+  it('el producto presión-tiempo de 0,3 s queda en el rango del banco y sube con el soporte', () => {
+    // Thille: media 1,6 cmH₂O·s (0,1 el peor equipo, 2,6 el mejor); mayor con el esfuerzo fuerte que con el muy fuerte.
+    expect(media((x) => x.ptp)).toBeGreaterThan(1.6);
+    expect(media((x) => x.ptp)).toBeLessThan(2.6);
+    for (const e of [1, 2]) for (let i = 1; i < 4; i++) expect(tabla[i]![e]!.ptp).toBeGreaterThan(tabla[i - 1]![e]!.ptp);
+    const porEsfuerzo = (e: number): number => tabla.reduce((s, fila) => s + fila[e]!.ptp, 0) / tabla.length;
+    expect(porEsfuerzo(2)).toBeLessThan(porEsfuerzo(1));
+  });
+
+  it('la fuente ideal (ganancia 0, banco analítico) vuelve sobre la PEEP en el mismo instante del disparo', () => {
+    const ideal = banco(5, 6.8, 0);
+    expect(ideal.di).toBeLessThanOrEqual(ideal.dt);
   });
 });

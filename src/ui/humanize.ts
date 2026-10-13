@@ -179,6 +179,7 @@ const PATIENT_FIELD_LABEL: Record<string, string> = {
   circuitComplianceLPerCmH2O: 'compliance del circuito',
   disconnected: 'circuito desconectado',
   expValveOpenMs: 'apertura de la válvula espiratoria',
+  pressureLoopGain: 'lazo de presión del equipo',
 };
 
 function patientFields(patient: unknown): string {

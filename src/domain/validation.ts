@@ -264,6 +264,7 @@ export function validatePatientParams(p: {
   p0: number;
   rExpValve?: number;
   expValveOpenMs?: number;
+  pressureLoopGain?: number;
   cardiac?: { hz: number; amplitude: number };
   leakLpmAt10?: number;
   circuitComplianceLPerCmH2O?: number;
@@ -314,6 +315,8 @@ export function validatePatientParams(p: {
     r.push('Compliance del circuito fuera de 0–50 mL/cmH2O');
   if (p.expValveOpenMs !== undefined && (!Number.isFinite(p.expValveOpenMs) || p.expValveOpenMs < 0 || p.expValveOpenMs > 200))
     r.push('Apertura de la válvula espiratoria fuera de 0–200 ms');
+  if (p.pressureLoopGain !== undefined && (!Number.isFinite(p.pressureLoopGain) || p.pressureLoopGain < 0 || p.pressureLoopGain > 100))
+    r.push('Ganancia del lazo de presión fuera de 0–100 L/s² por cmH2O');
   if (p.cardiac !== undefined) {
     const c = p.cardiac;
     if (!c || typeof c !== 'object' || !Number.isFinite(c.hz) || !Number.isFinite(c.amplitude)) r.push('Oscilación cardiogénica inválida');

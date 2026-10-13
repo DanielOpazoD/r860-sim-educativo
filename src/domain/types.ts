@@ -187,6 +187,12 @@ export interface PatientParams {
    */
   expValveOpenMs?: number;
   /**
+   * Ganancia del lazo de presión de PC y del soporte (L/s² por cmH2O): el flujo de la válvula inspiratoria sube a razón
+   * de G·(objetivo − Pva) hasta servir la demanda, así que la presión tarda en llegar al objetivo tras el disparo.
+   * Ausente = la del equipo; 0 = fuente de presión ideal que salta al objetivo (banco analítico).
+   */
+  pressureLoopGain?: number;
+  /**
    * Oscilación cardiogénica: el latido desplaza volumen torácico y aparece en el flujo y la presión de la vía aérea
    * como una presión sinusoidal a la frecuencia cardíaca. Ausente o amplitud 0 = sin latido (banco y escenarios de
    * lección). No es esfuerzo: el equipo no la cuenta como músculo.

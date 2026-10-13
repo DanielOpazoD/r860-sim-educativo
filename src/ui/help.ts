@@ -75,7 +75,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Rampa de presión',
     text: [
       'Tiempo que tarda la presión en subir desde PEEP hasta el objetivo en modos de presión y soporte.',
-      'Un tiempo menor produce una subida más rápida y mayor flujo inicial. Un tiempo mayor suaviza el ascenso. El modelo utiliza una rampa lineal.',
+      'Un tiempo menor produce una subida más rápida y mayor flujo inicial. Un tiempo mayor suaviza el ascenso. El modelo usa una subida exponencial que llega al 95 % en ese tiempo; aun con 0 ms la válvula tarda unas decenas de milisegundos en servir lo que pide el paciente, y más cuanto más fuerte tira.',
     ],
   },
   'setting.pause': {
