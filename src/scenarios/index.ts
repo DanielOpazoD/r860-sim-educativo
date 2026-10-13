@@ -607,7 +607,17 @@ SCENARIOS.push({
   description:
     'CPAP/PS con PS 10 sobre PEEP 5, ciclaje al 25 % del flujo pico. Esfuerzo de 8 cmH2O a 15/min: cada respiración la dispara y la termina el paciente; sin esfuerzo, apnea y respaldo.',
   patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
-  effort: { enabled: true, amplitude: 8, ratePerMin: 15, tiS: 0.8, phaseS: 0.5, shape: 'riseRelax' },
+  // Variabilidad de quien respira bien con soporte: Wysocki (2006) encontró en los que superaban la prueba un CV del
+  // impulso ≥ 19 % y del ciclo ≥ 10 %; aquí ±35 % de amplitud (CV ≈ 20 %) y ±20 % de período (CV ≈ 12 %).
+  effort: {
+    enabled: true,
+    amplitude: 8,
+    ratePerMin: 15,
+    tiS: 0.8,
+    phaseS: 0.5,
+    shape: 'riseRelax',
+    variability: { amplitudeFrac: 0.35, periodFrac: 0.2 },
+  },
   sensors: idealSensors,
   settings: {
     mode: 'CPAP_PS',
@@ -936,10 +946,10 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'CC-02': { atSimTimeMs: 18_000, ranges: { ppeak: [31, 36], peakInspFlow: [29, 31], peakExpFlow: [-26, -18], maxVolume: [490, 510] } },
   'CC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [35, 39], peakInspFlow: [27, 31], maxVolume: [590, 610] } },
   'CC-04': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 27], peakInspFlow: [20, 23], maxVolume: [390, 410] } },
-  'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
+  'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 17], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
   // Soporte de presión: Ppico = PEEP + soporte; el flujo y el volumen dependen del esfuerzo.
   'CC-06': { atSimTimeMs: 18_000, ranges: { ppeak: [24, 26], peakInspFlow: [52, 70] } },
-  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 16], maxVolume: [300, 400] } },
+  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [13, 17], maxVolume: [300, 400] } },
   'CC-08': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], peakInspFlow: [35, 47] } },
 };
 

@@ -4,7 +4,7 @@
  * Los números de la viñeta y de la explicación salen del motor con esa mecánica (tests/unit/casosClinicos.test.ts).
  */
 import type { EffortParams, SensorParams } from '../domain/types';
-import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
+import { CARDIAC_REFERENCE, TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import type { Scenario } from './index';
 
 const passive: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0, shape: 'riseRelax' };
@@ -136,11 +136,12 @@ const tejido = (id: string) => {
  * interno, Anaesth Intensive Care 2011; 8,0 mm en los hombres y 7,5 en las mujeres, P) y la relajación de esfuerzos de
  * los tejidos (D'Angelo 1989 en anestesiados sanos; en el SDRA, Eissa 1991 la encontró mayor: aquí 2× la sana, el
  * extremo bajo del preset, con el que un bloqueo de 2 s sigue dando una meseta estable). La resistencia lineal de cada
- * caso es la del paciente sin el tubo: la que mide el bloqueo las suma, como en la cabecera.
+ * caso es la del paciente sin el tubo: la que mide el bloqueo las suma, como en la cabecera. Y el latido: la
+ * oscilación cardiogénica que se ve en el flujo y en la presión (Imanaka 2000).
  */
-const INTUBADO_H = { r2: k2('id80'), ...tejido('healthy') };
-const INTUBADA_M = { r2: k2('id75'), ...tejido('healthy') };
-const SDRA_TEJIDO = { eVisc: 2 * tejido('healthy').eVisc, tauViscS: 1.0 };
+const INTUBADO_H = { r2: k2('id80'), ...tejido('healthy'), cardiac: CARDIAC_REFERENCE };
+const INTUBADA_M = { r2: k2('id75'), ...tejido('healthy'), cardiac: CARDIAC_REFERENCE };
+const SDRA_TEJIDO = { eVisc: 2 * tejido('healthy').eVisc, tauViscS: 1.0, cardiac: CARDIAC_REFERENCE };
 /**
  * Limitación al flujo espiratorio del EPOC (resistor de Starling): Armaganidis (Crit Care Med 2000) la encontró en 11 de
  * 13 pacientes ventilados por una insuficiencia de origen pulmonar, con PEEPi estática 7,1 ± 2,8 frente a 1,2 sin
@@ -159,14 +160,37 @@ const EPOC_EFL = { pcrit: 9, rusFraction: 0.5 };
 const EPOC_GAS = { alveolarDeadspaceFrac: 0.3, hco3: 32, paco2Basal: 60 };
 /** Paciente EPOC en soporte: obstrucción espiratoria y esfuerzo propio (CC-06, CC-08). */
 const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0, gas: EPOC_GAS };
-const ESFUERZO_EPOC: EffortParams = { enabled: true, amplitude: 7, ratePerMin: 22, tiS: 0.8, phaseS: 0.3, shape: 'riseRelax' };
+/**
+ * Variabilidad respiración a respiración de un paciente en destete difícil: Wysocki (Crit Care Med 2006) separó a los
+ * que fracasaban por un coeficiente de variación del impulso (VT/Ti) menor de 19 %; aquí la amplitud varía ±12 %
+ * (CV ≈ 7 %). La frecuencia del esfuerzo queda fija para que los criterios de sincronía cuenten esfuerzos.
+ */
+const VARIABILIDAD_DESTETE = { amplitudeFrac: 0.12, periodFrac: 0 };
+const ESFUERZO_EPOC: EffortParams = {
+  enabled: true,
+  amplitude: 7,
+  ratePerMin: 22,
+  tiS: 0.8,
+  phaseS: 0.3,
+  shape: 'riseRelax',
+  variability: VARIABILIDAD_DESTETE,
+};
 /**
  * CC-06, calibrado con Thille (Intensive Care Med 2008) sobre el paciente intubado (tubo 8,0 y rama espiratoria del
- * equipo, con limitación al flujo): con soporte 20 la mitad de los esfuerzos no dispara (45 % en el estudio) con VT
- * ≈ 9,7 mL/kg (10,2; RIC 7,2–11,5); con 13, disparan todos con ≈ 5,2 mL/kg (5,9; 4,9–6,7). Frecuencia neural 26/min (26,5 en el estudio). Con
- * Rexp 24 (sólo en este caso) el patrón queda en uno de cada dos.
+ * equipo, con limitación al flujo y la variabilidad de un destete difícil): con soporte 20 no dispara el 38 % de los
+ * esfuerzos (45 % en el estudio, RIC 36–52) con VT ≈ 8,6 mL/kg (10,2; RIC 7,2–11,5); con 13, disparan todos con
+ * ≈ 5,2 mL/kg (5,9; 4,9–6,7). Frecuencia neural 26/min (26,5 en el estudio). Con
+ * Rexp 24 (sólo en este caso).
  */
-const ESFUERZO_THILLE: EffortParams = { enabled: true, amplitude: 8, ratePerMin: 26, tiS: 1, phaseS: 0.3, shape: 'riseRelax' };
+const ESFUERZO_THILLE: EffortParams = {
+  enabled: true,
+  amplitude: 8.25,
+  ratePerMin: 26,
+  tiS: 1,
+  phaseS: 0.3,
+  shape: 'riseRelax',
+  variability: VARIABILIDAD_DESTETE,
+};
 const PS_BASE = { mode: 'CPAP_PS' as const, peep: 5, flowTrigger: 2 / 60, minRate: 'off' as const, pmax: 40 };
 
 export const CLINICAL_CASES: Scenario[] = [
@@ -258,7 +282,7 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'La constante de tiempo espiratoria de esta paciente es (Rexp + rama espiratoria del ventilador)·C = (40 + 3) × 0,06 ≈ 2,6 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP total de ≈ 13 cmH₂O (PEEP intrínseca ≈ 8). El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 la PEEP total baja a ≈ 9,6, pero no mucho más: la paciente tiene limitación al flujo espiratorio, como casi todos los EPOC ventilados por una insuficiencia de origen pulmonar (Armaganidis), y por debajo de una presión crítica (≈ 9 cmH₂O) el pulmón deja de vaciarse por más tiempo que se le dé. Por eso la PEEP externa hasta ≈ 85 % de esa presión no aumenta el atrapamiento (Ranieri): con FR 12 e I:E 1:4, subir la PEEP de 5 a 7 deja la PEEP total en ≈ 10; por encima, la suma. En una paciente pasiva tampoco la reduce: lo que desinfla es menos ventilación y más tiempo espiratorio. Para medirla, el bloqueo espiratorio necesita unos segundos: los tejidos siguen redistribuyendo presión después de cerrar la válvula, y una oclusión corta no llega a una meseta estable. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32 a su PaCO₂ habitual de ≈ 60) baja su PaCO₂ por debajo de lo habitual para ella: con la programación inicial la PaCO₂ de equilibrio sería ≈ 37 y el pH ≈ 7,49, en el límite alto aunque los tampones restan ≈ 5 mEq/L de bicarbonato en la hipocapnia aguda. Su riñón no compensa en minutos.',
+        'La constante de tiempo espiratoria de esta paciente es (Rexp + rama espiratoria del ventilador)·C = (40 + 3) × 0,06 ≈ 2,6 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP total de ≈ 13 cmH₂O (PEEP intrínseca ≈ 8). El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 la PEEP total baja a ≈ 9,6, pero no mucho más: la paciente tiene limitación al flujo espiratorio, como casi todos los EPOC ventilados por una insuficiencia de origen pulmonar (Armaganidis), y por debajo de una presión crítica (≈ 9 cmH₂O) el pulmón deja de vaciarse por más tiempo que se le dé. Por eso la PEEP externa hasta ≈ 85 % de esa presión no aumenta el atrapamiento (Ranieri): con FR 12 e I:E 1:4, subir la PEEP de 5 a 7 deja la PEEP total en ≈ 10; por encima, la suma. En una paciente pasiva tampoco la reduce: lo que desinfla es menos ventilación y más tiempo espiratorio. Para medirla, el bloqueo espiratorio necesita unos 4 s: los tejidos siguen redistribuyendo presión después de cerrar la válvula y la meseta late con el corazón, así que una oclusión corta no llega a una meseta estable. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32 a su PaCO₂ habitual de ≈ 60) baja su PaCO₂ por debajo de lo habitual para ella: con la programación inicial la PaCO₂ de equilibrio sería ≈ 37 y el pH ≈ 7,49, en el límite alto aunque los tampones restan ≈ 5 mEq/L de bicarbonato en la hipocapnia aguda. Su riñón no compensa en minutos.',
       references: [REF.marini2011, REF.armaganidis2000, REF.ranieri1993, REF.hess2014],
     },
     question: '¿Por qué bajar la frecuencia reduce el atrapamiento más que alargar sólo el I:E?',
@@ -396,6 +420,8 @@ export const CLINICAL_CASES: Scenario[] = [
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.4, rr: 10, ie: 1 / 2, peep: 5, pmax: 40, plimit: 100, pausePct: 0 },
+    // Límite de volumen minuto bajo programado para este paciente (5 L/min): el de su viñeta, no el 4 por omisión.
+    alarmLimits: { mveLow: 5 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Volumen minuto bajo y fracción de espacio muerto alta.',
@@ -431,7 +457,7 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'Con soporte 20 el volumen corriente es grande (≈ 640 mL, 9,7 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. La mitad de los esfuerzos se pierde. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 13–16 cmH₂O disparan todos con VT ≈ 340–365 mL: el tubo y la obstrucción frenan los flujos altos del soporte. La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 40 mmHg (pH 7,47); con 13, en ≈ 53 (pH 7,38), cerca de su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
+        'Con soporte 20 el volumen corriente es grande (≈ 570 mL, 8,6 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. Casi cuatro de cada diez esfuerzos se pierden. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 13–14 cmH₂O disparan todos con VT ≈ 345–360 mL: el tubo y la obstrucción frenan los flujos altos del soporte, y el esfuerzo de quien no progresa en el destete varía poco entre respiraciones (Wysocki). La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 40 mmHg (pH 7,47); con 13, en ≈ 52 (pH 7,39), cerca de su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
       references: [REF.thille2008, REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
     },
     question: '¿Por qué más soporte puede significar peor sincronía?',
@@ -467,7 +493,7 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'trig', text: 'Disparo por flujo de 6 L/min o menos', test: 'flowTriggerMax', params: { maxLpm: 6 } },
       ],
       reveal:
-        'La fuga deja escapar gas de forma continua; el ventilador mide ese flujo como si el paciente inspirara y, si supera el umbral de disparo, entrega una respiración que nadie pidió: autodisparo. A PEEP 5 esta fuga pierde ≈ 3 L/min, más que el umbral de 2 L/min. Con 4 L/min el umbral queda por encima de la fuga y el autodisparo cesa. Señales que no son esfuerzo —la fuga, las oscilaciones cardiogénicas (Imanaka)— pueden disparar un ventilador con disparo por flujo sensible, y la fuga es uno de los factores principales de asincronía en ventilación no invasiva (Al Otair y BaHammam). Insensibilizar de más tiene su costo cuando el paciente sí respira: esfuerzos inefectivos. La solución definitiva es corregir la fuga.',
+        'La fuga deja escapar gas de forma continua; el ventilador mide ese flujo como si el paciente inspirara y, si supera el umbral de disparo, entrega una respiración que nadie pidió: autodisparo. A PEEP 5 esta fuga pierde ≈ 3 L/min, más que el umbral de 2 L/min, y el latido suma al flujo que ve el sensor una oscilación de ≈ ±2 L/min (Imanaka la midió tras cirugía cardíaca): con 4–5 L/min el umbral todavía se cruza cuando coinciden, y con 6 el autodisparo cesa. Señales que no son esfuerzo —la fuga, las oscilaciones cardiogénicas— pueden disparar un ventilador con disparo por flujo sensible, y la fuga es uno de los factores principales de asincronía en ventilación no invasiva (Al Otair y BaHammam). Insensibilizar de más tiene su costo cuando el paciente sí respira: esfuerzos inefectivos. La solución definitiva es corregir la fuga.',
       references: [REF.imanaka2000, REF.alotair2020],
     },
     question: '¿Cómo distinguir un autodisparo de una respiración del paciente?',
@@ -486,7 +512,7 @@ export const CLINICAL_CASES: Scenario[] = [
       pausePct: 0,
       assistControl: true,
       flowTrigger: 2 / 60,
-      biasFlow: 4 / 60,
+      biasFlow: 8 / 60,
     },
     initialV: 'equilibrium',
     perturbations: [],
@@ -522,7 +548,7 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'En soporte de presión la inspiración termina cuando el flujo cae a un porcentaje del pico. En un pulmón obstructivo el flujo decae lento y, con un criterio del 5 %, la máquina sigue insuflando ≈ 1 s después de que la paciente terminó: ciclado tardío. La paciente empieza a espirar contra el ventilador, se acorta su tiempo espiratorio y la mitad de los esfuerzos siguientes no dispara. Tassaux mostró en pacientes obstructivos que subir el criterio de ciclado reduce el retraso y la PEEP intrínseca; aquí, con 25–50 % la inspiración mecánica termina con la neural. Un criterio demasiado alto corta la inspiración antes que la paciente: ciclado precoz, otra asincronía (Hess).',
+        'En soporte de presión la inspiración termina cuando el flujo cae a un porcentaje del pico. En un pulmón obstructivo el flujo decae lento y, con un criterio del 5 %, la máquina sigue insuflando ≈ 1 s después de que la paciente terminó: ciclado tardío. La paciente empieza a espirar contra el ventilador, se acorta su tiempo espiratorio y alrededor de uno de cada cuatro esfuerzos siguientes no dispara. Tassaux mostró en pacientes obstructivos que subir el criterio de ciclado reduce el retraso y la PEEP intrínseca; aquí, con 25–50 % la inspiración mecánica termina con la neural. Un criterio demasiado alto corta la inspiración antes que la paciente: ciclado precoz, otra asincronía (Hess).',
       references: [REF.tassaux2005, REF.hess2005],
     },
     question: '¿Por qué el ciclado tardío es más frecuente en pulmones obstructivos?',

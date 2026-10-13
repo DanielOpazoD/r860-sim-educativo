@@ -64,7 +64,9 @@ describe('MEC-01 · la resistencia sale de la misma oclusión que la distensibil
     const sim = deEscenario('SC-03');
     const r = bloquear(sim);
     expect(r.calidad).toBe('valid');
-    expect(r.raw as number, 'la oclusión mide la resistencia INSPIRATORIA').toBeCloseTo(10, 0);
+    // El latido mueve la Ppico de esa respiración ±0,45 cmH₂O: una sola oclusión da la resistencia con ±1 de error.
+    expect(r.raw as number, 'la oclusión mide la resistencia INSPIRATORIA').toBeGreaterThan(9);
+    expect(r.raw as number).toBeLessThan(11);
     const tauExp = sim.frame().metrics.tauExp;
     expect(tauExp?.quality).toBe('valid');
     expect(tauExp?.value as number, 'el vaciamiento va con Rexp 30, no con Rinsp 10').toBeGreaterThan(1.2);

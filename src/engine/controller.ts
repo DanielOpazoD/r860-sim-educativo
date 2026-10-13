@@ -58,6 +58,7 @@ export const DEFAULT_EXP_VALVE_OPEN_MS = 110;
  * la mitad del techo de 6 cmH2O que cita el manual. Antes era 0: la Pva espiratoria era exactamente la PEEP (U-42).
  */
 export const DEFAULT_EXP_BRANCH_R_CMH2O_S_L = 3;
+
 /** Resistencia equivalente de la válvula cerrada (cmH2O·s/L): el flujo arranca casi en cero al abrirse. */
 const VALVE_CLOSED_R = 200;
 /** La PEEPe se lee este tiempo antes del disparo detectado (s), P: la muestra aún no lleva la caída del esfuerzo. */
@@ -335,8 +336,8 @@ export class VcController {
     // Espiración: el par (volumen que queda, flujo que sale). En un vaciamiento pasivo de un compartimento son
     // proporcionales, y la constante de proporcionalidad es el tiempo que tarda en salir el 63 %.
     if (this.phase === 'exp') {
-      b.expSamples.push({ vAbsL: this.patient.vTotal, qLps: this.q });
-      if (Math.abs(this.pmusAt(this.simT)) > 0.05) b.effortInExp = true;
+      b.expSamples.push({ vAbsL: this.patient.vTotal, qLps: this.q, tS: this.simT });
+      if (Math.abs(this.effortAt(this.simT)) > 0.05) b.effortInExp = true;
     }
   }
 
@@ -368,7 +369,49 @@ export class VcController {
     }
   }
 
-  private pmusAt = (tS: number): number => this.effort.pmusAt(tS);
+  /** Sólo el músculo: lo que decide si hubo esfuerzo durante una maniobra o una fase. */
+  private effortAt = (tS: number): number => this.effort.pmusAt(tS);
+  /** Latido: presión sinusoidal a la frecuencia cardíaca, si el paciente la tiene (los casos clínicos). */
+  private cardiacAt = (tS: number): number => {
+    const c = this.patient.params.cardiac;
+    return c && c.amplitude > 0 ? c.amplitude * Math.sin(2 * Math.PI * c.hz * tS) : 0;
+  };
+  /** Frecuencia angular del latido (rad/s), 0 sin latido. */
+  private omegaCardiaca(): number {
+    const c = this.patient.params.cardiac;
+    return c && c.amplitude > 0 ? 2 * Math.PI * c.hz : 0;
+  }
+  /** Lo que mueve el pulmón: músculo más latido. */
+  private pmusAt = (tS: number): number => this.effort.pmusAt(tS) + this.cardiacAt(tS);
+  /**
+   * Una maniobra se lee promediando un ciclo cardíaco entero, como la lee el clínico sobre una meseta que late: cada
+   * muestra pasa a ser la media del último período. Sin latido, las muestras quedan como están.
+   */
+  private sinLatido(samples: { t: number; paw: number }[]): { t: number; paw: number }[] {
+    const c = this.patient.params.cardiac;
+    if (!c || !(c.amplitude > 0) || samples.length < 2) return samples;
+    const periodo = 1 / c.hz;
+    // Integral acumulada por trapecios: la media de un período exacto, con el borde interpolado, borra la sinusoide.
+    const integral = [0];
+    for (let i = 1; i < samples.length; i++)
+      integral.push(integral[i - 1]! + ((samples[i]!.paw + samples[i - 1]!.paw) / 2) * (samples[i]!.t - samples[i - 1]!.t));
+    const integralEn = (t: number): number => {
+      let j = 1;
+      while (j < samples.length - 1 && samples[j]!.t < t) j++;
+      const a = samples[j - 1]!,
+        b = samples[j]!;
+      const u = b.t > a.t ? Math.min(1, Math.max(0, (t - a.t) / (b.t - a.t))) : 0;
+      const pawT = a.paw + u * (b.paw - a.paw);
+      return integral[j - 1]! + ((a.paw + pawT) / 2) * (t - a.t);
+    };
+    const out: { t: number; paw: number }[] = [];
+    for (let i = 0; i < samples.length; i++) {
+      const t = samples[i]!.t;
+      if (t - samples[0]!.t < periodo - 1e-9) continue;
+      out.push({ t, paw: (integral[i]! - integralEn(t - periodo)) / periodo });
+    }
+    return out.length >= 2 ? out : samples;
+  }
 
   /**
    * (De)compresión del circuito tras una fase de presión: la presión del nodo fija el objetivo `Cc·Py` y el cambio se
@@ -461,7 +504,7 @@ export class VcController {
           this.q = qCmd;
           if (this.breath && used > 0) {
             this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
-            if (Math.abs(this.pmusAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
+            if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
           }
           if (hit === 'pmax') {
             this.paw = s.pmax;
@@ -482,7 +525,7 @@ export class VcController {
         this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
         if (this.breath && used > 0) {
           this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
-          if (Math.abs(this.pmusAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
+          if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
         }
         // En el instante del cruce la presión de vía aérea es exactamente el umbral: la válvula actúa allí (no se registra
         // la presión hipotética que habría producido el flujo completo).
@@ -574,13 +617,17 @@ export class VcController {
       case 'holdInsp':
       case 'holdExp': {
         this.q = 0;
-        const pmusStart = this.pmusAt(this.simT);
+        // El músculo se lee antes de integrar: el generador puede cambiar de período a mitad de paso y una consulta
+        // retrospectiva devolvería 0. El latido se suma aparte y no cuenta como esfuerzo.
+        const effortStart = this.effortAt(this.simT);
+        const pmusStart = effortStart + this.cardiacAt(this.simT);
         p.integrateFlowSource(0, h, pmusStart); // oclusión del ventilador: puede salir gas por fuga y redistribuirse entre unidades
         this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
         // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
-        const pmusEnd = this.pmusAt(this.simT + h);
+        const effortEnd = this.effortAt(this.simT + h);
+        const pmusEnd = effortEnd + this.cardiacAt(this.simT + h);
         this.paw = p.pawForFlow(0, pmusEnd);
-        const effortDuringOcclusion = Math.max(Math.abs(pmusStart), Math.abs(pmusEnd)) > 0.05;
+        const effortDuringOcclusion = Math.max(Math.abs(effortStart), Math.abs(effortEnd)) > 0.05;
         if (this.phase === 'inspPause' && this.breath) {
           this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
           if (effortDuringOcclusion) this.breath.effortDuringPause = true;
@@ -842,7 +889,7 @@ export class VcController {
       b.pplatReason = 'pauseTooShort';
       return;
     }
-    const q = plateauQuality(b.pauseSamples, tPause);
+    const q = plateauQuality(this.sinLatido(b.pauseSamples), tPause);
     if (q === null) {
       b.pplatCycle = null;
       b.pplatReason = 'insufficientSamples';
@@ -874,7 +921,7 @@ export class VcController {
       samples: [],
       pmaxHit: false,
       peepeBefore: this.paw,
-      effortDuringHold: Math.abs(this.pmusAt(this.simT)) > 0.05,
+      effortDuringHold: Math.abs(this.effortAt(this.simT)) > 0.05,
     };
     this.phase = req.kind === 'inspHold' ? 'holdInsp' : 'holdExp';
     this.tPhase = 0;
@@ -895,7 +942,8 @@ export class VcController {
     }
     this.hold = null;
     // Una sola evaluación: antes se llamaba dos veces con los mismos argumentos, una por campo.
-    const calidad = plateauQuality(hold.samples, this.simT - hold.tStart);
+    const muestras = this.sinLatido(hold.samples);
+    const calidad = plateauQuality(muestras, this.simT - hold.tStart);
     const outcome: HoldOutcome = {
       procedureId: hold.req.procedureId,
       kind: hold.req.kind,
@@ -905,7 +953,7 @@ export class VcController {
       actualDurationS: this.simT - hold.tStart,
       requestedDurationS: hold.req.durationS,
       pawStart: hold.pawStart,
-      pawEnd: this.paw,
+      pawEnd: muestras.at(-1)?.paw ?? this.paw,
       driftRate: calidad?.driftRate ?? Number.POSITIVE_INFINITY,
       reversal: calidad?.reversal ?? Number.POSITIVE_INFINITY,
       pmaxHit: hold.pmaxHit,
@@ -1012,7 +1060,7 @@ export class VcController {
       endSimTimeMs: sToMs(this.simT),
       cyclingCause: b.cause,
       ...indiceDeEstres(b),
-      ...constanteEspiratoria(b),
+      ...constanteEspiratoria(b, this.omegaCardiaca()),
       tInspS: b.tInspActual,
       tExpS: b.tExpActual,
       ppeak: b.ppeak,
@@ -1048,9 +1096,11 @@ function indiceDeEstres(b: BreathAccum): { stressIndex: number | null; stressInd
  * compartimento lineal da 1,000; el obstructivo SC-03 da 1,000 con tau larga; dos unidades dispares y la espiración
  * estrangulada de SC-16 caen por debajo, que es exactamente lo que esos escenarios enseñan.
  */
-function constanteEspiratoria(b: BreathAccum): { tauExpS: number | null; tauExpReason: string | null } {
+function constanteEspiratoria(b: BreathAccum, omegaCardiaca = 0): { tauExpS: number | null; tauExpReason: string | null } {
   if (b.effortInExp) return { tauExpS: null, tauExpReason: 'esfuerzoDuranteLaEspiracion' };
-  const r = expiratoryTimeConstant(b.expSamples);
+  // Con latido, la recta se ajusta junto con una sinusoide a la frecuencia cardíaca: la bondad del ajuste se juzga sobre
+  // lo que queda al restar el latido, como se lee la curva ignorando sus ondulaciones.
+  const r = expiratoryTimeConstant(b.expSamples, omegaCardiaca);
   if (r === null) return { tauExpS: null, tauExpReason: 'espiracionInsuficienteParaAjustar' };
   if (r.r2 < TAU_EXP_MIN_R2) return { tauExpS: null, tauExpReason: 'vaciamientoNoExponencial' };
   return { tauExpS: r.tau, tauExpReason: null };

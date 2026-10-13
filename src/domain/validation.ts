@@ -264,6 +264,7 @@ export function validatePatientParams(p: {
   p0: number;
   rExpValve?: number;
   expValveOpenMs?: number;
+  cardiac?: { hz: number; amplitude: number };
   leakLpmAt10?: number;
   circuitComplianceLPerCmH2O?: number;
   disconnected?: boolean;
@@ -283,7 +284,21 @@ export function validatePatientParams(p: {
     if (typeof p[k] !== 'number' || !Number.isFinite(p[k])) r.push(`${k}: ausente o no numérico`);
   for (const [k, v] of Object.entries(p))
     if (
-      !['crs', 'rInsp', 'rExp', 'r2', 'p0', 'sigmoid', 'recruit', 'efl', 'rExpVolumeDep', 'second', 'disconnected', 'gas'].includes(k) &&
+      ![
+        'crs',
+        'rInsp',
+        'rExp',
+        'r2',
+        'p0',
+        'sigmoid',
+        'recruit',
+        'efl',
+        'rExpVolumeDep',
+        'second',
+        'disconnected',
+        'gas',
+        'cardiac',
+      ].includes(k) &&
       (typeof v !== 'number' || !Number.isFinite(v))
     )
       r.push(`${k}: no numérico`);
@@ -299,6 +314,14 @@ export function validatePatientParams(p: {
     r.push('Compliance del circuito fuera de 0–50 mL/cmH2O');
   if (p.expValveOpenMs !== undefined && (!Number.isFinite(p.expValveOpenMs) || p.expValveOpenMs < 0 || p.expValveOpenMs > 200))
     r.push('Apertura de la válvula espiratoria fuera de 0–200 ms');
+  if (p.cardiac !== undefined) {
+    const c = p.cardiac;
+    if (!c || typeof c !== 'object' || !Number.isFinite(c.hz) || !Number.isFinite(c.amplitude)) r.push('Oscilación cardiogénica inválida');
+    else {
+      if (c.hz < 0.5 || c.hz > 3) r.push('Frecuencia cardíaca fuera de 30–180 /min');
+      if (c.amplitude < 0 || c.amplitude > 2) r.push('Oscilación cardiogénica fuera de 0–2 cmH2O');
+    }
+  }
   if (p.crs < 1e-4 || p.crs > 1) r.push('Crs fuera de 0.1–1000 mL/cmH2O');
   if (p.rInsp < 0.1 || p.rInsp > 1000) r.push('Rinsp fuera de 0.1–1000 cmH2O·s/L');
   if (p.rExp < 0.1 || p.rExp > 1000) r.push('Rexp fuera de 0.1–1000 cmH2O·s/L');

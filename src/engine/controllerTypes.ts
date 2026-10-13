@@ -78,7 +78,7 @@ export interface BreathAccum {
   pawAtFlowEnd: number;
   qAtFlowEnd: number;
   /** Volumen absoluto y flujo a lo largo de la espiración: de su pendiente sale la constante de tiempo espiratoria. */
-  expSamples: { vAbsL: number; qLps: number }[];
+  expSamples: { vAbsL: number; qLps: number; tS: number }[];
   /** Hubo esfuerzo muscular durante la espiración: entonces el vaciamiento no es pasivo y la pendiente no es del pulmón. */
   effortInExp: boolean;
   /** Si el paciente hizo fuerza durante esa rampa, la forma ya no es sólo del pulmón. */
