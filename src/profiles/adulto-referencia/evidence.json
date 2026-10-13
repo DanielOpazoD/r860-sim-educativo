@@ -1476,6 +1476,18 @@
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03b)"
       ]
+    },
+    {
+      "id": "E-112",
+      "claim": "Cadena de O2 como la del equipo. El mezclador ya no salta al ajuste: la mezcla entregada lo sigue con una constante de 8 s, así que un paso de 21 a 90 % llega al 90 % en ≈ 18 s y al 95 % en ≈ 24 s, dentro de lo que publica el equipo (menos de 6 respiraciones o 30 s, lo que sea más largo). El sensor la sigue con su retardo de primer orden (6 s por omisión, ajustable por el instructor; P) y su sesgo (SC-12). Lo que se muestra y comparan las alarmas de FiO2 es la media móvil de 10 s del sensor, como el equipo. La respuesta completa de la medida (sensor y media) cumple el «< 30 s, 10 a 95 %» del manual, y por eso las alarmas de FiO2 esperan 60 s tras un cambio (E-106). El ↑O2 y su restauración cambian el objetivo del mezclador al instante; la mezcla y la medida lo siguen.",
+      "status": "D (respuesta del mezclador, filtrado de 10 s y respuesta de la medida, R21) / P (forma de primer orden y constantes elegidas dentro de esos límites)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 13-21 «Oxygen-air mixture accuracy» (21 % to 90 % FiO2 response time) y 13-24 (FiO2: 10 s moving average; less than 30 s, 10 to 95 % FS response)",
+      "implemented": "src/engine/sensors.ts (O2_MIXER_TAU_S, FIO2_DISPLAY_AVERAGE_S, O2Sensor.target, delivered, sensor, measured)",
+      "tests": [
+        "tests/unit/oxigenoEquipo.test.ts (O2-URM)",
+        "tests/unit/review.test.ts (H1)"
+      ]
     }
   ]
 }

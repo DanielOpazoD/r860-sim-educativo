@@ -9,7 +9,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Fracción inspirada de oxígeno · FiO₂',
     text: [
       'Porcentaje de oxígeno en el gas que entrega el ventilador. El aire ambiente contiene aproximadamente 21%.',
-      'El número medido representa el sensor del circuito; puede tardar en alcanzar el ajuste. No es la saturación de oxígeno del paciente.',
+      'El número medido representa el sensor del circuito y tarda en alcanzar el ajuste, como en el equipo: el mezclador llega al 90 % del cambio en menos de 30 s, el sensor lo sigue y la pantalla muestra su media de los últimos 10 s. No es la saturación de oxígeno del paciente.',
     ],
   },
   'setting.vt': {
