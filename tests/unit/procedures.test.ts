@@ -83,15 +83,26 @@ describe('PRC · procedimientos con elegibilidad, cancelación, restauración id
     const hist = sim.events.filter((e) => e.kind === 'procedure');
     expect(hist.length).toBeGreaterThan(3);
   });
-  it('resp manual: elegible sólo en espiración; produce una respiración de tipo manual', () => {
+  it('resp manual: se pide en cualquier fase y se entrega tras 0,25 s de espiración (URM SW10 7-9)', () => {
     const sim = benchSim();
     while (phaseOf(sim) !== 'exp') sim.step();
     sim.run(500);
     expect(sim.command({ type: 'manualBreath' }).accepted).toBe(true);
     runUntilBreath(sim, 2);
     expect(sim.breaths[1]!.type).toBe('manual');
+    // Pedida durante la inspiración: espera a la espiración siguiente y a su pausa de 0,25 s.
     while (phaseOf(sim) !== 'inspFlow') sim.step();
-    expect(sim.command({ type: 'manualBreath' }).accepted).toBe(false);
+    expect(sim.command({ type: 'manualBreath' }).accepted).toBe(true);
+    expect(sim.command({ type: 'manualBreath' }).accepted).toBe(false); // ya hay una pedida
+    const n = sim.breaths.length;
+    runUntilBreath(sim, n + 1);
+    const t0 = sim.simTimeMs;
+    runUntilBreath(sim, n + 2);
+    const manual = sim.breaths.at(-1)!;
+    expect(manual.type).toBe('manual');
+    // Esa respiración (la que se pidió) tuvo una espiración de sólo 0,25 s antes de la manual.
+    expect(sim.breaths.at(-2)!.tExpS).toBeCloseTo(0.25, 2);
+    expect(sim.simTimeMs - t0).toBeGreaterThan(0);
   });
   it('DAT-04: el comparador rechaza combinar Pplat y VT de respiraciones distintas', () => {
     const sim = benchSim();

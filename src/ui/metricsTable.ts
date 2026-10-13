@@ -181,6 +181,19 @@ export function metricStatus(frame: EngineFrame | null, spec: MetricSpec): Metri
   const result = byQuality[sample.quality];
   return status(result.tone, result.label, SOURCE_SHORT[sample.source] ?? '');
 }
+/**
+ * Límite que está violando una medición en alarma, en sus unidades de pantalla, o null. El equipo lo muestra junto al
+ * valor cuando la alarma ocurre aunque los límites estén ocultos (D, URM SW10 8-6: «The alarm limit always shows when an
+ * alarm occurs for the measured data»).
+ */
+export function limiteEnAlarma(fr: EngineFrame, m: MetricSpec): string | null {
+  const ids = ALARM_IDS_BY_METRIC[m.key];
+  if (!ids) return null;
+  const a = fr.alarms.find((x) => x.conditionActive && !x.filteredBy && ids.includes(x.id) && x.threshold !== null);
+  if (!a || a.threshold === null) return null;
+  const v = a.threshold * m.factor;
+  return `${a.id.endsWith('Low') ? 'Mín.' : 'Máx.'} ${formatNumber(v, decimalesMostrados(m, v))}`;
+}
 /** ¿Alguna alarma activa afecta a esta medición? */
 export function metricInAlarm(fr: EngineFrame, key: string): boolean {
   const ids = ALARM_IDS_BY_METRIC[key];
