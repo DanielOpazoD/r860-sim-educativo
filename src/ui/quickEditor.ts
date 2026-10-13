@@ -51,17 +51,20 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
   function updateQuick(): void {
     const fr = ctx.frame as EngineFrame;
     const QUICK_KEYS = QUICK_KEYS_BY_MODE[fr.settings.mode];
+    // La tecla de modo dice «Respaldo A/C PC» mientras el equipo está en su respaldo (URM SW10 8-9).
+    const rotuloModo = fr.live.respaldo ? 'Respaldo A/C PC' : MODE_LABEL[fr.settings.mode];
     if (lastQuickSig !== fr.settings.mode) {
       lastQuickSig = fr.settings.mode;
       $('#quick-controls').style.setProperty('--nkeys', String(QUICK_KEYS.length));
       $('#quick-controls').innerHTML =
-        `<button class="device-key quick-key mode-key" data-action="modes"><small>Modo actual</small><b id="quick-mode">${MODE_LABEL[fr.settings.mode]}</b></button>` +
+        `<button class="device-key quick-key mode-key" data-action="modes"><small>Modo actual</small><b id="quick-mode">${rotuloModo}</b></button>` +
         QUICK_KEYS.map(
           (k) =>
             `<button class="device-key quick-key" data-setting-quick="${k}" data-key="${k}" aria-pressed="false"><small>${QUICK_LABEL[k]}</small><b data-quick-val="${k}"></b><em>${k === 'ie' ? '' : unitText(ruleOf(k).displayUnit)}</em><i data-quick-next="${k}" hidden></i></button>`,
         ).join('') +
         `<button class="device-key quick-key standby-key" data-action="standby"><small>EN ESPERA</small>${icon('hand')}</button><button class="device-key quick-key power-key" data-action="powerInfo" aria-label="Estado de alimentación virtual">${icon('plug')}</button>`;
     }
+    put('#quick-mode', rotuloModo);
     const st = edit.state;
     for (const k of QUICK_KEYS) {
       const b = $(`[data-setting-quick="${k}"]`);

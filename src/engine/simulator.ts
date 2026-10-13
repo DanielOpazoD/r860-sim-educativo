@@ -61,6 +61,8 @@ export interface LiveSignals {
   phase: ControllerPhase;
   /** La última respiración completa terminó limitada por Plimit: indicador junto a Ppico, no alarma (E-036). */
   plimitLimited: boolean;
+  /** CPAP/PS en el modo de respaldo del equipo (A/C PC), con su causa; null si ventila en su modo. */
+  respaldo: 'apnea' | 'vmesp' | null;
 }
 
 export interface Truth {
@@ -352,6 +354,19 @@ export class Simulator {
         });
         if (this.trends.length > 900) this.trends.shift();
         this.alarms.onBreath(ev.record, this.lastMetrics, t);
+        // Respaldo por VMesp (D, URM SW10 5-11): en CPAP/PS, con el límite bajo de VMesp puesto, un VMesp por debajo de
+        // su mitad pasa al respaldo. Con los mismos retardos que esa alarma (tras un bloqueo o al empezar a ventilar).
+        const lim = this.alarms.limits.mveLow;
+        const mve = this.lastMetrics.mve?.quality === 'valid' ? this.lastMetrics.mve.value : null;
+        if (
+          this.controller.settings.mode === 'CPAP_PS' &&
+          !this.controller.respaldoActivo &&
+          lim !== 'off' &&
+          mve !== null &&
+          mve < 0.5 * lim &&
+          !this.alarms.alarmaRetenida('mveLow', t)
+        )
+          this.controller.entrarEnRespaldo('vmesp');
         this.logEvent('breath', 'controller', {
           breathId: ev.record.breathId,
           type: ev.record.type,
@@ -373,6 +388,14 @@ export class Simulator {
       case 'apneaEnded':
         this.alarms.onPatientBreath(t);
         this.logEvent('alarm', 'controller', { apneaEnded: true, breathId: ev.breathId });
+        break;
+      case 'backupStarted':
+        this.alarms.onBackupStarted(t, ev.cause);
+        this.logEvent('alarm', 'controller', { backupStarted: ev.cause });
+        break;
+      case 'backupEnded':
+        this.alarms.onBackupEnded(t);
+        this.logEvent('alarm', 'controller', { backupEnded: true });
         break;
       case 'pmaxReached':
         this.alarms.onPmaxReached(
@@ -506,6 +529,7 @@ export class Simulator {
         phase: this.controller.phase,
         /** La última respiración completa terminó limitada por Plimit (indicador junto a Ppico; no es alarma, E-036). */
         plimitLimited: this.breaths.at(-1)?.plimitReached ?? false,
+        respaldo: this.controller.respaldoActivo,
       },
       settings: { ...this.controller.settings },
       pending: this.controller.pending ? { ...this.controller.pending } : null,

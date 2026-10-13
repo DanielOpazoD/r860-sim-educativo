@@ -649,7 +649,7 @@ SCENARIOS.push({
       { id: 'ps', text: 'Sube la presión de soporte a 15: el VTesp sube (≈ 750 mL) sin que cambie el esfuerzo.', test: 'psRaised' },
       {
         id: 'apnea',
-        text: 'Provoca una apnea en «Eventos»: a los 20 s alarma de apnea y respiraciones de respaldo. Deshazla y mira cómo el primer disparo del paciente resuelve la alarma.',
+        text: 'Provoca una apnea en «Eventos»: a los 20 s alarma de apnea y el equipo pasa a su respaldo (A/C PC). Deshazla: el primer disparo del paciente resuelve la alarma de apnea, pero el respaldo sigue hasta que confirmas el modo en «Modo actual», como en el equipo.',
         test: 'apneaRecovered',
       },
     ],

@@ -190,7 +190,7 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
     simTimeMs: 0,
     wallTimeMs: wall,
     ventilation: 'ventilating',
-    live: { paw: m.peepeCmH2O, flowLps: 0, volTidalL: 0, ppeakCurrent: m.ppeakCmH2O, phase: 'exp', plimitLimited: false },
+    live: { paw: m.peepeCmH2O, flowLps: 0, volTidalL: 0, ppeakCurrent: m.ppeakCmH2O, phase: 'exp', plimitLimited: false, respaldo: null },
     settings,
     pending: null,
     alarmLimits: limits,

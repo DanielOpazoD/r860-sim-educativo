@@ -107,7 +107,9 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     put(
       '#mode-timing',
       s.mode === 'CPAP_PS'
-        ? textoRespaldo(s)
+        ? (ctx.frame?.live.respaldo
+            ? 'Respaldo activo: el equipo ventila en A/C PC con los ajustes de respaldo hasta que confirmes el modo. '
+            : '') + textoRespaldo(s)
         : `Ti ${f(t.tInspS, 2)} s · Te ${f(t.tExpS, 2)} s · ciclo ${f(t.tCycleS, 2)} s · flujo ${f(t.qTargetLps * 60, 1)} L/min`,
     );
     put('#mode-error', joinSentences(errors));
@@ -157,6 +159,8 @@ export function createModeDialog(ctx: AppContext, deps: { cancelQuick: () => voi
     const base = { ...frame.settings, ...(frame.pending ?? {}) };
     for (const k of Object.keys(modeDraft) as (keyof VcSettings)[])
       if (modeDraft[k] !== base[k]) (changes as Record<string, unknown>)[k] = modeDraft[k];
+    // En respaldo, confirmar el modo (aunque no cambie nada) es lo que lo termina, como en el equipo.
+    if (frame.live.respaldo && !('mode' in changes)) (changes as Record<string, unknown>).mode = base.mode;
     if (!Object.keys(changes).length) {
       ctx.dialog.close();
       return;
