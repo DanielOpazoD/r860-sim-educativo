@@ -274,7 +274,7 @@ export function validatePatientParams(p: {
   efl?: { pcrit: number; rusFraction: number };
   rExpVolumeDep?: { gain: number; vRefL: number };
   second?: { crs: number; rInsp: number; rExp: number };
-  gas?: Partial<{ vco2MlMin: number; deadspaceL: number; alveolarDeadspaceFrac: number; hco3: number; storeL: number }>;
+  gas?: Partial<{ vco2MlMin: number; deadspaceL: number; alveolarDeadspaceFrac: number; hco3: number; paco2Basal: number; storeL: number }>;
 }): string[] {
   const r: string[] = [];
   // Las cinco magnitudes del modelo son obligatorias: `Object.entries` no ve las claves ausentes, así que un
@@ -324,6 +324,7 @@ export function validatePatientParams(p: {
       deadspaceL: [0, 0.6, 'Espacio muerto fuera de 0–600 mL'],
       alveolarDeadspaceFrac: [0, 0.8, 'Espacio muerto alveolar fuera de 0–0,8 del volumen alveolar'],
       hco3: [5, 50, 'Bicarbonato fuera de 5–50 mEq/L'],
+      paco2Basal: [20, 100, 'PaCO₂ habitual fuera de 20–100 mmHg'],
       storeL: [5, 200, 'Depósito de CO₂ fuera de 5–200 L'],
     } as const;
     if (!g || typeof g !== 'object' || Array.isArray(g)) r.push('Gasometría inválida');

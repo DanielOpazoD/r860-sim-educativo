@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validatePatientParams } from '../../src/domain/validation';
-import { ALVEOLAR_K, DEFAULT_GAS, GasExchange, phFrom, steadyPaco2 } from '../../src/engine/gasExchange';
+import { ALVEOLAR_K, DEFAULT_GAS, GasExchange, bicarbonate, phFrom, steadyPaco2 } from '../../src/engine/gasExchange';
 import { exportSession, importSession, replaySession } from '../../src/history/session';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
@@ -78,6 +78,31 @@ describe('GAS-01 · ecuaciones', () => {
   });
 });
 
+describe('GAS-07 · tamponamiento agudo: el bicarbonato sigue a la PaCO₂ en minutos', () => {
+  it('+1 mEq/L por cada 10 mmHg de hipercapnia aguda y −2 por cada 10 de hipocapnia aguda (reglas de Boston)', () => {
+    expect(bicarbonate(DEFAULT_GAS, 40)).toBe(24);
+    expect(bicarbonate(DEFAULT_GAS, 60)).toBeCloseTo(26, 9);
+    expect(bicarbonate(DEFAULT_GAS, 30)).toBeCloseTo(22, 9);
+    // Con PaCO₂ 60 el pH queda ≈ 0,04 por encima del que daría el bicarbonato fijo.
+    expect(phFrom(bicarbonate(DEFAULT_GAS, 60), 60) - phFrom(24, 60)).toBeCloseTo(Math.log10(26 / 24), 9);
+  });
+
+  it('en el EPOC hipercápnico crónico el bicarbonato habitual es el de su PaCO₂ habitual, no el de 40', () => {
+    const epoc = { ...DEFAULT_GAS, hco3: 32, paco2Basal: 60 };
+    expect(bicarbonate(epoc, 60)).toBe(32);
+    // Hiperventilado hasta 37 en minutos: los tampones restan ≈ 4,6 mEq/L y el pH no llega a lo que daría el 32 fijo.
+    expect(bicarbonate(epoc, 37)).toBeCloseTo(27.4, 9);
+    expect(phFrom(bicarbonate(epoc, 37), 37)).toBeLessThan(phFrom(32, 37) - 0.05);
+  });
+
+  it('el pH de equilibrio usa el bicarbonato de la PaCO₂ de equilibrio', () => {
+    const g = new GasExchange(40);
+    for (let t = 4; t <= 40; t += 4) respirar(g, t, 0.3);
+    const st = g.state(40, DEFAULT_GAS);
+    expect(st.phTarget!).toBeCloseTo(phFrom(bicarbonate(DEFAULT_GAS, st.paco2Target!), st.paco2Target!), 9);
+  });
+});
+
 describe('GAS-05 · V̇A del último minuto', () => {
   const regular = (g: GasExchange, hasta: number): void => {
     for (let t = 4; t <= hasta; t += 4) respirar(g, t, 0.5);
@@ -115,7 +140,7 @@ describe('GAS-02 · banco SC-01: la ventilación del pulmón fija la PaCO₂', (
     }
     expect(g.paco2Target!).toBeCloseTo(39, 0);
     expect(g.vdVt!).toBeCloseTo(0.41, 2);
-    expect(g.ph).toBeCloseTo(phFrom(24, g.paco2), 9);
+    expect(g.ph).toBeCloseTo(phFrom(bicarbonate(DEFAULT_GAS, g.paco2), g.paco2), 9);
     // Normocapnia en el paciente por omisión: nadie programó una hiperventilación.
     expect(g.ph).toBeGreaterThan(7.38);
     expect(g.ph).toBeLessThan(7.45);

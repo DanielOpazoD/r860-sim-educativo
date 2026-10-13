@@ -4,7 +4,6 @@
  * puede usarse para evaluar: no se muestra hasta entregar.
  */
 import type { ProcedureResult } from '../domain/types';
-import { phFrom } from '../engine/gasExchange';
 import type { CaseCriterion, ClinicalCase } from '../scenarios';
 import { LESSON_TESTS, type LessonContext } from './lesson';
 
@@ -31,7 +30,7 @@ function ventana(c: CaseContext): { type: string; tInspS: number }[] | null {
 }
 const phEquilibrio = (c: CaseContext): number | null => {
   const g = c.frame.truth.gas;
-  return g && g.paco2Target !== null ? phFrom(g.hco3, g.paco2Target) : null;
+  return g ? g.phTarget : null;
 };
 
 export const CASE_TESTS: Record<string, CaseTest> = {
@@ -55,6 +54,14 @@ export const CASE_TESTS: Record<string, CaseTest> = {
   },
   /** Auto-PEEP verdadera del modelo ≤ p.max. */
   autoPeepMax: (c, p) => c.frame.truth.peepiEndExp <= p.max!,
+  /**
+   * PEEP total medida (último bloqueo espiratorio válido tras el último ajuste) ≤ p.max. Con limitación al flujo la
+   * diferencia PEEPtot − PEEP baja con sólo subir la PEEP externa, sin desinflar nada: lo que mide el atrapamiento es la total.
+   */
+  peepTotMax: (c, p) => {
+    const v = bloqueo(c, 'expHold')?.values.peepTot?.value;
+    return typeof v === 'number' && v <= p.max!;
+  },
   /** pH de equilibrio con la ventilación actual en [p.min, p.max]. */
   phEqRange: (c, p) => {
     const ph = phEquilibrio(c);
