@@ -24,6 +24,31 @@ describe('PROT-01 · el estimador recupera el exponente que se le da', () => {
     for (const b of [0.6, 0.8, 1.0, 1.3, 1.8]) expect(stressIndex(curva(b)), `b=${b}`).toBeCloseTo(b, 3);
   });
 
+  it('con latido descuenta la sinusoide: el mismo exponente en cualquier fase cardíaca', () => {
+    // Oscilación cardiogénica de los casos: 80/min y ±0,45 cmH₂O. Sin descontarla, el exponente salta ±0,1 con la fase.
+    const w = (2 * Math.PI * 80) / 60;
+    const curva = (b: number, fase: number, duracion: number) => {
+      const m: { t: number; paw: number }[] = [];
+      for (let t = 0; t <= duracion + 1e-4; t += 0.004)
+        m.push({ t, paw: 10 + 8 * Math.pow(t / duracion, b) + 0.45 * Math.sin(w * t + fase) });
+      return m;
+    };
+    // Con un ciclo cardíaco de rampa o más (0,75 s a 80/min), a ≤ 0,02; con 0,93 de ciclo, a ≤ 0,04.
+    for (const [duracion, tol] of [
+      [0.8, 0.02],
+      [1.2, 0.02],
+      [0.7, 0.04],
+    ] as const)
+      for (const b of [0.6, 0.8, 1.0, 1.3, 1.8])
+        for (let k = 0; k < 6; k++) {
+          const err = stressIndex(curva(b, (k * Math.PI) / 3, duracion), w)! - b;
+          expect(Math.abs(err), `b=${b} fase=${k} T=${duracion}`).toBeLessThan(tol);
+        }
+    // Sin descontarla, la misma curva da un número distinto según la fase: es lo que se corrige.
+    const crudos = [0, 1, 2, 3, 4, 5].map((k) => stressIndex(curva(1, (k * Math.PI) / 3, 1.2))!);
+    expect(Math.max(...crudos) - Math.min(...crudos)).toBeGreaterThan(0.1);
+  });
+
   it('con muestras insuficientes devuelve null en vez de un número inventado', () => {
     expect(stressIndex([])).toBeNull();
     expect(

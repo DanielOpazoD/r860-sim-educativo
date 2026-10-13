@@ -23,7 +23,15 @@ export const PHYS: Record<string, PhysSpec> = {
     step: 1,
     help: 'patient.compliance',
     get: (fr) => fr.truth.patient.crs * 1000,
-    cmd: (v) => ({ type: 'setPatient', params: { crs: v / 1000 } }),
+    // Con curva sigmoidea la presión elástica sale de ella y no de crs: el control escala su capacidad en la misma
+    // proporción, así que mover C cambia la distensibilidad a todo volumen (antes no hacía nada en esos pulmones).
+    cmd: (v, fr) => {
+      const p = fr.truth.patient,
+        s = p.sigmoid;
+      return s && s.b > 0 && p.crs > 0
+        ? { type: 'setPatient', params: { crs: v / 1000, sigmoid: { ...s, b: (s.b * (v / 1000)) / p.crs } } }
+        : { type: 'setPatient', params: { crs: v / 1000 } };
+    },
   },
   resistance: {
     label: 'Resistencia insp.',

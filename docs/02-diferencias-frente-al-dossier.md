@@ -316,6 +316,7 @@ El resumen pasa a tener dos pantallas breves en vez de una: **Presiones** (lo de
   - **No se publica cuando la forma no es del pulmón**, y dice por qué: en presión control no hay rampa a flujo constante; con esfuerzo del paciente la curva es suya y del ventilador; con la presión recortada por Plimit o Pmáx la forma está truncada. Tres motivos distintos, tres mensajes distintos.
 - **Titulación de PEEP con las mediciones del propio alumno.** Cada bloqueo inspiratorio válido deja un punto (PEEP, Cstat) y la pantalla dibuja la curva que él construyó, señalando el máximo. Con menos de dos puntos no se dibuja nada y se dice cuántos faltan. **No hay ningún punto precalculado ni interpolado**: si la curva no aparece es porque no se ha medido, no porque falle.
 - El índice de estrés entra también en la tabla de mediciones, con su calidad y su procedencia, como cualquier otro dato.
+- *(13-10-2026)* En los casos clínicos, que laten, la sinusoide cardíaca se descuenta antes del ajuste (E-103): sin eso el índice de una misma mecánica saltaba entre 0,93 y 1,10 según la fase del latido.
 
 ## v0.6.2 · la presión motriz con atrapamiento aéreo (08-09-2026)
 

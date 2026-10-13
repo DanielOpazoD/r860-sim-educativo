@@ -78,6 +78,19 @@ describe('LAT · oscilación cardiogénica', () => {
     expect(tc!.value! / ts!.value!).toBeLessThan(1.03);
   });
 
+  it('el índice de estrés se lee descontando el latido: el mismo número que sin latido, respiración a respiración', () => {
+    // CC-03 con FR 16: cinco latidos por respiración, siempre en la misma fase. Sin descontarlo, el índice quedaba
+    // desplazado de forma fija (0,96 → 1,02 con el pulmón lineal); con FR no múltiplo saltaba entre 0,93 y 1,10.
+    const con = caso('CC-03', true),
+      sin = caso('CC-03', false);
+    con.run(30_000);
+    sin.run(30_000);
+    const ic = con.breaths.slice(-5).map((b) => b.stressIndex!),
+      is = sin.breaths.slice(-5).map((b) => b.stressIndex!);
+    for (let i = 0; i < 5; i++) expect(Math.abs(ic[i]! - is[i]!)).toBeLessThan(0.02);
+    expect(Math.max(...ic) - Math.min(...ic)).toBeLessThan(0.02);
+  });
+
   it('rechaza frecuencias y amplitudes fuera de rango', () => {
     expect(validatePatientParams({ ...BENCH_PATIENT, cardiac: CARDIAC_REFERENCE })).toEqual([]);
     expect(validatePatientParams({ ...BENCH_PATIENT, cardiac: { hz: 5, amplitude: 0.4 } }).join()).toMatch(/Frecuencia cardíaca/);

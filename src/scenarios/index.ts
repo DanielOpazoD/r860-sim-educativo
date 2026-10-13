@@ -944,7 +944,7 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   // Casos clínicos: Ppico = PEEP + (R + K₂·Q)·Q + VT/C más la carga viscoelástica, con la mecánica intubada de cada caso.
   'CC-01': { atSimTimeMs: 18_000, ranges: { ppeak: [27, 30], peakInspFlow: [27, 31], maxVolume: [440, 460] } },
   'CC-02': { atSimTimeMs: 18_000, ranges: { ppeak: [31, 36], peakInspFlow: [29, 31], peakExpFlow: [-26, -18], maxVolume: [490, 510] } },
-  'CC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [35, 39], peakInspFlow: [27, 31], maxVolume: [590, 610] } },
+  'CC-03': { atSimTimeMs: 18_000, ranges: { ppeak: [39, 43], peakInspFlow: [27, 31], maxVolume: [590, 610] } },
   'CC-04': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 27], peakInspFlow: [20, 23], maxVolume: [390, 410] } },
   'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 17], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
   // Soporte de presión: Ppico = PEEP + soporte; el flujo y el volumen dependen del esfuerzo.

@@ -1088,7 +1088,7 @@ export class VcController {
       startSimTimeMs: sToMs(b.startSimT),
       endSimTimeMs: sToMs(this.simT),
       cyclingCause: b.cause,
-      ...indiceDeEstres(b),
+      ...indiceDeEstres(b, this.omegaCardiaca()),
       ...constanteEspiratoria(b, this.omegaCardiaca()),
       tInspS: b.tInspActual,
       tExpS: b.tExpActual,
@@ -1111,10 +1111,10 @@ export class VcController {
 }
 
 /** El índice de estrés de una respiración y, si no lo hay, por qué. La forma sólo habla del pulmón si nadie más la tocó. */
-function indiceDeEstres(b: BreathAccum): { stressIndex: number | null; stressIndexReason: string | null } {
+function indiceDeEstres(b: BreathAccum, omegaCardiaca = 0): { stressIndex: number | null; stressIndexReason: string | null } {
   if (b.effortInFlow) return { stressIndex: null, stressIndexReason: 'esfuerzoDuranteLaRampa' };
   if (b.plimitReached || b.pmaxReached) return { stressIndex: null, stressIndexReason: 'presionRecortadaPorElTecho' };
-  const v = stressIndex(b.flowSamples);
+  const v = stressIndex(b.flowSamples, omegaCardiaca);
   return v === null ? { stressIndex: null, stressIndexReason: 'sinRampaAFlujoConstante' } : { stressIndex: v, stressIndexReason: null };
 }
 
