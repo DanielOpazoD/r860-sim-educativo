@@ -34,7 +34,8 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
 
   function alarmHTML(): string {
     const fr = ctx.frame as EngineFrame;
-    const active = fr.alarms.filter((a) => a.conditionActive),
+    // Las filtradas por otra activa no se listan, como en el equipo (URM SW10 8-25).
+    const active = fr.alarms.filter((a) => a.conditionActive && !a.filteredBy),
       pending = fr.alarms.filter((a) => !a.conditionActive && a.latching && a.resolvedAtMs !== null && a.acknowledgedAtMs === null);
     const row = (a: AlarmState): string =>
       `<div class="alarm-row ${a.conditionActive ? (a.priority === 'high' ? 'high' : 'medium') : 'resolved'}"><span class="alarm-priority">${icon(a.conditionActive ? 'bell' : 'check')}</span><div><b>${esc(learnerText(a.message))}</b><p>${esc(CHANNEL[a.source] ?? a.source)}${a.rawValueAtOnset !== null ? ` · valor al inicio ${f(a.rawValueAtOnset, 1)}` : ''}${a.threshold !== null ? ` · umbral ${f(a.threshold, 1)}` : ''}</p><small>${a.conditionActive ? 'ACTIVA' : 'RESUELTA · PENDIENTE DE RECONOCER'} · ${clock((a.onsetAtMs ?? 0) / 1000)}${a.acknowledgedAtMs !== null ? ' · reconocida' : ''} · prioridad ${PRIORITY[a.priority] ?? a.priority}</small></div></div>`;
@@ -49,7 +50,7 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     const audioTxt = audio.enabled ? 'audio habilitado' : 'audio apagado';
     if (fr.ventilation === 'standby') return 'En espera';
     if (bar.activeCount) {
-      const acked = fr.alarms.filter((a) => a.conditionActive && a.acknowledgedAtMs !== null).length;
+      const acked = fr.alarms.filter((a) => a.conditionActive && !a.filteredBy && a.acknowledgedAtMs !== null).length;
       const n = bar.activeCount;
       if (acked === n)
         return `${n} reconocida${n === 1 ? '' : 's'} · ${n === 1 ? 'condición sigue activa' : 'condiciones siguen activas'} · ${audioTxt}`;
@@ -71,14 +72,16 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     put('#mute-time', muteLeft > 0 ? clock(Math.ceil(muteLeft / 1000)) : '');
     const flags = ctx.lesson.flags;
     if (bar.activeCount) flags.alarmSeen = flags.alarmSeen || ctx.dialog.kind === 'alarms';
-    const sig = JSON.stringify(fr.alarms.map((a) => [a.id, a.conditionActive, a.acknowledgedAtMs]));
+    const sig = JSON.stringify(fr.alarms.map((a) => [a.id, a.conditionActive, a.filteredBy ?? null, a.acknowledgedAtMs]));
     if (ctx.dialog.kind === 'alarms' && sig !== alarmSignature) {
       alarmSignature = sig;
       const el = document.getElementById('live-alarms');
       if (el) el.innerHTML = alarmHTML();
     }
     audio.pausedUntilMs = fr.audioPauseUntilMs;
-    const top = fr.alarms.filter((a) => a.conditionActive).sort((a, b) => (a.priority === 'high' ? -1 : b.priority === 'high' ? 1 : 0))[0];
+    const top = fr.alarms
+      .filter((a) => a.conditionActive && !a.filteredBy)
+      .sort((a, b) => (a.priority === 'high' ? -1 : b.priority === 'high' ? 1 : 0))[0];
     if (ctx.running) audio.drive(top ? top.priority : null, fr.simTimeMs);
   }
   function alarms(): void {

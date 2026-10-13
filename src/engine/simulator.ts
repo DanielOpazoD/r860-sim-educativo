@@ -393,6 +393,9 @@ export class Simulator {
       case 'holdEnded':
       case 'rejected':
         if (ev.type === 'holdEnded') this.breathHoldS += ev.outcome.actualDurationS;
+        // Retardos y alarmas no habilitadas del equipo durante y después de un bloqueo (URM SW10 8-8 y 8-27).
+        if (ev.type === 'holdStarted') this.alarms.onHoldStart(ev.kind);
+        else if (ev.type === 'holdEnded') this.alarms.onHoldEnd(t);
         this.procedures.onControllerEvent(ev, t);
         this.logEvent(
           'procedure',
@@ -408,7 +411,10 @@ export class Simulator {
         break;
       case 'settingsApplied':
         // Única fuente del objetivo del mezclador: todo cambio de FiO2 aplicado (usuario, ↑O2, restauración) llega por aquí.
-        if (ev.changes.fio2 !== undefined) this.o2.setTarget(ev.changes.fio2);
+        if (ev.changes.fio2 !== undefined) {
+          this.o2.setTarget(ev.changes.fio2);
+          this.alarms.onFio2Changed(t);
+        }
         this.logEvent('setting', 'controller', { applied: ev.changes, breathId: ev.breathId });
         break;
       default:
@@ -454,13 +460,14 @@ export class Simulator {
       this.diverged = true;
       this.logEvent('discontinuity', 'system', { reason: 'el modelo dejó de dar números finitos', simTimeMs: this.clock.simTimeMs });
     }
-    const base = this.breathVStart + this.breathV2Start;
-    // Primero los instantes de transición resueltos dentro del paso, en orden, para que la curva pase por ellos.
+    // La curva de volumen es la del equipo: la integral del flujo de su sensor desde el inicio de la respiración, no el
+    // volumen verdadero del pulmón (que sigue en `truth`). Primero los instantes de transición resueltos dentro del paso,
+    // en orden, para que la curva pase por ellos.
     for (const m of this.controller.substepSamples) {
-      this.ring.push(m.tS * 1000, m.paw, m.q, m.vAbsL - base, this.effort.pmusAt(m.tS), this.controller.currentBreathSequence);
+      this.ring.push(m.tS * 1000, m.paw, m.q, m.vMedidoL, this.effort.pmusAt(m.tS), this.controller.currentBreathSequence);
       this.samplesSinceFrame += 1;
     }
-    const vol = this.patient.vTotal - base;
+    const vol = this.controller.volumenMedidoL;
     this.ring.push(
       this.clock.simTimeMs,
       this.controller.paw,
@@ -494,7 +501,7 @@ export class Simulator {
       live: {
         paw: this.controller.paw,
         flowLps: this.controller.q,
-        volTidalL: this.patient.vTotal - this.breathVStart - this.breathV2Start,
+        volTidalL: this.controller.volumenMedidoL,
         ppeakCurrent: this.controller.currentPpeak,
         phase: this.controller.phase,
         /** La última respiración completa terminó limitada por Plimit (indicador junto a Ppico; no es alarma, E-036). */

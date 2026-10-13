@@ -121,3 +121,83 @@ describe('ALM · estados separados (activa, reconocida, resuelta, audio)', () =>
     expect(sim.alarms.get('fio2Low')!.conditionActive).toBe(true);
   });
 });
+
+// ALM-URM · filtros, retardos y alarmas no habilitadas del equipo (URM SW10 2065490-001, 8-8 y 8-25 a 8-27).
+describe('ALM-URM · el sistema de alarmas se comporta como el del manual', () => {
+  it('filtros: con el paciente desconectado, las de volumen y FR salen de la lista y la banda sólo cuenta la desconexión', () => {
+    const sim = benchSim({ settings: { ...BENCH_SETTINGS, assistControl: true, biasFlow: 4 / 60, flowTrigger: 2 / 60 } });
+    runUntilBreath(sim, 3);
+    sim.command({ type: 'setPatient', params: { disconnected: true } });
+    runUntilBreath(sim, 8);
+    const lista = sim.frame().alarms;
+    const vte = lista.find((a) => a.id === 'vteLow')!;
+    expect(vte.conditionActive).toBe(true); // la condición se sigue evaluando
+    expect(vte.filteredBy).toBe('disconnect'); // pero el equipo la retira de la lista
+    expect(lista.find((a) => a.id === 'disconnect')!.filteredBy ?? null).toBeNull();
+    const visibles = lista.filter((a) => a.conditionActive && !a.filteredBy).map((a) => a.id);
+    expect(visibles).toContain('disconnect');
+    expect(visibles).not.toContain('vteLow');
+    expect(sim.frame().alarmBar.activeCount).toBe(visibles.length);
+  });
+
+  it('Ppico alta retira Ppico baja: el motor de alarmas lo aplica en la lista y en la banda', () => {
+    const al = new AlarmEngine({ ...DEFAULT_ALARM_LIMITS, ppeakLow: 25 });
+    al.onPmaxReached(1000, 31, 31, 30);
+    const rec = { ppeak: 20, vtExp: 0.5, peepe: 5, pmaxReached: true } as never;
+    al.onBreath(rec, {}, 4000);
+    const lista = al.list();
+    expect(lista.find((a) => a.id === 'ppeakLow')!.conditionActive).toBe(true);
+    expect(lista.find((a) => a.id === 'ppeakLow')!.filteredBy).toBe('pmax');
+    expect(al.bar().activeCount).toBe(1);
+  });
+
+  it('tras un bloqueo, VMesp bajo y FR baja esperan 60 s aunque la condición se cumpla', () => {
+    const sim = benchSim();
+    runUntilBreath(sim, 3);
+    sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 3 });
+    while (!sim.procedures.last.inspHold) sim.step();
+    const finBloqueo = sim.simTimeMs;
+    // Un límite que la ventilación incumple: con el retardo, no se anuncia hasta pasados 60 s del fin del bloqueo.
+    sim.command({ type: 'setAlarmLimits', changes: { mveLow: 10 } });
+    sim.run(30_000);
+    expect(sim.alarms.get('mveLow')!.conditionActive).toBe(false);
+    while (sim.simTimeMs < finBloqueo + 65_000) sim.step();
+    expect(sim.alarms.get('mveLow')!.conditionActive).toBe(true);
+  });
+
+  it('las alarmas de FiO2 esperan 60 s tras cambiar la FiO2: el sensor tarda en seguir al mezclador', () => {
+    const sim = benchSim({ settings: { ...BENCH_SETTINGS, fio2: 0.21 } });
+    runUntilBreath(sim, 2);
+    sim.command({ type: 'setAlarmLimits', changes: { fio2High: 0.5 } });
+    sim.command({ type: 'confirmSettings', changes: { fio2: 0.8 } });
+    runUntilBreath(sim, 4);
+    const t0 = sim.simTimeMs;
+    while (sim.simTimeMs < t0 + 30_000) sim.step();
+    expect(sim.frame().metrics.fio2!.value!).toBeGreaterThan(0.5); // el sensor ya marca sobre el límite
+    expect(sim.alarms.get('fio2High')!.conditionActive).toBe(false);
+    sim.run(40_000);
+    expect(sim.alarms.get('fio2High')!.conditionActive).toBe(true);
+  });
+
+  it('al pasar de espera a ventilar, VTesp bajo espera 60 s y la desconexión 10', () => {
+    const sim = benchSim({ alarmLimits: { ...DEFAULT_ALARM_LIMITS, vteLow: 0.6 } });
+    sim.command({ type: 'enterStandby' });
+    sim.run(1000);
+    sim.command({ type: 'startVentilation' });
+    const t0 = sim.simTimeMs;
+    sim.run(40_000);
+    expect(sim.alarms.get('vteLow')!.conditionActive).toBe(false);
+    while (sim.simTimeMs < t0 + 75_000) sim.step();
+    expect(sim.alarms.get('vteLow')!.conditionActive).toBe(true);
+  });
+
+  it('la apnea no se habilita durante un bloqueo', () => {
+    const al = new AlarmEngine(DEFAULT_ALARM_LIMITS);
+    al.onHoldStart('expHold');
+    al.onApnea(1000, 20);
+    expect(al.get('apnea')!.conditionActive).toBe(false);
+    al.onHoldEnd(2000);
+    al.onApnea(3000, 20);
+    expect(al.get('apnea')!.conditionActive).toBe(true);
+  });
+});

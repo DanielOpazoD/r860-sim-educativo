@@ -5,6 +5,7 @@ import { BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // ALM-10: cada límite configurable dispara en su escenario bajo y alto sobre el banco (Ppico 20, VTe 500, VMe 7,5, FR 15, PEEPe 5, FiO2 según ajuste)
 // y se resuelve al devolver el límite a un valor que no se viola. Colores de la banda: media → amarillo, alta → rojo.
+// Prioridades del equipo (URM SW10, lista de alarmas 8-8 a 8-25): media sólo VTesp alto y bajo, FR alta y PEEPe alta.
 type Case = {
   key: keyof AlarmLimits;
   violating: number;
@@ -15,17 +16,17 @@ type Case = {
   breaths?: number;
 };
 const CASES: Case[] = [
-  { key: 'ppeakLow', violating: 30, ok: 10, priority: 'medium' },
-  { key: 'vteLow', violating: 0.6, ok: 0.4, priority: 'medium' },
+  { key: 'ppeakLow', violating: 30, ok: 10, priority: 'high' },
+  { key: 'vteLow', violating: 0.6, ok: 0.4, priority: 'medium', breaths: 3 }, // tres respiraciones bajo el límite
   { key: 'vteHigh', violating: 0.4, ok: 0.6, priority: 'medium' },
   { key: 'mveLow', violating: 10, ok: 5, priority: 'high', breaths: 4 },
-  { key: 'mveHigh', violating: 5, ok: 10, priority: 'medium', breaths: 4 },
-  { key: 'rrLow', violating: 20, ok: 10, priority: 'medium', breaths: 4 },
+  { key: 'mveHigh', violating: 5, ok: 10, priority: 'high', breaths: 4 },
+  { key: 'rrLow', violating: 20, ok: 10, priority: 'high', breaths: 4 },
   { key: 'rrHigh', violating: 10, ok: 20, priority: 'medium', breaths: 4 },
-  { key: 'peepeLow', violating: 8, ok: 3, priority: 'medium' },
+  { key: 'peepeLow', violating: 8, ok: 3, priority: 'high' },
   { key: 'peepeHigh', violating: 5, ok: 20, priority: 'medium', peep: 10 }, // la rejilla de PEEPe alta empieza en 5
-  { key: 'fio2Low', violating: 0.3, ok: 0.18, priority: 'medium' },
-  { key: 'fio2High', violating: 0.24, ok: 0.99, priority: 'medium', fio2: 0.5 },
+  { key: 'fio2Low', violating: 0.3, ok: 0.18, priority: 'high' },
+  { key: 'fio2High', violating: 0.24, ok: 0.99, priority: 'high', fio2: 0.5 },
 ];
 
 describe('ALM-10 · cada límite de alarma dispara en su escenario bajo/alto y se resuelve', () => {

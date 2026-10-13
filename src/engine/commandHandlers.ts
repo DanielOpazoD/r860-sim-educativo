@@ -92,6 +92,8 @@ export const COMMAND_HANDLERS: Handlers = {
     if (ctx.ventilation() === 'ventilating') return reject('Ya ventilando');
     ctx.setVentilation('ventilating');
     ctx.controller.startVentilation();
+    // Transición a terapia: retardos de 60 s (10 la desconexión) del equipo, URM SW10 8-27.
+    ctx.alarms.onTherapyStart(ctx.simTimeMs);
     ctx.logEvent('state', actor, { ventilation: 'ventilating' });
     return ok;
   },

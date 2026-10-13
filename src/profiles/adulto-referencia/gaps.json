@@ -70,7 +70,7 @@
     {
       "id": "U-08",
       "question": "Ventanas y filtros de métricas.",
-      "policy": "Estimadores propios: última respiración; FR y VMesp con ventana de 8 respiraciones; calidad y ventana publicadas en cada muestra.",
+      "policy": "Estimadores propios: última respiración; FR y VMesp con ventana de 8 respiraciones; calidad y ventana publicadas en cada muestra. El manual SW10 define cada dato (9-2 a 9-5) pero no publica la ventana de promedio de FR y VMesp: sigue P.",
       "status": "abierta",
       "blocks": []
     },
@@ -99,8 +99,8 @@
     {
       "id": "U-11",
       "question": "Retardos, prioridades y enclavamientos de todas las alarmas.",
-      "policy": "Prioridades y enclavamiento propuestos; sin retardos; límites iniciales Off.",
-      "status": "abierta",
+      "policy": "Prioridades, retardos, filtros y alarmas no habilitadas durante bloqueos: los del manual (E-105, E-106, R21). Enclavamiento propuesto (alta y media requieren reconocer tras resolverse); límites iniciales del perfil (E-071).",
+      "status": "parcialmente cerrada (manual SW10 leído): prioridades, retardos y filtros D; enclavamientos P",
       "blocks": [
         "Auto Limits",
         "tiempo de apnea",
@@ -409,8 +409,8 @@
     {
       "id": "U-51",
       "question": "Con qué cadencia evalúa el R860 cada alarma fisiológica y qué retardo de confirmación aplica antes de activarla. U-11 recoge prioridades y enclavamientos; esto es la frecuencia de evaluación.",
-      "policy": "P: una evaluación por respiración cerrada (más el refresco del sensor de O2 y Pmáx dentro del ciclo), sin retardo de confirmación añadido. El retraso máximo es por tanto un ciclo, y se dice en la ayuda de alarmas en vez de dejarlo implícito. Un cambio de límites se contrasta de inmediato con la última respiración.",
-      "status": "nueva (v0.4.9)",
+      "policy": "Una evaluación por respiración cerrada (más el refresco del sensor de O2 y Pmáx dentro del ciclo), P. Los retardos de confirmación del equipo son los del manual (E-106): 60 s tras un bloqueo, tras un cambio de FiO2 y al pasar de espera a ventilar; VTesp bajo pide tres respiraciones (E-105). Un cambio de límites se contrasta de inmediato con lo último medido.",
+      "status": "revisada (manual SW10, 8-26 y 8-27)",
       "blocks": []
     },
     {

@@ -123,12 +123,15 @@
     {
       "id": "R21",
       "kind": "pdf",
-      "title": "CARESCAPE R860 · User's Reference Manual · Rev F (ruta oficial GE vía ASPR)",
-      "url": "https://www.gehealthcare.com/-/jssmedia/files/us--carescape-r860-user-manual-urm-rev-f.pdf",
+      "title": "CARESCAPE R860 · User's Reference Manual · Software Revision 10 · 2065490-001 Rev F (PDF oficial de GE, copia del Internet Archive)",
+      "url": "https://www.gehealthcare.com/-/jssmedia/files/us--carescape-r860-user-manual-urm-rev-f.pdf (archivado: https://web.archive.org/web/20240808061847/https://www.gehealthcare.com/-/jssmedia/files/us--carescape-r860-user-manual-urm-rev-f.pdf)",
       "access": {
-        "date": "2026-09-06",
-        "status": "FALLIDO (HTTP 502)",
-        "note": "Coincide con U-17 del dossier; integridad no verificada."
+        "date": "2026-10-13",
+        "method": "descarga de la captura del Internet Archive del 2024-08-08 de la URL oficial de GE (el sitio de GE estaba en mantenimiento) + pdftotext -layout",
+        "sha256": "bb2f742971a73149c34910f10d4a96ca9734144e8d7e341c74cde0d83ace80a3",
+        "pages": 510,
+        "readFully": false,
+        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21). El intento del 2026-09-06 había fallado con HTTP 502."
       }
     },
     {
@@ -1387,6 +1390,43 @@
         "tests/unit/measurementFidelity.test.ts",
         "tests/unit/casosClinicos.test.ts (CAS-07)",
         "tests/unit/objetivos.test.ts (SC-22, ALM)"
+      ]
+    },
+    {
+      "id": "E-105",
+      "claim": "Prioridades de las alarmas fisiológicas según la lista del equipo: altas Ppico alta (Pmáx) y Ppico baja, apnea, paciente desconectado, VMesp alto y bajo, FR baja, FiO2 alta y baja y PEEPe baja; medias VTesp alto y bajo, FR alta y PEEPe alta. Antes eran propuestas y seis diferían (Ppico baja, VMesp alto, FR baja, FiO2 alta y baja y PEEPe baja eran medias). VTesp bajo exige que el volumen haya quedado bajo el límite en tres respiraciones: se activa cuando las tres últimas están bajo el límite vigente y se resuelve en cuanto una no lo está (un cambio de límite se evalúa con esas tres). Consecuencia: SC-18 ya no da VTesp bajo, porque sus respiraciones apiladas bajan del límite una a una.",
+      "status": "D (prioridades y condición de VTesp bajo, R21) / P (enclavamientos, U-11)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 8 «List of alarms - adult and pediatric» (8-8 a 8-25): columnas Priority y Condition",
+      "implemented": "src/engine/alarms.ts (ALARM_RULES, VTE_LOW_BREATHS, vteRecientes)",
+      "tests": [
+        "tests/unit/alarmLimits.test.ts (ALM-10)",
+        "tests/unit/review.test.ts (H4)",
+        "tests/unit/objetivos.test.ts (ALM)"
+      ]
+    },
+    {
+      "id": "E-106",
+      "claim": "Retardos, alarmas no habilitadas y filtros del equipo. Retardos (no se activan durante el tiempo indicado): 60 s tras un bloqueo inspiratorio o espiratorio para VMesp bajo, FR baja y FiO2 alta y baja; 60 s desde el último cambio de FiO2 para las de FiO2 (aquí también el ↑O2 y su restauración, P); 60 s al pasar de espera a ventilar para VMesp alto y bajo, PEEPe alta y baja, FR baja, VTesp alto y bajo y FiO2, y 10 s para la desconexión. Cargar un escenario no es una transición a terapia: el paciente ya estaba ventilado. No habilitadas durante un bloqueo: apnea, VMesp bajo y FR baja (inspiratorio y espiratorio) y Ppico baja (espiratorio). Filtros (la alarma sigue evaluándose pero sale de la lista y de la banda): la apnea retira VTesp alto y bajo, VMesp alto y bajo y FR baja; la desconexión retira la apnea, Ppico baja, VTesp bajo, VMesp bajo, FR baja y FiO2 baja; Ppico alta retira Ppico baja. Sólo los que tienen equivalente en el simulador: sin módulo de gases, sin respaldo por VMesp, sin alarma de fuga ni modos no invasivos.",
+      "status": "D (tablas del equipo, R21) / P (que el ↑O2 cuente como cambio de FiO2; qué significa «no habilitada» con una alarma ya activa: se mantiene)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 8-8 (notas 1 y 2 de la lista), 8-25 y 8-26 «Alarm filters», 8-26 y 8-27 «Alarm delays»",
+      "implemented": "src/engine/alarms.ts (RETARDOS_S, NO_HABILITADAS_EN_BLOQUEO, FILTROS, alarmaVisible, onHoldStart, onHoldEnd, onFio2Changed, onTherapyStart); src/engine/simulator.ts (holdStarted, holdEnded, settingsApplied); src/engine/commandHandlers.ts (startVentilation); src/ui/alarmsUi.ts y src/ui/metricsTable.ts (filteredBy)",
+      "tests": [
+        "tests/unit/alarms.test.ts (ALM-URM)",
+        "tests/unit/fuga.test.ts (LEAK-05)"
+      ]
+    },
+    {
+      "id": "E-107",
+      "claim": "La curva de volumen es la del equipo: la integral, con su signo, del flujo de su sensor desde el inicio de la respiración en curso (lo entregado menos lo que vuelve, VTi − VTe acumulados), reiniciada al empezar cada respiración. Antes era el volumen verdadero del pulmón, que siempre vuelve a la base. Con fuga, la rama espiratoria ya no vuelve a cero: termina en VTi − VTe y salta a cero con la respiración siguiente, el signo de fuga que se lee en la curva de un ventilador (SC-22 y CC-07: la curva sube a los 500 mL entregados). Sin fuga ni circuito compresible coincide con el volumen del pulmón. El volumen verdadero sigue en los datos del modelo.",
+      "status": "D (las curvas muestran los datos que recibe el ventilador, R21) / P (reinicio en cada respiración)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 9-8 «Reading waveforms»: «Waveforms are dynamic illustrations of patient respiratory data received by the ventilator»",
+      "implemented": "src/engine/controller.ts (volumenMedidoL, substepSamples.vMedidoL); src/engine/simulator.ts (canal de volumen y live.volTidalL)",
+      "tests": [
+        "tests/unit/fuga.test.ts (LEAK-07)",
+        "tests/unit/curvas.test.ts (SC-22, CC-07)"
       ]
     }
   ]

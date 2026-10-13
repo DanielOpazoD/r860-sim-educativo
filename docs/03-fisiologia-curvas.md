@@ -193,6 +193,8 @@ Cada afirmación anterior está anclada en una prueba automática (`npm test`). 
 | No se fuerza el VT bajo límites | BM-06c | Ajuste VT 0,5 L; VTe medida < 0,45 L |
 | Conservación de volumen sin fuga | BM-07 (VC) y «BM-07 en PC» (`pc.test.ts`) | VTinsp − VTe = ΔV absoluto por respiración y acumulado en 10 (VC) / 8 (PC) respiraciones |
 | VT espirado = integral con signo del flujo del sensor | MED-VTE (`tests/unit/measurementFidelity.test.ts`) | En todos los escenarios sin fuga, entre 20 y 60 s: ΣVTi − ΣVTe = ΔV pulmonar (< 0,5 %), con latido, esfuerzos que no disparan y espiración activa; CC-05 con latido: VTe 400 mL con VT 400 |
+| Curva de volumen del equipo con fuga | LEAK-07 (`tests/unit/fuga.test.ts`) | Fuga 4,4 L/min a 10 cmH₂O: la curva llega a VTi (500 mL), termina la espiración en VTi − VTe y se reinicia en la respiración siguiente; sin fuga, VTi − VTe < 1 mL |
+| Sistema de alarmas del manual | ALM-URM (`tests/unit/alarms.test.ts`), ALM-10 | Filtros de la desconexión y de Ppico alta; VMesp bajo retenido 60 s tras un bloqueo; FiO₂ alta retenida 60 s tras cambiar la FiO₂; VTesp bajo retenido 60 s al salir de espera; apnea deshabilitada durante un bloqueo; prioridades de la lista del equipo |
 | Índice de estrés con latido | PROT-01 (`proteccion.test.ts`), LAT (`latido.test.ts`) | Potencias b 0,6–1,8 con ±0,45 cmH₂O a 80/min, en seis fases cardíacas: error ≤ 0,02 con un ciclo de rampa, ≤ 0,04 con 0,93; en CC-03, con y sin latido a ≤ 0,02 y estable respiración a respiración (E-103) |
 | SDRA no lineal (CC-03) | CAS-03 (`casosClinicos.test.ts`) | Sigmoide b 2,2 L, c 4, d 14: VT 600 → Pplat 32–35 y ΔP ≈ 23; 425 con FR 28 → ΔP > 15,1; 400 con FR 28 → ΔP ≈ 14,3 y caso resuelto; PEEP 14 → ΔP +2 y Cstat −3 mL/cmH₂O (E-102) |
 | El integrador converge y los eventos no dependen del paso | BM-08 | Errores de VT decrecientes para dt 4, 2, 1 ms frente a la solución analítica; Tinsp 0,75 s idéntico con dt 4 y 1 ms |
@@ -321,6 +323,28 @@ Con esos valores la apnea sube ≈ 4,3 mmHg/min y, a V̇A 5 L/min, una variació
 **Tamponamiento agudo.** El bicarbonato del paciente es el de su PaCO₂ habitual; cuando la PaCO₂ se aparta de ella, los tampones no bicarbonato lo mueven en minutos según las reglas clásicas de Boston: +1 mEq/L por cada 10 mmHg de hipercapnia aguda (Brackett 1965) y −2 por cada 10 mmHg de hipocapnia aguda (Arbus 1969). Con PaCO₂ 60 en un sano el pH sale ≈ 7,26 (con el bicarbonato fijo salía 7,23). En el EPOC hipercápnico crónico de los casos el bicarbonato habitual es 32 a una PaCO₂ habitual de 60 (la compensación renal de +4 mEq/L por cada 10 mmHg): hiperventilado hasta 37 en minutos queda en ≈ 27 y el pH en ≈ 7,49, no en el 7,56 que daba el 32 fijo. La compensación renal (días) no se modela.
 
 Simplificaciones declaradas: un solo depósito (sin los compartimentos rápido y lento del CO₂ corporal); fracción alveolar de espacio muerto constante (la real baja algo con el VT; las dos medianas de Fletcher y Jonson no permiten separar cuánto, y su texto completo no fue accesible); sin mezcla parcial en el espacio muerto (una respiración menor que VD no ventila nada); oxigenación no modelada.
+
+## 11. Lo que muestra el equipo: curva de volumen y alarmas
+
+**Curva de volumen** (E-107). Es la del ventilador: la integral con signo del flujo de su sensor desde el inicio de la respiración, lo entregado menos lo que vuelve, reiniciada en cada respiración (URM SW10, 9-8: las curvas muestran «patient respiratory data received by the ventilator»). Sin fuga coincide con el volumen del pulmón. Con fuga, la rama espiratoria no vuelve a cero: termina en VTi − VTe y salta a cero con la respiración siguiente, que es como se reconoce una fuga en la curva. El volumen verdadero del pulmón sigue en los datos del modelo.
+
+**Alarmas** (E-105, E-106; URM SW10, capítulo 8). Prioridades de la lista del equipo:
+
+| Prioridad | Alarmas |
+| --- | --- |
+| Alta | Ppico alta (Pmáx), Ppico baja, apnea, paciente desconectado, VMesp alto y bajo, FR baja, FiO₂ alta y baja, PEEPe baja |
+| Media | VTesp alto y bajo, FR alta, PEEPe alta |
+
+| Regla del equipo | Qué hace el simulador |
+| --- | --- |
+| VTesp bajo «for 3 breaths» | Se activa cuando las tres últimas respiraciones están bajo el límite vigente |
+| Retardo de 60 s tras un bloqueo | VMesp bajo, FR baja y FiO₂ no se activan en el minuto siguiente: la respiración ocluida alarga la ventana de VMesp y FR |
+| Retardo de 60 s tras cambiar la FiO₂ | Las de FiO₂ esperan a que el sensor siga al mezclador (también con ↑O₂, P) |
+| Retardo al pasar de espera a ventilar | 60 s las de volumen, FR, PEEPe y FiO₂; 10 s la desconexión. Cargar un escenario no cuenta: el paciente ya estaba ventilado |
+| No habilitadas durante un bloqueo | Apnea, VMesp bajo y FR baja; Ppico baja en el espiratorio |
+| Filtros | La desconexión retira la apnea, Ppico baja, VTesp bajo, VMesp bajo, FR baja y FiO₂ baja; la apnea, las de volumen y FR baja; Ppico alta, Ppico baja. La condición se sigue evaluando: sólo sale de la lista y de la banda |
+
+Lo que sigue siendo P: la ventana de 8 respiraciones de FR y VMesp (el manual no la publica, U-08) y los enclavamientos (U-11).
 
 ## Fuentes verificadas
 

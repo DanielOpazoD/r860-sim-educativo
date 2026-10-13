@@ -937,7 +937,8 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'SC-19': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 16], peakInspFlow: [55, 75], maxVolume: [550, 700] } },
   'SC-20': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], maxVolume: [300, 400] } },
   'SC-21': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-93, -72], maxVolume: [490, 510] } },
-  'SC-22': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 18], maxVolume: [300, 400] } },
+  // Con fuga la curva de volumen del equipo sube a lo entregado (500) y no vuelve a cero al espirar (VTi − VTe).
+  'SC-22': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 18], maxVolume: [490, 510] } },
   'SC-23': { atSimTimeMs: 18_000, ranges: { ppeak: [19, 21], peakExpFlow: [-50, -38], maxVolume: [490, 510] } },
   'SC-25': { atSimTimeMs: 18_000, ranges: { ppeak: [23, 28], maxVolume: [490, 510] } },
   'SC-P': { atSimTimeMs: 18_000, ranges: { ppeak: [32, 36], peakExpFlow: [-80, -60], maxVolume: [280, 290] } },
@@ -949,7 +950,7 @@ export const SCENARIO_WAVEFORM_CONTRACTS: Record<string, ScenarioWaveformContrac
   'CC-05': { atSimTimeMs: 18_000, ranges: { ppeak: [14, 17], peakInspFlow: [11, 13], maxVolume: [390, 410] } },
   // Soporte de presión: Ppico = PEEP + soporte; el flujo y el volumen dependen del esfuerzo.
   'CC-06': { atSimTimeMs: 18_000, ranges: { ppeak: [24, 26], peakInspFlow: [52, 70] } },
-  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [15, 19], maxVolume: [300, 400] } },
+  'CC-07': { atSimTimeMs: 18_000, ranges: { ppeak: [15, 19], maxVolume: [490, 510] } },
   'CC-08': { atSimTimeMs: 18_000, ranges: { ppeak: [16, 18], peakInspFlow: [35, 47] } },
 };
 
