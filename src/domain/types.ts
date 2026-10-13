@@ -219,7 +219,7 @@ export interface GasExchangeParams {
   hco3: number;
   /** PaCO₂ habitual (mmHg): aquella a la que el bicarbonato es `hco3`; fuera de ella actúa el tamponamiento agudo. */
   paco2Basal: number;
-  /** Capacidad del depósito equivalente de CO₂ (L): fija la velocidad con que la PaCO₂ sigue a la ventilación. */
+  /** Capacidad total de los depósitos de CO₂ (L equivalentes, pulmón más sangre y tejidos): fija la pendiente de la apnea y el tramo lento. */
   storeL: Liters;
 }
 

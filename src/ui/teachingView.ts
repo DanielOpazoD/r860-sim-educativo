@@ -320,12 +320,13 @@ function ventilacionHTML(fr: EngineFrame): string {
     `<dt>pH</dt><dd>${f(g.ph, 2)}</dd>` +
     `<dt>HCO₃⁻</dt><dd>${f(g.hco3, 0)} <small>mEq/L</small></dd>` +
     `<dt>Equilibrio</dt><dd>${g.paco2Target === null ? '—' : `${f(g.paco2Target, 0)} <small>mmHg</small>`}</dd>` +
-    `<dt>63 % del camino</dt><dd>${g.tauMin === null ? '—' : `${f(g.tauMin, 0)} <small>min</small>`}</dd>` +
+    `<dt>Tramo lento τ</dt><dd>${g.tauMin === null ? '—' : `${f(g.tauMin, 0)} <small>min</small>`}</dd>` +
     `</dl>` +
     `<p class="edu-nota">${esc(tendencia(g.paco2, g.paco2Target))}</p>` +
-    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">El CO₂ del cuerpo es un depósito grande: un cambio ` +
-    `de ventilación tarda minutos en verse en sangre (τ = depósito ÷ V̇A, más lenta cuanto menos se ventila). Por eso la ` +
-    `gasometría de control se pide a los 20–30 minutos y no tras la siguiente respiración. El bicarbonato se mueve ` +
+    `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">El CO₂ del cuerpo está en dos depósitos: el ` +
+    `pulmón, pequeño, se pone al día en segundos; la sangre y los tejidos, grandes, en minutos (τ, más lenta cuanto menos ` +
+    `se ventila). Por eso la gasometría de control se pide a los 20–30 minutos y no tras la siguiente respiración, y en ` +
+    `apnea la PaCO₂ salta ≈ 8 mmHg el primer minuto y después sube ≈ 4 por minuto. El bicarbonato se mueve ` +
     `poco y rápido por los tampones (+1 mEq/L por cada 10 mmHg al subir la PaCO₂, −2 al bajar); la compensación ` +
     `renal tarda días y aquí no ocurre.</p></details>` +
     `</section>` +

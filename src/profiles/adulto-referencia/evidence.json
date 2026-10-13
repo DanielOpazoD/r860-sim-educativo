@@ -229,6 +229,12 @@
         "readFully": false
       },
       "note": "NO es documentación del R860 ni de una fuga de paciente: son los orificios de ventilación de dos mascarillas, medidos por el fabricante entre 3 y 40 cmH₂O (F20: 3→19, 10→37, 20→54, 30→69, 40→82 L/min; N20: 4→20, 11→35, 20→49, 30→61). Se usan como dato de cómo crece con la presión el flujo por un orificio real: Q = K·P^n con n = 0,562 (F20) y 0,557 (N20), error ≤ 1,8 %; una ley lineal yerra en más del 50 % en el mismo rango."
+    },
+    {
+      "id": "C14",
+      "title": "Cinética del CO₂ corporal: Stock MC, Schisler JQ, McSweeney TD. The PaCO₂ rate of rise in anesthetized patients with airway obstruction. J Clin Anesth 1989;1:328–32 (PMID 2516732); Kobayashi T, Yokoyama K. [The arterial blood gas change in anesthetized patients with apnea]. Masui 1994;43:1130–4 (PMID 7933492); Gentz BA et al. Carbon dioxide dynamics during apneic oxygenation: the effects of preceding hypocapnia. J Clin Anesth 1998;10:189–94 (PMID 9603587); Taskar V et al. Dynamics of carbon dioxide elimination following ventilator resetting. Chest 1995;108:196–202 (PMID 7606958); Farhi LE, Rahn H. Dynamics of changes in carbon dioxide stores. Anesthesiology 1960;21:604–14 (PMID 13698175)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Resúmenes leídos en PubMed. Stock 1989: 14 adultos sanos anestesiados sin bloqueo, tubo traqueal pinzado, gasometrías a 0, 20, 40, 60, 120, 180, 240 y 300 s; la subida fue logarítmica y su aproximación lineal por tramos, +12 mmHg el primer minuto y 3,4 mmHg/min después. Kobayashi 1994: 15 anestesiados, apnea de 4 min sin flujo de O₂, tres grupos por ETCO₂ previo (40, 30, 20); +9,8 ± 1,9 mmHg el primer minuto y 3,4–4,4 mmHg/min después, sin diferencias entre grupos. Gentz 1998: 19 anestesiados, apnea con oxigenación tras eucapnia o tras hipocapnia aguda; con hipocapnia, mayor subida en el primer minuto y mayor gradiente venoarterial de PCO₂ previo. Taskar 1995: 44 ventilados estables, VE ±10 %; el cambio de PaCO₂ y ETCO₂ fue mínimo a las 10 respiraciones y creció durante 20 min; la τ aumentó al calcularla en periodos más largos y fue más larga al bajar la ventilación. Farhi y Rahn 1960: sólo el título verificado (sin resumen), cita de origen del modelo de depósitos. Se usan para la cinética de dos compartimentos (E-095, E-114), no para ningún ajuste."
     }
   ],
   "claims": [
@@ -1276,11 +1282,11 @@
     },
     {
       "id": "E-095",
-      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, vía aérea 165 mL y fracción alveolar 0,12 (las dos medianas de Fletcher y Jonson 1984 resueltas para las dos partes: VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; C03), HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 9 min a V̇A 4,4 L/min). Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 39, pH 7,41). La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Con tamponamiento agudo: el bicarbonato es el de la PaCO₂ habitual del paciente (`paco2Basal`, 40 por omisión) y se mueve +0,1 mEq/L por mmHg al subir la PaCO₂ y +0,2 por mmHg al bajar (reglas de Boston, C08); la compensación renal no se modela. El pH de equilibrio usa el bicarbonato de la PaCO₂ de equilibrio. No realimenta la mecánica.",
-      "status": "P (modelo de un depósito y VCO₂, C y HCO₃⁻ como aproximación docente; la fracción alveolar real baja algo con el VT y aquí es constante); D para las dos medianas de espacio muerto que fijan la vía aérea y la fracción alveolar (C03); D-secundario el tamponamiento agudo (reglas de Boston, C08)",
-      "source": "C03, C08",
+      "claim": "Cinética del CO₂: dos compartimentos unidos por la sangre (Farhi y Rahn), el pulmón (C_p 3 L equivalentes: CRF en decúbito y tejido pulmonar) y la sangre venosa con los tejidos (C_t = C − C_p). C_t·dPvCO₂/dt = 0,863·VCO₂ − G·(PvCO₂ − PACO₂) y C_p·dPACO₂/dt = G·(PvCO₂ − PACO₂) − V̇A·PACO₂, con producción continua en los tejidos y lavado del pulmón por respiración. G fija, ≈ 29 L/min: la que deja la venosa mixta 6 mmHg por encima de la arterial con VCO₂ 200. La PaCO₂ que se informa es la de una muestra arterial: la alveolar promediada con constante de 10 s, que deja la oscilación de cada respiración (≈ 4 mmHg en el alvéolo) en ±0,1. Tramo rápido ≈ 5 s y lento τ ≈ C_t·(1/V̇A + 1/G), 11,6 min a V̇A 4,4 L/min, más lento con menos ventilación. Valores del adulto de referencia: VCO₂ 200 mL/min, vía aérea 165 mL y fracción alveolar 0,12 (las dos medianas de Fletcher y Jonson 1984 resueltas para las dos partes: VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; C03), HCO₃⁻ 24 mEq/L, C 45 L. Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 39, pH 7,41). La PaCO₂ inicial es la de equilibrio con la ventilación de los primeros segundos. Con tamponamiento agudo: el bicarbonato es el de la PaCO₂ habitual del paciente (`paco2Basal`, 40 por omisión) y se mueve +0,1 mEq/L por mmHg al subir la PaCO₂ y +0,2 por mmHg al bajar (reglas de Boston, C08); la compensación renal no se modela. El pH de equilibrio usa el bicarbonato de la PaCO₂ de equilibrio. No realimenta la mecánica.",
+      "status": "P (modelo de dos compartimentos; C_p, la constante de la muestra y la capacidad total como aproximación docente calibrada con C14; la fracción alveolar real baja algo con el VT y aquí es constante); D-secundario el gradiente venoarterial de reposo (6 mmHg, libro de texto); D para las dos medianas de espacio muerto que fijan la vía aérea y la fracción alveolar (C03); D-secundario el tamponamiento agudo (reglas de Boston, C08)",
+      "source": "C03, C08, C14",
       "locator": "Fletcher y Jonson 1984 (resumen: VDphys/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; VDaw sin cambios con el VT; VDalv/VTalv menor con VT mayor); Morán 2006 (VD fisiológico 352 → 310 mL sin intercambiador); Hinkson 2006 (VD/VT −6 % sin intercambiador, −5 % más sin codo)",
-      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04)"
+      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, slowTauMin, phFrom, DEFAULT_GAS, LUNG_CO2_STORE_L, VENOARTERIAL_PCO2_MMHG, ARTERIAL_SAMPLE_TAU_S); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); src/ui/teachingView.ts (tramo lento τ); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04, GAS-08)"
     },
     {
       "id": "E-096",
@@ -1500,6 +1506,17 @@
         "tests/unit/procedures.test.ts (resp manual)",
         "tests/unit/metricasEquipo.test.ts (MON)",
         "tests/e2e/pc.spec.ts (alarmas configuradas)"
+      ]
+    },
+    {
+      "id": "E-114",
+      "claim": "Forma de la cinética del CO₂ frente a lo medido. Apnea desde el equilibrio: +8,1 mmHg el primer minuto —el pulmón alcanza a la sangre venosa en segundos— y 3,8 mmHg/min después (0,863·VCO₂/C con C 45 L), frente a +9,8 ± 1,9 y 3,4–4,4 (Kobayashi 1994) y +12 y 3,4 (Stock 1989, aproximación por tramos de una curva logarítmica): dentro de una desviación de Kobayashi y por debajo de Stock. Tras 5 min de hiperventilación el gradiente venoarterial está abierto y el primer minuto de apnea sube más (Gentz 1998); tras 30 min vuelve al de reposo. Con VT ±10 % la PaCO₂ recorre menos del 20 % del camino en diez respiraciones y más del 70 % en 20 min, con τ lenta un 30 % mayor al bajar la ventilación que al subirla (Taskar 1995).",
+      "status": "D (forma de la apnea, efecto de la hipocapnia aguda y respuesta a un cambio de ventilación, C14); P la calibración que los reproduce (E-095)",
+      "source": "C14",
+      "locator": "Stock 1989 y Kobayashi 1994 (resúmenes: subida del primer minuto y pendiente posterior); Gentz 1998 (resumen: hipocapnia aguda previa, primer minuto y gradiente venoarterial); Taskar 1995 (resumen: cambio mínimo a las 10 respiraciones, creciente durante 20 min, τ más larga al bajar la ventilación)",
+      "implemented": "src/engine/gasExchange.ts (GasExchange.step, onBreath, slowTauMin, DEFAULT_GAS.storeL); src/ui/teachingView.ts (Por qué)",
+      "tests": [
+        "tests/unit/gasometria.test.ts (GAS-08)"
       ]
     }
   ]

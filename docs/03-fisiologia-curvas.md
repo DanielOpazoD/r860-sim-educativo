@@ -289,12 +289,14 @@ El motor deriva una PaCO₂ y un pH del paciente virtual a partir de la ventilac
 
 **Ventilación alveolar.** El espacio muerto fisiológico tiene dos partes (Fletcher 1981): el de la **vía aérea** (VDaw), en serie, y el **alveolar**, unidades ventiladas con poca o ninguna perfusión. La vía aérea se sigue como un tapón que se llena y se vacía en orden: al espirar sale primero el gas inspirado que quedó en ella y después el alveolar; al inspirar, el gas alveolar que quedó en la vía aérea vuelve al alvéolo antes que el fresco. Así una respiración regular ventila VT − VDaw, dos respiraciones apiladas pagan la vía aérea una sola vez, y el volumen que mueve un esfuerzo que no dispara (o una oscilación) entra y sale de la vía aérea sin ventilar. Del gas alveolar que sale, la fracción alveolar f no lleva CO₂: **V̇A = (VT − VDaw)·(1 − f)·FR**. La vía aérea pesa más cuanto menor es el VT; la parte alveolar recorta lo mismo con cualquier VT. Cuenta el volumen que sale del pulmón (las dos unidades juntas, de modo que el pendelluft entre ellas no suma): la fuga y el gas comprimido en el circuito pasan por el sensor del ventilador pero no por el alvéolo, así que no ventilan. La V̇A publicada es la de las últimas respiraciones (hasta tres, del último minuto) sobre el tiempo que cubren, sin contar el de los bloqueos —una maniobra de medición no cambia el equilibrio de la ventilación programada, aunque la PaCO₂ sí sube mientras dura—, de modo que el equilibrio que se muestra y que evalúan los casos es el de la ventilación de ahora y responde en pocas respiraciones a un cambio; en apnea el tiempo sin respiraciones cuenta y la V̇A cae hasta 0 (E-094, P).
 
-**Equilibrio y cinética.** Un depósito equivalente de CO₂ de capacidad C:
+**Equilibrio y cinética.** Dos compartimentos de CO₂ unidos por la sangre (Farhi y Rahn): el **pulmón** (gas alveolar y tejido pulmonar, capacidad C_p = 3 L equivalentes) y la **sangre venosa y los tejidos** (C_t = C − C_p):
 
-    C · dPaCO₂/dt = 0,863 · VCO₂ − V̇A · PaCO₂        pH = 6,1 + log10(HCO₃⁻ / (0,03 · PaCO₂))
+    C_t · dPvCO₂/dt = 0,863 · VCO₂ − G · (PvCO₂ − PACO₂)
+    C_p · dPACO₂/dt = G · (PvCO₂ − PACO₂) − V̇A · PACO₂
+    pH = 6,1 + log10(HCO₃⁻ / (0,03 · PaCO₂))
     HCO₃⁻ = HCO₃⁻habitual + 0,1·(PaCO₂ − PaCO₂habitual) si sube; + 0,2·(PaCO₂ − PaCO₂habitual) si baja
 
-La producción entra de forma continua y cada respiración lava la fracción VA/C del depósito. En equilibrio queda la ecuación de la ventilación alveolar, PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS). La constante de tiempo τ = C/V̇A no es un parámetro: sale del modelo, y es más lenta cuanto menos se ventila. En apnea la PaCO₂ sube 0,863·VCO₂/C mmHg por minuto (E-095, P).
+La producción entra en los tejidos; la sangre la lleva al pulmón con una conductancia G fija (gasto cardíaco por la pendiente de la curva de disociación), elegida para que en reposo la venosa mixta quede 6 mmHg por encima de la arterial (46 frente a 40, D-secundario de libro de texto): G = 0,863·200/6 ≈ 29 L/min, y con otra producción el gradiente cambia en proporción, como por Fick. Cada respiración lava la fracción VA/C_p del pulmón, así que el alvéolo sube y baja ≈ 4 mmHg en cada ciclo; la PaCO₂ que se informa es la de una muestra arterial, esa oscilación promediada por la mezcla en la sangre y los segundos de la extracción (constante de 10 s, P): queda en ±0,1 mmHg. En equilibrio sigue la ecuación de la ventilación alveolar, PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS; 0,863 = 760·(310/273)/1000). Las constantes de tiempo no son parámetros: salen del modelo. El tramo rápido (el pulmón alcanza a la sangre venosa) dura ≈ 5 s; el lento (los tejidos) vale τ ≈ C_t·(1/V̇A + 1/G): 11,6 min a V̇A 4,4 L/min, 6,5 min con la ventilación doble y 22 min con la mitad, más lento cuanto menos se ventila (E-095, E-114).
 
 | Parámetro (`patient.gas`) | Adulto de referencia | Rango validado |
 | --- | --- | --- |
@@ -303,26 +305,30 @@ La producción entra de forma continua y cada respiración lava la fracción VA/
 | Espacio muerto alveolar (`alveolarDeadspaceFrac`, VDalv/VTalv) | 0,12 | 0–0,8 |
 | HCO₃⁻ habitual (`hco3`) | 24 mEq/L | 5–50 |
 | PaCO₂ habitual (`paco2Basal`) | 40 mmHg (EPOC hipercápnico: 60) | 20–100 |
-| Depósito (`storeL`) | 40 L | 5–200 |
+| Depósitos en total (`storeL`, pulmón más tejidos) | 45 L | 5–200 |
 
 La vía aérea (165 mL) y la fracción alveolar (0,12) salen de las dos medianas de Fletcher y Jonson (1984) en adultos anestesiados y ventilados —VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L, con la vía aérea constante—; la fracción alveolar real baja algo con el VT, y aquí es constante (P). Los casos con enfermedad cambian sobre todo la fracción alveolar: 0,30 en el EPOC y 0,35 en el SDRA (VD/VT ≈ 0,6 con VT de 6 mL/kg, en torno a la media de 0,58 de Nuckton).
 
-Con esos valores la apnea sube ≈ 4,3 mmHg/min y, a V̇A 5 L/min, una variación de la ventilación recorre el 63 % en ≈ 8 min: la gasometría de control se pide a los 20–30 minutos, no tras la siguiente respiración. La PaCO₂ inicial es la de equilibrio con la primera respiración completa.
+Con esos valores la **apnea** reproduce la forma medida en anestesiados con el tubo ocluido: +8,1 mmHg el primer minuto (el pulmón se pone a la altura de la sangre venosa en segundos) y 3,8 mmHg/min después (0,863·VCO₂/C), frente a +9,8 ± 1,9 y 3,4–4,4 de Kobayashi (1994) y +12 y 3,4 de Stock (1989), aproximación por tramos de una curva logarítmica (E-114, D). Tras una **hiperventilación aguda** la venosa se queda atrás, el gradiente venoarterial se abre y el primer minuto de apnea sube más, como halló Gentz (1998); con la hipocapnia ya asentada el gradiente vuelve a 6 y la subida es la misma. Tras un **cambio de ventilación** de ±10 % la PaCO₂ apenas se mueve en las diez primeras respiraciones y recorre la mayor parte del camino en 20 min, más despacio al bajar la ventilación que al subirla, como describió Taskar (1995): la gasometría de control se pide a los 20–30 minutos, no tras la siguiente respiración. La PaCO₂ inicial es la de equilibrio con la ventilación de los primeros segundos.
 
 | Comprobación (`tests/unit/gasometria.test.ts`) | Valor |
 | --- | --- |
-| Banco SC-01: VT 500 mL, 15/min, VDaw 165 mL, f 0,12 | V̇A 4,4 L/min · PaCO₂ 39,0 mmHg · pH 7,41 · VD/VT 0,41 |
+| Banco SC-01: VT 500 mL, 15/min, VDaw 165 mL, f 0,12 | V̇A 4,4 L/min · PaCO₂ 39 mmHg · pH 7,41 · VD/VT 0,41 |
 | Fletcher y Jonson: VT 0,45 y 0,75 L | VD/VT fisiológica 0,44 y 0,31 (sus dos medianas) |
 | Un esfuerzo que mete y saca 80 mL a mitad de la espiración | misma V̇A que sin esfuerzo |
 | Mismo volumen minuto con VT 0,75 × 10 y 0,375 × 20 | V̇A × 0,33 si todo el espacio muerto es de vía aérea (300 mL); × 1 si es alveolar (f 0,4) |
 | PaCO₂ 40 con HCO₃⁻ 24 | pH 7,40 |
-| Apnea de 1 min | +4,3 mmHg |
-| Duplicar la FR, una τ después | ≈ 63 % del camino al nuevo equilibrio |
+| Apnea desde el equilibrio | +8,1 mmHg el primer minuto, 3,8 mmHg/min después (Kobayashi 9,8 ± 1,9 y 3,4–4,4; Stock 12 y 3,4) |
+| En equilibrio, venosa − arterial | 6 mmHg; × 1,25 con VCO₂ 250 |
+| Apnea tras 5 min de hiperventilación (VT 0,8) | gradiente y subida del primer minuto mayores; tras 30 min, iguales que en eucapnia |
+| VT ± 10 % | < 20 % del camino en 10 respiraciones, > 70 % en 20 min; τ lenta 30 % mayor al bajar |
+| Duplicar la FR, pasado el tramo rápido, una τ lenta después | ≈ 63 % del camino al nuevo equilibrio |
+| Muestra arterial frente al alvéolo, en un ciclo | < 0,3 mmHg frente a > 2 mmHg |
 | Mecánica con VCO₂ 400 y VD 300 frente al banco | idéntica |
 
 **Tamponamiento agudo.** El bicarbonato del paciente es el de su PaCO₂ habitual; cuando la PaCO₂ se aparta de ella, los tampones no bicarbonato lo mueven en minutos según las reglas clásicas de Boston: +1 mEq/L por cada 10 mmHg de hipercapnia aguda (Brackett 1965) y −2 por cada 10 mmHg de hipocapnia aguda (Arbus 1969). Con PaCO₂ 60 en un sano el pH sale ≈ 7,26 (con el bicarbonato fijo salía 7,23). En el EPOC hipercápnico crónico de los casos el bicarbonato habitual es 32 a una PaCO₂ habitual de 60 (la compensación renal de +4 mEq/L por cada 10 mmHg): hiperventilado hasta 37 en minutos queda en ≈ 27 y el pH en ≈ 7,49, no en el 7,56 que daba el 32 fijo. La compensación renal (días) no se modela.
 
-Simplificaciones declaradas: un solo depósito (sin los compartimentos rápido y lento del CO₂ corporal); fracción alveolar de espacio muerto constante (la real baja algo con el VT; las dos medianas de Fletcher y Jonson no permiten separar cuánto, y su texto completo no fue accesible); sin mezcla parcial en el espacio muerto (una respiración menor que VD no ventila nada); oxigenación no modelada.
+Simplificaciones declaradas: dos compartimentos y no los varios de los tejidos (en una apnea larga la subida real se va frenando a medida que entran los depósitos lentos, el músculo y el hueso); conductancia de la sangre fija (el gasto cardíaco no cambia con la hipercapnia); el primer minuto de apnea queda algo por debajo de lo medido, porque faltan el colapso del pulmón que absorbe O₂ con el tubo ocluido y el efecto Haldane; fracción alveolar de espacio muerto constante (la real baja algo con el VT; las dos medianas de Fletcher y Jonson no permiten separar cuánto, y su texto completo no fue accesible); sin mezcla parcial en el espacio muerto (una respiración menor que VD no ventila nada); oxigenación no modelada.
 
 ## 11. Lo que muestra el equipo: curva de volumen y alarmas
 
