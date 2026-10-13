@@ -49,6 +49,13 @@ describe('CTR-01 · la banda de alarmas contrasta en todos sus estados y en los 
   it('el subtítulo de la banda no lleva opacidad: hereda el color medido', () => {
     expect(bloque('.alarm-message small')).not.toMatch(/opacity/);
   });
+  it('sin alarmas la banda es verde, como en las pantallas del manual SW10 y en la fotografía P1', () => {
+    for (const fondo of degradado('.alarm-band')) {
+      const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(fondo.slice(1 + i, 3 + i), 16)) as [number, number, number];
+      expect(g, fondo).toBeGreaterThan(r + 60);
+      expect(g, fondo).toBeGreaterThan(b + 40);
+    }
+  });
   it('la prioridad media es ámbar con texto oscuro, como la celda que alarma', () => {
     expect(luminancia(color('.alarm-band.medium'))).toBeLessThan(0.1);
   });

@@ -29,9 +29,9 @@ Capturas propias: `docs/capturas/aud-01-pc-sc13-curvas.png` y `docs/capturas/aud
 | Colores de las curvas | Configurables en el equipo: blanco, verde, rojo, amarillo o azul (URM 23-6) | Los de la transcripción de P1 | El manual no fija un color: no hay discrepancia |
 | Rótulos | Inglés en el manual | Español, como en las fotografías P1 y P3 del equipo localizado (E-025) | Observado (O) |
 
-## Decisión abierta: la banda de alarmas en reposo
+## Resuelto: la banda de alarmas en reposo vuelve al verde
 
-El manual (en las tres vistas) y la transcripción de P1 muestran la banda **verde** con «No Alarms» / «Sin alarmas» cuando no hay alarmas. El simulador la muestra del **azul** del monitor desde la ronda v0.5.2. Aquel cambio fue por contraste (3,22:1 el título y 2,74:1 el subtítulo sobre el verde) y para que el color signifique sólo alarma. Es la única diferencia de aspecto frente al equipo que no se explica por una configuración del propio equipo. Volver al verde con un texto que cumpla el contraste es posible, pero contradice esa decisión de diseño: queda para decidir.
+El manual (en las tres vistas) y la transcripción de P1 muestran la banda **verde** con «No Alarms» / «Sin alarmas» cuando no hay alarmas. Desde la ronda v0.5.2 el simulador la mostraba del azul del monitor, por contraste (3,22:1 el título y 2,74:1 el subtítulo sobre el verde claro de entonces). Tras esta auditoría vuelve al verde, con un tono más profundo (#116b35 → #178042) y texto blanco que cumple el mínimo AA: 6,6:1 y 5,0:1 en los dos extremos del degradado (CTR-01, que ahora también exige que el reposo sea verde).
 
 ## Pendiente con las fotografías originales
 
