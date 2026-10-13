@@ -377,3 +377,7 @@ En v0.3.6 la alarma de Plimit se cambió por un indicador junto a Ppico, porque 
 - Las dos son **rebajables**: la pausa de audio las pasa a prioridad baja (luz azul) hasta que se resuelven (8-7 y nota 4 de 8-8).
 
 En SC-04, tras subir la resistencia, aparecen las dos: es lo que el equipo mostraría al recortar la entrega.
+
+## Paleta del equipo (13-10-2026)
+
+La pantalla deja el azul saturado heredado de R860 Lab y toma los colores medidos en las capturas del manual SW10, que son la imagen que genera el equipo (E-118, D). Fondo azul pizarra, teclas de grafito, cifras blancas en negrita, curvas de trazo blanco con flujo verde y volumen blanco, y barra de presión con tubo negro y relleno verde. El valor en alarma pasa del bloque ámbar sólido al borde del color de la prioridad, como el equipo (8-7). Detalle, medidas y contrastes en `docs/09-auditoria-visual.md`.

@@ -31,10 +31,28 @@ Capturas propias: `docs/capturas/aud-01-pc-sc13-curvas.png` y `docs/capturas/aud
 
 ## Resuelto: la banda de alarmas en reposo vuelve al verde
 
-El manual (en las tres vistas) y la transcripción de P1 muestran la banda **verde** con «No Alarms» / «Sin alarmas» cuando no hay alarmas. Desde la ronda v0.5.2 el simulador la mostraba del azul del monitor, por contraste (3,22:1 el título y 2,74:1 el subtítulo sobre el verde claro de entonces). Tras esta auditoría vuelve al verde, con un tono más profundo (#116b35 → #178042) y texto blanco que cumple el mínimo AA: 6,6:1 y 5,0:1 en los dos extremos del degradado (CTR-01, que ahora también exige que el reposo sea verde).
+El manual (en las tres vistas) y la transcripción de P1 muestran la banda **verde** con «No Alarms» / «Sin alarmas» cuando no hay alarmas. Desde la ronda v0.5.2 el simulador la mostraba del azul del monitor, por contraste (3,22:1 el título y 2,74:1 el subtítulo sobre el verde claro de entonces). Tras esta auditoría vuelve al verde, con un tono más profundo y texto blanco que cumple el mínimo AA (CTR-01, que ahora también exige que el reposo sea verde). Desde la pasada de paleta (abajo) es el verde amarillento de las capturas, #2b6f1a → #36832a: 6,2:1 y 4,7:1.
+
+## Paleta y acabado del equipo (13-10-2026)
+
+Las capturas del manual son la imagen que genera el propio equipo, sin cámara de por medio, así que sus colores se pueden medir. Se midieron en las vistas Basic, Basic Waveform, Advanced Waveform, Flow-Volume y en la de alarma de VTesp bajo (3-12 a 3-14 y 8-8) y la pantalla se ajustó a ellas (E-118, D). Capturas propias: `docs/capturas/aud-04-paleta-curvas.png`, `aud-05-paleta-alarma.png` y `aud-06-paleta-bucles.png`.
+
+| Elemento | Equipo (medido en las capturas) | Antes | Ahora |
+| --- | --- | --- | --- |
+| Fondo de la pantalla | Azul pizarra: #15395b en los bordes, #2b3f58 en el área de datos, #455974 hacia el centro | Azul saturado #004eaf → #0053b5 | Degradado radial #3b4f68 → #2c405a → #1b3350 |
+| Teclas de arriba y de ajustes | Grafito, #1e222b a #303440, rótulo blanco | Azul con rótulo celeste | Grafito con rótulo blanco; «Modo actual», más oscura |
+| Fila de vistas | Banda casi negra (#040c19 a #0d1321), botones redondos grises, el activo con halo cian | Azul | Igual que el equipo |
+| Columna numérica | Rótulo y cifra blancos en negrita, unidad gris | Rótulo celeste, cifra de peso medio | Rótulo y cifra blancos en negrita (700), unidad #d6dee8 |
+| Curvas | Trazo blanco; relleno de presión amarillo (Basic Waveform) o azul (Advanced), flujo verde, volumen blanco | Trazos celestes, flujo y volumen celestes | Trazo blanco; presión amarilla (como en P1), flujo verde, volumen blanco |
+| Bucle flujo-volumen | Relleno verde | Trazo turquesa | Relleno verde y trazo blanco |
+| Barra de presión | Panel redondeado algo más claro; tubo negro con relleno verde, marcas cian, Pmáx roja, Ppico y PEEP blancas; VTesp y FiO₂ en dos columnas | Tubo azul con relleno turquesa, Pva numérica arriba | Igual que el equipo, con «Pva» y su unidad arriba |
+| Valor en alarma | Borde del color de la prioridad alrededor de la cifra y sus límites (8-7, captura 8-8) | Bloque ámbar sólido con número negro | Borde ámbar (media) o rojo (alta), cifra blanca |
+| Banda sin alarmas | Verde amarillento #3c9225 | Verde azulado | Verde amarillento algo más profundo, por contraste |
+
+Los contrastes se recalcularon sobre el extremo más claro del nuevo fondo (#3b4f68): las cifras pequeñas de la columna numérica superan 6:1, el texto de ejes 6,5:1 y los bordes de alarma 3:1 (CTR-02, CTR-03 y CTR-05). La tipografía sigue siendo Arial: el equipo usa una sans humanista en negrita que no se distribuye con el navegador.
 
 ## Pendiente con las fotografías originales
 
-- Comprobar con P1–P3 los colores exactos de las curvas y del relleno, y la tipografía.
+- Comprobar con P1–P3 los colores de las curvas y del relleno que tenía configurados ese equipo (el manual deja elegirlos) y la tipografía.
 - Comprobar el área de mensajes de la izquierda de la fila de vistas. El manual muestra ahí avisos técnicos («Calibration required»); el simulador muestra la fase de la respiración.
 - Revisar con P2 el acercamiento del mando y del rótulo CARESCAPE R860.
