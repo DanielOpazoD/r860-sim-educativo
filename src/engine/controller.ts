@@ -37,6 +37,15 @@ export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
 export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 /**
+ * Ganancia del lazo de presión de PC y del soporte (L/s² por cmH2O): el flujo de la válvula inspiratoria crece a
+ * razón de G·(objetivo − Pva) mientras no alcanza la demanda, en vez de saltar al instante. Así la presión tarda en
+ * volver sobre la PEEP tras el disparo más cuanto más tira el paciente y menos cuanto mayor es el soporte, como en
+ * Thille (Intensive Care Med 2009, banco de 13 equipos): el retardo inspiratorio crece con el esfuerzo y cae con el
+ * soporte, y con el Engström quedó bajo 70 ms en promedio y bajo 100 ms en el peor caso (soporte 5, esfuerzo muy
+ * fuerte). El valor es P calibrado sobre esos D con el mismo banco (prueba SYN-05): media 66 ms, peor caso 84 ms.
+ */
+export const PRESSURE_LOOP_GAIN = 4;
+/**
  * Tope de flujo espiratorio (L/s): la conductancia máxima de la válvula y de la rama espiratoria con la válvula
  * abierta del todo. No existía, y sin él la espiración no tenía ningún límite de máquina: con resistencia muy baja y
  * un gradiente alto el modelo llegaba a −2949 L/min, que ninguna tubuladura deja pasar. El valor es P: la ficha
@@ -413,17 +422,22 @@ export class VcController {
     return out.length >= 2 ? out : samples;
   }
 
+  /** Ganancia del lazo de presión (L/s² por cmH2O) del equipo; 0 = fuente ideal del banco analítico. */
+  private gananciaLazo(): number {
+    return this.patient.params.pressureLoopGain ?? PRESSURE_LOOP_GAIN;
+  }
+
   /**
    * (De)compresión del circuito tras una fase de presión: la presión del nodo fija el objetivo `Cc·Py` y el cambio se
    * reparte a razón del tope del actuador, para que la apertura espiratoria no sea un pico infinito. Devuelve el
    * volumen transferido: el sensor de la máquina lo ve como flujo `delta/h`. No cambia Py (simplificación declarada).
    */
-  private circuitTransfer(pyEnd: number, h: number, qOther = 0): number {
+  private circuitTransfer(pyEnd: number, h: number, qOther = 0, qMax = ACTUATOR_MAX_FLOW_LPS): number {
     const cc = this.patient.circuitComplianceL;
     if (cc <= 0 || !(h > 0)) return 0;
     // El gas comprimido comparte la válvula con el flujo del pulmón: el flujo total del sensor no supera el tope del
     // actuador, así que la transferencia se recorta al margen que deja qOther (y la descompresión tarda varios pasos).
-    const cap = ACTUATOR_MAX_FLOW_LPS * h;
+    const cap = qMax * h;
     const delta = Math.max(-cap - qOther * h, Math.min(cap - qOther * h, cc * pyEnd - this.vCirc));
     this.vCirc += delta;
     return delta;
@@ -548,7 +562,10 @@ export class VcController {
         const tauRise = rise / RISE_TIME_TAU_FRACTION; // 0 → escalón
         const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? 1 - Math.exp(-tb / tauRise) : 1);
         const tb0 = this.tBreath;
-        const nSub = rise > 0 && tb0 < rise ? Math.max(1, Math.ceil(h / 0.001)) : 1;
+        const b0 = this.breath;
+        // Sub-pasos de 1 ms mientras dura la rampa o mientras la válvula limita: el flujo servible cambia rápido.
+        const nSub = (rise > 0 && tb0 < rise) || b0?.valvulaLimita ? Math.max(1, Math.ceil(h / 0.001)) : 1;
+        let limito = false;
         let dVtot = 0;
         let dVLeakTot = 0;
         let qLast = 0;
@@ -558,8 +575,14 @@ export class VcController {
         for (let i = 0; i < nSub; i++) {
           const tb = tb0 + (i + 1) * hs;
           const tg = targetAt(tb);
-          // Fuente de presión con tope de flujo del actuador dentro del integrador: si el tope actúa, la presión queda por debajo del objetivo.
-          const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, false, ACTUATOR_MAX_FLOW_LPS);
+          // Fuente de presión con el flujo que la válvula alcanza a servir dentro del integrador: si ese tope actúa, la
+          // presión queda por debajo del objetivo y el error acelera la válvula (lazo de ganancia finita).
+          const tope = Math.min(ACTUATOR_MAX_FLOW_LPS, b0?.qValvula ?? ACTUATOR_MAX_FLOW_LPS);
+          const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, false, tope);
+          if (r.clamped && b0 && r.qEnd + r.qLeakEnd > 0) {
+            limito = true;
+            b0.qValvula = Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula + this.gananciaLazo() * Math.max(0, tg - r.pyEnd) * hs);
+          }
           if (r.dV >= 0) dVtot += r.dV;
           else dVexp -= r.dV; // flujo negativo (válvula espiratoria activa tras bajar la PEEP): cuenta como espirado, nunca VTi negativo
           dVLeakTot += r.dVLeak;
@@ -569,7 +592,8 @@ export class VcController {
         // El circuito compresible también entrega/recoge gas por el sensor de la máquina (la fuente de presión no lo mueve).
         // El gas comprimido comparte el mismo presupuesto del actuador que el flujo al pulmón+fuga: sin qOther el
         // sensor podía mostrar 2×160 L/min (320) — un tope para cada gasto es como no tener tope.
-        const delta = this.circuitTransfer(pawLast, h, qLast);
+        if (b0) b0.valvulaLimita = limito;
+        const delta = this.circuitTransfer(pawLast, h, qLast, b0 ? Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula) : ACTUATOR_MAX_FLOW_LPS);
         if (this.breath) {
           this.breath.vtInsp += dVtot + dVLeakTot + Math.max(0, delta); // VTi de pantalla: lo entregado, fuga incluida
           this.breath.vtExp += dVexp + Math.max(0, -delta);
@@ -1033,6 +1057,9 @@ export class VcController {
       cause: 'time',
       energyInsp: 0,
       qPeak: 0,
+      // La válvula parte del flujo de base que ya entregaba durante la espiración (con la fuente ideal, del tope).
+      qValvula: this.gananciaLazo() > 0 ? s.biasFlow : ACTUATOR_MAX_FLOW_LPS,
+      valvulaLimita: this.gananciaLazo() > 0,
       pAbove: cpap ? (type === 'spontaneous' ? s.psupport : s.backupPinsp) : s.pinsp,
       tInspTargetS: cpap ? (type === 'spontaneous' ? SUPPORT_TI_MAX_S : s.backupTinspS) : this.timing.tInspS,
     };

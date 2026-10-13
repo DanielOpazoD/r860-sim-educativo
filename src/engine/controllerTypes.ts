@@ -91,6 +91,10 @@ export interface BreathAccum {
   energyInsp: number;
   /** Flujo inspiratorio máximo de la respiración (L/s): la referencia del ciclado por flujo del soporte. */
   qPeak: number;
+  /** Flujo que la válvula inspiratoria alcanza a servir en este instante de una respiración por presión (L/s): sube con el error de presión. */
+  qValvula: number;
+  /** En el paso anterior el flujo de la válvula fue el que limitó (la presión quedó bajo el objetivo). */
+  valvulaLimita: boolean;
   /** Presión objetivo sobre PEEP de una respiración por presión: Pinsp, Pinsp de respaldo o PS. */
   pAbove: number;
   /** Duración de una inspiración por presión: Tinsp programado, Tinsp de respaldo o tope del soporte. */

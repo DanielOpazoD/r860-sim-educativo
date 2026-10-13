@@ -53,7 +53,7 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
       sourceId: 'R03',
       locator: 'p.2 «Tiempo de Rampa: 0 a 500 ms … Activo en … A/C PC … (incrementos de 50 ms)»',
       status: 'D',
-      note: 'Forma lineal de la rampa: P (JB72469XX sólo dice «alto flujo inicial… luego disminuye»).',
+      note: 'Forma exponencial de primer orden (≈95 % en riseMs) servida por el lazo de presión de E-100: P (JB72469XX sólo dice «alto flujo inicial… luego disminuye»).',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },

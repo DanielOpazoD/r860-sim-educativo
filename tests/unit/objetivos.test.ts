@@ -368,13 +368,13 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
     // Los casos alarman cuando su problema es justo ése, y la viñeta lo cuenta: la hipoventilación de CC-05 (volumen
     // minuto bajo) y el soporte excesivo de CC-06 (VT espirado alto). Con la rama espiratoria del equipo, las dos fugas
     // (CC-07 y SC-22) devuelven menos de 250 mL y avisan como en la cabecera: VT espirado bajo (en SC-22 también el
-    // volumen minuto; CC-07 lo sostiene con el autodisparo y su flujo de base de 8 L/min). Y con
-    // la variabilidad del esfuerzo, alguna respiración de CC-08 tras un esfuerzo débil sale bajo 250 mL.
+    // volumen minuto; CC-07 lo sostiene con el autodisparo y su flujo de base de 8 L/min). CC-08 ya no avisa: con el
+    // lazo de presión del equipo el soporte no hace el pico de flujo inicial de la fuente ideal, el ciclado por
+    // flujo deja de cortar antes de tiempo las respiraciones de esfuerzo débil y ninguna sale bajo 250 mL.
     expect(ruidosos.sort()).toEqual([
       'CC-05: mveLow',
       'CC-06: vteHigh',
       'CC-07: vteLow',
-      'CC-08: vteLow',
       'SC-18: ppeakLow,vteHigh,vteLow',
       'SC-22: mveLow,vteLow',
     ]);

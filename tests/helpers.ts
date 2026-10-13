@@ -13,6 +13,7 @@ export const BENCH_PATIENT: PatientParams = {
   p0: 0,
   expValveOpenMs: 0,
   rExpValve: 0,
+  pressureLoopGain: 0,
 };
 export const BENCH_SETTINGS: VcSettings = {
   mode: 'AC_VC',

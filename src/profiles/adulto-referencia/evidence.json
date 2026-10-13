@@ -164,7 +164,7 @@
       "id": "C04",
       "title": "Banco de ventiladores de UCI: Thille AW, Lyazidi A, Richard JC, Galia F, Brochard L. A bench study of intensive-care-unit ventilators: new versus old and turbine-based versus compressed gas-based ventilators. Intensive Care Med 2009;35:1368–76 (PMID 19352622, PMC2873304, acceso abierto)",
       "kind": "literatura clínica",
-      "note": "NO es documentación del fabricante. Trece ventiladores de 2006, entre ellos el Engström de GE, en un pulmón de dos compartimentos con esfuerzos de P0,1 2, 6 y 13 cmH₂O, PS 5–20, con y sin PEEP 5, disparo en la máxima sensibilidad sin autodisparo (0,8 ± 0,3 L/min; 1,3 ± 0,8 con PEEP). Retardo de disparo (inicio del esfuerzo → comienzo de la presurización): media 58 ms (42–88); menos de 50 ms con el Engström; 69 ± 31 ms con esfuerzo débil frente a 52 ± 14 con fuerte. Retardo inspiratorio (Pva bajo la basal): media 94 ms (54–177), < 70 con el Engström. Se usa para el retardo de respuesta del disparo (40 ms tras el cruce del umbral), no para ningún ajuste."
+      "note": "NO es documentación del fabricante. Trece ventiladores de 2006, entre ellos el Engström de GE, en un pulmón de dos compartimentos con esfuerzos de P0,1 2, 6 y 13 cmH₂O, PS 5–20, con y sin PEEP 5, disparo en la máxima sensibilidad sin autodisparo (0,8 ± 0,3 L/min; 1,3 ± 0,8 con PEEP). Retardo de disparo (inicio del esfuerzo → comienzo de la presurización): media 58 ms (42–88); menos de 50 ms con el Engström; 69 ± 31 ms con esfuerzo débil frente a 52 ± 14 con fuerte. Retardo inspiratorio (Pva bajo la basal): media 94 ms (54–177), < 70 con el Engström y < 100 con él en el peor caso (PS 5, esfuerzo muy fuerte); más largo con esfuerzo muy fuerte (107 ± 65 frente a 86–88) y con soporte bajo (122 ± 67 con PS 5, 80 ± 36 con 20). Producto presión-tiempo de los primeros 0,3 s: media 1,6 cmH₂O·s (0,1–2,6); 1,8 con esfuerzo fuerte y 1,4 con muy fuerte; los esfuerzos del banco piden 0,1, 0,6 y 1,2 L/s de flujo decreciente, con la presurización más rápida de cada equipo. Se usa para el retardo de respuesta del disparo (40 ms tras el cruce del umbral) y para la ganancia del lazo de presión del soporte (E-100), no para ningún ajuste."
     },
     {
       "id": "C05",
@@ -500,7 +500,7 @@
       "status": "D",
       "source": "R23, R24",
       "locator": "JB72469XX · diapositivas de A/C PC (presión constante, flujo decelerante, VT dependiente)",
-      "implemented": "src/engine/controller.ts (fase inspPressure, rampa lineal riseMs, objetivo PEEP + Pinsp)",
+      "implemented": "src/engine/controller.ts (fase inspPressure, rampa exponencial de primer orden riseMs servida por el lazo de presión de E-100, objetivo PEEP + Pinsp)",
       "tests": [
         "tests/bench/pc.test.ts (BM-03 en el motor, PHY-02)",
         "tests/e2e/pc.spec.ts"
@@ -1167,7 +1167,7 @@
     },
     {
       "id": "E-091",
-      "claim": "Regulador de PEEP con ancho de banda finito: ante una demanda inspiratoria del paciente (flujo hacia el pulmón durante la espiración) la fuente no sostiene la Pva de forma ideal sino que cae K·(demanda − demandaYaCompensada) con K = 3 cmH2O·s/L, y un filtro integral con τ = 0,1 s repone el flujo. En álgebra se implementa como fuente peep + K·qFilt con una resistencia en serie extra K: py = peep − rValve·q − K·(q − qFilt), válido con dos unidades, fuga y Rohrer al reutilizar el mecanismo rSeries del nodo. En régimen (fuga estable) no queda caída permanente; con el esfuerzo repentina sí la hay y el regulador recupera antes del siguiente ciclo. La caída sólo existe si la demanda supera la PEEP intrínseca (esfuerzo que tira gas de verdad): medido 0,74 cmH2O con Pmus 8 y base 8 L/min, 3,9 con Pmus 12, 1,6 con base 4. Un esfuerzo que no llega a tirar no mueve la Pva — esa parte sigue siendo límite. Verificación contra el banco de Thille 2009 (C04): la Pva queda bajo PEEP ≈ 56 ms con esfuerzo débil y ≈ 48 con fuerte (PS 10, PEEP 5, disparo por flujo de 1 L/min), como el Engström (< 70 ms; media de 13 equipos 94 ms). Lo que el modelo no reproduce: la presurización es instantánea, así que el tramo bajo PEEP no se alarga con esfuerzos muy fuertes (el banco: 107 frente a 86–88 ms).",
+      "claim": "Regulador de PEEP con ancho de banda finito: ante una demanda inspiratoria del paciente (flujo hacia el pulmón durante la espiración) la fuente no sostiene la Pva de forma ideal sino que cae K·(demanda − demandaYaCompensada) con K = 3 cmH2O·s/L, y un filtro integral con τ = 0,1 s repone el flujo. En álgebra se implementa como fuente peep + K·qFilt con una resistencia en serie extra K: py = peep − rValve·q − K·(q − qFilt), válido con dos unidades, fuga y Rohrer al reutilizar el mecanismo rSeries del nodo. En régimen (fuga estable) no queda caída permanente; con el esfuerzo repentina sí la hay y el regulador recupera antes del siguiente ciclo. La caída sólo existe si la demanda supera la PEEP intrínseca (esfuerzo que tira gas de verdad): medido 0,74 cmH2O con Pmus 8 y base 8 L/min, 3,9 con Pmus 12, 1,6 con base 4. Un esfuerzo que no llega a tirar no mueve la Pva — esa parte sigue siendo límite. La presurización que sigue al disparo ya no es instantánea (E-100): con el lazo de presión del equipo el tramo bajo PEEP se alarga con esfuerzos muy fuertes y soporte bajo, como en el banco.",
       "status": "P (U-43, ancho de banda real no publicado); retardo inspiratorio dentro del rango de banco (C04)",
       "source": "C04",
       "locator": "Thille 2009, Resultados · Trigger function: DI medio 94 ms (54–177), < 70 con el Engström; 107 ± 65 con esfuerzo muy fuerte",
@@ -1176,7 +1176,7 @@
         "tests/bench/reguladorPeep.test.ts (BM-RP)",
         "tests/unit/asynchrony.test.ts (ASI-02)",
         "tests/unit/sync.test.ts (SYN-04)",
-        "tests/unit/sync.test.ts (SYN-04, retardo inspiratorio)"
+        "tests/unit/sync.test.ts (SYN-05)"
       ]
     },
     {
@@ -1303,6 +1303,18 @@
       "tests": [
         "tests/unit/casosClinicos.test.ts (CAS-06, CAS-08)",
         "tests/unit/objetivos.test.ts (SC-19)"
+      ]
+    },
+    {
+      "id": "E-100",
+      "claim": "Lazo de presión de PC y del soporte con ganancia finita: la válvula inspiratoria parte del flujo de base y su flujo crece a razón de G·(objetivo − Pva), G = 4 L/s² por cmH₂O, hasta servir la demanda (tope 160 L/min); mientras no la sirve la Pva queda bajo el objetivo. Antes la fuente era ideal: la Pva saltaba al objetivo en el mismo paso del disparo y el tramo bajo PEEP terminaba con el disparo. En el banco de Thille 2009 (C 100 mL/cmH₂O, R 5, PEEP 5, disparo por flujo de 1 L/min, rampa 0, PS 5–20, esfuerzos que piden 0,1, 0,6 y 1,2 L/s) el modelo da retardo inspiratorio medio 66 ms (Engström < 70; media de 13 equipos 94), 84 ms en el peor caso (PS 5 con esfuerzo muy fuerte; Engström < 100) y 56 ms con PS 20; crece con el esfuerzo y cae con el soporte, como en el banco. Producto presión-tiempo de 0,3 s: media 1,97 cmH₂O·s (banco 1,6; 0,1–2,6), 2,25 con esfuerzo fuerte y 1,89 con muy fuerte, y sube con el soporte. Consecuencia en los casos: sin el pico de flujo de la fuente ideal, el ciclado por flujo deja de cortar antes de tiempo las respiraciones de esfuerzo débil (CC-08: VT mínimo de 225 a 275 mL). No hay sobreimpulso ni oscilación: el flujo de la válvula sólo sube mientras la presión no llega, y no se modela la inercia del gas.",
+      "status": "P (U-30: la ganancia del lazo del R860 no está publicada; valor calibrado sobre el banco); D el rango de banco y las cifras del Engström de GE (C04)",
+      "source": "C04",
+      "locator": "Thille 2009, Resultados · Trigger function (DI 94 ms, 54–177; < 70 y < 100 en el peor caso con el Engström; 107 con esfuerzo muy fuerte; 122 con PS 5 frente a 80 con 20) y Pressurization capacity (PTP 1,6, 0,1–2,6; 1,8 fuerte, 1,4 muy fuerte)",
+      "implemented": "src/engine/controller.ts (PRESSURE_LOOP_GAIN, qValvula de la respiración, fases inspPressure e inspSupport); src/domain/types.ts (pressureLoopGain: 0 = fuente ideal del banco analítico)",
+      "tests": [
+        "tests/unit/sync.test.ts (SYN-05)",
+        "tests/unit/objetivos.test.ts (ALM)"
       ]
     }
   ]
