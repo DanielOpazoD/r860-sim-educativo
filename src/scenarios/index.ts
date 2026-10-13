@@ -202,7 +202,7 @@ export const SCENARIOS: Scenario[] = [
     },
     question: '¿Qué diferencia hay entre Plimit y Pmáx?',
     answer:
-      'Plimit sostiene la presión el resto de la inspiración (el volumen puede no completarse). Pmáx termina la inspiración de inmediato y activa la alarma.',
+      'Plimit sostiene la presión el resto de la inspiración (el volumen puede no completarse) y avisa con una alarma media, «Plimit alcanzada»; si el VT queda corto seis respiraciones seguidas, también «VT no entregado». Pmáx termina la inspiración de inmediato con una alarma alta.',
     description: 'Rinsp = 60 desde t = 20 s: separación entre presión resistiva y elástica; efecto de Plimit.',
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
     effort: passive,

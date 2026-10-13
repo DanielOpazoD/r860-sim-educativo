@@ -364,6 +364,16 @@ Lo que el manual SW10 dice de la luz y el sonido (8-6 a 8-8; High Alert Audio de
 - Una **alta** que nadie resuelve ni reconoce en **30 s** sube de tono y de volumen.
 - La pausa de audio **no calla la desconexión** del paciente.
 - El tono de **baja** suena una vez; los de alta y media se repiten.
-- Ninguna alarma del modelo es de las que la pausa rebaja a baja prioridad.
+- Las alarmas que el manual marca como rebajables bajan a prioridad baja con la pausa hasta resolverse (ver la sección siguiente).
 
 Cadencias, frecuencias y volumen siguen siendo propuestos (U-12).
+
+## «Plimit alcanzada» y «VT no entregado» (13-10-2026)
+
+En v0.3.6 la alarma de Plimit se cambió por un indicador junto a Ppico, porque no estaba verificado que el equipo avisara. El manual SW10 lo documenta, así que vuelve (E-036, E-117, D):
+
+- **Plimit alcanzada**, prioridad media, en cada respiración en que la presión llega a Plimit (8-20). El indicador junto a Ppico se mantiene.
+- **VT no entregado**, prioridad media: seis respiraciones de volumen control seguidas con el VT inspirado un 20 % (o 5 mL, lo mayor) por debajo del programado (8-21). No se evalúa en presión control ni en CPAP/PS.
+- Las dos son **rebajables**: la pausa de audio las pasa a prioridad baja (luz azul) hasta que se resuelven (8-7 y nota 4 de 8-8).
+
+En SC-04, tras subir la resistencia, aparecen las dos: es lo que el equipo mostraría al recortar la entrega.

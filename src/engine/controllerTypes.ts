@@ -72,6 +72,8 @@ export interface BreathAccum {
   tExpActual: number;
   plimitReached: boolean;
   pmaxReached: boolean;
+  /** VT programado de la respiración si es de volumen control (L), o null. */
+  vtSetL: number | null;
   pauseSamples: { t: number; paw: number }[];
   effortDuringPause: boolean;
   /** Muestras de la rampa a flujo constante: de su forma sale el índice de estrés. */

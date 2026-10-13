@@ -201,3 +201,60 @@ describe('ALM-URM · el sistema de alarmas se comporta como el del manual', () =
     expect(al.get('apnea')!.conditionActive).toBe(true);
   });
 });
+
+// ALM-PLIMIT · las dos alarmas del equipo ligadas a Plimit y al volumen entregado (URM SW10 8-20 y 8-21), y su rebaja
+// con la pausa de audio (nota 4 de la lista, 8-8; 8-7).
+describe('ALM-PLIMIT · Plimit alcanzada y VT no entregado', () => {
+  /** Banco en VC con Rinsp 60: la presión resistiva lleva la Ppico muy por encima de un Plimit de 25. */
+  const limitado = () => benchSim({ patient: { ...BENCH_PATIENT, rInsp: 60 }, settings: { ...BENCH_SETTINGS, plimit: 25, pmax: 60 } });
+
+  it('Plimit alcanzada salta en la primera respiración recortada; VT no entregado espera seis seguidas', () => {
+    const sim = limitado();
+    runUntilBreath(sim, 2);
+    expect(sim.alarms.get('plimit')!.conditionActive).toBe(true);
+    expect(sim.alarms.get('plimit')!.priority).toBe('medium');
+    const b = sim.breaths.at(-1)!;
+    expect(b.vtSetL).toBe(BENCH_SETTINGS.vt);
+    expect(b.vtInspMeasured! / b.vtSetL!).toBeLessThan(0.8);
+    expect(sim.alarms.get('vtNotDelivered')!.conditionActive).toBe(false);
+    runUntilBreath(sim, 5);
+    expect(sim.alarms.get('vtNotDelivered')!.conditionActive).toBe(false);
+    runUntilBreath(sim, 6);
+    expect(sim.alarms.get('vtNotDelivered')!.conditionActive).toBe(true);
+    // Quitar el recorte: la primera respiración que entrega el VT resuelve las dos.
+    sim.command({ type: 'confirmSettings', changes: { plimit: 100 } });
+    runUntilBreath(sim, 8);
+    expect(sim.alarms.get('plimit')!.conditionActive).toBe(false);
+    expect(sim.alarms.get('vtNotDelivered')!.conditionActive).toBe(false);
+  });
+
+  it('un VT corto por menos del 20 % no cuenta; en presión control no se evalúa', () => {
+    const sim = benchSim({ settings: { ...BENCH_SETTINGS } });
+    runUntilBreath(sim, 10);
+    expect(sim.alarms.get('vtNotDelivered')!.conditionActive).toBe(false);
+    const pc = benchSim({ settings: { ...BENCH_SETTINGS, mode: 'AC_PC', pinsp: 3 } });
+    runUntilBreath(pc, 10);
+    expect(pc.breaths.at(-1)!.vtSetL).toBeNull();
+    expect(pc.alarms.get('vtNotDelivered')!.conditionActive).toBe(false);
+  });
+
+  it('la pausa de audio las rebaja a prioridad baja hasta que se resuelven; las demás conservan la suya', () => {
+    const sim = limitado();
+    sim.command({ type: 'setAlarmLimits', changes: { vteLow: 0.45 } });
+    runUntilBreath(sim, 7);
+    expect(sim.alarms.get('vtNotDelivered')!.conditionActive).toBe(true);
+    expect(sim.alarms.get('vteLow')!.conditionActive).toBe(true);
+    sim.command({ type: 'audioPause' });
+    expect(sim.alarms.get('plimit')!.priority).toBe('informational');
+    expect(sim.alarms.get('vtNotDelivered')!.priority).toBe('informational');
+    expect(sim.alarms.get('vteLow')!.priority).toBe('medium');
+    // Resuelta y vuelta a aparecer, recupera su prioridad.
+    sim.command({ type: 'confirmSettings', changes: { plimit: 100 } });
+    runUntilBreath(sim, 9);
+    expect(sim.alarms.get('plimit')!.conditionActive).toBe(false);
+    sim.command({ type: 'confirmSettings', changes: { plimit: 25 } });
+    runUntilBreath(sim, 11);
+    expect(sim.alarms.get('plimit')!.conditionActive).toBe(true);
+    expect(sim.alarms.get('plimit')!.priority).toBe('medium');
+  });
+});

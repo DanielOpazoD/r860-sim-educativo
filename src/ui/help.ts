@@ -54,6 +54,7 @@ export const HELP: Record<string, HelpEntry> = {
     text: [
       'Limita la presión mientras se entrega una respiración por volumen. Cuando se alcanza, el flujo deja de ser constante y el volumen objetivo puede no completarse.',
       'Ajuste avanzado: por omisión está en su máximo y no actúa; Pmáx es el techo. Si se baja por debajo de Pmáx, recorta la presión antes de que Pmáx termine la inspiración.',
+      'Como en el equipo, recortar avisa: «Plimit alcanzada» (prioridad media) en cada respiración recortada y, si el VT inspirado queda un 20 % por debajo del programado seis respiraciones seguidas, «VT no entregado». La pausa de audio rebaja las dos a prioridad baja hasta que se resuelven.',
     ],
   },
   'setting.pinsp': {
