@@ -1567,6 +1567,17 @@
         "tests/unit/contrastePlots.test.ts (CTR-03)",
         "tests/e2e/visual.spec.ts (VIS-04)"
       ]
+    },
+    {
+      "id": "E-119",
+      "claim": "Retardos del respaldo como el equipo. El respaldo por apnea o por VMesp no vuelve a entrar en los 10 s siguientes a que terminó el anterior. Tras confirmar un modo, el de apnea espera 10 s y el de VMesp 60 s. La alarma de apnea no espera: salta al vencer el tiempo de apnea y la respiración de respaldo llega al terminar la retención. Tras un bloqueo y al pasar de espera a ventilar, el de VMesp espera los 60 s de la alarma de VMesp bajo.",
+      "status": "D (retardos y a qué alarmas se aplican, R21); P que confirmar cualquier ajuste con el modo cuente como cambio de modo",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 8-26 y 8-27 «Alarm delays»: «10 seconds since the last Backup ventilation on alarm was active», «10 seconds since the last ventilation mode change · Backup ventilation on (due to Apnea)», «60 seconds since the last vent mode change · Backup ventilation on (due to MVexp)», «60 seconds after an inspiratory or expiratory hold procedure» y «60 seconds upon transition to therapy · Backup ventilation on (due to MVexp)»",
+      "implemented": "src/engine/controller.ts (BACKUP_DELAY_AFTER_BACKUP_S, BACKUP_DELAY_AFTER_MODE_S, respaldoRetenido, entrarEnRespaldo, salirDeRespaldo, plazoDeRespaldo, onPlazoDeRespaldo); src/engine/simulator.ts (respaldo por VMesp)",
+      "tests": [
+        "tests/unit/soporte.test.ts (PHY-03d)"
+      ]
     }
   ]
 }

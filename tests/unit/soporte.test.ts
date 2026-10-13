@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { VcSettings } from '../../src/domain/types';
 import { validateVcSettings } from '../../src/domain/validation';
-import { APNEA_BACKUP_RATE_PER_MIN, SUPPORT_TI_MAX_S } from '../../src/engine/controller';
+import {
+  APNEA_BACKUP_RATE_PER_MIN,
+  BACKUP_DELAY_AFTER_BACKUP_S,
+  BACKUP_DELAY_AFTER_MODE_S,
+  SUPPORT_TI_MAX_S,
+} from '../../src/engine/controller';
 import { exportSession, importSession } from '../../src/history/session';
 import { DEFAULT_ALARM_LIMITS, VC_ADULT_CROSS_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
@@ -276,5 +281,66 @@ describe('SUP-URM · ciclado por presión, rampa propia y Tsupp del equipo', () 
 
   it('Tsupp: el tope de la inspiración soportada es 4 s en adultos', () => {
     expect(SUPPORT_TI_MAX_S).toBe(4);
+  });
+});
+
+// PHY-03d · retardos del respaldo (D, URM SW10 8-26 y 8-27): «Backup ventilation on» espera 10 s desde que terminó el
+// último respaldo, y tras confirmar un modo 10 s por apnea y 60 s por VMesp.
+describe('PHY-03d · retardos del respaldo', () => {
+  it('tras confirmar el modo, la apnea vuelve a alarmar enseguida pero el respaldo espera 10 s', () => {
+    const sim = benchSim({ settings: { ...PS, apneaTimeS: 5 } });
+    sim.run(12_000); // apnea a los 5 s y respaldo cada 5 s
+    expect(sim.frame().live.respaldo).toBe('apnea');
+    const t0 = sim.simTimeMs;
+    expect(sim.command({ type: 'confirmSettings', changes: { mode: 'CPAP_PS' } }).accepted).toBe(true);
+    expect(sim.frame().live.respaldo).toBeNull();
+    expect(sim.controller.respaldoRetenido('apnea')).toBe(true);
+    sim.run(9_000);
+    // El paciente sigue sin respirar: la apnea sigue activa, pero en estos 9 s no entra ninguna de respaldo.
+    expect(sim.alarms.get('apnea')!.conditionActive).toBe(true);
+    expect(sim.breaths.filter((b) => b.startSimTimeMs > t0 + 100 && b.type === 'backup')).toHaveLength(0);
+    expect(sim.frame().live.respaldo).toBeNull();
+    // La respiración se registra al terminar: se deja correr hasta que la primera de respaldo haya acabado.
+    sim.run(6_000);
+    const primera = sim.breaths.find((b) => b.startSimTimeMs > t0 + 100 && b.type === 'backup');
+    expect(primera).toBeDefined();
+    expect(primera!.startSimTimeMs - t0).toBeGreaterThanOrEqual(BACKUP_DELAY_AFTER_MODE_S.apnea * 1000 - 5);
+    expect(primera!.startSimTimeMs - t0).toBeLessThan(BACKUP_DELAY_AFTER_MODE_S.apnea * 1000 + 50);
+    expect(sim.frame().live.respaldo).toBe('apnea');
+  });
+
+  it('por VMesp, tras confirmar el modo el respaldo no vuelve antes de 60 s aunque el VMesp siga bajo', () => {
+    const sim = benchSim({
+      effort: { ...esfuerzo, amplitude: 3, ratePerMin: 6 },
+      settings: { ...PS, psupport: 4 },
+      alarmLimits: { ...DEFAULT_ALARM_LIMITS, mveLow: 4 },
+    });
+    sim.run(90_000);
+    expect(sim.frame().live.respaldo).toBe('vmesp');
+    const t0 = sim.simTimeMs;
+    sim.command({ type: 'confirmSettings', changes: { mode: 'CPAP_PS' } });
+    let vuelta: number | null = null;
+    for (let i = 0; i < 120_000 / 4 && vuelta === null; i++) {
+      sim.step();
+      if (sim.frame().live.respaldo !== null) vuelta = sim.simTimeMs - t0;
+    }
+    expect(vuelta).not.toBeNull();
+    expect(vuelta!).toBeGreaterThanOrEqual(BACKUP_DELAY_AFTER_MODE_S.vmesp * 1000);
+  });
+
+  it('los plazos: 10 s desde el fin del respaldo para las dos causas, y desde el modo 10 s la apnea y 60 s el VMesp', () => {
+    const sim = benchSim({ settings: { ...PS, apneaTimeS: 5 } });
+    sim.run(8_000);
+    sim.command({ type: 'confirmSettings', changes: { mode: 'CPAP_PS' } });
+    const c = sim.controller;
+    sim.run(9_900);
+    expect(c.respaldoRetenido('apnea')).toBe(true);
+    expect(c.respaldoRetenido('vmesp')).toBe(true);
+    sim.run(200);
+    expect(c.respaldoRetenido('apnea')).toBe(false);
+    expect(c.respaldoRetenido('vmesp')).toBe(true);
+    sim.run(50_000);
+    expect(c.respaldoRetenido('vmesp')).toBe(false);
+    expect(BACKUP_DELAY_AFTER_BACKUP_S).toBe(10);
   });
 });

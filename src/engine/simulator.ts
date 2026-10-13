@@ -354,8 +354,9 @@ export class Simulator {
         });
         if (this.trends.length > 900) this.trends.shift();
         this.alarms.onBreath(ev.record, this.lastMetrics, t);
-        // Respaldo por VMesp (D, URM SW10 5-11): en CPAP/PS, con el límite bajo de VMesp puesto, un VMesp por debajo de
-        // su mitad pasa al respaldo. Con los mismos retardos que esa alarma (tras un bloqueo o al empezar a ventilar).
+        // Respaldo por VMesp (D, URM SW10 5-11): en CPAP/PS, un VMesp por debajo de la mitad de su límite bajo pasa al
+        // respaldo. Con los retardos de esa alarma (tras un bloqueo o al empezar a ventilar) y los suyos (tras otro
+        // respaldo o tras confirmar un modo, 8-26 y 8-27).
         const lim = this.alarms.limits.mveLow;
         const mve = this.lastMetrics.mve?.quality === 'valid' ? this.lastMetrics.mve.value : null;
         if (
@@ -364,7 +365,8 @@ export class Simulator {
           lim !== 'off' &&
           mve !== null &&
           mve < 0.5 * lim &&
-          !this.alarms.alarmaRetenida('mveLow', t)
+          !this.alarms.alarmaRetenida('mveLow', t) &&
+          !this.controller.respaldoRetenido('vmesp')
         )
           this.controller.entrarEnRespaldo('vmesp');
         this.logEvent('breath', 'controller', {
