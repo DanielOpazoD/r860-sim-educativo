@@ -3,7 +3,6 @@
  * la entrega y sus referencias. Bajo el ventilador: el desarrollo, que se revela al entregar. Presentación pura.
  */
 import { formatNumber as f } from '../domain/units';
-import { phFrom } from '../engine/gasExchange';
 import type { EngineFrame } from '../engine/simulator';
 import type { ClinicalCase, Scenario } from '../scenarios';
 import type { CaseResult } from './caseEvaluation';
@@ -145,8 +144,8 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
     filas.push(
       fila('Esfuerzo del paciente', `${f(t.effort.amplitude, 0)} cmH₂O · ${f(t.effort.ratePerMin, 0)}/min · Ti ${f(t.effort.tiS, 1)} s`),
     );
-  if (g && g.paco2Target !== null)
-    filas.push(fila('PaCO₂ y pH de equilibrio', `${f(g.paco2Target, 0)} mmHg · ${f(phFrom(g.hco3, g.paco2Target), 2)}`));
+  if (g && g.paco2Target !== null && g.phTarget !== null)
+    filas.push(fila('PaCO₂ y pH de equilibrio', `${f(g.paco2Target, 0)} mmHg · ${f(g.phTarget, 2)}`));
   return element('div', 'case-truth', element('h3', 'aula-kicker', 'Lo que el modelo sabía'), element('dl', 'edu-gases', ...filas));
 }
 

@@ -15,8 +15,10 @@ import type { GasExchangeParams } from '../domain/types';
  * lleva CO₂: V̇A = (VT − VDaw) · (1 − f) · FR. En equilibrio queda la ecuación de la ventilación alveolar,
  * PaCO₂ = 0,863 · VCO₂ / V̇A (D), con VCO₂ en mL/min STPD y V̇A en L/min BTPS. La constante de tiempo τ = C / V̇A
  * sale del modelo: más lenta cuanto menor es la ventilación, y en apnea la PaCO₂ sube 0,863 · VCO₂ / C mmHg/min.
- * pH por Henderson-Hasselbalch con el bicarbonato fijo del escenario; sin tamponamiento agudo (simplificación
- * declarada: con PaCO₂ 60 el pH sale ≈ 0,035 por debajo del que daría la regla de +1 mEq/L de HCO₃⁻ por cada 10 mmHg).
+ * pH por Henderson-Hasselbalch con tamponamiento agudo: el bicarbonato del paciente es el de su PaCO₂ habitual y,
+ * cuando la PaCO₂ se aparta de ella, los tampones no bicarbonato lo mueven en minutos según las reglas clásicas de
+ * Boston: +1 mEq/L por cada 10 mmHg de hipercapnia aguda (Brackett, N Engl J Med 1965) y −2 por cada 10 mmHg de
+ * hipocapnia aguda (Arbus, N Engl J Med 1969). La compensación renal (días) no se modela: la sesión dura minutos.
  */
 export const DEFAULT_GAS: GasExchangeParams = {
   /** Producción de CO₂ de un adulto en reposo (mL/min STPD), P. */
@@ -31,8 +33,10 @@ export const DEFAULT_GAS: GasExchangeParams = {
    */
   deadspaceL: 0.165,
   alveolarDeadspaceFrac: 0.12,
-  /** Bicarbonato plasmático (mEq/L): el componente metabólico, fijo durante la sesión. */
+  /** Bicarbonato plasmático (mEq/L) a la PaCO₂ habitual del paciente: el componente metabólico y la compensación crónica. */
   hco3: 24,
+  /** PaCO₂ habitual del paciente (mmHg), aquella a la que su bicarbonato es `hco3`: 40 en un adulto sano. */
+  paco2Basal: 40,
   /**
    * Capacidad del depósito de CO₂ (L equivalentes). Elegida para que la apnea suba ≈ 4 mmHg/min y una variación de la
    * ventilación tarde ≈ 8 min en recorrer el 63 % (V̇A 5 L/min): la gasometría de control se pide a los 20–30 min. P.
@@ -51,6 +55,16 @@ export const gasParams = (p: Partial<GasExchangeParams> | undefined): GasExchang
 /** PaCO₂ de equilibrio para una ventilación alveolar (mmHg), o null si no hay ventilación alveolar. */
 export function steadyPaco2(vco2MlMin: number, vaLMin: number): number | null {
   return vaLMin > 0 ? (ALVEOLAR_K * vco2MlMin) / vaLMin : null;
+}
+
+/** Respuesta aguda del bicarbonato por mmHg de PaCO₂ (mEq/L): hipercapnia (Brackett 1965) e hipocapnia (Arbus 1969). D. */
+export const ACUTE_HCO3_PER_MMHG_UP = 0.1;
+export const ACUTE_HCO3_PER_MMHG_DOWN = 0.2;
+
+/** Bicarbonato a una PaCO₂ dada: el habitual del paciente más la respuesta aguda de los tampones no bicarbonato. */
+export function bicarbonate(p: Pick<GasExchangeParams, 'hco3' | 'paco2Basal'>, paco2: number): number {
+  const d = paco2 - p.paco2Basal;
+  return p.hco3 + (d >= 0 ? ACUTE_HCO3_PER_MMHG_UP : ACUTE_HCO3_PER_MMHG_DOWN) * d;
 }
 
 /** pH arterial por Henderson-Hasselbalch. */
@@ -78,7 +92,10 @@ export const EQUILIBRIUM_WINDOW_S = 20;
 export interface GasState {
   paco2: number;
   ph: number;
+  /** Bicarbonato de ahora (mEq/L): el habitual más la respuesta aguda a la PaCO₂ de ahora. */
   hco3: number;
+  /** pH hacia el que tiende con la ventilación actual (con el bicarbonato de esa PaCO₂), o null sin ventilación alveolar. */
+  phTarget: number | null;
   /** Ventilación alveolar actual (L/min; últimas respiraciones), o null antes de completar una respiración. */
   vaLMin: number | null;
   /** Fracción de espacio muerto de la última respiración (1 − VA/VT pulmonar), o null sin respiración. */
@@ -179,14 +196,16 @@ export class GasExchange {
 
   state(nowS: number, p: GasExchangeParams): GasState {
     const va = this.vaLMin(nowS);
+    const objetivo = va === null ? null : steadyPaco2(p.vco2MlMin, va);
     return {
       paco2: this.paco2,
-      ph: phFrom(p.hco3, this.paco2),
-      hco3: p.hco3,
+      ph: phFrom(bicarbonate(p, this.paco2), this.paco2),
+      hco3: bicarbonate(p, this.paco2),
       vaLMin: va,
       vdVt: this.lastVdVt,
       vtL: this.lastVtL,
-      paco2Target: va === null ? null : steadyPaco2(p.vco2MlMin, va),
+      paco2Target: objetivo,
+      phTarget: objetivo === null ? null : phFrom(bicarbonate(p, objetivo), objetivo),
       tauMin: va !== null && va > 0 ? p.storeL / va : null,
     };
   }

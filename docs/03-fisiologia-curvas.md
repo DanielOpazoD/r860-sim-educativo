@@ -232,7 +232,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | --- | --- | --- |
 | Un compartimento estático más un cuerpo de Maxwell opcional (E2, τ2) | Con E2 = 0 la presión cae de Ppico a Pplat instantáneamente. Con E2 > 0 aparece la relajación de esfuerzo: caída inmediata resistiva hasta P1 y decaimiento exponencial hasta P2, la diferencia entre elastancia dinámica y estática. Las unidades rápidas y lentas en paralelo existen desde v0.4.3 como opción (E-051): con una sola unidad no hay pendelluft | D el modelo (Mount, Bates, D'Angelo); P los valores (E-044, U-37) |
 | Compliance lineal por omisión, sigmoide de Venegas opcional | Con la curva lineal el bucle P-V es una recta. Con la sigmoide aparecen el codo inferior, la compliance máxima en c y el pico de sobredistensión arriba; la compliance medida depende de la PEEP | D la ecuación; P los valores (E-048, U-39) |
-| Limitación al flujo espiratorio opcional (resistor de Starling) | Sin ella la espiración es un vaciamiento exponencial hacia PEEP en cualquier obstructivo. Con ella el flujo se hace independiente del esfuerzo y de la presión aguas abajo, el pulmón atrapa hasta que su retroceso iguala la presión crítica y la PEEP externa hasta ese punto abre la vía aérea | D el modelo; P los valores (E-049, U-40) |
+| Limitación al flujo espiratorio opcional (resistor de Starling) | Sin ella la espiración es un vaciamiento exponencial hacia PEEP en cualquier obstructivo. Con ella el flujo se hace independiente del esfuerzo y de la presión aguas abajo, el pulmón atrapa hasta que su retroceso iguala la presión crítica y la PEEP externa hasta ese punto abre la vía aérea sin aumentar la PEEP total (cascada; Ranieri 1993: hasta ≈ 85 % de la PEEPi). La usan SC-16 y los casos CC-02 y CC-06 (presión crítica 9) | D el modelo; P los valores (E-049, U-40) |
 | Resistencia espiratoria dependiente del volumen opcional | Con resistencia constante el flujo es exactamente proporcional al volumen y la rama espiratoria del bucle es una recta; con dependencia queda excavada | D la dependencia; P la forma y los valores (E-050, U-40) |
 | Segunda unidad alveolar en paralelo opcional | Con una sola unidad el flujo espiratorio es monoexponencial y la meseta no depende de la duración de la oclusión. Con dos aparecen la cola lenta, la meseta que sigue bajando y el pendelluft con el circuito cerrado | D el modelo; P los valores y que la segunda unidad sea lineal (E-051, U-41) |
 | Sin inertancia | La presión responde al flujo sin retardo; no hay oscilaciones ni sobreimpulso al inicio del flujo | P |
@@ -279,6 +279,7 @@ El motor deriva una PaCO₂ y un pH del paciente virtual a partir de la ventilac
 **Equilibrio y cinética.** Un depósito equivalente de CO₂ de capacidad C:
 
     C · dPaCO₂/dt = 0,863 · VCO₂ − V̇A · PaCO₂        pH = 6,1 + log10(HCO₃⁻ / (0,03 · PaCO₂))
+    HCO₃⁻ = HCO₃⁻habitual + 0,1·(PaCO₂ − PaCO₂habitual) si sube; + 0,2·(PaCO₂ − PaCO₂habitual) si baja
 
 La producción entra de forma continua y cada respiración lava la fracción VA/C del depósito. En equilibrio queda la ecuación de la ventilación alveolar, PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS). La constante de tiempo τ = C/V̇A no es un parámetro: sale del modelo, y es más lenta cuanto menos se ventila. En apnea la PaCO₂ sube 0,863·VCO₂/C mmHg por minuto (E-095, P).
 
@@ -287,7 +288,8 @@ La producción entra de forma continua y cada respiración lava la fracción VA/
 | VCO₂ (`vco2MlMin`) | 200 mL/min | 50–600 |
 | Espacio muerto de la vía aérea (`deadspaceL`) | 165 mL | 0–600 mL |
 | Espacio muerto alveolar (`alveolarDeadspaceFrac`, VDalv/VTalv) | 0,12 | 0–0,8 |
-| HCO₃⁻ (`hco3`) | 24 mEq/L | 5–50 |
+| HCO₃⁻ habitual (`hco3`) | 24 mEq/L | 5–50 |
+| PaCO₂ habitual (`paco2Basal`) | 40 mmHg (EPOC hipercápnico: 60) | 20–100 |
 | Depósito (`storeL`) | 40 L | 5–200 |
 
 La vía aérea (165 mL) y la fracción alveolar (0,12) salen de las dos medianas de Fletcher y Jonson (1984) en adultos anestesiados y ventilados —VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L, con la vía aérea constante—; la fracción alveolar real baja algo con el VT, y aquí es constante (P). Los casos con enfermedad cambian sobre todo la fracción alveolar: 0,30 en el EPOC y 0,35 en el SDRA (VD/VT ≈ 0,6 con VT de 6 mL/kg, en torno a la media de 0,58 de Nuckton).
@@ -305,7 +307,9 @@ Con esos valores la apnea sube ≈ 4,3 mmHg/min y, a V̇A 5 L/min, una variació
 | Duplicar la FR, una τ después | ≈ 63 % del camino al nuevo equilibrio |
 | Mecánica con VCO₂ 400 y VD 300 frente al banco | idéntica |
 
-Simplificaciones declaradas: un solo depósito (sin los compartimentos rápido y lento del CO₂ corporal); bicarbonato fijo, sin el tamponamiento agudo (≈ +1 mEq/L por cada 10 mmHg): con PaCO₂ 60 el pH sale 7,23 en lugar de ≈ 7,26; sin mezcla parcial en el espacio muerto (una respiración menor que VD no ventila nada); oxigenación no modelada.
+**Tamponamiento agudo.** El bicarbonato del paciente es el de su PaCO₂ habitual; cuando la PaCO₂ se aparta de ella, los tampones no bicarbonato lo mueven en minutos según las reglas clásicas de Boston: +1 mEq/L por cada 10 mmHg de hipercapnia aguda (Brackett 1965) y −2 por cada 10 mmHg de hipocapnia aguda (Arbus 1969). Con PaCO₂ 60 en un sano el pH sale ≈ 7,26 (con el bicarbonato fijo salía 7,23). En el EPOC hipercápnico crónico de los casos el bicarbonato habitual es 32 a una PaCO₂ habitual de 60 (la compensación renal de +4 mEq/L por cada 10 mmHg): hiperventilado hasta 37 en minutos queda en ≈ 27 y el pH en ≈ 7,49, no en el 7,56 que daba el 32 fijo. La compensación renal (días) no se modela.
+
+Simplificaciones declaradas: un solo depósito (sin los compartimentos rápido y lento del CO₂ corporal); fracción alveolar de espacio muerto constante (la real baja algo con el VT; las dos medianas de Fletcher y Jonson no permiten separar cuánto, y su texto completo no fue accesible); sin mezcla parcial en el espacio muerto (una respiración menor que VD no ventila nada); oxigenación no modelada.
 
 ## Fuentes verificadas
 

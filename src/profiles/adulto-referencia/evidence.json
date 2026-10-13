@@ -183,6 +183,18 @@
       "title": "Válvula espiratoria de ventiladores de UCI: Pinède A, Cour M, Degivry F, Louis B, Argaud L, Guérin C. Bench assessment of expiratory valve resistance of current ICU ventilators in dynamic conditions. Respir Care 2021;66:610–618 (PMID 33144385)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Siete ventiladores de UCI (entre ellos el Carescape de GE) en un ASL 5000 pasivo (C 20 mL/cmH₂O, R 5), VC 0,8 L a 10/min, presión y flujo medidos justo antes de la válvula espiratoria, PEEP 5, 10 y 15. Con el Carescape: tiempo de apertura de la válvula 0,110 s (0,105–0,110) —de 0,072 a 0,145 s entre los siete—; producto presión-tiempo sobre o bajo la PEEP 2,4 cmH₂O·s (2,1–2,4) con PEEP 5; resistencia instantánea mediana 20,9 cmH₂O/L/s (15,8–24,9), cuya definición exacta no da el resumen y no se usa. Leído el resumen; el texto completo no fue accesible. Se usa para el tiempo de apertura (110 ms) y, con la derivación R ≈ PTP/VT = 2,4/0,8 ≈ 3 cmH₂O·s/L, para la resistencia de la rama espiratoria por omisión."
+    },
+    {
+      "id": "C08",
+      "title": "Tamponamiento agudo del CO₂: Brackett NC, Cohen JJ, Schwartz WB. Carbon dioxide titration curve of normal man. N Engl J Med 1965;272:6–12 (PMID 14219220); Arbus GS et al. Characterization and clinical application of the «significance band» for acute respiratory alkalosis. N Engl J Med 1969;280:117–23 (PMID 5782512); Baillie JK. Simple «rules of thumb» for respiratory acid-base compensation. Thorax 2008;63:289–90 (PMID 18308967)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Estudios originales de las reglas clásicas de Boston para la respuesta aguda del bicarbonato: ≈ +1 mEq/L por cada 10 mmHg de hipercapnia aguda (Brackett) y ≈ −2 por cada 10 mmHg de hipocapnia aguda (Arbus); compensación crónica ≈ +4 por cada 10 mmHg. Verificados en PubMed (sin resumen con cifras); los coeficientes son los de las reglas de libro de texto que esos trabajos sostienen."
+    },
+    {
+      "id": "C09",
+      "title": "Limitación al flujo espiratorio en ventilados: Armaganidis A et al. Crit Care Med 2000;28:3837–42 (PMID 11153623); Ranieri VM et al. Am Rev Respir Dis 1993;147:5–13 (PMID 8420430); Tobin MJ, Lodato RF. PEEP, auto-PEEP, and waterfalls. Chest 1989 (PMID 2670461)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Armaganidis: limitación al flujo (prueba de presión espiratoria negativa) en 12 de 32 pacientes ventilados, 11 de los 13 con insuficiencia de origen pulmonar; PEEPi estática 7,1 ± 2,8 frente a 1,2 ± 0,9 sin limitación. Ranieri: en nueve EPOC en ventilación controlada con PEEPi 9,8 ± 0,5, PEEP de 5 y 10 no cambiaron el volumen pulmonar ni la PEEP total; por encima del 85 % de la PEEPi (presión crítica) hubo hiperinflación y efectos hemodinámicos. Se usa para la presión crítica de CC-02 y CC-06 (9 cmH₂O) y para el criterio de PEEP total de CC-02."
     }
   ],
   "claims": [
@@ -709,9 +721,9 @@
     },
     {
       "id": "E-049",
-      "claim": "Limitación al flujo espiratorio (resistor de Starling): cuando la presión de la vía aérea cae por debajo de la presión crítica del segmento colapsable, el flujo deja de depender de la presión aguas abajo y queda fijado por el retroceso elástico y la resistencia aguas arriba del estrangulamiento, Qmax = (Pel − Pcrít)/(f·Rexp). Consecuencias reproducidas: independencia del esfuerzo espiratorio, atrapamiento hasta que el retroceso iguala Pcrít, y desaparición de la limitación cuando la PEEP externa alcanza ese punto.",
+      "claim": "Limitación al flujo espiratorio (resistor de Starling): cuando la presión de la vía aérea cae por debajo de la presión crítica del segmento colapsable, el flujo deja de depender de la presión aguas abajo y queda fijado por el retroceso elástico y la resistencia aguas arriba del estrangulamiento, Qmax = (Pel − Pcrít)/(f·Rexp). Consecuencias reproducidas: independencia del esfuerzo espiratorio, atrapamiento hasta que el retroceso iguala Pcrít, y desaparición de la limitación cuando la PEEP externa alcanza ese punto. Los casos CC-02 y CC-06 la usan con presión crítica 9 cmH₂O (C09): con FR 12 e I:E 1:4, CC-02 no baja de PEEP total ≈ 9,6, y subir la PEEP externa a 7 apenas la cambia (cascada) mientras que 11 la suma.",
       "status": "D (modelo de resistor de Starling y limitación al flujo, bibliografía de mecánica respiratoria) / P (valores y la condición Pva < Pcrít como interruptor)",
-      "source": "BIBLIO",
+      "source": "BIBLIO, C09",
       "locator": "limitación al flujo espiratorio; punto de igual presión; efecto de la PEEP externa en el atrapamiento dinámico",
       "implemented": "src/engine/patient.ts (maxExpiratoryFlow, aplicado dentro de flowForPaw)",
       "tests": [
@@ -1230,9 +1242,9 @@
     },
     {
       "id": "E-095",
-      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, vía aérea 165 mL y fracción alveolar 0,12 (las dos medianas de Fletcher y Jonson 1984 resueltas para las dos partes: VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; C03), HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 9 min a V̇A 4,4 L/min). Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 39, pH 7,41). La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Sin tamponamiento agudo: el bicarbonato es fijo durante la sesión. No realimenta la mecánica.",
-      "status": "P (modelo de un depósito y VCO₂, C y HCO₃⁻ como aproximación docente; la fracción alveolar real baja algo con el VT y aquí es constante); D para las dos medianas de espacio muerto que fijan la vía aérea y la fracción alveolar (C03)",
-      "source": "C03",
+      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, vía aérea 165 mL y fracción alveolar 0,12 (las dos medianas de Fletcher y Jonson 1984 resueltas para las dos partes: VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; C03), HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 9 min a V̇A 4,4 L/min). Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 39, pH 7,41). La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Con tamponamiento agudo: el bicarbonato es el de la PaCO₂ habitual del paciente (`paco2Basal`, 40 por omisión) y se mueve +0,1 mEq/L por mmHg al subir la PaCO₂ y +0,2 por mmHg al bajar (reglas de Boston, C08); la compensación renal no se modela. El pH de equilibrio usa el bicarbonato de la PaCO₂ de equilibrio. No realimenta la mecánica.",
+      "status": "P (modelo de un depósito y VCO₂, C y HCO₃⁻ como aproximación docente; la fracción alveolar real baja algo con el VT y aquí es constante); D para las dos medianas de espacio muerto que fijan la vía aérea y la fracción alveolar (C03); D-secundario el tamponamiento agudo (reglas de Boston, C08)",
+      "source": "C03, C08",
       "locator": "Fletcher y Jonson 1984 (resumen: VDphys/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; VDaw sin cambios con el VT; VDalv/VTalv menor con VT mayor); Morán 2006 (VD fisiológico 352 → 310 mL sin intercambiador); Hinkson 2006 (VD/VT −6 % sin intercambiador, −5 % más sin codo)",
       "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04)"
     },

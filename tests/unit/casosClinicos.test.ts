@@ -5,7 +5,6 @@ import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS, findScenario, type Scenario } from '../../src/scenarios';
 import { CASE_TESTS, evaluateCase, type CaseContext } from '../../src/ui/caseEvaluation';
 import { updateLessonFlags } from '../../src/ui/lesson';
-import { phFrom } from '../../src/engine/gasExchange';
 import { CASES_KEY, loadCaseProgress, saveCaseProgress } from '../../src/ui/caseProgress';
 
 /** Simulador con la mecánica y los ajustes del caso, como lo carga la interfaz. */
@@ -149,15 +148,15 @@ class Caso {
   }
 }
 const caso = (id: string): Caso => new Caso(findScenario(id)!);
-const phEq = (k: Caso): number => phFrom(k.gas.hco3, k.gas.paco2Target!);
+const phEq = (k: Caso): number => k.gas.phTarget!;
 
 describe('CAS-02 · EPOC: atrapamiento', () => {
-  it('la viñeta: PEEP intrínseca ≈ 8 y alcalemia de equilibrio ≈ 7,56; no se resuelve sin tocar nada', () => {
+  it('la viñeta: PEEP intrínseca ≈ 8 y pH de equilibrio ≈ 7,49 (hipocapnia aguda tamponada); no se resuelve sin tocar nada', () => {
     const k = caso('CC-02');
     k.correr(40_000);
     expect(k.sim.frame().truth.peepiEndExp).toBeGreaterThan(6.5);
     expect(k.sim.frame().truth.peepiEndExp).toBeLessThan(9);
-    expect(phEq(k)).toBeCloseTo(7.56, 1);
+    expect(phEq(k)).toBeCloseTo(7.49, 1);
     k.bloqueo('expHold');
     expect(k.resultado().passed).toBe(false);
   });
@@ -168,20 +167,40 @@ describe('CAS-02 · EPOC: atrapamiento', () => {
     bien.bloqueo('expHold');
     expect(bien.resultado().criteria.map((c) => [c.id, c.ok])).toEqual([
       ['mide', true],
-      ['peepi', true],
+      ['peeptot', true],
       ['ph', true],
     ]);
     const soloIe = caso('CC-02');
     soloIe.ajustar({ ie: 1 / 4 });
     soloIe.correr(60_000);
     soloIe.bloqueo('expHold');
-    expect(soloIe.resultado().criteria.find((c) => c.id === 'peepi')!.ok).toBe(false);
+    expect(soloIe.resultado().criteria.find((c) => c.id === 'peeptot')!.ok).toBe(false);
     const vtBajo = caso('CC-02');
     vtBajo.ajustar({ vt: 0.4, rr: 14, ie: 1 / 4 });
     vtBajo.correr(60_000);
     vtBajo.bloqueo('expHold');
     // El espacio muerto de la vía aérea se paga: con VT 400 la acidosis de equilibrio sale del rango.
     expect(vtBajo.resultado().criteria.find((c) => c.id === 'ph')!.ok).toBe(false);
+  });
+});
+
+describe('CAS-02b · EPOC con limitación al flujo: la PEEP externa hasta la presión crítica no infla', () => {
+  /** PEEP total medida con FR 12 e I:E 1:4 y la PEEP externa dada. */
+  const peepTot = (peep: number): number => {
+    const k = caso('CC-02');
+    k.ajustar({ rr: 12, ie: 1 / 4, peep });
+    k.correr(60_000);
+    k.bloqueo('expHold');
+    return k.sim.procedures.last.expHold!.values.peepTot!.value!;
+  };
+  it('con PEEP 5 la PEEP total no baja de ≈ 9,6 (presión crítica 9); con 7 casi no cambia (Ranieri 1993); con 11 la suma', () => {
+    const p5 = peepTot(5),
+      p7 = peepTot(7),
+      p11 = peepTot(11);
+    expect(p5).toBeGreaterThan(9);
+    expect(p5).toBeLessThan(10);
+    expect(p7 - p5).toBeLessThan(0.6);
+    expect(p11 - p5).toBeGreaterThan(3);
   });
 });
 
@@ -241,10 +260,10 @@ describe('CAS-04 · PEEP decremental', () => {
 });
 
 describe('CAS-05 · hipercapnia', () => {
-  it('la viñeta: PaCO₂ 88 y pH 7,06 de equilibrio', () => {
+  it('la viñeta: PaCO₂ 88 y pH 7,14 de equilibrio (con el bicarbonato de la hipercapnia aguda)', () => {
     const k = caso('CC-05');
     expect(k.gas.paco2Target!).toBeCloseTo(88, -1);
-    expect(phEq(k)).toBeCloseTo(7.06, 1);
+    expect(phEq(k)).toBeCloseTo(7.14, 1);
     expect(k.resultado().passed).toBe(false);
   });
   it('VT 500 con FR 14 o VT 400 con FR 22 lo resuelven; FR 18 sola no basta; VT 600 se pasa de 8 mL/kg', () => {
@@ -299,14 +318,14 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
       bien = conSoporte(13);
     expect(bien.mlKg / inicio.mlKg).toBeLessThan(0.6);
     expect(bien.va / inicio.va).toBeGreaterThan(0.6);
-    expect(inicio.k.gas.hco3).toBe(32);
-    expect(inicio.k.gas.paco2Target!).toBeGreaterThan(31);
-    expect(inicio.k.gas.paco2Target!).toBeLessThan(39);
+    expect(inicio.k.sc.patient.gas?.hco3).toBe(32);
+    expect(inicio.k.gas.paco2Target!).toBeGreaterThan(33);
+    expect(inicio.k.gas.paco2Target!).toBeLessThan(43);
     expect(phEq(inicio.k)).toBeLessThan(7.62);
     for (const k of [bien.k, conSoporte(12).k]) {
       expect(k.gas.paco2Target!).toBeGreaterThan(46);
-      expect(k.gas.paco2Target!).toBeLessThan(58);
-      expect(phEq(k)).toBeGreaterThan(7.36);
+      expect(k.gas.paco2Target!).toBeLessThan(61);
+      expect(phEq(k)).toBeGreaterThan(7.35);
       expect(phEq(k)).toBeLessThan(7.45);
     }
   });

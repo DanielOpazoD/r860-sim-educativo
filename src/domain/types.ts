@@ -203,8 +203,10 @@ export interface GasExchangeParams {
    * suficiente. Escala con el VT, a diferencia del de la vía aérea.
    */
   alveolarDeadspaceFrac: number;
-  /** Bicarbonato plasmático (mEq/L). */
+  /** Bicarbonato plasmático (mEq/L) a la PaCO₂ habitual del paciente. */
   hco3: number;
+  /** PaCO₂ habitual (mmHg): aquella a la que el bicarbonato es `hco3`; fuera de ella actúa el tamponamiento agudo. */
+  paco2Basal: number;
   /** Capacidad del depósito equivalente de CO₂ (L): fija la velocidad con que la PaCO₂ sigue a la ventilación. */
   storeL: Liters;
 }

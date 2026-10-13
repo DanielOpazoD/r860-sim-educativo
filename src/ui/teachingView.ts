@@ -325,8 +325,9 @@ function ventilacionHTML(fr: EngineFrame): string {
     `<p class="edu-nota">${esc(tendencia(g.paco2, g.paco2Target))}</p>` +
     `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">El CO₂ del cuerpo es un depósito grande: un cambio ` +
     `de ventilación tarda minutos en verse en sangre (τ = depósito ÷ V̇A, más lenta cuanto menos se ventila). Por eso la ` +
-    `gasometría de control se pide a los 20–30 minutos y no tras la siguiente respiración. El bicarbonato es el ` +
-    `componente metabólico y aquí no cambia.</p></details>` +
+    `gasometría de control se pide a los 20–30 minutos y no tras la siguiente respiración. El bicarbonato se mueve ` +
+    `poco y rápido por los tampones (+1 mEq/L por cada 10 mmHg al subir la PaCO₂, −2 al bajar); la compensación ` +
+    `renal tarda días y aquí no ocurre.</p></details>` +
     `</section>` +
     `<section class="edu-bloque">` +
     `<header><h3>Ventilación alveolar</h3><b>${g.vaLMin === null ? '—' : `${f(g.vaLMin, 1)}<small>L/min</small>`}</b></header>` +
