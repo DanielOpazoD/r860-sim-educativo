@@ -24,17 +24,25 @@ function espiraciones(sim: ReturnType<typeof benchSim>, breaths: number): { pawM
 describe('LEAK-01 · lo entregado no es lo recibido', () => {
   it('VC con fuga 6 L/min a 10 cmH₂O: VTi es el programado, VTe lo que vuelve, y la diferencia es la fuga', () => {
     const sim = benchSim({ patient: FUGA, settings: { ...BENCH_SETTINGS, assistControl: true, biasFlow: 4 / 60, flowTrigger: 4 / 60 } });
-    runUntilBreath(sim, 8);
+    runUntilBreath(sim, 7);
+    // Gas perdido por la fuga durante la respiración 8 entera: conductancia lineal por la presión del nodo.
+    const g = 6 / 60 / 10;
+    let fugaL = 0;
+    while (sim.breaths.length < 8) {
+      sim.step();
+      fugaL += g * Math.max(0, sim.frame().live.paw) * 0.004;
+    }
     const b = sim.breaths.at(-1)!;
     expect(b.vtInsp).toBeCloseTo(0.5, 6); // el ventilador entrega lo programado, fuga incluida
-    expect(b.vtExp / b.vtInsp).toBeGreaterThan(0.5);
-    expect(b.vtExp / b.vtInsp).toBeLessThan(0.62);
+    expect(b.vtExp / b.vtInsp).toBeGreaterThan(0.4);
+    expect(b.vtExp / b.vtInsp).toBeLessThan(0.5);
     const m = sim.frame().metrics;
-    expect(m.leakPct!.value!).toBeGreaterThan(0.35);
-    // En régimen el pulmón no acumula: lo que no vuelve se fue por la fuga (VTi − VTe ≈ fuga, no ΔV).
+    expect(m.leakPct!.value!).toBeGreaterThan(0.5);
+    // En régimen el pulmón no acumula: VTi − VTe es toda la fuga del ciclo, la de la inspiración y la que se lleva el
+    // flujo de base en la espiración (el sensor integra el flujo con su signo), no una parte de ella.
     const prev = sim.breaths.at(-2)!;
     expect(Math.abs(b.truthVStartL - prev.truthVStartL)).toBeLessThan(0.005);
-    expect(b.vtInsp - b.vtExp).toBeGreaterThan(0.15);
+    expect(Math.abs(b.vtInsp - b.vtExp - fugaL) / fugaL).toBeLessThan(0.03);
     // La presión pico baja: parte del flujo no llega al pulmón.
     expect(b.ppeak).toBeLessThan(18);
     expect(b.ppeak).toBeGreaterThan(14);
