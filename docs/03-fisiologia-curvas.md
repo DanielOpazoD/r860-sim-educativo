@@ -293,7 +293,7 @@ Con esos valores la apnea sube ≈ 4,3 mmHg/min y, a V̇A 5 L/min, una variació
 
 | Comprobación (`tests/unit/gasometria.test.ts`) | Valor |
 | --- | --- |
-| Banco SC-01: VT 500 mL, 15/min, VD 150 mL | V̇A 5,25 L/min · PaCO₂ 32,9 mmHg · VD/VT 0,30 |
+| Banco SC-01: VT 500 mL, 15/min, VD 200 mL | V̇A 4,5 L/min · PaCO₂ 38,4 mmHg · pH 7,42 · VD/VT 0,40 |
 | PaCO₂ 40 con HCO₃⁻ 24 | pH 7,40 |
 | Apnea de 1 min | +4,3 mmHg |
 | Duplicar la FR, una τ después | ≈ 63 % del camino al nuevo equilibrio |

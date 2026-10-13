@@ -2,6 +2,7 @@
  * Pestaña «Resumen»: el esquema de una respiración con sus tres presiones marcadas, y las cuatro fórmulas con los
  * números de esta respiración sustituidos. Presentación pura sobre lo que el motor publica; aquí no se calcula física.
  */
+import { DEFAULT_GAS } from '../engine/gasExchange';
 import type { EngineFrame } from '../engine/simulator';
 import type { AppContext } from './context';
 import { $, $$, esc } from './dom';
@@ -299,8 +300,8 @@ function ventilacionHTML(fr: EngineFrame): string {
   const g = fr.truth.gas;
   if (!g) return `<p class="edu-pie">Esta referencia fotográfica no tiene motor: no hay gasometría que calcular.</p>`;
   const gp = fr.truth.patient.gas ?? {};
-  const vd = (gp.deadspaceL ?? 0.15) * 1000,
-    vco2 = gp.vco2MlMin ?? 200;
+  const vd = (gp.deadspaceL ?? DEFAULT_GAS.deadspaceL) * 1000,
+    vco2 = gp.vco2MlMin ?? DEFAULT_GAS.vco2MlMin;
   const vtPulmon = g.vdVt !== null && g.vdVt > 0 ? vd / g.vdVt : null;
   const rr = fr.metrics.rr?.value ?? null;
   const sustitucion =
