@@ -4,13 +4,14 @@ import type { AlarmLimits, VcSettings } from '../../domain/types';
 
 /**
  * Reglas de ajuste para ADULTO · A/C VC (única franja habilitada en esta etapa).
- * Fuente de rangos: ficha técnica JB23840CO (2014), leída íntegra (R03). Escalones I:E y políticas de aplicación: P.
+ * Fuente de rangos: ficha técnica JB23840CO (2014), leída íntegra (R03), contrastada con las tablas de ajustes y de
+ * alarmas del manual de referencia SW10 (R21, 13-12 a 13-15), que manda donde difieren. Políticas de aplicación: P.
  * Los tramos están en unidad MOSTRADA; el motor usa L, s, cmH2O y fracciones.
  */
 export const IE_VALUES: number[] = (() => {
   const vals: number[] = [];
-  for (let e = 9; e >= 1; e -= 0.5) vals.push(1 / e); // 1:9 … 1:1
-  for (let i = 1.5; i <= 4; i += 0.5) vals.push(i); // 1.5:1 … 4:1
+  for (let e = 90; e >= 10; e--) vals.push(10 / e); // 1:9.0 … 1:1.0, de 0,1 en 0,1
+  for (let i = 11; i <= 40; i++) vals.push(i / 10); // 1.1:1 … 4.0:1
   return vals;
 })();
 
@@ -138,10 +139,9 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
     dependencies: ['peep', 'pmax'],
     applyPolicy: 'nextBreath',
     evidence: {
-      sourceId: 'R23',
-      locator: 'tabla «CPAP/PS … Seguridad: Pmax, Minimum Rate, Backup Pinsp, Backup Tinsp»',
+      sourceId: 'R21',
+      locator: 'URM SW10 13-12 «Backup Pinsp 1 to 98 cmH2O · 1 cmH2O»; R23, tabla «CPAP/PS … Seguridad: … Backup Pinsp»',
       status: 'D',
-      note: 'Existencia D; rango P: se toma el de Pinsp (ficha 2014, 1–98).',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },
@@ -154,15 +154,20 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
     decimals: 2,
     allowedPatientTypes: ['adult'],
     allowedModes: ['CPAP_PS'],
-    domain: [{ min: 0.25, max: 4, step: 0.05 }],
+    domain: [
+      { min: 0.25, max: 1, step: 0.05 },
+      { min: 1, max: 4, step: 0.1 },
+      { min: 4, max: 15, step: 0.25 },
+    ],
     allowOff: false,
     dependencies: ['minRate', 'riseMs'],
     applyPolicy: 'nextBreath',
     evidence: {
-      sourceId: 'R23',
-      locator: 'tabla «CPAP/PS … Backup Tinsp»; ficha 2014 p.2 «Tiempo inspiratorio: 0.1 a 10 seg»',
+      sourceId: 'R21',
+      locator:
+        'URM SW10 13-12 «Backup Tinsp 0.25 to 15 s · 0.25 to 1 by 0.05 s, 1 to 4 by 0.1 s, 4 to 15 by 0.25 s»; R23, tabla «CPAP/PS … Backup Tinsp»',
       status: 'D',
-      note: 'Existencia D; tramo adulto 0,25–4 s en pasos de 0,05: P (subconjunto del rango de la ficha). Valor inicial 1,7 s: el de fábrica (URM SW10 11-9); antes 1.',
+      note: 'Valor inicial 1,7 s: el de fábrica (URM SW10 11-9). Antes 0,25–4 s en pasos de 0,05 (P).',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },
@@ -175,13 +180,16 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
     decimals: 0,
     allowedPatientTypes: ['adult'],
     allowedModes: ['CPAP_PS'],
-    domain: [{ min: 5, max: 60, step: 1 }],
+    domain: [
+      { min: 5, max: 20, step: 1 },
+      { min: 20, max: 60, step: 5 },
+    ],
     allowOff: false,
     dependencies: [],
     applyPolicy: 'nextBreath',
     evidence: {
-      sourceId: 'R03',
-      locator: 'p.3 «Alarma de apnea: 5 a 60 seg»',
+      sourceId: 'R21',
+      locator: 'URM SW10 13-14 «Apnea Time 5 to 60 s · 5 to 20 by 1 s, 20 to 60 by 5 s»; ficha 2014 p.3 «Alarma de apnea: 5 a 60 seg»',
       status: 'D',
       note: 'Valor inicial 30 s: el de fábrica en adultos (URM SW10 11-10); antes 20 (P). Sólo se evalúa en CPAP/PS: en A/C la frecuencia programada garantiza respiraciones (P).',
     },
@@ -259,10 +267,10 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
     dependencies: ['rr', 'vt'],
     applyPolicy: 'nextBreath',
     evidence: {
-      sourceId: 'R03',
-      locator: 'p.2 «Relación inspiratoria/espiratoria: 1:9 a 4:1»',
+      sourceId: 'R21',
+      locator: 'URM SW10 13-12 «I:E 1:9 to 4:1 · 0.1»; ficha 2014 p.2 «Relación inspiratoria/espiratoria: 1:9 a 4:1»',
       status: 'D',
-      note: 'Escalones de 0.5 en la parte E y en la parte I: PROPUESTA (U-05).',
+      note: 'Paso 0,1 en la parte E y en la parte I, como el equipo (antes 0,5, P).',
     },
     policyEvidence: { status: 'P', note: 'Siguiente respiración (U-06).' },
   },
@@ -577,14 +585,26 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
     unit: 'L',
     displayUnit: 'ml',
     displayFactor: 1000,
-    decimals: 0,
+    decimals: 1,
     allowedPatientTypes: ['adult'],
     allowedModes: ['AC_VC'],
-    domain: [{ min: 1, max: 1950, step: 1 }],
+    domain: [
+      { min: 1, max: 20, step: 0.5 },
+      { min: 20, max: 100, step: 1 },
+      { min: 100, max: 350, step: 5 },
+      { min: 350, max: 1000, step: 25 },
+      { min: 1000, max: 1950, step: 50 },
+    ],
     allowOff: true,
     dependencies: [],
     applyPolicy: 'immediate',
-    evidence: { sourceId: 'R03', locator: 'p.3 «Volumen tidal: Bajo: Inactivo, 1 a 1950 mL»', status: 'D' },
+    evidence: {
+      sourceId: 'R21',
+      locator:
+        'URM SW10 13-14 «VTexp Low Off, 1 to 1950 ml · 1.0 to 20 by 0.5 ml, 20 to 100 by 1, 100 to 350 by 5, 350 to 1000 by 25, 1000 to 1950 by 50»',
+      status: 'D',
+      note: 'Antes paso único de 1 mL (P).',
+    },
     policyEvidence: { status: 'P', note: 'Inmediato.' },
   },
   vteHigh: {
@@ -593,14 +613,26 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
     unit: 'L',
     displayUnit: 'ml',
     displayFactor: 1000,
-    decimals: 0,
+    decimals: 1,
     allowedPatientTypes: ['adult'],
     allowedModes: ['AC_VC'],
-    domain: [{ min: 3, max: 2000, step: 1 }],
+    domain: [
+      { min: 3, max: 20, step: 0.5 },
+      { min: 20, max: 100, step: 1 },
+      { min: 100, max: 350, step: 5 },
+      { min: 350, max: 1000, step: 25 },
+      { min: 1000, max: 2000, step: 50 },
+    ],
     allowOff: true,
     dependencies: [],
     applyPolicy: 'immediate',
-    evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 3 a 2000 mL, inactivo»', status: 'D' },
+    evidence: {
+      sourceId: 'R21',
+      locator:
+        'URM SW10 13-14 «VTexp High Off, 3 to 2000 ml · 3.0 to 20 by 0.5 ml, 20 to 100 by 1, 100 to 350 by 5, 350 to 1000 by 25, 1000 to 2000 by 50»',
+      status: 'D',
+      note: 'Antes paso único de 1 mL (P).',
+    },
     policyEvidence: { status: 'P', note: 'Inmediato.' },
   },
   mveLow: {
@@ -609,14 +641,23 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
     unit: 'perMin',
     displayUnit: 'l/min',
     displayFactor: 1,
-    decimals: 1,
+    decimals: 2,
     allowedPatientTypes: ['adult'],
     allowedModes: ['AC_VC'],
-    domain: [{ min: 0.1, max: 40, step: 0.1 }],
-    allowOff: true,
+    domain: [
+      { min: 0.01, max: 1, step: 0.01 },
+      { min: 1, max: 10, step: 0.1 },
+      { min: 10, max: 40, step: 1 },
+    ],
+    allowOff: false,
     dependencies: [],
     applyPolicy: 'immediate',
-    evidence: { sourceId: 'R03', locator: 'p.3 «Volumen minuto: Bajo: 0.01 a 40 L/min»', status: 'D', note: 'Paso 0.1 y Off: P.' },
+    evidence: {
+      sourceId: 'R21',
+      locator: 'URM SW10 13-14 «MVexp Low 0.01 to 40 l/min (NIV: Off, 0.01 to 40) · 0.01 to 1.0 by 0.01, 1.0 to 10 by 0.1, 10 to 40 by 1»',
+      status: 'D',
+      note: 'Sin Off en ventilación invasiva, como el equipo: sólo la VNI la admite. Antes paso 0,1 y Off (P).',
+    },
     policyEvidence: { status: 'P', note: 'Inmediato.' },
   },
   mveHigh: {
@@ -625,14 +666,23 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
     unit: 'perMin',
     displayUnit: 'l/min',
     displayFactor: 1,
-    decimals: 1,
+    decimals: 2,
     allowedPatientTypes: ['adult'],
     allowedModes: ['AC_VC'],
-    domain: [{ min: 0.1, max: 99, step: 0.1 }],
-    allowOff: true,
+    domain: [
+      { min: 0.02, max: 1, step: 0.01 },
+      { min: 1, max: 10, step: 0.1 },
+      { min: 10, max: 99, step: 1 },
+    ],
+    allowOff: false,
     dependencies: [],
     applyPolicy: 'immediate',
-    evidence: { sourceId: 'R03', locator: 'p.3 «Alto: 0.02 a 99 L/min»', status: 'D', note: 'Paso 0.1 y Off: P.' },
+    evidence: {
+      sourceId: 'R21',
+      locator: 'URM SW10 13-14 «MVexp High 0.02 to 99 l/min · 0.02 to 1.0 by 0.01, 1.0 to 10 by 0.1, 10 to 99 by 1»',
+      status: 'D',
+      note: 'Sin Off, como el equipo. Antes paso 0,1 y Off (P).',
+    },
     policyEvidence: { status: 'P', note: 'Inmediato.' },
   },
   rrLow: {
@@ -677,10 +727,15 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
     allowedPatientTypes: ['adult'],
     allowedModes: ['AC_VC'],
     domain: [{ min: 18, max: 99, step: 1 }],
-    allowOff: true,
+    allowOff: false,
     dependencies: [],
     applyPolicy: 'immediate',
-    evidence: { sourceId: 'R03', locator: 'p.3 «FiO2: Bajo: 18 a 99%»', status: 'D', note: 'Off: P.' },
+    evidence: {
+      sourceId: 'R21',
+      locator: 'URM SW10 13-14 «FiO2 Low 18 to 99% · 1%»; ficha 2014 p.3 «FiO2: Bajo: 18 a 99%»',
+      status: 'D',
+      note: 'Sin Off, como el equipo (antes Off, P).',
+    },
     policyEvidence: { status: 'P', note: 'Inmediato.' },
   },
   fio2High: {

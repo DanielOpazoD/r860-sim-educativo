@@ -15,7 +15,7 @@ export const PROFILE = {
     'JB79437XX troubleshooting 2020 (leída)',
     'JB72469XX modos invasivos ES 2020 (leída)',
     '2065492-001 QRG SW10 (sólo vía dossier)',
-    '2065490-001 URM SW10 (sólo vía dossier)',
+    '2065490-001 URM SW10 Rev F (secciones leídas, R21)',
   ],
   mergeVersionsSilently: false,
   clinicalUse: false,

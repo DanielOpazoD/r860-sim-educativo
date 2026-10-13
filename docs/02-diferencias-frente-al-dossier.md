@@ -344,3 +344,13 @@ Dos presiones motrices distintas y una identidad que no cuadra, en un obstructiv
 ## Auditoría visual frente a las pantallas del manual (13-10-2026)
 
 La disposición coincide con las pantallas del manual SW10 y con las transcripciones de P1 y P3: fila superior, curvas, dos columnas de valores, barra de presión, vista de seis casillas y fila de ajustes. Las diferencias son las ya decididas (límites de alarma junto a cada valor; colores de curva, que el equipo deja configurar). La banda de alarmas en reposo, azul desde v0.5.2, vuelve al verde del equipo con un tono que cumple el contraste AA (6,6:1 y 5,0:1). Detalle y lo pendiente con las fotografías originales en `docs/09-auditoria-visual.md`.
+
+## Rangos y pasos como en las tablas del manual (13-10-2026)
+
+Los ajustes y los límites de alarma se contrastaron con las tablas del manual SW10 para adulto (13-12 a 13-15). Donde la ficha de 2014 no daba el paso, o el proyecto lo había propuesto, manda el manual (E-115, D):
+
+- **I:E** de 0,1 en 0,1 en las dos partes, de 1:9 a 4:1 (antes de 0,5 en 0,5, P).
+- **Tiempo de apnea** de 1 en 1 s hasta 20 y de 5 en 5 hasta 60.
+- **Tinsp de respaldo** de 0,25 a 15 s: 0,05 hasta 1 s, 0,1 hasta 4 y 0,25 después (antes 0,25–4 s, P). **Pinsp de respaldo** 1–98 pasa a D.
+- **VTesp bajo y alto** con los cinco tramos del equipo: 0,5 mL hasta 20, 1 hasta 100, 5 hasta 350, 25 hasta 1000 y 50 después (antes de 1 en 1).
+- **VMesp bajo y alto** desde 0,01 y 0,02 L/min, de 0,01 en 0,01 bajo 1, de 0,1 hasta 10 y de 1 después. Como en el equipo, en ventilación invasiva no se apagan; tampoco la **FiO₂ baja** (antes las tres admitían Off, P). El diálogo de límites lo explica y no deja un campo vacío en ellas.

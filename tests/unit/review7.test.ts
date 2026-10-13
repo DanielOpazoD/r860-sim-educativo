@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { gridValues } from '../../src/domain/validation';
 import { PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S } from '../../src/engine/breathAnalysis';
 import { Simulator } from '../../src/engine/simulator';
 import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
@@ -112,8 +113,9 @@ describe('R7-03 · un límite recién puesto se compara enseguida con lo último
     return sim;
   }
   const activa = (sim: Simulator, id: string): boolean => sim.frame().alarms.some((a) => a.id === id && a.conditionActive);
-  /** Un límite de VTesp por encima de lo entregado, en la rejilla de 1 mL que admite el ajuste. */
-  const porEncimaDelVte = (sim: Simulator): number => Math.round(((sim.frame().metrics.vte?.value as number) + 0.1) * 1000) / 1000;
+  /** Un límite de VTesp por encima de lo entregado, en la rejilla que admite el ajuste (de 25 en 25 mL entre 350 y 1000). */
+  const porEncimaDelVte = (sim: Simulator): number =>
+    gridValues(REFERENCE_PROFILE.alarmLimitRules.vteLow).find((v) => v > ((sim.frame().metrics.vte?.value as number) + 0.1) * 1000)! / 1000;
 
   it('subir el límite de VTesp bajo por encima de lo entregado alarma sin esperar a la respiración siguiente', () => {
     // A 5 /min una respiración dura 12 s. Confirmar un límite que el paciente ya incumple y ver la banda en verde

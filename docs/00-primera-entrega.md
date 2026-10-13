@@ -74,7 +74,7 @@ Desactivadas con motivo visible (ver `gaps.json › disabledFeatures`): vista b�
 | Prioridades y enclavamiento de alarmas | P (U-11) | |
 | Timbre/cadencia de audio | P (U-12) | patrón de tonos D |
 | Plazo de edición 20 s | P (U-07) | configurable |
-| Escalones de I:E de 0,5 | P (U-05) | rango 1:9–4:1 D |
+| Escalones de I:E de 0,5 | P (U-05) | rango 1:9–4:1 D; desde 13-10-2026 de 0,1 como el equipo (D, E-115) |
 
 ## 6. Lista de pruebas de esta etapa
 
