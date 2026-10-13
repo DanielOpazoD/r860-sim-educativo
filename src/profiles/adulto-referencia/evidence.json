@@ -171,6 +171,12 @@
       "title": "Disparo reverso en el SDRA: Akoumianaki E et al. Mechanical ventilation-induced reverse-triggered breaths: a frequently unrecognized form of neuromechanical coupling. Chest 2013;143:927–38 (PMID 23187649); Baedorf Kassis E et al. Reverse trigger phenotypes in acute respiratory distress syndrome. Am J Respir Crit Care Med 2021;203:67–77 (PMID 32809842, PMC7781129, acceso abierto)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Akoumianaki: en ocho pacientes con SDRA sedados en asistida-controlada, contracciones diafragmáticas evocadas por la insuflación con acoplamiento 1:1 (siete), 1:2 y 1:3; frecuencia con variabilidad < 5 %. Baedorf Kassis (55 pacientes con SDRA; mediana FR 30, VT 450 mL, PEEP 14, elastancia 29 cmH₂O/L), tabla 2: latencia desde el inicio de la respiración de la máquina 0,34 s (temprano, relajación temprana; Pmus 6,8), 0,40 s (temprano, relajación tardía; 9,8), 0,47 s (a mitad del ciclo; 6,7), 0,70 s (tardío; 4,2) y 0,68 s (con apilamiento; 7,4 cmH₂O). Se usa para la mecánica, la latencia y la amplitud de SC-24, no para ningún ajuste."
+    },
+    {
+      "id": "C06",
+      "title": "Meseta legible en ventilación asistida: Bianchi I, Grassi A, Pham T, Telias I, Teggia Droghi M, Vieira F, Jonkman A, Brochard L, Bellani G. Reliability of plateau pressure during patient-triggered assisted ventilation. Analysis of a multicentre database. J Crit Care 2022;68:96–103 (PMID 34952477)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Seis evaluadores independientes clasificaron bloqueos inspiratorios de respiraciones disparadas por el paciente (base BEARDS) como legibles o ilegibles con 92 % de acuerdo: lo legible se caracterizó por poco tiempo del pico a la meseta y una meseta estable y más larga; lo ilegible se asoció a mayor esfuerzo inspiratorio. Respalda la forma del criterio de meseta (estabilidad en el tramo final, invalidación por el esfuerzo); los umbrales numéricos del simulador son propios. Leído el resumen; el texto completo no es de acceso abierto."
     }
   ],
   "claims": [
@@ -507,11 +513,11 @@
     },
     {
       "id": "E-033",
-      "claim": "Flujo de base espiratorio: durante la espiración la válvula mantiene la PEEP hasta un flujo de base de 10 L/min hacia el paciente; por encima, la Pva cae por debajo de PEEP (deflexión de disparo).",
-      "status": "P",
+      "claim": "Flujo de base espiratorio: durante la espiración la válvula mantiene la PEEP mientras la demanda del paciente no supere el flujo de base programado (2–10 L/min, 2 por omisión; E-038); por encima, la Pva cae por debajo de PEEP (deflexión de disparo).",
+      "status": "P (la forma: tope de flujo de la fuente de PEEP); D el rango programable (E-038, R03)",
       "source": "DOSSIER (bias flow como control del modo, E-016); valor y forma propios (U-33)",
       "locator": "—",
-      "note": "Sustituye la válvula espiratoria ideal (Pva = PEEP siempre) de v0.3. El valor del equipo no está documentado en las fuentes leídas.",
+      "note": "Sustituye la válvula espiratoria ideal (Pva = PEEP siempre) de v0.3. Hasta v0.3 el valor era fijo en 10 L/min; hoy es el ajuste `biasFlow`.",
       "implemented": "src/engine/controller.ts (EXP_BIAS_FLOW_LPS; fase exp: integratePressureSource con tope de flujo de base)",
       "tests": [
         "tests/unit/review3.test.ts «sin asistencia, un esfuerzo de 8 cmH₂O en espiración baja la Pva por debajo de PEEP y VTe − VTi queda acotado por el flujo de base»",
@@ -653,9 +659,9 @@
     {
       "id": "E-045",
       "claim": "El criterio de meseta separa dos cosas: la deriva en el tramo final de la oclusión (la presión ya se asentó) y la excursión contra la tendencia en toda la ventana (esfuerzo, fuga u oscilación). Una relajación viscoelástica es monótona y no invalida la maniobra si la oclusión dura lo suficiente; un esfuerzo mueve la presión en ambos sentidos y la invalida siempre.",
-      "status": "P (criterio del simulador; el algoritmo del equipo no está publicado)",
-      "source": "—",
-      "locator": "—",
+      "status": "P (criterio del simulador; el algoritmo del equipo no está publicado); la forma —meseta estable, invalidada por el esfuerzo— coincide con los rasgos de legibilidad de Bianchi 2022 (C06)",
+      "source": "C06",
+      "locator": "Bianchi 2022 (resumen: meseta legible = poco tiempo del pico a la meseta y meseta estable y más larga; ilegible = mayor esfuerzo)",
       "implemented": "src/engine/breathAnalysis.ts (plateauQuality); src/engine/procedures.ts",
       "tests": [
         "tests/unit/viscoelastic.test.ts (VIS-02)",
@@ -809,9 +815,9 @@
     {
       "id": "E-059",
       "claim": "El criterio de estabilidad de la meseta es una TASA (cmH2O/s) sobre un tramo final de duración fija, no una diferencia absoluta sobre un tramo que crece con la oclusión. Así el veredicto es monótono en la duración: esperar más nunca empeora la medición aceptada. El umbral es distinto según lo que la maniobra publica: 0,45 cmH2O/s en el bloqueo inspiratorio, que entrega una presión de 20-30 cmH2O, y 0,04 cmH2O/s en el espiratorio, que entrega una resta de dos presiones casi iguales (PEEPi). Ambos calibrados sobre tres mecánicas (dos unidades dispares, viscoelástica y un compartimento).",
-      "status": "P (la forma del criterio es deducida; el valor está calibrado, no documentado por el fabricante)",
-      "source": "—",
-      "locator": "—",
+      "status": "P (la forma del criterio es deducida y coincide con la estabilidad que Bianchi 2022 asocia a una meseta legible, C06; el valor está calibrado, no documentado por el fabricante)",
+      "source": "C06",
+      "locator": "Bianchi 2022 (resumen)",
       "implemented": "src/engine/breathAnalysis.ts (plateauQuality, PLATEAU_DRIFT_RATE_CMH2O_S, PLATEAU_DRIFT_RATE_EXP_CMH2O_S); src/engine/procedures.ts (driftLimit)",
       "tests": [
         "tests/unit/review5.test.ts (R5-01)",
@@ -1105,10 +1111,10 @@
     },
     {
       "id": "E-085",
-      "claim": "Lo que la fuente no fija y el simulador decide para CPAP/PS: el ciclado compara el flujo instantáneo con el pico registrado después de la rampa y termina la inspiración al alcanzar el porcentaje (resuelto al final del paso de 4 ms); una inspiración soportada dura como máximo 3 s (SUPPORT_TI_MAX_S) si el flujo no cae al umbral; la apnea se cuenta desde el inicio de la última respiración de cualquier tipo (o del comienzo de la ventilación) y sólo se evalúa en CPAP/PS; al declararla el ventilador entrega respiraciones de respaldo por presión (Pinsp y Tinsp de respaldo) a 12/min (APNEA_BACKUP_RATE_PER_MIN) hasta que el paciente vuelve a disparar, momento en que la alarma se resuelve; la frecuencia mínima entrega una respiración por presión cuando pasan 60/FRmín s sin ninguna respiración; al pasar de A/C a CPAP/PS no se entrega la obligatoria que el temporizador tenía en cola; al iniciar ventilación en CPAP/PS se espera al paciente. Las asistidas de A/C no son espontáneas; FR y VM espontáneos se cuentan sobre la misma ventana que FR y VMesp.",
-      "status": "P (U-52)",
-      "source": "—",
-      "locator": "—",
+      "claim": "Lo que la fuente no fija y el simulador decide para CPAP/PS: el ciclado compara el flujo instantáneo con el pico registrado después de la rampa y termina la inspiración al alcanzar el porcentaje (resuelto al final del paso de 4 ms); una inspiración soportada dura como máximo 3 s (SUPPORT_TI_MAX_S) si el flujo no cae al umbral; la apnea se cuenta desde el inicio de la última respiración de cualquier tipo (o del comienzo de la ventilación) y sólo se evalúa en CPAP/PS; al declararla el ventilador entrega respiraciones de respaldo por presión (Pinsp y Tinsp de respaldo) a 12/min (APNEA_BACKUP_RATE_PER_MIN) hasta que el paciente vuelve a disparar, momento en que la alarma se resuelve; la frecuencia mínima entrega una respiración por presión cuando pasan 60/FRmín s sin ninguna respiración; al pasar de A/C a CPAP/PS no se entrega la obligatoria que el temporizador tenía en cola; al iniciar ventilación en CPAP/PS se espera al paciente. Las asistidas de A/C no son espontáneas; FR y VM espontáneos se cuentan sobre la misma ventana que FR y VMesp. El curso de modos del fabricante (R23) confirma la estructura: en CPAP/PS la sincronización se ajusta con disparo inspiratorio, disparo espiratorio, flujo de base y tiempo de subida (Tsupp aparece sólo en VS), y la respiración soportada termina con el disparo espiratorio o con su duración máxima, sin dar la cifra: los 3 s son del simulador.",
+      "status": "P (U-52); D para los ajustes de sincronización de CPAP/PS y la existencia de una duración máxima de la respiración soportada (R23)",
+      "source": "R23",
+      "locator": "R23 diap. 14 (tabla de modos de soporte: CPAP/PS con Insp Trigger, Exp Trigger, Bias Flow, PS Rise Time; Tsupp sólo en VS) y diap. 35 (fin por el disparo espiratorio o la duración máxima de la respiración soportada)",
       "implemented": "src/engine/controller.ts (inspSupport, SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN, onPlazoDeRespaldo, esperarDisparo); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)",
@@ -1131,15 +1137,16 @@
     },
     {
       "id": "E-091",
-      "claim": "Regulador de PEEP con ancho de banda finito: ante una demanda inspiratoria del paciente (flujo hacia el pulmón durante la espiración) la fuente no sostiene la Pva de forma ideal sino que cae K·(demanda − demandaYaCompensada) con K = 3 cmH2O·s/L, y un filtro integral con τ = 0,1 s repone el flujo. En álgebra se implementa como fuente peep + K·qFilt con una resistencia en serie extra K: py = peep − rValve·q − K·(q − qFilt), válido con dos unidades, fuga y Rohrer al reutilizar el mecanismo rSeries del nodo. En régimen (fuga estable) no queda caída permanente; con el esfuerzo repentina sí la hay y el regulador recupera antes del siguiente ciclo. La caída sólo existe si la demanda supera la PEEP intrínseca (esfuerzo que tira gas de verdad): medido 0,74 cmH2O con Pmus 8 y base 8 L/min, 3,9 con Pmus 12, 1,6 con base 4. Un esfuerzo que no llega a tirar no mueve la Pva — esa parte sigue siendo límite.",
-      "status": "P (U-43, ancho de banda real no publicado)",
-      "source": "—",
-      "locator": "—",
+      "claim": "Regulador de PEEP con ancho de banda finito: ante una demanda inspiratoria del paciente (flujo hacia el pulmón durante la espiración) la fuente no sostiene la Pva de forma ideal sino que cae K·(demanda − demandaYaCompensada) con K = 3 cmH2O·s/L, y un filtro integral con τ = 0,1 s repone el flujo. En álgebra se implementa como fuente peep + K·qFilt con una resistencia en serie extra K: py = peep − rValve·q − K·(q − qFilt), válido con dos unidades, fuga y Rohrer al reutilizar el mecanismo rSeries del nodo. En régimen (fuga estable) no queda caída permanente; con el esfuerzo repentina sí la hay y el regulador recupera antes del siguiente ciclo. La caída sólo existe si la demanda supera la PEEP intrínseca (esfuerzo que tira gas de verdad): medido 0,74 cmH2O con Pmus 8 y base 8 L/min, 3,9 con Pmus 12, 1,6 con base 4. Un esfuerzo que no llega a tirar no mueve la Pva — esa parte sigue siendo límite. Verificación contra el banco de Thille 2009 (C04): la Pva queda bajo PEEP ≈ 56 ms con esfuerzo débil y ≈ 48 con fuerte (PS 10, PEEP 5, disparo por flujo de 1 L/min), como el Engström (< 70 ms; media de 13 equipos 94 ms). Lo que el modelo no reproduce: la presurización es instantánea, así que el tramo bajo PEEP no se alarga con esfuerzos muy fuertes (el banco: 107 frente a 86–88 ms).",
+      "status": "P (U-43, ancho de banda real no publicado); retardo inspiratorio dentro del rango de banco (C04)",
+      "source": "C04",
+      "locator": "Thille 2009, Resultados · Trigger function: DI medio 94 ms (54–177), < 70 con el Engström; 107 ± 65 con esfuerzo muy fuerte",
       "implemented": "src/engine/trigger.ts (PEEP_REGULATOR_DROOP_CMH2O_S_L, PEEP_REGULATOR_TAU_S); src/engine/controller.ts (qDemandFilt, fase exp)",
       "tests": [
         "tests/bench/reguladorPeep.test.ts (BM-RP)",
         "tests/unit/asynchrony.test.ts (ASI-02)",
-        "tests/unit/sync.test.ts (SYN-04)"
+        "tests/unit/sync.test.ts (SYN-04)",
+        "tests/unit/sync.test.ts (SYN-04, retardo inspiratorio)"
       ]
     },
     {

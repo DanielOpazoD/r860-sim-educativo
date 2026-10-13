@@ -192,6 +192,27 @@ describe('SYN-04 · retardo de respuesta del disparo: el trabajo de disparo apar
     expect(presion).toBeGreaterThan(debil + 30);
   });
 
+  it('la Pva queda bajo PEEP menos de 70 ms al disparar, como el Engström en el banco de Thille 2009 (media de 13 equipos: 94 ms)', () => {
+    // Retardo inspiratorio del banco: tiempo con la presión de vía aérea bajo la basal desde el inicio del esfuerzo.
+    for (const amplitude of [6.4, 19]) {
+      const ef = { enabled: true, amplitude, ratePerMin: 15, tiS: 0.5, phaseS: 0.5, shape: 'riseRelax' as const };
+      const sim = benchSim({
+        effort: ef,
+        settings: { ...BENCH_SETTINGS, mode: 'CPAP_PS', psupport: 10, peep: 5, flowTrigger: 1 / 60, biasFlow: 2 / 60, minRate: 'off' },
+      });
+      sim.run(8000);
+      while (sim.simTimeMs < 8500 - 4) sim.step(); // inicio del esfuerzo de las 8,5 s
+      const t0 = sim.simTimeMs;
+      let bajoPeepMs = 0;
+      while (sim.simTimeMs - t0 < 600) {
+        sim.step();
+        if (sim.frame().live.paw < 5 - 0.05) bajoPeepMs = sim.simTimeMs - t0;
+      }
+      expect(bajoPeepMs).toBeGreaterThan(30);
+      expect(bajoPeepMs).toBeLessThan(70);
+    }
+  });
+
   it('más flujo de base o menos esfuerzo, menos trabajo de disparo; el disparo por presión lo multiplica', () => {
     const base = disparos({}).at(-1)!.caida;
     expect(disparos({ biasFlow: 10 / 60 }).at(-1)!.caida).toBeLessThan(base - 0.5);
