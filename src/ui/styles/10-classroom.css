@@ -22,7 +22,7 @@
 .case-note {
   margin: 0 0 10px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--shell-warning-soft);
   color: var(--shell-warning);
   font-size: var(--type-xs);
@@ -35,20 +35,21 @@
   text-decoration: underline;
 }
 .aula-kicker {
-  font-size: var(--type-xs);
+  font-size: var(--type-2xs);
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--shell-muted);
   margin: 0;
 }
 
-/* Curva de referencia: botón con icono junto a «Personalizar vista», con su misma caja; encendido, en el color de acento. */
-.signal-toolbar .button.icon-only.ref-toggle {
+/* Ayudas sobre las curvas: botón con icono junto a «Personalizar vista», con su misma caja; encendido, en acento. */
+.signal-toolbar .button.icon-only.aids-toggle {
   background: var(--shell-raised);
   border-color: var(--shell-line);
   color: var(--shell-dim);
 }
-.signal-toolbar .button.icon-only.ref-toggle[aria-pressed='true'] {
+.signal-toolbar .button.icon-only.aids-toggle[aria-pressed='true'] {
   background: var(--shell-accent-soft);
   border-color: var(--shell-accent);
   color: var(--shell-accent);
@@ -82,7 +83,7 @@
 .gas-title {
   font-size: var(--type-2xs);
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--shell-muted);
 }
@@ -91,7 +92,7 @@
   color: var(--shell-muted);
   padding: 0 5px;
   border: 1px solid var(--shell-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 .gas-trend {
   justify-self: end;
@@ -195,7 +196,7 @@
   min-height: 30px;
   padding: 5px 8px;
   border: 1px solid var(--shell-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--shell-surface);
   color: var(--shell-text);
   text-align: left;
@@ -240,7 +241,7 @@
   color: var(--shell-text);
   background: var(--shell-surface);
   border: 1px solid var(--shell-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 9px 12px;
 }
 .case-item:hover {
@@ -276,7 +277,7 @@
   width: 22px;
   height: 22px;
   border: 1px solid var(--shell-line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--shell-surface);
   color: var(--shell-muted);
   font: inherit;
@@ -321,7 +322,7 @@
 .case-goal {
   margin: 10px 0;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--shell-accent-soft);
 }
 .case-goal .aula-kicker {
@@ -347,7 +348,7 @@
   color: var(--shell-text);
   background: var(--shell-surface);
   border: 1px solid var(--shell-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 10px;
 }
 .case-option:hover:not(:disabled),
@@ -460,7 +461,7 @@
   min-height: 24px;
   padding: 2px 8px 2px 10px;
   border: 1px solid var(--shell-line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--shell-surface);
   color: var(--shell-muted);
   font: inherit;
@@ -491,7 +492,7 @@
   flex-direction: column;
   background: var(--shell-surface);
   border: 1px solid var(--shell-line);
-  border-radius: var(--shell-radius);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shell-shadow);
   overflow: hidden;
   animation: flyout-in 140ms ease-out;
@@ -529,7 +530,7 @@
 .flyout-tab {
   flex: 1;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: none;
   padding: 5px 4px;
   color: var(--shell-muted);
@@ -541,7 +542,7 @@
   background: var(--shell-surface);
   color: var(--shell-accent);
   font-weight: 600;
-  box-shadow: 0 1px 3px #18344215;
+  box-shadow: var(--shadow-sm);
 }
 .flyout-body {
   flex: 1;
@@ -688,7 +689,7 @@
   color: var(--shell-text);
   background: var(--shell-surface);
   border: 1px solid var(--shell-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px;
   resize: vertical;
   margin-top: 8px;
@@ -706,7 +707,7 @@
   background: var(--shell-raised);
   border: 1px solid var(--shell-line);
   margin: 16px 0 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 14px 16px;
 }
 .classroom .reflection p {
@@ -733,7 +734,7 @@
   display: inline-flex;
   padding: 3px;
   border: 1px solid var(--shell-line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--shell-raised);
 }
 .classroom .edu-tabs .device-small {
@@ -741,13 +742,13 @@
   background: transparent;
   color: var(--shell-muted);
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: var(--type-md);
 }
 .classroom .edu-tabs .chosen {
   background: var(--shell-surface);
   color: var(--shell-text);
-  box-shadow: 0 1px 4px #18344215;
+  box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
 .classroom .edu-body {
@@ -763,7 +764,7 @@
   background: var(--shell-surface);
   padding: 20px;
   border-color: var(--shell-line);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 .classroom .edu-card h3,
 .classroom .edu-card header b,
@@ -779,7 +780,7 @@
   color: var(--shell-text);
   background: var(--shell-surface);
   border: 1px solid var(--shell-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   margin: 8px 0;
 }
@@ -802,7 +803,7 @@
 .classroom .edu-siluetas,
 .classroom .edu-titulacion {
   background: #063c72;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 @media (max-width: 1000px) {
   .app-top {
@@ -903,7 +904,7 @@
     font-size: var(--type-md);
   }
   .app-top .signal-toolbar .wave-options-button,
-  .app-top .signal-toolbar .ref-toggle {
+  .app-top .signal-toolbar .aids-toggle {
     width: 44px;
     min-width: 44px;
     padding: 0;

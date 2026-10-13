@@ -18,13 +18,11 @@ html {
 body {
   margin: 0;
   background-attachment: fixed;
-  font:
-    14px/1.5 -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Arial,
-    sans-serif;
+  font: 14px/1.5 var(--font-ui);
   font-feature-settings: 'tnum';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   min-width: 320px;
 }
 button {
@@ -120,7 +118,7 @@ a {
 }
 .wordmark strong {
   letter-spacing: -1.4px;
-  font-weight: 760;
+  font-weight: 700;
 }
 .wordmark strong span {
   color: var(--shell-accent);
@@ -139,11 +137,11 @@ a {
   background: var(--shell-raised);
   color: var(--shell-text);
   border: 1px solid var(--shell-line);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   padding: 9px 13px;
   min-height: 37px;
-  font-size: 12px;
-  font-weight: 570;
+  font-size: var(--type-sm);
+  font-weight: 500;
   line-height: 1.25;
   display: inline-flex;
   align-items: center;
@@ -183,7 +181,7 @@ a {
   height: 17px;
 }
 .button.small {
-  font-size: 11px;
+  font-size: var(--type-xs);
   padding: 8px 10px;
   min-height: 32px;
 }
@@ -204,7 +202,7 @@ a {
   padding: 12px 28px;
   background: var(--shell-warning-soft);
   color: var(--shell-warning);
-  font-size: 13px;
+  font-size: var(--type-md);
   border-bottom: 1px solid var(--shell-warning);
 }
 .workspace {
@@ -931,7 +929,7 @@ a {
 }
 .instructor {
   border: 1px solid var(--shell-line);
-  box-shadow: var(--shell-shadow);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 .instructor-tabs {
@@ -949,7 +947,8 @@ a {
 .instructor-tabs button.active {
   color: var(--shell-accent);
   border-bottom-color: var(--shell-accent);
-  background: var(--shell-accent-soft);
+  background: transparent;
+  font-weight: 600;
 }
 .instructor-tabs button:hover {
   color: var(--shell-text);
@@ -968,7 +967,7 @@ a {
   margin-bottom: 8px;
 }
 .phys-field-header label {
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: 500;
   color: var(--shell-text);
   line-height: 1.2;
@@ -988,7 +987,7 @@ a {
   padding: 2px 1px;
   appearance: textfield;
   -moz-appearance: textfield;
-  font-weight: 650;
+  font-weight: 600;
 }
 .phys-value input::-webkit-inner-spin-button {
   appearance: none;
@@ -1000,13 +999,13 @@ a {
   background: var(--shell-raised);
   color: var(--shell-text);
   border: 1px solid var(--shell-line);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font: inherit;
 }
 .preset-note {
   display: block;
   min-height: 1em;
-  font-size: 10px;
+  font-size: var(--type-2xs);
   line-height: 1.3;
   color: var(--shell-muted);
 }
@@ -1075,7 +1074,7 @@ a {
   grid-column: 1 / -1;
 }
 .truth-grid .truth-wide b {
-  font-size: 13px;
+  font-size: var(--type-md);
   font-weight: 500;
   line-height: 1.35;
   display: block;
@@ -1098,7 +1097,7 @@ a {
   color: var(--shell-muted);
 }
 .mini-muscle b {
-  font-size: 10px;
+  font-size: var(--type-2xs);
   font-weight: 500;
   color: var(--shell-accent);
 }
@@ -1119,7 +1118,7 @@ a {
   display: flex;
   gap: 9px;
   align-items: flex-start;
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--shell-text);
   line-height: 1.5;
 }
@@ -1153,26 +1152,26 @@ a {
   border-bottom: 1px solid var(--shell-line);
   padding: 13px 0;
   margin: 0 0 14px;
-  font-size: 11px;
+  font-size: var(--type-xs);
   line-height: 1.6;
   color: var(--shell-text);
 }
 .reflection summary {
   cursor: pointer;
-  font-weight: 550;
+  font-weight: 500;
 }
 .reflection p {
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--shell-muted);
   padding: 0 6px;
   margin: 13px 0 0;
   line-height: 1.8;
 }
 .small-section-title {
-  font-size: 10px;
+  font-size: var(--type-2xs);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--shell-dim);
+  letter-spacing: 0.08em;
+  color: var(--shell-muted);
   margin: 25px 0 14px;
-  font-weight: 500;
+  font-weight: 600;
 }

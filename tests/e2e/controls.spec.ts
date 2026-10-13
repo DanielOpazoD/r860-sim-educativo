@@ -53,14 +53,14 @@ test.describe('Controles exteriores coherentes', () => {
     await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('fixed');
   });
 
-  test('la barra muestra exactamente Pausar, Personalizar vista y la curva de referencia; Sesión sólo en Más opciones', async ({
+  test('la barra muestra exactamente Pausar, Personalizar vista y las ayudas sobre las curvas; Sesión sólo en Más opciones', async ({
     page,
   }) => {
     await open(page);
     await expect(page.locator('.signal-toolbar button:visible')).toHaveCount(3);
     await expect(page.locator('#sim-pause')).toBeVisible();
     await expect(page.locator('#wave-options-button')).toBeVisible();
-    await expect(page.locator('#wave-guides-toggle')).toBeVisible();
+    await expect(page.locator('#wave-aids-toggle')).toBeVisible();
     await expect(page.locator('.top-actions > [data-action="session"]')).toHaveCount(0);
     await page.locator('#more-button').click();
     await expect(page.locator('#more-menu [data-action="session"]')).toBeVisible();
@@ -69,46 +69,42 @@ test.describe('Controles exteriores coherentes', () => {
 
   test('Descripción de variables muestra el glosario y las ayudas persisten al recargar', async ({ page }) => {
     await open(page);
-    const guides = page.locator('#wave-guides-toggle');
+    const ayudasBoton = page.locator('#wave-aids-toggle');
     const toggle = page.locator('#variable-descriptions');
-    const annotations = page.locator('#wave-annotations');
     const legend = page.locator('#variable-legend');
-    // La curva de referencia es un botón junto a «Personalizar vista»: encendida por omisión, su estado está a la vista.
-    await expect(guides).toHaveAttribute('aria-pressed', 'true');
-    await guides.click();
-    await expect(guides).toHaveAttribute('aria-pressed', 'false');
+    // Las ayudas sobre las curvas son un botón junto a «Personalizar vista»: encendidas por omisión, su estado está a la vista.
+    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'true');
+    await ayudasBoton.click();
+    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'false');
     await openPersonalization(page);
+    await expect(page.locator('#wave-annotations')).toHaveCount(0);
     await expect(toggle).not.toBeChecked();
     await expect(legend).toBeHidden();
-    await expect(annotations).toBeChecked();
     await expect(page.locator('#wave-ref-button')).toBeDisabled();
     await toggle.check();
-    await annotations.uncheck();
     await expect(legend).toBeVisible();
     const stressIndex = legend.locator('dl > div').filter({ hasText: 'Índice de estrés' });
     await expect(stressIndex.locator('dd')).toHaveText(
       'Forma de la curva de presión durante una inspiración a flujo constante. Con flujo constante el volumen entra a ritmo fijo, así que la forma de la presión frente al tiempo es la forma de la presión elástica frente al volumen dentro del volumen corriente.',
     );
     await expect(stressIndex.locator('dd')).not.toHaveText('Índice de estrés');
-    const ayudas = () =>
+    const preferencias = () =>
       page.evaluate(() => {
         const prefs = JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}');
         return [prefs.variableDescriptions, prefs.waveGuides, prefs.waveAnnotations];
       });
-    await expect.poll(ayudas).toEqual([true, false, false]);
+    await expect.poll(preferencias).toEqual([true, false, false]);
     await closePersonalization(page);
     await page.reload();
     await expect(toggle).toBeChecked();
     await expect(legend).toBeVisible();
-    await expect(guides).toHaveAttribute('aria-pressed', 'false');
-    await guides.click();
+    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'false');
+    await ayudasBoton.click();
     await openPersonalization(page);
-    await expect(annotations).not.toBeChecked();
     await expect(page.locator('#wave-ref-button')).toBeEnabled();
     await toggle.uncheck();
-    await annotations.check();
     await expect(legend).toBeHidden();
-    await expect.poll(ayudas).toEqual([false, true, true]);
+    await expect.poll(preferencias).toEqual([false, true, true]);
   });
 
   test('las preferencias de ayudas no se escriben en una referencia fotográfica', async ({ page }) => {
@@ -122,11 +118,10 @@ test.describe('Controles exteriores coherentes', () => {
     await expect(page.locator('#scenario-name')).toContainText('Referencia fotográfica P1');
     await openPersonalization(page);
     await page.locator('#variable-descriptions').check();
-    await page.locator('#wave-annotations').uncheck();
     await expect(page.locator('#variable-legend')).toBeVisible();
     await closePersonalization(page);
-    await page.locator('#wave-guides-toggle').click();
-    await expect(page.locator('#wave-guides-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#wave-aids-toggle').click();
+    await expect(page.locator('#wave-aids-toggle')).toHaveAttribute('aria-pressed', 'false');
     await expect
       .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}')))
       .toEqual({ v: 1, welcomed: true, variableDescriptions: false, waveGuides: true, waveAnnotations: true });
@@ -145,7 +140,7 @@ test.describe('Controles exteriores coherentes', () => {
     await page.locator('#wave-ref-button').click();
     // La referencia no se anuncia con texto: el botón de la barra ya lo muestra.
     await expect(page.locator('#view-active-state')).not.toContainText('Referencia');
-    await expect(page.locator('#wave-guides-toggle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#wave-aids-toggle')).toHaveAttribute('aria-pressed', 'true');
     await closePersonalization(page);
     await page.locator('#sim-pause').click();
     await expect(page.locator('#sim-pause')).toContainText('Reanudar · 3×');

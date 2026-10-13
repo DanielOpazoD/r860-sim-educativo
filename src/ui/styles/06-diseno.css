@@ -6,7 +6,7 @@
 }
 .instructor {
   margin-top: 0;
-  border-radius: var(--shell-radius);
+  border-radius: var(--radius-lg);
 }
 .instructor-tabs button {
   padding: 9px 4px 8px;
@@ -255,12 +255,12 @@
 }
 .edu-card h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-md);
   font-weight: 500;
   color: #d1f6ff;
 }
 .edu-card header b {
-  font-size: 23px;
+  font-size: var(--type-xl);
   font-weight: 600;
   color: #eaffff;
   line-height: 1;
@@ -273,8 +273,8 @@
   margin-left: 5px;
 }
 .edu-formula {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12.5px;
+  font-family: var(--font-mono);
+  font-size: var(--type-sm);
   letter-spacing: 0.01em;
   padding: 4px 8px;
   border-radius: 4px;
@@ -313,7 +313,7 @@
 }
 .edu-nota {
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--type-xs);
   line-height: 1.4;
   color: #b9d9ef;
 }
@@ -338,7 +338,7 @@
   padding-top: 7px;
 }
 .edu-pie code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   color: #bfe6ff;
 }
 /* En pantallas estrechas la fila de cuatro se parte en dos y luego en una. */
@@ -388,12 +388,12 @@
 }
 .edu-bloque h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-md);
   font-weight: 500;
   color: #d1f6ff;
 }
 .edu-bloque header b {
-  font-size: 26px;
+  font-size: var(--type-xl);
   font-weight: 600;
   color: #eaffff;
   line-height: 1;
@@ -458,12 +458,12 @@
   margin-top: 3px;
 }
 .edu-silueta figcaption b {
-  font-size: 11.5px;
+  font-size: var(--type-xs);
   color: #7fa9c9;
   font-weight: 600;
 }
 .edu-silueta figcaption span {
-  font-size: 10.5px;
+  font-size: var(--type-2xs);
   color: #7fa9c9;
 }
 .edu-silueta.activa figcaption b {

@@ -40,7 +40,8 @@ export interface PlotsView {
   readonly gaugePaw: number | null;
   readonly frozen: boolean;
   readonly waveScaleMode: 'auto' | 'fixed';
-  readonly waveGuides: boolean;
+  /** Ayudas sobre las curvas: curva previa, marcas de fase y de presión, líneas de PEEP/Pmáx y disparos. */
+  readonly waveAids: boolean;
   /** Añade todas las muestras del cuadro a la traza y reinicia si el tiempo retrocedió. */
   ingest(prev: EngineFrame | null, fr: EngineFrame): void;
   /** Vacía la traza y el ciclo de referencia (escenario nuevo, sesión importada). */
@@ -60,8 +61,7 @@ export interface PlotsView {
   setWaveWindow(s: number): void;
   setWaveStyle(style: 'sweep' | 'scroll'): void;
   setWaveScaleMode(mode: 'auto' | 'fixed'): void;
-  setWaveGuides(on: boolean): void;
-  setWaveAnnotations(on: boolean): void;
+  setWaveAids(on: boolean): void;
   /** Deslizador de historia (0–1000) con las curvas congeladas. */
   slideHistory(value: number): void;
   /** Deslizadores A/B (0–1000) sobre la ventana congelada. */
@@ -77,8 +77,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     frozenTriggerDetections: number[] = [],
     lastTriggerSeq = 0;
   let waveWindow = 12,
-    waveGuides = true,
-    waveAnnotations = true,
+    waveAids = true,
     waveStyle: 'sweep' | 'scroll' = 'sweep',
     waveScaleMode: 'auto' | 'fixed' = 'auto';
   let frozen = false,
@@ -183,7 +182,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
           : null,
       );
     }
-    const markers = waveAnnotations ? markerCache : [];
+    const markers = waveAids ? markerCache : [];
     if (view === 'waves')
       drawWave($<HTMLCanvasElement>('#waves-canvas'), pts, end, peep, vtMl, {
         window: waveWindow,
@@ -195,7 +194,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         bounds: waveBounds('waves', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
-        reference: waveGuides ? waveReference : null,
+        reference: waveAids ? waveReference : null,
+        aids: waveAids,
       });
     else if (view === 'basic')
       drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
@@ -206,7 +206,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         bounds: waveBounds('basic', pts, end, peep, vtMl),
         pmax: fr.settings.pmax,
         triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
-        reference: waveGuides ? waveReference : null,
+        reference: waveAids ? waveReference : null,
+        aids: waveAids,
       });
     else if (view === 'loops') {
       drawLoop($<HTMLCanvasElement>('#pv-canvas'), pts, loopReference, peep, vtMl, 'pv', {
@@ -351,19 +352,15 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     get waveScaleMode() {
       return waveScaleMode;
     },
-    get waveGuides() {
-      return waveGuides;
+    get waveAids() {
+      return waveAids;
     },
-    setWaveGuides(on) {
-      waveGuides = on;
+    setWaveAids(on) {
+      waveAids = on;
       $<HTMLButtonElement>('#wave-ref-button').disabled = !on;
-      const toggle = $<HTMLButtonElement>('#wave-guides-toggle');
+      const toggle = $<HTMLButtonElement>('#wave-aids-toggle');
       toggle.classList.toggle('active', on);
       toggle.setAttribute('aria-pressed', String(on));
-      dirty = true;
-    },
-    setWaveAnnotations(on) {
-      waveAnnotations = on;
       dirty = true;
     },
     ingest(prev, fr) {
