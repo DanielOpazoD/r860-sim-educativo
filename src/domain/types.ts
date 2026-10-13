@@ -302,6 +302,8 @@ export interface BreathRecord {
   vtExpMeasured?: Liters;
   plimitReached: boolean;
   pmaxReached: boolean;
+  /** VT programado de la respiración si fue de volumen control (L), o null: contra él se mide «VT no entregado». */
+  vtSetL?: Liters | null;
   /** Energía que el ventilador entregó en la inspiración (J): ∫ Pva·dV, con 1 cmH2O·L = 0,098 J. Base de la potencia mecánica. */
   energyInspJ?: number;
   /** Estado verdadero al inicio (docente): volumen absoluto sobre relajación. */

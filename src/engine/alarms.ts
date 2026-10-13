@@ -71,6 +71,27 @@ export const ALARM_RULES: Record<string, RuleDef> = {
     latching: true,
     source: 'ventilator.paw',
   },
+  /** «Plimit reached» (media, rebajable; D, URM SW10 8-20): la presión llegó a Plimit en la respiración. */
+  plimit: {
+    id: 'plimit',
+    priority: 'medium',
+    message: 'Plimit alcanzada',
+    responseAction: 'none',
+    latching: true,
+    source: 'ventilator.paw',
+  },
+  /**
+   * «Tidal volume not delivered» (media, rebajable; D, URM SW10 8-21): seis respiraciones de volumen seguidas con el VT
+   * inspirado medido un 20 % (o 5 mL, lo mayor) por debajo del programado.
+   */
+  vtNotDelivered: {
+    id: 'vtNotDelivered',
+    priority: 'medium',
+    message: 'VT no entregado',
+    responseAction: 'none',
+    latching: true,
+    source: 'ventilator.flow',
+  },
 };
 
 const PRIORITY_RANK: Record<AlarmPriority, number> = { high: 3, medium: 2, informational: 1 };
@@ -108,6 +129,15 @@ export const FILTROS: Record<string, readonly string[]> = {
 };
 /** VTesp bajo exige que el volumen haya quedado bajo el límite en 3 respiraciones (D, URM SW10 8-25). */
 export const VTE_LOW_BREATHS = 3;
+/** «VT no entregado»: seis respiraciones seguidas con el VT inspirado un 20 % o 5 mL (lo mayor) bajo el programado (D, 8-21). */
+export const VT_NOT_DELIVERED_BREATHS = 6;
+export const VT_NOT_DELIVERED_FRACTION = 0.2;
+export const VT_NOT_DELIVERED_MIN_L = 0.005;
+/**
+ * Alarmas que la pausa de audio rebaja a prioridad baja hasta que se resuelven (D, URM SW10 8-7 y nota 4 de la lista
+ * 8-8): de las del modelo, Plimit alcanzada y VT no entregado.
+ */
+export const REBAJABLES_CON_PAUSA: ReadonlySet<string> = new Set(['plimit', 'vtNotDelivered']);
 /** Alarmas visibles: activas y no retiradas de la lista por otra. Es lo que muestra la banda y la lista del equipo. */
 export const alarmaVisible = (a: AlarmState): boolean => a.conditionActive && !a.filteredBy;
 /** Umbrales de la desconexión (P): sin presión de trabajo y sin volumen que vuelva. */
@@ -133,6 +163,8 @@ export class AlarmEngine {
   private bloqueo: 'inspHold' | 'expHold' | null = null;
   /** VTesp medido de las últimas respiraciones (L), para la persistencia de VTesp bajo. */
   private vteRecientes: number[] = [];
+  /** Respiraciones de volumen seguidas con el VT inspirado corto, para «VT no entregado». */
+  private vtCortas = 0;
 
   constructor(limits: AlarmLimits) {
     this.limits = { ...limits };
@@ -227,6 +259,8 @@ export class AlarmEngine {
     // Retardo del equipo o alarma no habilitada durante un bloqueo: la condición no se anuncia todavía.
     if (this.retenida(id, simTimeMs)) return;
     a.conditionActive = true;
+    // Una rebajada por la pausa de audio vuelve a su prioridad cuando la condición reaparece.
+    a.priority = ALARM_RULES[id]?.priority ?? a.priority;
     a.onsetAtMs = simTimeMs;
     a.resolvedAtMs = null;
     a.acknowledgedAtMs = null;
@@ -241,6 +275,11 @@ export class AlarmEngine {
     if (!a || !a.conditionActive) return;
     a.conditionActive = false;
     a.resolvedAtMs = simTimeMs;
+  }
+
+  /** Pausa de audio: las activas que el equipo rebaja pasan a prioridad baja hasta que se resuelven (D, URM SW10 8-7). */
+  onAudioPause(): void {
+    for (const a of this.alarms.values()) if (a.conditionActive && REBAJABLES_CON_PAUSA.has(a.id)) a.priority = 'informational';
   }
 
   /** Reconocer no resuelve la condición física; resolver no reconoce. */
@@ -307,7 +346,28 @@ export class AlarmEngine {
     this.vteRecientes.push(record.vtExpMeasured ?? record.vtExp);
     if (this.vteRecientes.length > VTE_LOW_BREATHS) this.vteRecientes.shift();
     if (!record.pmaxReached) this.resolve('pmax', simTimeMs);
+    if (record.plimitReached) this.activate('plimit', simTimeMs, record.ppeak, Math.round(record.ppeak), null, 'la presión llegó a Plimit');
+    else this.resolve('plimit', simTimeMs);
+    this.checkVtEntregado(record, simTimeMs);
     this.checkBreathLimits(simTimeMs);
+  }
+
+  /** VT no entregado: sólo cuenta en respiraciones de volumen control; una que entrega lo programado lo resuelve. */
+  private checkVtEntregado(record: BreathRecord, simTimeMs: number): void {
+    const vt = record.vtSetL ?? null;
+    const vti = record.vtInspMeasured ?? record.vtInsp;
+    const corta = vt !== null && vti < vt - Math.max(VT_NOT_DELIVERED_FRACTION * vt, VT_NOT_DELIVERED_MIN_L);
+    this.vtCortas = corta ? this.vtCortas + 1 : 0;
+    if (this.vtCortas >= VT_NOT_DELIVERED_BREATHS && vt !== null)
+      this.activate(
+        'vtNotDelivered',
+        simTimeMs,
+        vti,
+        Math.round(litersToMl(vti)),
+        vt,
+        `VTi ${Math.round(litersToMl(vti))} mL en ${this.vtCortas} respiraciones`,
+      );
+    else if (!corta) this.resolve('vtNotDelivered', simTimeMs);
   }
 
   /** Compara los límites con la última respiración monitorizada. Sin ninguna, no hay nada que comparar. */
@@ -387,6 +447,7 @@ export class AlarmEngine {
     this.lastBreath = null;
     this.lastFio2 = null;
     this.vteRecientes = [];
+    this.vtCortas = 0;
     this.bloqueo = null;
   }
 

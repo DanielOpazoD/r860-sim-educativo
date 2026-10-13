@@ -611,15 +611,15 @@
     },
     {
       "id": "E-036",
-      "claim": "[v0.3.6: indicador «Plimit» junto a Ppico, ya no alarma] Alarma de prioridad media «Presión limitada por Plimit» cuando la inspiración termina limitada por Plimit (VT no entregado).",
-      "status": "P",
-      "source": "R07 p.2 describe el evento («Plimit impide entregar todo el VT»), no la alarma",
-      "locator": "—",
-      "note": "NO VERIFICADO que el R860 emita un aviso con ese texto ni con esa prioridad; se propone para que el alumno vea por qué el VT queda corto (U-11).",
-      "implemented": "src/engine/alarms.ts (condición plimit, prioridad media, a partir de record.plimitReached)",
+      "claim": "[v0.3.6 la quitó por no estar verificada; desde 13-10-2026 vuelve como la documenta el manual] Alarma «Plimit alcanzada», prioridad media, en cada respiración en que la presión llega a Plimit; se resuelve con la primera que no llega. Se mantiene además el indicador «Plimit» junto a Ppico. Con ella, «VT no entregado» (E-117).",
+      "status": "D (existencia, condición y prioridad, R21)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 8-20 «Plimit reached · Medium4 · Peak airway pressure has reached the set Plimit»",
+      "note": "Antes P y retirada en v0.3.6 porque la conducta del equipo no estaba verificada (U-11).",
+      "implemented": "src/engine/alarms.ts (ALARM_RULES.plimit, onBreath a partir de record.plimitReached); src/ui/metricsView.ts (indicador junto a Ppico)",
       "tests": [
-        "tests/unit/review3.test.ts «con Plimit 7 la alarma de prioridad media se activa; al subir Plimit se resuelve»",
-        "tests/unit/alarms.test.ts"
+        "tests/unit/review3.test.ts (R3-04)",
+        "tests/unit/alarms.test.ts (ALM-PLIMIT)"
       ]
     },
     {
@@ -1533,7 +1533,7 @@
     },
     {
       "id": "E-116",
-      "claim": "Alarma audible y luminosa como el equipo. La luz del bisel muestra a la derecha la prioridad: roja intermitente la alta, amarilla intermitente la media (antes fija), azul fija la baja. Durante la pausa de audio su mitad izquierda queda azul. Los tonos de alta y media se repiten hasta que se pausa el audio o se resuelve la condición; el de baja suena una vez. Una alta que no se resuelve ni se reconoce en 30 s (High Alert Audio de fábrica) sube de tono y de volumen; reconocerla es pulsar «Reconocer» o pausar el audio después de que empezó (P). La pausa de audio no calla la desconexión del paciente. Ninguna de las alarmas del modelo es de las que la pausa rebaja a baja prioridad (marca 4 de la lista del manual).",
+      "claim": "Alarma audible y luminosa como el equipo. La luz del bisel muestra a la derecha la prioridad: roja intermitente la alta, amarilla intermitente la media (antes fija), azul fija la baja. Durante la pausa de audio su mitad izquierda queda azul. Los tonos de alta y media se repiten hasta que se pausa el audio o se resuelve la condición; el de baja suena una vez. Una alta que no se resuelve ni se reconoce en 30 s (High Alert Audio de fábrica) sube de tono y de volumen; reconocerla es pulsar «Reconocer» o pausar el audio después de que empezó (P). La pausa de audio no calla la desconexión del paciente. Las alarmas que el manual marca como rebajables (nota 4 de la lista) bajan a prioridad baja con la pausa de audio hasta que se resuelven: de las del modelo, «Plimit alcanzada» y «VT no entregado» (E-036, E-117).",
       "status": "D (colores e intermitencias, mitad azul en pausa, repetición, High Alert Audio de 30 s, desconexión siempre audible y alarmas rebajables, R21); P cadencias, frecuencias y volumen de la alerta (U-12) y qué cuenta como reconocer",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 8-6 «Priority · Color · Light · Tone» y nota sobre repetición y High Alert Audio; 8-6 a 8-7 «Audio pause» (lado izquierdo azul, alarmas siempre audibles); 8-8 nota 4 (alarmas rebajables); 11-10 «High alert audio 30 s»",
@@ -1542,6 +1542,17 @@
         "tests/unit/alarmLimits.test.ts (ALM-URM-AUDIO)",
         "tests/unit/uiDom.test.ts (luz del bisel)",
         "tests/unit/contraste.test.ts (CTR-03)"
+      ]
+    },
+    {
+      "id": "E-117",
+      "claim": "Alarma «VT no entregado», prioridad media: seis respiraciones de volumen control seguidas con el VT inspirado medido un 20 % (o 5 mL, lo mayor) por debajo del programado de esa respiración; se resuelve con la primera que lo entrega. En presión control y en CPAP/PS no se evalúa. «Plimit alcanzada» y «VT no entregado» son rebajables: la pausa de audio las pasa a prioridad baja hasta que se resuelven, y al reaparecer recuperan la media.",
+      "status": "D (condición, prioridad y rebaja, R21); P que el volumen comparado sea el VT inspirado medido de cada respiración",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 8-21 «Tidal volume not delivered · Medium4 · Ventilator has delivered 20% less tidal volume than the set tidal volume, or 5 ml (whichever is greater) for 6 breaths»; 8-7 y 8-8 nota 4 (alarmas rebajables)",
+      "implemented": "src/engine/alarms.ts (ALARM_RULES.vtNotDelivered, checkVtEntregado, REBAJABLES_CON_PAUSA, onAudioPause); src/engine/controller.ts (vtSetL de cada respiración); src/engine/commandHandlers.ts (audioPause)",
+      "tests": [
+        "tests/unit/alarms.test.ts (ALM-PLIMIT)"
       ]
     }
   ]

@@ -150,6 +150,7 @@ export const COMMAND_HANDLERS: Handlers = {
   },
   audioPause: (ctx, _cmd, actor) => {
     const until = ctx.setAudioPauseUntil(ctx.simTimeMs + ctx.profile.audioPauseMs);
+    ctx.alarms.onAudioPause();
     ctx.logEvent('audio', actor, { pauseMs: ctx.profile.audioPauseMs, until, evidence: 'D QRG 2020 p.4' });
     return ok;
   },
