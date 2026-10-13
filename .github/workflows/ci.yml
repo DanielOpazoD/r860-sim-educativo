@@ -8,8 +8,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      # La misma versión mayor que el entorno de desarrollo (.nvmrc): la cobertura de V8 cambia entre versiones de Node
+      # y el README publica la cifra medida, así que una versión distinta la desalineaba en cada PR.
       - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
+        with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
       - run: npm run lint
       - run: npm run deps
