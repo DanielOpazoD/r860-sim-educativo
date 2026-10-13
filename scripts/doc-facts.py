@@ -41,6 +41,22 @@ def load(path, que_ejecutar):
     return json.load(open(path, encoding='utf-8'))
 
 
+# La cobertura medida varía en décimas entre máquinas aun con el mismo Node: medido el 13-10-2026, +0,1 puntos en
+# ramas de `src/ui/teaching*.ts` entre el macOS de desarrollo y el CI. Exigir el mismo decimal hacía fallar cada PR
+# por ruido del entorno; con esta tolerancia, una cifra que quedó atrás de verdad sigue fallando.
+TOLERANCIA_COBERTURA = 0.3
+
+
+def cifras_equivalentes(escrito, medido, tolerancia):
+    """Mismo texto salvo porcentajes que difieren a lo más en `tolerancia` puntos."""
+    patron = r'(\d+,\d) %'
+    if re.sub(patron, 'N %', escrito) != re.sub(patron, 'N %', medido):
+        return False
+    a = [float(x.replace(',', '.')) for x in re.findall(patron, escrito)]
+    b = [float(x.replace(',', '.')) for x in re.findall(patron, medido)]
+    return len(a) == len(b) and all(abs(x - y) <= tolerancia + 1e-9 for x, y in zip(a, b))
+
+
 def num(x):
     """Número con coma decimal, como el resto de la documentación en español."""
     return f'{x:.1f}'.replace('.', ',')
@@ -154,8 +170,12 @@ for doc in DOCUMENTOS:
         continue
     if CHECK:
         for clave in HECHOS:
-            if re.search(r'<!-- hechos:' + clave + r' -->', original) and HECHOS[clave] not in original:
-                desactualizados.append(f'{doc} · {clave}')
+            bloque = re.search(r'<!-- hechos:' + clave + r' -->(.*?)<!-- /hechos:' + clave + r' -->', original, re.S)
+            if not bloque or HECHOS[clave] in original:
+                continue
+            if clave == 'cobertura' and cifras_equivalentes(bloque.group(1), HECHOS[clave], TOLERANCIA_COBERTURA):
+                continue
+            desactualizados.append(f'{doc} · {clave}')
     else:
         open(doc, 'w', encoding='utf-8').write(texto)
         escritos.append(doc)
