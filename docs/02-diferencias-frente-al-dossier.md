@@ -340,3 +340,7 @@ Dos presiones motrices distintas y una identidad que no cuadra, en un obstructiv
 - **Sin la pista «Haz un bloqueo inspiratorio» dentro de la casilla de Pplat.** El guion basta; el motivo queda en el nombre accesible de la casilla y en su ayuda.
 - **Marcas sobre la curva en enteros** («Ppico 20»), como las cifras del monitor.
 - **Ayudas sobre las curvas en un solo botón con icono** junto a «Personalizar vista»: curva previa («Antes/Después»), marcas de inicio, ciclado, fin espiratorio y esfuerzo, etiquetas de Ppico y Pplat, líneas de PEEP y Pmáx y marcas de disparo se encienden y apagan juntas. Apagadas, la curva queda como en el equipo. El estado se lee en el propio botón y no se anuncia con texto.
+
+## Auditoría visual frente a las pantallas del manual (13-10-2026)
+
+La disposición coincide con las pantallas del manual SW10 y con las transcripciones de P1 y P3: fila superior, curvas, dos columnas de valores, barra de presión, vista de seis casillas y fila de ajustes. Las diferencias son las ya decididas (límites de alarma junto a cada valor; colores de curva, que el equipo deja configurar) y una abierta: la banda de alarmas en reposo es verde en el equipo y azul aquí desde v0.5.2. Detalle y lo pendiente con las fotografías originales en `docs/09-auditoria-visual.md`.
