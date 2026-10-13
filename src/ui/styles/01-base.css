@@ -259,6 +259,7 @@ a {
   gap: 14px;
 }
 .bezel-light {
+  position: relative;
   width: 28px;
   height: 5px;
   border-radius: 3px;
@@ -278,9 +279,29 @@ a {
     box-shadow: none;
   }
 }
+/* Media: amarilla intermitente, más lenta que la alta; baja: azul fija (URM SW10 8-6, D; cadencias P). */
 .bezel-light.medium {
   background: #efc051;
   box-shadow: 0 0 13px #ffb82d80;
+  animation: bezel-blink-medium 2s steps(1, end) infinite;
+}
+@keyframes bezel-blink-medium {
+  50% {
+    background: #5e4b1c;
+    box-shadow: none;
+  }
+}
+.bezel-light.low {
+  background: #4f8dff;
+  box-shadow: 0 0 10px #4f8dff80;
+}
+/* Pausa de audio: la mitad izquierda de la luz, azul fija; la derecha sigue con la prioridad (URM SW10 8-6, D). */
+.bezel-light.pausa::before {
+  content: '';
+  position: absolute;
+  inset: 0 50% 0 0;
+  border-radius: 2px 0 0 2px;
+  background: #4f8dff;
 }
 .screen-window {
   width: 100%;

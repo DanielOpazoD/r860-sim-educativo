@@ -3,7 +3,7 @@ import type { AlarmLimits, AlarmState } from '../domain/types';
 import { gridValues, isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
-import { AlarmAudio } from './audio';
+import { AlarmAudio, sonidoDeAlarma } from './audio';
 import type { AppContext } from './context';
 import { $, $$, btn, esc, icon, put } from './dom';
 import { clock, unitText } from './format';
@@ -65,10 +65,13 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     const bar = fr.alarmBar;
     const lev = bar.color === 'red' ? 'high' : bar.color === 'yellow' ? 'medium' : bar.color === 'grey' ? 'previous' : '';
     $('#alarm-band').className = 'alarm-band ' + lev;
-    $('#bezel-light').className = 'bezel-light ' + (lev === 'previous' ? '' : lev);
+    const muteLeft = fr.audioPauseUntilMs !== null ? fr.audioPauseUntilMs - fr.simTimeMs : 0;
+    // La luz del equipo: a la derecha el color de la prioridad (roja y amarilla intermitentes, azul fija para la baja) y
+    // a la izquierda azul mientras dura la pausa de audio (URM SW10 8-6, D).
+    const luz = bar.color === 'blue' ? 'low' : lev === 'previous' ? '' : lev;
+    $('#bezel-light').className = `bezel-light ${luz}${muteLeft > 0 ? ' pausa' : ''}`;
     put('#alarm-label', alarmBandLabel(bar));
     put('#alarm-detail', alarmDetailText(fr));
-    const muteLeft = fr.audioPauseUntilMs !== null ? fr.audioPauseUntilMs - fr.simTimeMs : 0;
     put('#mute-time', muteLeft > 0 ? clock(Math.ceil(muteLeft / 1000)) : '');
     const flags = ctx.lesson.flags;
     if (bar.activeCount) flags.alarmSeen = flags.alarmSeen || ctx.dialog.kind === 'alarms';
@@ -78,11 +81,7 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
       const el = document.getElementById('live-alarms');
       if (el) el.innerHTML = alarmHTML();
     }
-    audio.pausedUntilMs = fr.audioPauseUntilMs;
-    const top = fr.alarms
-      .filter((a) => a.conditionActive && !a.filteredBy)
-      .sort((a, b) => (a.priority === 'high' ? -1 : b.priority === 'high' ? 1 : 0))[0];
-    if (ctx.running) audio.drive(top ? top.priority : null, fr.simTimeMs);
+    if (ctx.running) audio.drive(sonidoDeAlarma(fr.alarms, fr.simTimeMs, fr.audioPauseUntilMs, ctx.profile.audioPauseMs), fr.simTimeMs);
   }
   function alarms(): void {
     ctx.lesson.flags.alarmSeen = true;

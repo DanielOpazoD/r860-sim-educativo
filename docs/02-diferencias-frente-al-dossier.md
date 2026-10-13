@@ -354,3 +354,16 @@ Los ajustes y los límites de alarma se contrastaron con las tablas del manual S
 - **Tinsp de respaldo** de 0,25 a 15 s: 0,05 hasta 1 s, 0,1 hasta 4 y 0,25 después (antes 0,25–4 s, P). **Pinsp de respaldo** 1–98 pasa a D.
 - **VTesp bajo y alto** con los cinco tramos del equipo: 0,5 mL hasta 20, 1 hasta 100, 5 hasta 350, 25 hasta 1000 y 50 después (antes de 1 en 1).
 - **VMesp bajo y alto** desde 0,01 y 0,02 L/min, de 0,01 en 0,01 bajo 1, de 0,1 hasta 10 y de 1 después. Como en el equipo, en ventilación invasiva no se apagan; tampoco la **FiO₂ baja** (antes las tres admitían Off, P). El diálogo de límites lo explica y no deja un campo vacío en ellas.
+
+## Luz y sonido de alarma como el equipo (13-10-2026)
+
+Lo que el manual SW10 dice de la luz y el sonido (8-6 a 8-8; High Alert Audio de fábrica, 11-10) y no se hacía (E-116, D):
+
+- La **luz media** parpadea en amarillo, como la alta en rojo (antes quedaba fija); la **baja** es azul fija.
+- Durante la **pausa de audio** la mitad izquierda de la luz queda azul y la derecha sigue con la prioridad.
+- Una **alta** que nadie resuelve ni reconoce en **30 s** sube de tono y de volumen.
+- La pausa de audio **no calla la desconexión** del paciente.
+- El tono de **baja** suena una vez; los de alta y media se repiten.
+- Ninguna alarma del modelo es de las que la pausa rebaja a baja prioridad.
+
+Cadencias, frecuencias y volumen siguen siendo propuestos (U-12).

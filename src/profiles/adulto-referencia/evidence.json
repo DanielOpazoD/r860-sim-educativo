@@ -280,7 +280,7 @@
       "status": "D",
       "source": "R02",
       "locator": "p.9 «Alarm Priority»",
-      "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12); styles.css (.bezel-light.high: luz roja intermitente, fija con prefers-reduced-motion); humanize.ts (alarmBandLabel: la prioridad también en palabras, P)",
+      "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12); styles.css (.bezel-light.high y .medium intermitentes, .low fija; todas fijas con prefers-reduced-motion; ver E-116); humanize.ts (alarmBandLabel: la prioridad también en palabras, P)",
       "tests": [
         "ALM-06",
         "tests/unit/contraste.test.ts (CTR-03)",
@@ -1529,6 +1529,19 @@
       "tests": [
         "tests/unit/rangosEquipo.test.ts (RAN-URM)",
         "tests/unit/validation.test.ts (I:E de 0,1 en 0,1)"
+      ]
+    },
+    {
+      "id": "E-116",
+      "claim": "Alarma audible y luminosa como el equipo. La luz del bisel muestra a la derecha la prioridad: roja intermitente la alta, amarilla intermitente la media (antes fija), azul fija la baja. Durante la pausa de audio su mitad izquierda queda azul. Los tonos de alta y media se repiten hasta que se pausa el audio o se resuelve la condición; el de baja suena una vez. Una alta que no se resuelve ni se reconoce en 30 s (High Alert Audio de fábrica) sube de tono y de volumen; reconocerla es pulsar «Reconocer» o pausar el audio después de que empezó (P). La pausa de audio no calla la desconexión del paciente. Ninguna de las alarmas del modelo es de las que la pausa rebaja a baja prioridad (marca 4 de la lista del manual).",
+      "status": "D (colores e intermitencias, mitad azul en pausa, repetición, High Alert Audio de 30 s, desconexión siempre audible y alarmas rebajables, R21); P cadencias, frecuencias y volumen de la alerta (U-12) y qué cuenta como reconocer",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 8-6 «Priority · Color · Light · Tone» y nota sobre repetición y High Alert Audio; 8-6 a 8-7 «Audio pause» (lado izquierdo azul, alarmas siempre audibles); 8-8 nota 4 (alarmas rebajables); 11-10 «High alert audio 30 s»",
+      "implemented": "src/ui/audio.ts (HIGH_ALERT_AUDIO_MS, SIEMPRE_AUDIBLES, sonidoDeAlarma, patronAhora, AlarmAudio.drive); src/ui/alarmsUi.ts (updateAlarm: clases de la luz); src/ui/styles/01-base.css (.bezel-light.medium, .low, .pausa::before); src/ui/help.ts (procedure.alarms)",
+      "tests": [
+        "tests/unit/alarmLimits.test.ts (ALM-URM-AUDIO)",
+        "tests/unit/uiDom.test.ts (luz del bisel)",
+        "tests/unit/contraste.test.ts (CTR-03)"
       ]
     }
   ]

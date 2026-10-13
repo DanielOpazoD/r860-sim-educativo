@@ -548,7 +548,7 @@ export const HELP: Record<string, HelpEntry> = {
       'Los límites comparan mediciones de los ciclos con el intervalo elegido. Un valor fuera de rango debe persistir para activar ciertas alarmas.',
       'Volumen, frecuencia y Ppico baja se evalúan al terminar cada respiración: a frecuencia baja, entre el cambio y la alarma puede pasar un ciclo entero. Un límite recién confirmado no espera: se compara enseguida con la última respiración medida. Pmáx actúa dentro del propio ciclo, sobre la presión antes de redondear.',
       'Como en el equipo: VTesp bajo pide tres respiraciones seguidas bajo el límite; tras un bloqueo, VMesp bajo, FR baja y FiO2 esperan 60 s, y las de FiO2 también tras cambiarla; al pasar de espera a ventilar, las de volumen, FR, PEEPe y FiO2 esperan 60 s. Una alarma que otra explica sale de la lista: la desconexión retira la apnea y las de volumen, y la apnea, las de volumen y FR baja.',
-      'Silenciar sólo pausa el sonido. Reconocer registra la revisión; no elimina una condición que sigue activa. Pmáx se configura con los ajustes de ventilación.',
+      'Silenciar sólo pausa el sonido durante 2 minutos, y no calla la desconexión del paciente; mientras dura, la mitad izquierda de la luz del bisel queda azul. Una alarma alta que nadie resuelve ni reconoce en 30 s sube de tono y de volumen. Reconocer registra la revisión; no elimina una condición que sigue activa. Pmáx se configura con los ajustes de ventilación.',
     ],
   },
   'procedure.sbt': {
