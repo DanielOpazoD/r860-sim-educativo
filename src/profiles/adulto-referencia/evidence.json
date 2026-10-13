@@ -156,9 +156,9 @@
     },
     {
       "id": "C03",
-      "title": "Espacio muerto del adulto intubado y ventilado: Fletcher R, Jonson B. Br J Anaesth 1984;56:109–19 (PMID 6419753); Morán I et al. Intensive Care Med 2006;32:524–31 (PMID 16498531); Hinkson CR et al. Respir Care 2006;51:1140–4 (PMID 17005059)",
+      "title": "Espacio muerto fisiológico del adulto intubado y ventilado: Fletcher R, Jonson B, Cumming G, Brew J. Br J Anaesth 1981;53:77–88 (PMID 6779846); Fletcher R, Jonson B. Br J Anaesth 1984;56:109–19 (PMID 6419753); Morán I et al. Intensive Care Med 2006;32:524–31 (PMID 16498531); Hinkson CR et al. Respir Care 2006;51:1140–4 (PMID 17005059)",
       "kind": "literatura clínica",
-      "note": "NO es documentación del fabricante. Fletcher y Jonson: en adultos anestesiados con ventilación mecánica, VDphys/VT mediana 0,44 con VT 0,45 L (≈ 200 mL) y 0,31 con VT 0,75 L. Morán: cambiar el intercambiador de calor y humedad por un humidificador activo bajó el VD fisiológico de 352 a 310 mL (≈ 42 mL). Hinkson: quitar el intercambiador y luego el codo flexible de 15 cm bajó VD/VT ≈ 6 % y otro ≈ 5 %. Se usa para el espacio muerto en serie por omisión (0,20 L), no para ningún ajuste."
+      "note": "NO es documentación del fabricante. Fletcher 1981: el espacio muerto fisiológico es la suma del de la vía aérea (gas entre los labios y la interfase alveolar) y el alveolar (desajuste V/Q dentro y entre unidades). Fletcher y Jonson 1984: en adultos anestesiados con ventilación mecánica, VDphys/VT mediana 0,44 con VT 0,45 L y 0,31 con VT 0,75 L; la vía aérea no cambió con el VT y la fracción alveolar bajó con el VT mayor. Morán: cambiar el intercambiador de calor y humedad por un humidificador activo bajó el VD fisiológico de 352 a 310 mL (≈ 42 mL). Hinkson: quitar el intercambiador y luego el codo flexible de 15 cm bajó VD/VT ≈ 6 % y otro ≈ 5 %. Se usa para el espacio muerto por omisión (vía aérea 0,165 L y fracción alveolar 0,12), no para ningún ajuste."
     }
   ],
   "claims": [
@@ -1197,18 +1197,18 @@
     },
     {
       "id": "E-094",
-      "claim": "Gasometría de modelo: en equilibrio PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS) y pH = 6,1 + log10(HCO₃⁻/(0,03·PaCO₂)). V̇A es el volumen que espira el PULMÓN en cada respiración menos el espacio muerto en serie, nunca negativo: la fuga y el gas comprimido en el circuito no ventilan el alvéolo, y una respiración menor que el espacio muerto no aporta. Banco SC-01: V̇A 4,5 L/min, PaCO₂ 38,4 mmHg, pH 7,42, VD/VT 0,40.",
-      "status": "P (ecuaciones estándar de libro de texto, sin fuente abierta en esta revisión; la V̇A como volumen pulmonar − VD por respiración, sin mezcla parcial de Bohr)",
-      "source": "—",
-      "locator": "—",
-      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-02, GAS-05)"
+      "claim": "Gasometría de modelo: en equilibrio PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS) y pH = 6,1 + log10(HCO₃⁻/(0,03·PaCO₂)). Espacio muerto fisiológico en dos partes (Fletcher 1981): el de la vía aérea, en serie, seguido como un tapón que se llena y se vacía en orden (al espirar sale primero el gas inspirado que quedó en la vía aérea; al inspirar vuelve primero al alvéolo el gas alveolar que quedó en ella), y el alveolar, una fracción f del gas alveolar que no lleva CO₂. V̇A = (VT − VDaw)·(1 − f)·FR con el volumen que espira el PULMÓN: la fuga y el gas comprimido en el circuito no ventilan, una respiración menor que la vía aérea no aporta, el volumen que mueve un esfuerzo que no dispara entra y sale de la vía aérea sin ventilar, y dos respiraciones apiladas la pagan una sola vez. La V̇A del equilibrio no cuenta el tiempo de los bloqueos (maniobra de medición). Banco SC-01: V̇A 4,4 L/min, PaCO₂ 39,0 mmHg, pH 7,41, VD/VT 0,41.",
+      "status": "P (ecuaciones estándar de libro de texto; el tapón de la vía aérea es la idealización de Fowler, sin mezcla axial); D para la descomposición en vía aérea y alveolar (C03)",
+      "source": "C03",
+      "locator": "Fletcher et al. 1981 (resumen: VDphys = VDaw + VDalv; VDaw es el gas entre los labios y la interfase alveolar/gas fresco; VDalv por desajuste V/Q)",
+      "implemented": "src/engine/gasExchange.ts (GasExchange.move, onBreath, vaLMin, DEFAULT_GAS); src/engine/simulator.ts (cambio de volumen pulmonar por paso, tiempo de bloqueo por respiración, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); src/ui/teachingView.ts (sustitución con la fracción alveolar); tests/unit/gasometria.test.ts (GAS-01, GAS-02, GAS-05)"
     },
     {
       "id": "E-095",
-      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, VD 200 mL (vía aérea con el tubo más intercambiador y codo; documentado, C03), HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 9 min a V̇A 4,5 L/min). Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 38, pH 7,42); con el VD anterior de 150 mL salía hipocápnico sin que nadie lo programara. La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Sin tamponamiento agudo: el bicarbonato es fijo durante la sesión. No realimenta la mecánica.",
-      "status": "P (modelo de un depósito y VCO₂, C y HCO₃⁻ como aproximación docente); D para el espacio muerto en serie (C03)",
+      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, vía aérea 165 mL y fracción alveolar 0,12 (las dos medianas de Fletcher y Jonson 1984 resueltas para las dos partes: VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; C03), HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 9 min a V̇A 4,4 L/min). Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 39, pH 7,41). La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Sin tamponamiento agudo: el bicarbonato es fijo durante la sesión. No realimenta la mecánica.",
+      "status": "P (modelo de un depósito y VCO₂, C y HCO₃⁻ como aproximación docente; la fracción alveolar real baja algo con el VT y aquí es constante); D para las dos medianas de espacio muerto que fijan la vía aérea y la fracción alveolar (C03)",
       "source": "C03",
-      "locator": "Fletcher y Jonson 1984 (resumen: VDphys/VT 0,44 con VT 0,45 L); Morán 2006 (VD fisiológico 352 → 310 mL sin intercambiador); Hinkson 2006 (VD/VT −6 % sin intercambiador, −5 % más sin codo)",
+      "locator": "Fletcher y Jonson 1984 (resumen: VDphys/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; VDaw sin cambios con el VT; VDalv/VTalv menor con VT mayor); Morán 2006 (VD fisiológico 352 → 310 mL sin intercambiador); Hinkson 2006 (VD/VT −6 % sin intercambiador, −5 % más sin codo)",
       "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04)"
     },
     {

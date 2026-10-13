@@ -5,9 +5,18 @@ import { exportSession, importSession, replaySession } from '../../src/history/s
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // Gasometría de modelo (P). Oráculo: la ecuación de la ventilación alveolar, PaCO₂ = 0,863·VCO₂/V̇A, y
-// Henderson-Hasselbalch. Banco SC-01: VT 0,5 L a 15/min con espacio muerto 0,20 L → V̇A = 0,30·15 = 4,5 L/min,
-// PaCO₂ de equilibrio 0,863·200/4,5 = 38,4 mmHg y pH 7,42: normocapnia, como se espera de esa ventilación.
+// Henderson-Hasselbalch, con V̇A = (VT − VDaw)·(1 − f)·FR. Banco SC-01: VT 0,5 L a 15/min, vía aérea 0,165 L y
+// fracción alveolar 0,12 → V̇A = 0,335·0,88·15 = 4,42 L/min, PaCO₂ de equilibrio 39,0 mmHg, pH 7,41 y VDfis/VT 0,41:
+// normocapnia, como se espera de esa ventilación.
 
+/** Una respiración de volumen `vt` y `durS` segundos que termina en `t` (s): entra y sale del pulmón, y se cierra. */
+function respirar(g: GasExchange, t: number, vt: number, p = DEFAULT_GAS, durS = 4): void {
+  g.move(vt, p);
+  g.move(-vt, p);
+  g.onBreath(t, durS, p);
+}
+/** V̇A de una respiración regular con los parámetros por omisión (L/min). */
+const vaRegular = (vt: number, fr: number): number => (vt - DEFAULT_GAS.deadspaceL) * (1 - DEFAULT_GAS.alveolarDeadspaceFrac) * fr;
 const minutos = (sim: ReturnType<typeof benchSim>, min: number): void => sim.run(Math.round(min * 60_000));
 const gas = (sim: ReturnType<typeof benchSim>) => sim.frame().truth.gas!;
 
@@ -29,27 +38,61 @@ describe('GAS-01 · ecuaciones', () => {
 
   it('una respiración menor que el espacio muerto no ventila el alvéolo', () => {
     const g = new GasExchange(40);
-    g.onBreath(4, 4, 0.12, DEFAULT_GAS);
+    respirar(g, 4, 0.12);
     expect(g.paco2).toBe(40);
     expect(g.state(4, DEFAULT_GAS).vaLMin).toBe(0);
+  });
+
+  it('el espacio muerto fisiológico reproduce las dos medianas de Fletcher y Jonson (0,44 con VT 0,45; 0,31 con 0,75)', () => {
+    for (const [vt, vdvt] of [
+      [0.45, 0.44],
+      [0.75, 0.31],
+    ] as const) {
+      const g = new GasExchange(40);
+      respirar(g, 4, vt);
+      expect(g.state(4, DEFAULT_GAS).vdVt!).toBeCloseTo(vdvt, 2);
+    }
+  });
+
+  it('el gas que mueve un esfuerzo que no dispara entra y sale de la vía aérea: no ventila', () => {
+    const limpia = new GasExchange(40),
+      conEsfuerzo = new GasExchange(40);
+    for (let t = 4; t <= 40; t += 4) {
+      respirar(limpia, t, 0.5);
+      // La misma respiración, con un esfuerzo a mitad de la espiración que mete y saca 80 mL.
+      conEsfuerzo.move(0.5, DEFAULT_GAS);
+      conEsfuerzo.move(-0.3, DEFAULT_GAS);
+      conEsfuerzo.move(0.08, DEFAULT_GAS);
+      conEsfuerzo.move(-0.28, DEFAULT_GAS);
+      conEsfuerzo.onBreath(t, 4, DEFAULT_GAS);
+    }
+    expect(conEsfuerzo.vaLMin(40)!).toBeCloseTo(limpia.vaLMin(40)!, 12);
+    expect(conEsfuerzo.paco2).toBeCloseTo(limpia.paco2, 12);
+    // Dos respiraciones apiladas sin espiración entre ellas pagan el espacio muerto una sola vez.
+    const apiladas = new GasExchange(40);
+    apiladas.move(0.4, DEFAULT_GAS);
+    apiladas.move(0.4, DEFAULT_GAS);
+    apiladas.move(-0.8, DEFAULT_GAS);
+    apiladas.onBreath(8, 8, DEFAULT_GAS);
+    expect(apiladas.vaLMin(8)!).toBeCloseTo(vaRegular(0.8, 7.5), 12);
   });
 });
 
 describe('GAS-05 · V̇A del último minuto', () => {
   const regular = (g: GasExchange, hasta: number): void => {
-    for (let t = 4; t <= hasta; t += 4) g.onBreath(t, 4, 0.5, DEFAULT_GAS);
+    for (let t = 4; t <= hasta; t += 4) respirar(g, t, 0.5);
   };
   it('una ventilación regular da (VT − VD)·FR en cualquier fase del ciclo', () => {
     const g = new GasExchange(40);
     regular(g, 120);
-    for (const ahora of [120, 121, 122.5, 123.9]) expect(g.vaLMin(ahora)!).toBeCloseTo((0.5 - DEFAULT_GAS.deadspaceL) * 15, 9);
+    for (const ahora of [120, 121, 122.5, 123.9]) expect(g.vaLMin(ahora)!).toBeCloseTo(vaRegular(0.5, 15), 9);
   });
   it('en apnea la V̇A baja y llega a 0 cuando las respiraciones salen de la ventana', () => {
     const g = new GasExchange(40);
     regular(g, 120);
     const a = g.vaLMin(150)!,
       b = g.vaLMin(170)!;
-    expect(a).toBeLessThan((0.5 - DEFAULT_GAS.deadspaceL) * 15);
+    expect(a).toBeLessThan(vaRegular(0.5, 15));
     expect(b).toBeLessThan(a);
     expect(g.vaLMin(181)).toBe(0);
   });
@@ -60,18 +103,18 @@ describe('GAS-02 · banco SC-01: la ventilación del pulmón fija la PaCO₂', (
     const sim = benchSim();
     runUntilBreath(sim, 2);
     const inicio = gas(sim).paco2;
-    expect(inicio).toBeCloseTo(38.4, 0);
+    expect(inicio).toBeCloseTo(39, 0);
     minutos(sim, 5);
     const g = gas(sim);
     expect(Math.abs(g.paco2 - inicio)).toBeLessThan(0.6);
-    expect(g.vaLMin!).toBeCloseTo(4.5, 1);
+    expect(g.vaLMin!).toBeCloseTo(vaRegular(0.5, 15), 1);
     // Sin depender de en qué punto del ciclo se lea.
     for (let i = 0; i < 4; i++) {
       sim.run(1000);
       expect(gas(sim).vaLMin!).toBeCloseTo(g.vaLMin!, 2);
     }
-    expect(g.paco2Target!).toBeCloseTo(38.4, 0);
-    expect(g.vdVt!).toBeCloseTo(0.4, 2);
+    expect(g.paco2Target!).toBeCloseTo(39, 0);
+    expect(g.vdVt!).toBeCloseTo(0.41, 2);
     expect(g.ph).toBeCloseTo(phFrom(24, g.paco2), 9);
     // Normocapnia en el paciente por omisión: nadie programó una hiperventilación.
     expect(g.ph).toBeGreaterThan(7.38);
@@ -115,7 +158,7 @@ describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇
     const g = gas(sim);
     const objetivo = g.paco2Target!;
     expect(objetivo).toBeLessThan(p0 * 0.6);
-    expect(g.vaLMin!).toBeGreaterThan(1.8 * 4.5);
+    expect(g.vaLMin!).toBeGreaterThan(1.8 * vaRegular(0.5, 15));
     const tau = g.tauMin!;
     expect(tau).toBeCloseTo(DEFAULT_GAS.storeL / g.vaLMin!, 9);
     const p1 = g.paco2;
@@ -132,7 +175,28 @@ describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇
     runUntilBreath(sim, 2);
     sim.command({ type: 'setPatient', params: { gas: { deadspaceL: 0.25 } } }, 'instructor');
     minutos(sim, 1);
-    expect(gas(sim).paco2Target!).toBeCloseTo((ALVEOLAR_K * 200) / (0.25 * 15), 0);
+    expect(gas(sim).paco2Target!).toBeCloseTo((ALVEOLAR_K * 200) / (0.25 * 0.88 * 15), 0);
+    sim.command({ type: 'setPatient', params: { gas: { deadspaceL: 0.25, alveolarDeadspaceFrac: 0.4 } } }, 'instructor');
+    minutos(sim, 1);
+    expect(gas(sim).paco2Target!).toBeCloseTo((ALVEOLAR_K * 200) / (0.25 * 0.6 * 15), 0);
+  });
+
+  it('el espacio muerto de la vía aérea pesa más con VT bajos; el alveolar, igual con cualquier VT', () => {
+    // Mismo volumen minuto (7,5 L/min) con VT 0,75 × 10 y 0,375 × 20: la vía aérea castiga al VT pequeño; la fracción
+    // alveolar recorta la V̇A en la misma proporción en los dos.
+    const va = (vt: number, fr: number, p: typeof DEFAULT_GAS) => (vt - p.deadspaceL) * (1 - p.alveolarDeadspaceFrac) * fr;
+    const viaAerea = { ...DEFAULT_GAS, deadspaceL: 0.3, alveolarDeadspaceFrac: 0 },
+      alveolar = { ...DEFAULT_GAS, deadspaceL: 0, alveolarDeadspaceFrac: 0.4 };
+    for (const p of [viaAerea, alveolar]) {
+      const grande = new GasExchange(40),
+        chico = new GasExchange(40);
+      for (let t = 6; t <= 60; t += 6) respirar(grande, t, 0.75, p, 6);
+      for (let t = 3; t <= 60; t += 3) respirar(chico, t, 0.375, p, 3);
+      expect(grande.vaLMin(60)!).toBeCloseTo(va(0.75, 10, p), 9);
+      expect(chico.vaLMin(60)!).toBeCloseTo(va(0.375, 20, p), 9);
+    }
+    expect(va(0.375, 20, viaAerea) / va(0.75, 10, viaAerea)).toBeCloseTo(0.33, 2);
+    expect(va(0.375, 20, alveolar) / va(0.75, 10, alveolar)).toBe(1);
   });
 });
 
@@ -140,6 +204,7 @@ describe('GAS-04 · validación y reproducción', () => {
   it('rechaza valores fuera de rango y claves desconocidas', () => {
     expect(validatePatientParams({ ...BENCH_PATIENT, gas: { deadspaceL: 0.15 } })).toEqual([]);
     expect(validatePatientParams({ ...BENCH_PATIENT, gas: { deadspaceL: 1 } })).toContain('Espacio muerto fuera de 0–600 mL');
+    expect(validatePatientParams({ ...BENCH_PATIENT, gas: { alveolarDeadspaceFrac: 0.9 } }).join()).toMatch(/alveolar fuera/);
     expect(validatePatientParams({ ...BENCH_PATIENT, gas: { vco2: 200 } as never }).join()).toMatch(/clave desconocida/);
     expect(validatePatientParams({ ...BENCH_PATIENT, gas: { hco3: Number.NaN } })).toContain('Bicarbonato fuera de 5–50 mEq/L');
   });

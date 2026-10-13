@@ -196,8 +196,13 @@ export interface PatientParams {
 export interface GasExchangeParams {
   /** Producción de CO₂ (mL/min STPD). */
   vco2MlMin: number;
-  /** Espacio muerto en serie: anatómico más el instrumental (L). */
+  /** Espacio muerto de la vía aérea, en serie: anatómico más el instrumental (L). */
   deadspaceL: Liters;
+  /**
+   * Espacio muerto alveolar como fracción del volumen alveolar (VDalv/VTalv, 0–0,8): unidades ventiladas sin perfusión
+   * suficiente. Escala con el VT, a diferencia del de la vía aérea.
+   */
+  alveolarDeadspaceFrac: number;
   /** Bicarbonato plasmático (mEq/L). */
   hco3: number;
   /** Capacidad del depósito equivalente de CO₂ (L): fija la velocidad con que la PaCO₂ sigue a la ventilación. */

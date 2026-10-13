@@ -253,7 +253,7 @@ Cobertura L3 (revisión experta clínica): pendiente, como consta en `01-resulta
 | Retardo de respuesta del disparo por tipo: 80 ms por flujo, 110 ms por presión (la caída debe propagarse y medirse en la rama), sin dinámica de válvula ni compensación | Entre el cruce del umbral y la apertura de la válvula inspiratoria el paciente sigue tirando del flujo de base: con Pmus 8 y flujo de base 4 L/min la Pva cae ≈ 2 cmH₂O bajo PEEP, y más con disparo por presión (umbral ya rebajado al detectar + retardo mayor). Es el **trabajo de disparo** que se ve en la curva de presión; bancos ICU publican 60–100 ms por flujo y 100–150 ms por presión | P (E-086, U-53) |
 | Regulador de PEEP con ancho de banda finito: caída K·(demanda no compensada) con K = 3 cmH₂O·s/L y recuperación integral τ = 0,1 s | Una demanda inspiratoria repentina del paciente hunde la Pva transitoriamente y el regulador la repone en régimen (medido: 0,74 con Pmus 8 y base 8 L/min; 3,9 con Pmus 12; 1,6 con base 4). La caída sólo aparece cuando el esfuerzo tira gas (supera la PEEP intrínseca); un esfuerzo que no llega deja la muesca sólo en el **flujo**. Ancho de banda real del equipo no publicado | P (E-091, U-43) |
 | Con dos unidades, lo que el equipo mide no es lo que el pulmón tiene | Es una propiedad del sistema real, no un defecto del modelo, y por eso importa enseñarla: en SC-17 una oclusión de 2 s da Cstat 45,6 frente a 60 verdadera (−24 %) y una resistencia aparente (Ppico−Pplat)/Q de 9,66 frente a 4,88 del paralelo (+98 %); a 15 s la resistencia aparente llega a 14,61. **La fórmula que enseña SC-01 no vale en SC-17**, y hoy la aplicación no lo advierte | D el fenómeno; U la advertencia al alumno (U-49) |
-| Sin intercambio gaseoso | No hay SpO₂, PaO₂, PaCO₂, EtCO₂ ni espacio muerto: cambiar la FiO₂ o la ventilación minuto no tiene consecuencia alguna más allá de la mecánica. El simulador enseña mecánica ventilatoria, no oxigenación ni ventilación alveolar | — |
+| Sin oxigenación | No hay SpO₂, PaO₂ ni EtCO₂: cambiar la FiO₂ no tiene consecuencia más allá del sensor de O₂. La PaCO₂ y el pH son de modelo (§10), derivados de la ventilación alveolar, y no realimentan la mecánica | — |
 | Sin datos de pacientes reales | Todas las cifras son analíticas o sintéticas; el simulador no valida ajustes clínicos ni pretende fidelidad numérica con el equipo (U-18) | — |
 
 **Valores de referencia (presets del panel docente, U-37).** Los deslizadores de E₂/τ₂ y K₂ siguen valiendo 0 por omisión, pero el panel ofrece presets fisiológicos: «Adulto sano» (E₂ 3 cmH₂O/L, τ₂ 1,1 s; sistema respiratorio total anestesiado-paralizado, D’Angelo 1989/1991, oclusión rápida a flujo constante) y «Restrictivo / SDRA» (E₂ 9, τ₂ 1,0 s; 2–3× la sana) — cifras aproximadas de literatura (P). Para el tubo endotraqueal, el preset fija el K₂ inspiratorio por diámetro interno según el método de oclusión (Anaesth Intensive Care 2011;39:410, D): 2,4 cmH₂O/(L/s)² en 9,0 mm hasta 12,8 en 6,5 mm; el término lineal K₁ del tubo se considera incluido en la resistencia del paciente (P). Con el preset sano y VC 500 mL a 0,5 L/s, una oclusión de 3 s da P1−P2 ≈ 0,87 cmH₂O (≈ 2,6 con SDRA); el TET 7,0 mm sube la Ppico ≈ 2,3 cmH₂O a 0,5 L/s (`tests/bench/viscoelasticoReferencia.test.ts`, BM-VE).
@@ -274,7 +274,7 @@ Simplificaciones declaradas: no hay inertancia ni ondas de presión; en las fase
 
 El motor deriva una PaCO₂ y un pH del paciente virtual a partir de la ventilación que **recibe el pulmón**. No es una medición del ventilador —el equipo no mide gases arteriales— y por eso no aparece en el monitor: se lee en Aula · Fundamentos · Ventilación, rotulada «Gasometría (modelo)» (E-096, P). No realimenta la mecánica: las curvas y las mediciones son idénticas con cualquier gasometría.
 
-**Ventilación alveolar.** En cada respiración cuenta el volumen que sale del pulmón (las dos unidades juntas, de modo que el pendelluft entre ellas no suma), menos el espacio muerto en serie: VA = máx(0, V_espirado_pulmón − VD). La fuga y el gas comprimido en el circuito pasan por el sensor del ventilador pero no por el alvéolo, así que no ventilan. La V̇A publicada es la de las últimas respiraciones (hasta tres, del último minuto) sobre el tiempo que cubren, de modo que el equilibrio que se muestra y que evalúan los casos es el de la ventilación de ahora y responde en pocas respiraciones a un cambio; en apnea el tiempo sin respiraciones cuenta y la V̇A cae hasta 0 (E-094, P).
+**Ventilación alveolar.** El espacio muerto fisiológico tiene dos partes (Fletcher 1981): el de la **vía aérea** (VDaw), en serie, y el **alveolar**, unidades ventiladas con poca o ninguna perfusión. La vía aérea se sigue como un tapón que se llena y se vacía en orden: al espirar sale primero el gas inspirado que quedó en ella y después el alveolar; al inspirar, el gas alveolar que quedó en la vía aérea vuelve al alvéolo antes que el fresco. Así una respiración regular ventila VT − VDaw, dos respiraciones apiladas pagan la vía aérea una sola vez, y el volumen que mueve un esfuerzo que no dispara (o una oscilación) entra y sale de la vía aérea sin ventilar. Del gas alveolar que sale, la fracción alveolar f no lleva CO₂: **V̇A = (VT − VDaw)·(1 − f)·FR**. La vía aérea pesa más cuanto menor es el VT; la parte alveolar recorta lo mismo con cualquier VT. Cuenta el volumen que sale del pulmón (las dos unidades juntas, de modo que el pendelluft entre ellas no suma): la fuga y el gas comprimido en el circuito pasan por el sensor del ventilador pero no por el alvéolo, así que no ventilan. La V̇A publicada es la de las últimas respiraciones (hasta tres, del último minuto) sobre el tiempo que cubren, sin contar el de los bloqueos —una maniobra de medición no cambia el equilibrio de la ventilación programada, aunque la PaCO₂ sí sube mientras dura—, de modo que el equilibrio que se muestra y que evalúan los casos es el de la ventilación de ahora y responde en pocas respiraciones a un cambio; en apnea el tiempo sin respiraciones cuenta y la V̇A cae hasta 0 (E-094, P).
 
 **Equilibrio y cinética.** Un depósito equivalente de CO₂ de capacidad C:
 
@@ -285,15 +285,21 @@ La producción entra de forma continua y cada respiración lava la fracción VA/
 | Parámetro (`patient.gas`) | Adulto de referencia | Rango validado |
 | --- | --- | --- |
 | VCO₂ (`vco2MlMin`) | 200 mL/min | 50–600 |
-| Espacio muerto (`deadspaceL`) | 150 mL | 0–600 mL |
+| Espacio muerto de la vía aérea (`deadspaceL`) | 165 mL | 0–600 mL |
+| Espacio muerto alveolar (`alveolarDeadspaceFrac`, VDalv/VTalv) | 0,12 | 0–0,8 |
 | HCO₃⁻ (`hco3`) | 24 mEq/L | 5–50 |
 | Depósito (`storeL`) | 40 L | 5–200 |
+
+La vía aérea (165 mL) y la fracción alveolar (0,12) salen de las dos medianas de Fletcher y Jonson (1984) en adultos anestesiados y ventilados —VD/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L, con la vía aérea constante—; la fracción alveolar real baja algo con el VT, y aquí es constante (P). Los casos con enfermedad cambian sobre todo la fracción alveolar: 0,30 en el EPOC y 0,35 en el SDRA (VD/VT ≈ 0,6 con VT de 6 mL/kg, en torno a la media de 0,58 de Nuckton).
 
 Con esos valores la apnea sube ≈ 4,3 mmHg/min y, a V̇A 5 L/min, una variación de la ventilación recorre el 63 % en ≈ 8 min: la gasometría de control se pide a los 20–30 minutos, no tras la siguiente respiración. La PaCO₂ inicial es la de equilibrio con la primera respiración completa.
 
 | Comprobación (`tests/unit/gasometria.test.ts`) | Valor |
 | --- | --- |
-| Banco SC-01: VT 500 mL, 15/min, VD 200 mL | V̇A 4,5 L/min · PaCO₂ 38,4 mmHg · pH 7,42 · VD/VT 0,40 |
+| Banco SC-01: VT 500 mL, 15/min, VDaw 165 mL, f 0,12 | V̇A 4,4 L/min · PaCO₂ 39,0 mmHg · pH 7,41 · VD/VT 0,41 |
+| Fletcher y Jonson: VT 0,45 y 0,75 L | VD/VT fisiológica 0,44 y 0,31 (sus dos medianas) |
+| Un esfuerzo que mete y saca 80 mL a mitad de la espiración | misma V̇A que sin esfuerzo |
+| Mismo volumen minuto con VT 0,75 × 10 y 0,375 × 20 | V̇A × 0,33 si todo el espacio muerto es de vía aérea (300 mL); × 1 si es alveolar (f 0,4) |
 | PaCO₂ 40 con HCO₃⁻ 24 | pH 7,40 |
 | Apnea de 1 min | +4,3 mmHg |
 | Duplicar la FR, una τ después | ≈ 63 % del camino al nuevo equilibrio |

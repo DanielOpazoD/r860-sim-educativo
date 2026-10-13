@@ -6,8 +6,13 @@ import type { GasExchangeParams } from '../domain/types';
  *
  * Balance de masa de un solo depósito de CO₂ equivalente:
  *   C · dPaCO₂/dt = 0,863 · VCO₂ − V̇A · PaCO₂
- * La producción entra de forma continua; cada respiración retira su volumen alveolar (VT pulmonar − VD) con la
- * concentración alveolar del momento. En equilibrio queda la ecuación de la ventilación alveolar,
+ * La producción entra de forma continua; cada respiración retira su volumen alveolar con la concentración alveolar
+ * del momento. El espacio muerto de la vía aérea se sigue como un tapón que se llena y se vacía en orden (Fowler):
+ * al espirar sale primero el gas inspirado que quedó en la vía aérea y después el alveolar; al inspirar, el gas
+ * alveolar que quedó en la vía aérea vuelve al alvéolo antes que el fresco. Una respiración regular retira VT − VDaw;
+ * el volumen que mueve un esfuerzo que no dispara (o una oscilación) es gas de la vía aérea que entra y sale, y no
+ * ventila. Del gas alveolar que sale, la fracción de espacio muerto alveolar viene de unidades sin perfusión y no
+ * lleva CO₂: V̇A = (VT − VDaw) · (1 − f) · FR. En equilibrio queda la ecuación de la ventilación alveolar,
  * PaCO₂ = 0,863 · VCO₂ / V̇A (D), con VCO₂ en mL/min STPD y V̇A en L/min BTPS. La constante de tiempo τ = C / V̇A
  * sale del modelo: más lenta cuanto menor es la ventilación, y en apnea la PaCO₂ sube 0,863 · VCO₂ / C mmHg/min.
  * pH por Henderson-Hasselbalch con el bicarbonato fijo del escenario; sin tamponamiento agudo (simplificación
@@ -17,13 +22,15 @@ export const DEFAULT_GAS: GasExchangeParams = {
   /** Producción de CO₂ de un adulto en reposo (mL/min STPD), P. */
   vco2MlMin: 200,
   /**
-   * Espacio muerto en serie de un adulto intubado y ventilado (L), D: el de la vía aérea con el tubo más el del equipo
-   * (intercambiador de calor y humedad, codo). Fletcher y Jonson (Br J Anaesth 1984) midieron en adultos anestesiados
-   * con ventilación mecánica un espacio muerto fisiológico de 0,44 del VT con VT 0,45 L (≈ 200 mL); Morán (Intensive
-   * Care Med 2006) atribuyó ≈ 42 mL al intercambiador, y Hinkson (Respir Care 2006) otro tanto al codo flexible. Con
-   * 0,15 L el banco por omisión (VT 500 × 15) salía hipocápnico, PaCO₂ 33 y pH 7,49, sin que nadie lo programara.
+   * Espacio muerto fisiológico = de la vía aérea + alveolar (Fletcher, Br J Anaesth 1981). Fletcher y Jonson (Br J
+   * Anaesth 1984) midieron en adultos anestesiados con ventilación mecánica VDfis/VT 0,44 con VT 0,45 L y 0,31 con
+   * VT 0,75 L, con el de la vía aérea constante y una fracción alveolar menor con el VT mayor. Las dos medianas fijan
+   * las dos partes de este modelo: 165 mL de vía aérea (tubo y vías de conducción, en serie) y 0,12 del volumen
+   * alveolar (P: la fracción real baja algo con el VT). Con el banco por omisión (VT 500 × 15) da VDfis/VT 0,41,
+   * PaCO₂ 39 y pH 7,41: normocapnia sin programarla.
    */
-  deadspaceL: 0.2,
+  deadspaceL: 0.165,
+  alveolarDeadspaceFrac: 0.12,
   /** Bicarbonato plasmático (mEq/L): el componente metabólico, fijo durante la sesión. */
   hco3: 24,
   /**
@@ -41,9 +48,6 @@ export const PK_BICARBONATE = 6.1;
 
 export const gasParams = (p: Partial<GasExchangeParams> | undefined): GasExchangeParams => ({ ...DEFAULT_GAS, ...p });
 
-/** Volumen alveolar de una respiración: lo que el pulmón espiró menos el espacio muerto; nunca negativo. */
-export const alveolarVolumeL = (lungExpiredL: number, deadspaceL: number): number => Math.max(0, lungExpiredL - deadspaceL);
-
 /** PaCO₂ de equilibrio para una ventilación alveolar (mmHg), o null si no hay ventilación alveolar. */
 export function steadyPaco2(vco2MlMin: number, vaLMin: number): number | null {
   return vaLMin > 0 ? (ALVEOLAR_K * vco2MlMin) / vaLMin : null;
@@ -58,6 +62,8 @@ interface AlveolarBreath {
   startS: number;
   endS: number;
   vaL: number;
+  /** Segundos de bloqueo dentro de la respiración: una maniobra de medición, no parte de la ventilación programada. */
+  pauseS: number;
 }
 
 /** Antigüedad máxima de las respiraciones que cuentan para la V̇A actual (s). */
@@ -75,8 +81,10 @@ export interface GasState {
   hco3: number;
   /** Ventilación alveolar actual (L/min; últimas respiraciones), o null antes de completar una respiración. */
   vaLMin: number | null;
-  /** Fracción de espacio muerto de la última respiración (VD/VT pulmonar), o null sin respiración. */
+  /** Fracción de espacio muerto de la última respiración (1 − VA/VT pulmonar), o null sin respiración. */
   vdVt: number | null;
+  /** Volumen que espiró el pulmón en la última respiración (L), o null sin respiración. */
+  vtL: number | null;
   /** PaCO₂ hacia la que tiende con la ventilación actual, o null sin ventilación alveolar. */
   paco2Target: number | null;
   /** Constante de tiempo de esa aproximación (min), o null sin ventilación alveolar. */
@@ -91,6 +99,12 @@ export class GasExchange {
   paco2: number;
   private breaths: AlveolarBreath[] = [];
   private lastVdVt: number | null = null;
+  private lastVtL: number | null = null;
+  /** Gas alveolar que ocupa la vía aérea de conducción (L, entre 0 y VD): al final de la espiración la llena entera. */
+  private airwayAlveolarL: number | null = null;
+  /** Lo que el pulmón espiró en la respiración en curso (L) y la parte de eso que fue gas alveolar. */
+  private expiredL = 0;
+  private alveolarOutL = 0;
   /** Con PaCO₂ inicial 'equilibrium', las respiraciones de los primeros EQUILIBRIUM_WINDOW_S fijan el equilibrio. */
   private pendingEquilibrium: boolean;
 
@@ -104,11 +118,30 @@ export class GasExchange {
     this.paco2 += (ALVEOLAR_K * p.vco2MlMin * (dtS / 60)) / p.storeL;
   }
 
-  /** Fin de una respiración: retira el CO₂ de su volumen alveolar. */
-  onBreath(endS: number, durationS: number, lungExpiredL: number, p: GasExchangeParams): void {
-    const vaL = alveolarVolumeL(lungExpiredL, p.deadspaceL);
-    this.lastVdVt = lungExpiredL > 0 ? Math.min(1, p.deadspaceL / lungExpiredL) : null;
-    this.breaths.push({ startS: endS - durationS, endS, vaL });
+  /** Cambio del volumen pulmonar en un paso (L; negativo al espirar). Sólo el gas alveolar que sale de la boca ventila. */
+  move(dvL: number, p: GasExchangeParams): void {
+    const vd = p.deadspaceL;
+    const enVia = Math.min(vd, this.airwayAlveolarL ?? vd);
+    if (dvL < 0) {
+      const sale = -dvL;
+      this.alveolarOutL += Math.max(0, sale - (vd - enVia));
+      this.expiredL += sale;
+      this.airwayAlveolarL = Math.min(vd, enVia + sale);
+    } else this.airwayAlveolarL = Math.max(0, enVia - dvL);
+  }
+
+  /**
+   * Fin de una respiración: retira el CO₂ del gas alveolar que salió en ella, salvo el de las unidades sin perfusión.
+   * `pauseS` es el tiempo de bloqueo dentro de ella: la PaCO₂ sí sube durante el bloqueo (la producción no para), pero
+   * la V̇A —y el equilibrio que se muestra y se evalúa— es la de la ventilación programada, sin la maniobra.
+   */
+  onBreath(endS: number, durationS: number, p: GasExchangeParams, pauseS = 0): void {
+    const vaL = this.alveolarOutL * (1 - p.alveolarDeadspaceFrac);
+    this.lastVtL = this.expiredL > 0 ? this.expiredL : null;
+    this.lastVdVt = this.expiredL > 0 ? Math.min(1, 1 - vaL / this.expiredL) : null;
+    this.expiredL = 0;
+    this.alveolarOutL = 0;
+    this.breaths.push({ startS: endS - durationS, endS, vaL, pauseS: Math.min(pauseS, durationS) });
     while (this.breaths.length && this.breaths[0]!.endS < endS - VA_WINDOW_S) this.breaths.shift();
     if (this.pendingEquilibrium) {
       if (endS >= EQUILIBRIUM_WINDOW_S) this.pendingEquilibrium = false;
@@ -129,16 +162,18 @@ export class GasExchange {
    * tiempo que cubren. Responde en pocas respiraciones a un cambio de programación —el equilibrio que se muestra y se
    * evalúa es el de la ventilación de ahora, no un promedio con la anterior— y una ventilación regular da exactamente
    * (VT − VD)·FR sin depender de la fase. Una respiración en curso no cuenta como pausa; si pasa más de un ciclo medio
-   * sin respiraciones (apnea), ese tiempo sí cuenta y la V̇A cae hasta 0 cuando la última sale del minuto.
+   * sin respiraciones (apnea), ese tiempo sí cuenta y la V̇A cae hasta 0 cuando la última sale del minuto. El tiempo de
+   * los bloqueos no cuenta: medir la meseta no cambia el equilibrio de la ventilación programada.
    */
   vaLMin(nowS: number): number | null {
     if (!this.breaths.length) return null;
     const recientes = this.breaths.filter((b) => b.endS >= nowS - VA_WINDOW_S).slice(-3);
     if (!recientes.length) return 0;
     const desde = recientes[0]!.startS,
-      cubierto = recientes.at(-1)!.endS - desde,
+      pausas = recientes.reduce((s, b) => s + b.pauseS, 0),
+      cubierto = recientes.at(-1)!.endS - desde - pausas,
       cicloMedio = cubierto / recientes.length;
-    const span = Math.max(cubierto, nowS - desde - cicloMedio);
+    const span = Math.max(cubierto, nowS - desde - pausas - cicloMedio);
     return span > 0 ? (recientes.reduce((s, b) => s + b.vaL, 0) * 60) / span : null;
   }
 
@@ -150,6 +185,7 @@ export class GasExchange {
       hco3: p.hco3,
       vaLMin: va,
       vdVt: this.lastVdVt,
+      vtL: this.lastVtL,
       paco2Target: va === null ? null : steadyPaco2(p.vco2MlMin, va),
       tauMin: va !== null && va > 0 ? p.storeL / va : null,
     };
