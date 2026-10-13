@@ -198,6 +198,27 @@ describe('edición, medición y navegación de diálogos', () => {
     expect(ctx.dialog.kind).toBe('');
   });
 
+  it('la luz del bisel como la del equipo: prioridad a la derecha y mitad azul durante la pausa de audio', () => {
+    const { ctx, sim } = harness;
+    const alarms = createAlarmsUi(ctx);
+    ctx.frame = sim.frame();
+    alarms.updateAlarm();
+    expect($('#bezel-light').className.trim()).toBe('bezel-light');
+    // VTesp bajo (media) con un límite por encima de lo entregado.
+    while (sim.simTimeMs < 12_000) sim.step();
+    sim.command({ type: 'setAlarmLimits', changes: { vteLow: 0.6 } });
+    for (let i = 0; i < 4 * 1500 && !sim.alarms.get('vteLow')!.conditionActive; i++) sim.step();
+    ctx.frame = sim.frame();
+    alarms.updateAlarm();
+    expect($('#bezel-light').classList.contains('medium')).toBe(true);
+    expect($('#bezel-light').classList.contains('pausa')).toBe(false);
+    sim.command({ type: 'audioPause' });
+    ctx.frame = sim.frame();
+    alarms.updateAlarm();
+    expect($('#bezel-light').classList.contains('medium')).toBe(true);
+    expect($('#bezel-light').classList.contains('pausa')).toBe(true);
+  });
+
   it('VMesp y FiO2 baja no se apagan, como en el equipo: el campo vacío es un error con el mínimo', async () => {
     const { ctx } = harness;
     const alarms = createAlarmsUi(ctx);

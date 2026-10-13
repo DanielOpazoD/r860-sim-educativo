@@ -88,6 +88,10 @@ describe('CTR-03 · la prioridad va en palabras y la luz roja parpadea salvo con
   it('la luz del bisel de prioridad alta lleva animación, y la regla de reducir movimiento la anula', () => {
     expect(bloque('.bezel-light.high')).toMatch(/animation: bezel-blink/);
     expect(css).toMatch(/@keyframes bezel-blink/);
+    // Media también intermitente y baja fija (URM SW10 8-6); la pausa de audio pinta de azul la mitad izquierda.
+    expect(bloque('.bezel-light.medium')).toMatch(/animation: bezel-blink-medium/);
+    expect(bloque('.bezel-light.low')).not.toMatch(/animation/);
+    expect(bloque('.bezel-light.pausa::before')).toMatch(/inset: 0 50% 0 0/);
     const reducido = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(css);
     expect(reducido, 'regla de reducir movimiento').not.toBeNull();
     expect(reducido![1]).toMatch(/animation: none !important/);

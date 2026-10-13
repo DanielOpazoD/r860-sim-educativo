@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AlarmLimits } from '../../src/domain/types';
-import { AlarmAudio } from '../../src/ui/audio';
+import type { AlarmLimits, AlarmPriority, AlarmState } from '../../src/domain/types';
+import { AlarmAudio, HIGH_ALERT_AUDIO_MS, patronAhora, type Sonido, sonidoDeAlarma } from '../../src/ui/audio';
 import { BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // ALM-10: cada límite configurable dispara en su escenario bajo y alto sobre el banco (Ppico 20, VTe 500, VMe 7,5, FR 15, PEEPe 5, FiO2 según ajuste)
@@ -70,7 +70,9 @@ describe('ALM-10 · cada límite de alarma dispara en su escenario bajo/alto y s
   });
 });
 
-describe('ALM-11 · el audio suena según prioridad y respeta la pausa', () => {
+const alta = (desdeMs = 0, alerta = false): Sonido => ({ priority: 'high', desdeMs, alerta });
+
+describe('ALM-11 · el audio suena según prioridad', () => {
   function fakeAudio(): { audio: AlarmAudio; beeps: number[] } {
     const beeps: number[] = [];
     class Osc {
@@ -108,24 +110,83 @@ describe('ALM-11 · el audio suena según prioridad y respeta la pausa', () => {
     vi.stubGlobal('document', { hidden: false });
     return { audio: new AlarmAudio(), beeps };
   }
-  it('alta: ráfaga de 10 tonos; media: 3; sin alarma: nada; en pausa de audio: nada; vuelve a sonar tras la cadencia', async () => {
+  it('alta: ráfaga de 10 tonos; media: 3; sin alarma: nada; vuelve a sonar tras la cadencia', async () => {
     const { audio, beeps } = fakeAudio();
     expect(await audio.enable()).toBe(true);
     audio.drive(null, 0);
     expect(beeps.length).toBe(0);
-    audio.drive('high', 0);
+    audio.drive(alta(), 0);
     expect(beeps.length).toBe(10);
-    audio.drive('high', 1000); // dentro de la cadencia de 6 s: no repite
+    audio.drive(alta(), 1000); // dentro de la cadencia de 6 s: no repite
     expect(beeps.length).toBe(10);
-    audio.drive('high', 7000);
+    audio.drive(alta(), 7000);
     expect(beeps.length).toBe(20);
-    audio.drive('medium', 20_000);
+    audio.drive({ priority: 'medium', desdeMs: 20_000, alerta: false }, 20_000);
     expect(beeps.length).toBe(23);
-    audio.pausedUntilMs = 60_000;
-    audio.drive('high', 40_000);
-    expect(beeps.length).toBe(23);
-    audio.drive('high', 61_000);
-    expect(beeps.length).toBe(33);
     vi.unstubAllGlobals();
+  });
+});
+
+// ALM-URM-AUDIO · lo que el manual dice del sonido (URM SW10 8-6 y 8-7; High Alert Audio de fábrica 30 s, 11-10).
+describe('ALM-URM-AUDIO · sonido de alarma como el equipo', () => {
+  const alarma = (id: string, priority: AlarmPriority, onsetAtMs: number, extra: Partial<AlarmState> = {}): AlarmState => ({
+    id,
+    priority,
+    priorityEvidence: 'D',
+    source: 'ventilator.flow',
+    message: id,
+    conditionActive: true,
+    onsetAtMs,
+    resolvedAtMs: null,
+    acknowledgedAtMs: null,
+    displayedValueAtOnset: null,
+    rawValueAtOnset: null,
+    threshold: null,
+    conditionReason: '',
+    responseAction: 'none',
+    latching: true,
+    filteredBy: null,
+    ...extra,
+  });
+  const PAUSA = 120_000;
+
+  it('suena la de más prioridad que se ve; las filtradas no suenan', () => {
+    const s = sonidoDeAlarma([alarma('vteLow', 'medium', 0), alarma('mveLow', 'high', 5000)], 6000, null, PAUSA);
+    expect(s).toEqual({ priority: 'high', desdeMs: 5000, alerta: false });
+    expect(sonidoDeAlarma([alarma('mveLow', 'high', 0, { filteredBy: 'disconnect' })], 1000, null, PAUSA)).toBeNull();
+  });
+
+  it('una alta sin resolver ni reconocer pasa a alerta a los 30 s: más tono y más volumen', () => {
+    const lista = [alarma('mveLow', 'high', 10_000)];
+    expect(sonidoDeAlarma(lista, 10_000 + HIGH_ALERT_AUDIO_MS - 1, null, PAUSA)!.alerta).toBe(false);
+    const s = sonidoDeAlarma(lista, 10_000 + HIGH_ALERT_AUDIO_MS, null, PAUSA)!;
+    expect(s.alerta).toBe(true);
+    const normal = patronAhora(null, alta(10_000), 0)!,
+      alerta = patronAhora(null, s, 0)!;
+    expect(alerta.frecuenciaHz).toBeGreaterThan(normal.frecuenciaHz);
+    expect(alerta.volumen).toBeGreaterThan(normal.volumen);
+    // Pasar a alerta dispara el patrón nuevo en el acto, sin esperar a la cadencia.
+    expect(patronAhora({ ...alta(10_000), at: 39_000 }, s, 40_000)).not.toBeNull();
+    // Reconocida, o con el audio pausado después de empezar, no escala; una media nunca escala.
+    expect(sonidoDeAlarma([alarma('mveLow', 'high', 10_000, { acknowledgedAtMs: 12_000 })], 60_000, null, PAUSA)!.alerta).toBe(false);
+    expect(sonidoDeAlarma(lista, 200_000, 15_000 + PAUSA, PAUSA)!.alerta).toBe(false);
+    expect(sonidoDeAlarma([alarma('vteLow', 'medium', 0)], 60_000, null, PAUSA)!.alerta).toBe(false);
+  });
+
+  it('la pausa de audio calla todo menos la desconexión', () => {
+    const otras = [alarma('mveLow', 'high', 0), alarma('vteLow', 'medium', 0)];
+    expect(sonidoDeAlarma(otras, 1000, 1000 + PAUSA, PAUSA)).toBeNull();
+    const con = [...otras, alarma('disconnect', 'high', 2000)];
+    expect(sonidoDeAlarma(con, 3000, 1000 + PAUSA, PAUSA)).toEqual({ priority: 'high', desdeMs: 2000, alerta: false });
+    // Pasada la pausa vuelve a sonar la de más prioridad.
+    expect(sonidoDeAlarma(otras, 1000 + PAUSA, 1000 + PAUSA, PAUSA)!.priority).toBe('high');
+  });
+
+  it('la baja suena una vez y no se repite; alta y media se repiten', () => {
+    const baja: Sonido = { priority: 'informational', desdeMs: 0, alerta: false };
+    expect(patronAhora(null, baja, 0)!.tonos).toHaveLength(1);
+    expect(patronAhora({ ...baja, at: 0 }, baja, 600_000)).toBeNull();
+    expect(patronAhora({ ...baja, at: 0 }, { ...baja, desdeMs: 5000 }, 600_000)).not.toBeNull();
+    expect(patronAhora({ ...alta(), at: 0 }, alta(), 6000)).not.toBeNull();
   });
 });
