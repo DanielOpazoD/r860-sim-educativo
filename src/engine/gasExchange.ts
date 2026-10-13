@@ -16,8 +16,14 @@ import type { GasExchangeParams } from '../domain/types';
 export const DEFAULT_GAS: GasExchangeParams = {
   /** Producción de CO₂ de un adulto en reposo (mL/min STPD), P. */
   vco2MlMin: 200,
-  /** Espacio muerto en serie: anatómico más el de la pieza en Y (L), P. */
-  deadspaceL: 0.15,
+  /**
+   * Espacio muerto en serie de un adulto intubado y ventilado (L), D: el de la vía aérea con el tubo más el del equipo
+   * (intercambiador de calor y humedad, codo). Fletcher y Jonson (Br J Anaesth 1984) midieron en adultos anestesiados
+   * con ventilación mecánica un espacio muerto fisiológico de 0,44 del VT con VT 0,45 L (≈ 200 mL); Morán (Intensive
+   * Care Med 2006) atribuyó ≈ 42 mL al intercambiador, y Hinkson (Respir Care 2006) otro tanto al codo flexible. Con
+   * 0,15 L el banco por omisión (VT 500 × 15) salía hipocápnico, PaCO₂ 33 y pH 7,49, sin que nadie lo programara.
+   */
+  deadspaceL: 0.2,
   /** Bicarbonato plasmático (mEq/L): el componente metabólico, fijo durante la sesión. */
   hco3: 24,
   /**

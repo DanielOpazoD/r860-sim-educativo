@@ -153,6 +153,12 @@
       "title": "Gattinoni L et al. Ventilator-related causes of lung injury: the mechanical power. Intensive Care Med 2016;42:1567–75 (definición de potencia mecánica y fórmula de flujo constante)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Se usa para la definición (energía por respiración × frecuencia) y para comprobar que la integral del motor coincide con la fórmula en el caso lineal pasivo; no aporta umbrales ni ajustes sugeridos."
+    },
+    {
+      "id": "C03",
+      "title": "Espacio muerto del adulto intubado y ventilado: Fletcher R, Jonson B. Br J Anaesth 1984;56:109–19 (PMID 6419753); Morán I et al. Intensive Care Med 2006;32:524–31 (PMID 16498531); Hinkson CR et al. Respir Care 2006;51:1140–4 (PMID 17005059)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Fletcher y Jonson: en adultos anestesiados con ventilación mecánica, VDphys/VT mediana 0,44 con VT 0,45 L (≈ 200 mL) y 0,31 con VT 0,75 L. Morán: cambiar el intercambiador de calor y humedad por un humidificador activo bajó el VD fisiológico de 352 a 310 mL (≈ 42 mL). Hinkson: quitar el intercambiador y luego el codo flexible de 15 cm bajó VD/VT ≈ 6 % y otro ≈ 5 %. Se usa para el espacio muerto en serie por omisión (0,20 L), no para ningún ajuste."
     }
   ],
   "claims": [
@@ -1191,7 +1197,7 @@
     },
     {
       "id": "E-094",
-      "claim": "Gasometría de modelo: en equilibrio PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS) y pH = 6,1 + log10(HCO₃⁻/(0,03·PaCO₂)). V̇A es el volumen que espira el PULMÓN en cada respiración menos el espacio muerto en serie, nunca negativo: la fuga y el gas comprimido en el circuito no ventilan el alvéolo, y una respiración menor que el espacio muerto no aporta. Banco SC-01: V̇A 5,25 L/min, PaCO₂ 32,9 mmHg, VD/VT 0,30.",
+      "claim": "Gasometría de modelo: en equilibrio PaCO₂ = 0,863·VCO₂/V̇A (VCO₂ en mL/min STPD, V̇A en L/min BTPS) y pH = 6,1 + log10(HCO₃⁻/(0,03·PaCO₂)). V̇A es el volumen que espira el PULMÓN en cada respiración menos el espacio muerto en serie, nunca negativo: la fuga y el gas comprimido en el circuito no ventilan el alvéolo, y una respiración menor que el espacio muerto no aporta. Banco SC-01: V̇A 4,5 L/min, PaCO₂ 38,4 mmHg, pH 7,42, VD/VT 0,40.",
       "status": "P (ecuaciones estándar de libro de texto, sin fuente abierta en esta revisión; la V̇A como volumen pulmonar − VD por respiración, sin mezcla parcial de Bohr)",
       "source": "—",
       "locator": "—",
@@ -1199,10 +1205,10 @@
     },
     {
       "id": "E-095",
-      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, VD 150 mL, HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 8 min a V̇A 5 L/min). La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Sin tamponamiento agudo: el bicarbonato es fijo durante la sesión. No realimenta la mecánica.",
-      "status": "P (modelo de un depósito y sus valores: aproximación docente, no curva de un paciente)",
-      "source": "—",
-      "locator": "—",
+      "claim": "Cinética del CO₂: un solo depósito equivalente, C·dPaCO₂/dt = 0,863·VCO₂ − V̇A·PaCO₂, con producción continua y lavado por respiración. τ = C/V̇A sale del modelo (más lenta con menos ventilación) y en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg/min. Valores del adulto de referencia: VCO₂ 200 mL/min, VD 200 mL (vía aérea con el tubo más intercambiador y codo; documentado, C03), HCO₃⁻ 24 mEq/L, C 40 L (apnea ≈ 4 mmHg/min; τ ≈ 9 min a V̇A 4,5 L/min). Con VT 500 × 15 el paciente por omisión queda normocápnico (PaCO₂ 38, pH 7,42); con el VD anterior de 150 mL salía hipocápnico sin que nadie lo programara. La PaCO₂ inicial es la de equilibrio con la primera respiración completa. Sin tamponamiento agudo: el bicarbonato es fijo durante la sesión. No realimenta la mecánica.",
+      "status": "P (modelo de un depósito y VCO₂, C y HCO₃⁻ como aproximación docente); D para el espacio muerto en serie (C03)",
+      "source": "C03",
+      "locator": "Fletcher y Jonson 1984 (resumen: VDphys/VT 0,44 con VT 0,45 L); Morán 2006 (VD fisiológico 352 → 310 mL sin intercambiador); Hinkson 2006 (VD/VT −6 % sin intercambiador, −5 % más sin codo)",
       "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, phFrom, DEFAULT_GAS); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04)"
     },
     {

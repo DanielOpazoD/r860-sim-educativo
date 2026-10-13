@@ -509,8 +509,8 @@ test.describe('EDU · pestaña Resumen', () => {
     await page.click('[data-edu-tab="ventilacion"]');
     await expect(page.locator('[data-edu-tab="ventilacion"]')).toHaveAttribute('aria-pressed', 'true');
     const bloque = page.locator('[data-testid="gasometria"]');
-    // Banco SC-01 (VT 500 mL, 15/min, VD 150 mL): V̇A 5,3 L/min y PaCO₂ de equilibrio ≈ 33 mmHg.
-    await expect(bloque.locator('header b')).toHaveText(/^3[23]mmHg PaCO₂$/, { timeout: 15_000 });
+    // Banco SC-01 (VT 500 mL, 15/min, VD 200 mL): V̇A 4,5 L/min y PaCO₂ de equilibrio ≈ 38 mmHg.
+    await expect(bloque.locator('header b')).toHaveText(/^3[89]mmHg PaCO₂$/, { timeout: 15_000 });
     await expect(bloque.locator('.edu-gases')).toContainText('pH');
     await expect(page.locator('.edu-bloque').nth(1)).toContainText('L/min');
     await expect(page.locator('.edu-pie')).toContainText('no del equipo');

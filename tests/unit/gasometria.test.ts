@@ -5,8 +5,8 @@ import { exportSession, importSession, replaySession } from '../../src/history/s
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // Gasometría de modelo (P). Oráculo: la ecuación de la ventilación alveolar, PaCO₂ = 0,863·VCO₂/V̇A, y
-// Henderson-Hasselbalch. Banco SC-01: VT 0,5 L a 15/min con espacio muerto 0,15 L → V̇A = 0,35·15 = 5,25 L/min,
-// PaCO₂ de equilibrio 0,863·200/5,25 = 32,9 mmHg.
+// Henderson-Hasselbalch. Banco SC-01: VT 0,5 L a 15/min con espacio muerto 0,20 L → V̇A = 0,30·15 = 4,5 L/min,
+// PaCO₂ de equilibrio 0,863·200/4,5 = 38,4 mmHg y pH 7,42: normocapnia, como se espera de esa ventilación.
 
 const minutos = (sim: ReturnType<typeof benchSim>, min: number): void => sim.run(Math.round(min * 60_000));
 const gas = (sim: ReturnType<typeof benchSim>) => sim.frame().truth.gas!;
@@ -42,14 +42,14 @@ describe('GAS-05 · V̇A del último minuto', () => {
   it('una ventilación regular da (VT − VD)·FR en cualquier fase del ciclo', () => {
     const g = new GasExchange(40);
     regular(g, 120);
-    for (const ahora of [120, 121, 122.5, 123.9]) expect(g.vaLMin(ahora)!).toBeCloseTo(0.35 * 15, 9);
+    for (const ahora of [120, 121, 122.5, 123.9]) expect(g.vaLMin(ahora)!).toBeCloseTo((0.5 - DEFAULT_GAS.deadspaceL) * 15, 9);
   });
   it('en apnea la V̇A baja y llega a 0 cuando las respiraciones salen de la ventana', () => {
     const g = new GasExchange(40);
     regular(g, 120);
     const a = g.vaLMin(150)!,
       b = g.vaLMin(170)!;
-    expect(a).toBeLessThan(0.35 * 15);
+    expect(a).toBeLessThan((0.5 - DEFAULT_GAS.deadspaceL) * 15);
     expect(b).toBeLessThan(a);
     expect(g.vaLMin(181)).toBe(0);
   });
@@ -60,19 +60,22 @@ describe('GAS-02 · banco SC-01: la ventilación del pulmón fija la PaCO₂', (
     const sim = benchSim();
     runUntilBreath(sim, 2);
     const inicio = gas(sim).paco2;
-    expect(inicio).toBeCloseTo(32.9, 0);
+    expect(inicio).toBeCloseTo(38.4, 0);
     minutos(sim, 5);
     const g = gas(sim);
     expect(Math.abs(g.paco2 - inicio)).toBeLessThan(0.6);
-    expect(g.vaLMin!).toBeCloseTo(5.25, 1);
+    expect(g.vaLMin!).toBeCloseTo(4.5, 1);
     // Sin depender de en qué punto del ciclo se lea.
     for (let i = 0; i < 4; i++) {
       sim.run(1000);
       expect(gas(sim).vaLMin!).toBeCloseTo(g.vaLMin!, 2);
     }
-    expect(g.paco2Target!).toBeCloseTo(32.9, 0);
-    expect(g.vdVt!).toBeCloseTo(0.3, 2);
+    expect(g.paco2Target!).toBeCloseTo(38.4, 0);
+    expect(g.vdVt!).toBeCloseTo(0.4, 2);
     expect(g.ph).toBeCloseTo(phFrom(24, g.paco2), 9);
+    // Normocapnia en el paciente por omisión: nadie programó una hiperventilación.
+    expect(g.ph).toBeGreaterThan(7.38);
+    expect(g.ph).toBeLessThan(7.45);
   });
 
   it('el CO₂ no realimenta la mecánica: presiones y volúmenes idénticos con otra gasometría', () => {
@@ -112,7 +115,7 @@ describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇
     const g = gas(sim);
     const objetivo = g.paco2Target!;
     expect(objetivo).toBeLessThan(p0 * 0.6);
-    expect(g.vaLMin!).toBeGreaterThan(1.8 * 5.25);
+    expect(g.vaLMin!).toBeGreaterThan(1.8 * 4.5);
     const tau = g.tauMin!;
     expect(tau).toBeCloseTo(DEFAULT_GAS.storeL / g.vaLMin!, 9);
     const p1 = g.paco2;
