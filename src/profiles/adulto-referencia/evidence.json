@@ -165,6 +165,12 @@
       "title": "Banco de ventiladores de UCI: Thille AW, Lyazidi A, Richard JC, Galia F, Brochard L. A bench study of intensive-care-unit ventilators: new versus old and turbine-based versus compressed gas-based ventilators. Intensive Care Med 2009;35:1368–76 (PMID 19352622, PMC2873304, acceso abierto)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Trece ventiladores de 2006, entre ellos el Engström de GE, en un pulmón de dos compartimentos con esfuerzos de P0,1 2, 6 y 13 cmH₂O, PS 5–20, con y sin PEEP 5, disparo en la máxima sensibilidad sin autodisparo (0,8 ± 0,3 L/min; 1,3 ± 0,8 con PEEP). Retardo de disparo (inicio del esfuerzo → comienzo de la presurización): media 58 ms (42–88); menos de 50 ms con el Engström; 69 ± 31 ms con esfuerzo débil frente a 52 ± 14 con fuerte. Retardo inspiratorio (Pva bajo la basal): media 94 ms (54–177), < 70 con el Engström. Se usa para el retardo de respuesta del disparo (40 ms tras el cruce del umbral), no para ningún ajuste."
+    },
+    {
+      "id": "C05",
+      "title": "Disparo reverso en el SDRA: Akoumianaki E et al. Mechanical ventilation-induced reverse-triggered breaths: a frequently unrecognized form of neuromechanical coupling. Chest 2013;143:927–38 (PMID 23187649); Baedorf Kassis E et al. Reverse trigger phenotypes in acute respiratory distress syndrome. Am J Respir Crit Care Med 2021;203:67–77 (PMID 32809842, PMC7781129, acceso abierto)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Akoumianaki: en ocho pacientes con SDRA sedados en asistida-controlada, contracciones diafragmáticas evocadas por la insuflación con acoplamiento 1:1 (siete), 1:2 y 1:3; frecuencia con variabilidad < 5 %. Baedorf Kassis (55 pacientes con SDRA; mediana FR 30, VT 450 mL, PEEP 14, elastancia 29 cmH₂O/L), tabla 2: latencia desde el inicio de la respiración de la máquina 0,34 s (temprano, relajación temprana; Pmus 6,8), 0,40 s (temprano, relajación tardía; 9,8), 0,47 s (a mitad del ciclo; 6,7), 0,70 s (tardío; 4,2) y 0,68 s (con apilamiento; 7,4 cmH₂O). Se usa para la mecánica, la latencia y la amplitud de SC-24, no para ningún ajuste."
     }
   ],
   "claims": [
@@ -1164,14 +1170,14 @@
     },
     {
       "id": "E-092",
-      "claim": "Disparo reverso (entrainment): la insuflación pasiva de una respiración de máquina evoca una contracción diafragmática fase-bloqueada, modelada como pulso 'riseRelax' que arranca `delayS` después del inicio de la insuflación con amplitud y acoplamiento propios (`effort.reverse`; ratio máquina:paciente 1:1–1:3). Sólo las respiraciones 'mandatory'/'backup' la evocan — una asistida disparada por la evocada no re-evoca—; si la contracción sobrevive al ciclado, su demanda dispara la siguiente respiración por el mecanismo normal y emerge el doble disparo. Verificado en banco: con SC-24 (VC 450 mL, C 0,045, R 10, amplitud 8, latencia 0,5) el pico de Pmus cae a inicio+0,5+0,8 s en todos los ciclos y el registro es todo 'mandatory'; con latencia 1,4 aparecen respiraciones 'assisted' apiladas a ~0,6 s del fin de la inspiración previa (demanda > Pel−PEEP mientras aún queda volumen; con 0,9 físicamente no dispara: el pico 8 no supera Pel−PEEP ≈ 9,5). Fenómeno descrito por Akoumianaki 2013 (Chest 143:927); latencia, amplitud y ratio son valores propuestos (U-54).",
-      "status": "P (fenómeno descrito; valores propuestos del simulador)",
-      "source": "literatura",
-      "locator": "Akoumianaki et al., Chest 2013;143(4):927 (reverse triggering / entrainment)",
+      "claim": "Disparo reverso (entrainment): la insuflación pasiva de una respiración de máquina evoca una contracción diafragmática fase-bloqueada, modelada como pulso 'riseRelax' que arranca `delayS` después del inicio de la insuflación con amplitud y acoplamiento propios (`effort.reverse`; ratio máquina:paciente 1:1–1:3, los que describió Akoumianaki). Sólo las respiraciones 'mandatory'/'backup' la evocan —una asistida disparada por la evocada no re-evoca—; si la contracción sobrevive al ciclado, su demanda dispara la siguiente respiración por el mecanismo normal y emerge el apilamiento. SC-24 usa la mediana de Baedorf Kassis 2021 (elastancia 29 cmH₂O/L, VT 450, FR 30, PEEP 14): con Pmus 7 y latencia 0,5 s (a mitad del ciclo en el estudio: 0,47 s, Pmus 6,7) todas las respiraciones son 'mandatory'; con 0,7 s (con apilamiento: 0,68 s, Pmus 7,4) aparecen asistidas que entran con ≈ 200 mL más en el pulmón y Ppico ≈ 40. El umbral no se programa: sale de la mecánica, entre 0,6 y 0,7 s de latencia y con Pmus de 7 o más (6,5 no apila).",
+      "status": "P (pulso evocado de forma fija; el umbral es emergente); D para la mecánica, las latencias y las amplitudes de los fenotipos (C05)",
+      "source": "C05",
+      "locator": "Akoumianaki 2013 (resumen: ratios 1:1, 1:2, 1:3); Baedorf Kassis 2021, tabla 1 (mecánica y programación) y tabla 2 (latencia y Pmus por fenotipo)",
       "implemented": "src/domain/types.ts (EffortParams.reverse); src/engine/effort.ts (notifyMachineBreath, riseRelaxPulse evocado); src/engine/controller.ts (aviso en startBreath mandatory/backup); src/ui/patientControls.ts (reverseAmp, reverseDelay); src/ui/help.ts (patient.reverse, patient.reverseDelay); src/scenarios/index.ts (SC-24)",
       "tests": [
         "tests/unit/effort.test.ts (entrainment: identidad sin reverse, onset/pico, ratio, sobrescritura)",
-        "tests/bench/disparoReverso.test.ts (BM-RT)",
+        "tests/bench/disparoReverso.test.ts (BM-RT, umbral de apilamiento)",
         "tests/e2e/interaction.spec.ts (RT · disparo reverso)"
       ]
     },

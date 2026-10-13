@@ -272,8 +272,8 @@ export const HELP: Record<string, HelpEntry> = {
   'patient.reverseDelay': {
     title: 'Latencia del disparo reverso',
     text: [
-      'Tiempo desde que arranca la insuflación de la máquina hasta que empieza la contracción evocada. Con latencias cortas el pulso cae antes del ciclado; con latencias largas (p. ej. ≈ 1,4 s en SC-24) sobrevive y dispara la respiración siguiente.',
-      'Valor propuesto del simulador (P): la literatura describe el fenómeno sin fijar latencias universales.',
+      'Tiempo desde que arranca la insuflación de la máquina hasta que empieza la contracción evocada. Con latencias cortas el pulso cae antes del ciclado; con latencias largas sobrevive y dispara una respiración apilada (en SC-24, a partir de ≈ 0,7 s).',
+      'Baedorf Kassis (2021) midió en el SDRA 0,34–0,47 s en los fenotipos tempranos y a mitad del ciclo, y 0,68 s en los que apilan respiraciones.',
     ],
   },
   'patient.presetTissue': {
