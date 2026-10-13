@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIGGER_DELAY_FLOW_S, TRIGGER_REFRACTORY_S } from '../../src/engine/trigger';
+import { TRIGGER_DELAY_S, TRIGGER_REFRACTORY_S } from '../../src/engine/trigger';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim } from '../helpers';
 
 // ASI-01 · asincronías EMERGENTES. No hay ninguna regla que las produzca: salen de la mecánica, del perfil de esfuerzo
@@ -30,7 +30,7 @@ describe('ASI-01 · doble disparo con Ti neural mayor que el mecánico', () => {
     // El segundo disparo llega lo antes que el motor lo permite: tiempo inspiratorio mecánico + refractario + retardo de
     // respuesta. Ninguno puede llegar antes, y el más temprano llega exactamente entonces; los demás dependen de la fase
     // del esfuerzo y del gas atrapado en ese momento, no del refractario.
-    const esperado = 1000 + (TRIGGER_REFRACTORY_S + TRIGGER_DELAY_FLOW_S) * 1000;
+    const esperado = 1000 + (TRIGGER_REFRACTORY_S + TRIGGER_DELAY_S) * 1000;
     for (const g of cortos) expect(g).toBeGreaterThanOrEqual(esperado - 8);
     // Hasta dos pasos de 4 ms de holgura: el refractario y el umbral se resuelven al final del paso en que se cumplen.
     expect(Math.abs(Math.min(...cortos) - esperado)).toBeLessThanOrEqual(12);
@@ -121,11 +121,12 @@ describe('ASI-02 · esfuerzos inefectivos cuando aparece auto-PEEP', () => {
     // transitoriamente (caída proporcional a la demanda no compensada) y su acción integral la repone antes de que
     // termine la espiración: el esfuerzo que no llega a disparar deja la muesca que se enseña en la curva de presión.
     // La caída exige demanda: el esfuerzo tiene que superar la PEEP intrínseca y tirar gas. Con rExp 15 queda algo de
-    // auto-PEEP pero Pmus 8 basta para crear demanda en la parte tardía de la espiración (medido: pawMin ≈ 4,26).
+    // auto-PEEP pero Pmus 8 basta para crear demanda en la parte tardía de la espiración.
     const sim = benchSim({
       patient: { ...BENCH_PATIENT, rExp: 15 },
       effort: { enabled: true, amplitude: 8, ratePerMin: 20, tiS: 0.8, phaseS: 1.2 },
-      settings: { ...settings, flowTrigger: 3 / 60, biasFlow: 8 / 60, rr: 25, ie: 1 },
+      // Sin disparo asistido todos los esfuerzos son inefectivos: la caída es sólo la del regulador, no la del retardo de disparo.
+      settings: { ...settings, assistControl: false, flowTrigger: 3 / 60, biasFlow: 8 / 60, rr: 25, ie: 1 },
     });
     let pawMin = Infinity,
       pawUltimo = 5;

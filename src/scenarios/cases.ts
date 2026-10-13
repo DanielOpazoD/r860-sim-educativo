@@ -125,8 +125,9 @@ const EPOC_GAS = { alveolarDeadspaceFrac: 0.3, hco3: 28 };
 const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0, gas: EPOC_GAS };
 const ESFUERZO_EPOC: EffortParams = { enabled: true, amplitude: 6, ratePerMin: 22, tiS: 0.8, phaseS: 0.3, shape: 'riseRelax' };
 /**
- * CC-06, calibrado con Thille (Intensive Care Med 2008): con soporte 20 casi la mitad de los esfuerzos no dispara y el
- * VT ronda 10 mL/kg; con 13, disparan todos con ≈ 6 mL/kg. Frecuencia neural 26/min (26,5 en el estudio).
+ * CC-06, calibrado con Thille (Intensive Care Med 2008): con soporte 20 la mitad de los esfuerzos no dispara (45 % en el
+ * estudio) con VT ≈ 12 mL/kg (10,2; RIC 7,2–11,5); con 13, disparan todos con ≈ 5,6 mL/kg (5,9). Frecuencia neural
+ * 26/min (26,5 en el estudio). Con Rexp 30 (sólo en este caso) el patrón queda en uno de cada dos.
  */
 const ESFUERZO_THILLE: EffortParams = { enabled: true, amplitude: 8, ratePerMin: 26, tiS: 1, phaseS: 0.3, shape: 'riseRelax' };
 const PS_BASE = { mode: 'CPAP_PS' as const, peep: 5, flowTrigger: 2 / 60, minRate: 'off' as const, pmax: 40 };
@@ -384,13 +385,13 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'Con soporte 20 el volumen corriente es grande (≈ 690 mL, 10,5 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. Cuatro de cada diez esfuerzos se pierden. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 10–14 cmH₂O disparan todos con VT ≈ 335–385 mL. La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador sube porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 31 mmHg (pH 7,58); con 12–13, en ≈ 45–48 (pH 7,39–7,42), su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
+        'Con soporte 20 el volumen corriente es grande (≈ 780 mL, 12 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. La mitad de los esfuerzos se pierde. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 11–16 cmH₂O disparan todos con VT ≈ 340–385 mL. La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 31 mmHg (pH 7,58); con 12–13, en ≈ 47–50 (pH 7,37–7,40), su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
       references: [REF.thille2008, REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
     },
     question: '¿Por qué más soporte puede significar peor sincronía?',
     answer:
       'Porque un VT mayor deja menos tiempo para vaciar el pulmón: la PEEP intrínseca resultante se interpone entre el esfuerzo y el disparo.',
-    patient: { ...EPOC_PS, rExp: 28 },
+    patient: { ...EPOC_PS, rExp: 30 },
     effort: ESFUERZO_THILLE,
     sensors: idealSensors,
     settings: { ...PS_BASE, psupport: 20, expTriggerPct: 0.25 },
