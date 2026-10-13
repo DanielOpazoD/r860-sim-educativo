@@ -384,10 +384,10 @@ a {
   color: #adffdb;
 }
 /*
- * El color de la banda significa alarma, y sólo alarma. Sin alarmas era un bloque verde de 620 px: lo más luminoso y
- * ancho de la pantalla comunicaba AUSENCIA de información, y encima no llegaba al contraste exigido (3,22:1 el título,
- * 2,74:1 el subtítulo). En reposo la banda es ahora del mismo azul del monitor y se retira; el color queda para cuando
- * hay algo que decir. Medido: texto #cfe6f7 sobre #0a3d6e = 8,6:1.
+ * Sin alarmas la banda es VERDE, como en el equipo: las pantallas del manual SW10 (3-12 y 3-13) y la fotografía P1
+ * muestran «No Alarms» / «Sin alarmas» sobre verde. Entre v0.5.2 y la auditoría visual fue del azul del monitor porque el
+ * verde claro anterior no llegaba al contraste (3,22:1 el título, 2,74:1 el subtítulo); este verde es más profundo y el
+ * texto blanco cumple: 6,6:1 y 5,0:1 en los dos extremos del degradado.
  *
  * Los estados con color se miden en los DOS extremos del degradado y el subtítulo ya no lleva opacidad (con 0,85 la
  * banda media caía a 2,1:1 y la roja a 3,8:1 en el extremo claro). Prioridad media: ámbar con texto oscuro, como la
@@ -396,9 +396,9 @@ a {
 .alarm-band {
   display: flex;
   border-radius: 3px;
-  background: linear-gradient(95deg, #0a3d6e, #0d4780);
-  color: #cfe6f7;
-  border: 1px solid #2d6ea8;
+  background: linear-gradient(95deg, #116b35, #178042);
+  color: #ffffff;
+  border: 1px solid #43b06a;
   transition: background 0.2s;
 }
 .alarm-band button {
