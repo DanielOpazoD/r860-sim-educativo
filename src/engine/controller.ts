@@ -34,6 +34,11 @@ export const SUPPORT_TI_MAX_S = 4;
  * vuelta) hace subir la Pva, y el equipo corta la inspiración.
  */
 export const PS_PRESSURE_CYCLE_CMH2O = 2.5;
+/**
+ * Pausa mínima entre respiraciones antes de entregar una manual (s): «The ventilator requires a 0.25 second pause between
+ * delivery of breaths» (D, URM SW10 7-9). La orden se acepta en cualquier fase y se sirve pasada esa pausa espiratoria.
+ */
+export const MANUAL_BREATH_PAUSE_S = 0.25;
 /** Julios por cmH2O·litro: la energía de la ventilación se mide en presión × volumen (1 cmH2O = 98,07 Pa; 1 L = 1e-3 m³). */
 export const JOULES_PER_CMH2O_L = 0.09807;
 /** Frecuencia de las respiraciones de respaldo mientras dura la apnea sin frecuencia mínima programada (/min), P (U-52). */
@@ -313,8 +318,9 @@ export class VcController {
 
   requestManualBreath(): { accepted: boolean; reason?: string } {
     if (this.phase === 'standby') return { accepted: false, reason: 'En espera: no hay ventilación' };
-    if (this.phase !== 'exp') return { accepted: false, reason: 'Sólo elegible durante la espiración (P)' };
     if (this.hold || this.holdRequest) return { accepted: false, reason: 'Bloqueo en cola o en curso' };
+    // Se acepta también durante la inspiración: se entrega tras la pausa de 0,25 s de la espiración siguiente (D).
+    if (this.manualRequested) return { accepted: false, reason: 'Ya hay una respiración manual pedida' };
     this.manualRequested = true;
     return { accepted: true };
   }
@@ -787,9 +793,12 @@ export class VcController {
         else this.peepHeldS = 0;
         if (this.peepHeldS >= TRIGGER_PEEP_DWELL_S) this.peepDemostrada = true;
         if (this.manualRequested) {
-          // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); nunca queda pendiente para otra respiración.
-          this.manualRequested = false;
-          this.transition = () => this.endExpiration('manual');
+          // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); se sirve en cuanto la
+          // espiración lleva la pausa de 0,25 s que exige el equipo entre respiraciones (D).
+          if (this.tPhase + h >= MANUAL_BREATH_PAUSE_S - EPS) {
+            this.manualRequested = false;
+            this.transition = () => this.endExpiration('manual');
+          }
         } else if (
           !this.triggerPending &&
           (s.assistControl || s.mode === 'CPAP_PS') &&

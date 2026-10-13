@@ -22,6 +22,7 @@ import {
   type MetricSpec,
   veredictoEstimacion,
   decimalesMostrados,
+  limiteEnAlarma,
 } from './metricsTable';
 
 const EVENT_KIND: Record<string, string> = {
@@ -149,9 +150,12 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           metricSample(fr, m.key)?.reason?.startsWith('twoCompartments') ? `${m.unit} · aprox.` : m.unit,
         );
         const est = examEstimates.get(m.key);
+        // En alarma, el límite que se viola se muestra junto al valor, como en el equipo (URM SW10 8-6).
+        const limite = sinDato ? null : limiteEnAlarma(fr, m);
         put(
           el.querySelector('.numeric-age'),
           motivoCorto ||
+            limite ||
             (est
               ? `Est. ${f(est.guess, m.decimals)}`
               : m.source === 'hold' && h && h.quality === 'valid' && metricSample(fr, m.key)?.value !== null

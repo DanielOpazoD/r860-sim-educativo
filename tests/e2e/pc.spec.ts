@@ -138,6 +138,8 @@ test.describe('Alarmas configuradas desde el diálogo', () => {
     await page.click('[data-action="confirmLimits"]');
     await expect.poll(async () => (await frame(page)).alarmBar.color, { timeout: 20_000 }).toBe('yellow');
     await expect(page.locator('#alarm-band')).toContainText('VTesp bajo');
+    // Como el equipo, la casilla en alarma muestra el límite que se viola (URM SW10 8-6).
+    await expect(page.locator('[data-metric="vte"] .numeric-age')).toHaveText('Mín. 600');
     await page.locator('[data-action="alarmSetup"]').first().click();
     await page.fill('[data-limit="vteLow"]', '');
     await page.dispatchEvent('[data-limit="vteLow"]', 'input');

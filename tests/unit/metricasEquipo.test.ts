@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MINUTE_WINDOW_MS } from '../../src/engine/metrics';
-import { ALL_METRICS, decimalesMostrados } from '../../src/ui/metricsTable';
+import { ALL_METRICS, decimalesMostrados, limiteEnAlarma } from '../../src/ui/metricsTable';
+import { DEFAULT_ALARM_LIMITS } from '../../src/profiles/adulto-referencia/settings';
 import { BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
 // MON · los números del monitor se filtran y se muestran como en el equipo (URM SW10 2065490-001, 13-22 a 13-24).
@@ -45,5 +46,24 @@ describe('MON · resolución de pantalla del equipo', () => {
     expect(decimalesMostrados(spec('vte'), 45)).toBe(1);
     expect(decimalesMostrados(spec('vte'), 450)).toBe(0);
     expect(decimalesMostrados(spec('ppeak'), 20)).toBe(0);
+  });
+});
+
+describe('MON · en alarma, el límite violado se muestra junto al valor', () => {
+  const spec = (k: string) => ALL_METRICS.find((m) => m.key === k)!;
+  it('VTesp bajo el límite de 600 mL: la casilla dice «Mín. 600»; sin alarma, nada', () => {
+    const sim = benchSim({ alarmLimits: { ...DEFAULT_ALARM_LIMITS, vteLow: 0.6 } });
+    runUntilBreath(sim, 2);
+    expect(limiteEnAlarma(sim.frame(), spec('vte'))).toBeNull(); // aún no van tres respiraciones bajo el límite
+    runUntilBreath(sim, 4);
+    expect(limiteEnAlarma(sim.frame(), spec('vte'))).toBe('Mín. 600');
+    expect(limiteEnAlarma(sim.frame(), spec('ppeak'))).toBeNull();
+  });
+  it('Pmáx alcanzada: la casilla de Ppico dice «Máx.» con el valor de Pmáx', () => {
+    const sim = benchSim();
+    runUntilBreath(sim, 2);
+    sim.command({ type: 'confirmSettings', changes: { pmax: 15 } });
+    runUntilBreath(sim, 5);
+    expect(limiteEnAlarma(sim.frame(), spec('ppeak'))).toBe('Máx. 15');
   });
 });

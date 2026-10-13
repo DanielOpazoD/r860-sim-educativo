@@ -1488,6 +1488,19 @@
         "tests/unit/oxigenoEquipo.test.ts (O2-URM)",
         "tests/unit/review.test.ts (H1)"
       ]
+    },
+    {
+      "id": "E-113",
+      "claim": "Procedimientos y alarmas en pantalla como el equipo. Respiración manual: el equipo exige «a 0.25 second pause between delivery of breaths». La orden se acepta en cualquier fase y se entrega cuando la espiración lleva 0,25 s (antes sólo se aceptaba durante la espiración y se servía al instante, P). En CPAP/PS usa los ajustes de respaldo, porque el modo no tiene frecuencia. Límite en alarma: la casilla de una medición en alarma muestra el límite que viola («Mín. 600», «Máx. 15» para Pmáx), porque el equipo lo muestra aunque los límites estén ocultos (la opción «Alarm Limits»).",
+      "status": "D (pausa de la respiración manual, ajustes que usa y límite visible en alarma, R21)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 7-9 «Manual breath»; 8-6 «Alarm Limits» (punto 5)",
+      "implemented": "src/engine/controller.ts (MANUAL_BREATH_PAUSE_S, requestManualBreath, fase exp); src/ui/metricsTable.ts (limiteEnAlarma); src/ui/metricsView.ts",
+      "tests": [
+        "tests/unit/procedures.test.ts (resp manual)",
+        "tests/unit/metricasEquipo.test.ts (MON)",
+        "tests/e2e/pc.spec.ts (alarmas configuradas)"
+      ]
     }
   ]
 }
