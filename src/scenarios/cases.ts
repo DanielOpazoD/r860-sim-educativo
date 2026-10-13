@@ -4,6 +4,7 @@
  * Los números de la viñeta y de la explicación salen del motor con esa mecánica (tests/unit/casosClinicos.test.ts).
  */
 import type { EffortParams, SensorParams } from '../domain/types';
+import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import type { Scenario } from './index';
 
 const passive: EffortParams = { enabled: false, amplitude: 0, ratePerMin: 12, tiS: 0.8, phaseS: 0, shape: 'riseRelax' };
@@ -113,6 +114,21 @@ const REF = {
     url: pubmed('15691390'),
   },
 } as const;
+const k2 = (id: string): number => TUBE_PRESETS.find((t) => t.id === id)!.r2;
+const tejido = (id: string) => {
+  const t = TISSUE_PRESETS.find((x) => x.id === id)!;
+  return { eVisc: t.eVisc, tauViscS: t.tauViscS };
+};
+/**
+ * Pulmón intubado real en todos los casos: la resistencia de flujo turbulento del tubo endotraqueal (K₂ por diámetro
+ * interno, Anaesth Intensive Care 2011; 8,0 mm en los hombres y 7,5 en las mujeres, P) y la relajación de esfuerzos de
+ * los tejidos (D'Angelo 1989 en anestesiados sanos; en el SDRA, Eissa 1991 la encontró mayor: aquí 2× la sana, el
+ * extremo bajo del preset, con el que un bloqueo de 2 s sigue dando una meseta estable). La resistencia lineal de cada
+ * caso es la del paciente sin el tubo: la que mide el bloqueo las suma, como en la cabecera.
+ */
+const INTUBADO_H = { r2: k2('id80'), ...tejido('healthy') };
+const INTUBADA_M = { r2: k2('id75'), ...tejido('healthy') };
+const SDRA_TEJIDO = { eVisc: 2 * tejido('healthy').eVisc, tauViscS: 1.0 };
 /**
  * Gasometría del EPOC (CC-02, CC-06, CC-08): la misma vía aérea que el adulto de referencia y un espacio muerto
  * alveolar mayor (unidades con V/Q alta), que da VDfis/VT ≈ 0,55–0,65 con VT de 6–7 mL/kg (P). Que lo alveolar escale
@@ -120,14 +136,15 @@ const REF = {
  * midió Thille (2008). Bicarbonato de retención crónica de CO₂: con la gasometría a la vista, un EPOC con bicarbonato
  * normal mostraría una alcalosis respiratoria pura que no corresponde a su enfermedad.
  */
-const EPOC_GAS = { alveolarDeadspaceFrac: 0.3, hco3: 28 };
+const EPOC_GAS = { alveolarDeadspaceFrac: 0.3, hco3: 32 };
 /** Paciente EPOC en soporte: obstrucción espiratoria y esfuerzo propio (CC-06, CC-08). */
 const EPOC_PS = { crs: 0.06, rInsp: 15, rExp: 25, r2: 0, p0: 0, gas: EPOC_GAS };
-const ESFUERZO_EPOC: EffortParams = { enabled: true, amplitude: 6, ratePerMin: 22, tiS: 0.8, phaseS: 0.3, shape: 'riseRelax' };
+const ESFUERZO_EPOC: EffortParams = { enabled: true, amplitude: 7, ratePerMin: 22, tiS: 0.8, phaseS: 0.3, shape: 'riseRelax' };
 /**
- * CC-06, calibrado con Thille (Intensive Care Med 2008): con soporte 20 la mitad de los esfuerzos no dispara (45 % en el
- * estudio) con VT ≈ 12 mL/kg (10,2; RIC 7,2–11,5); con 13, disparan todos con ≈ 5,6 mL/kg (5,9). Frecuencia neural
- * 26/min (26,5 en el estudio). Con Rexp 30 (sólo en este caso) el patrón queda en uno de cada dos.
+ * CC-06, calibrado con Thille (Intensive Care Med 2008) sobre el paciente intubado (tubo 8,0 y rama espiratoria del
+ * equipo): con soporte 20 la mitad de los esfuerzos no dispara (45 % en el estudio) con VT ≈ 10,6 mL/kg (10,2; RIC
+ * 7,2–11,5); con 13, disparan todos con ≈ 5,3 mL/kg (5,9; 4,9–6,7). Frecuencia neural 26/min (26,5 en el estudio). Con
+ * Rexp 24 (sólo en este caso) el patrón queda en uno de cada dos.
  */
 const ESFUERZO_THILLE: EffortParams = { enabled: true, amplitude: 8, ratePerMin: 26, tiS: 1, phaseS: 0.3, shape: 'riseRelax' };
 const PS_BASE = { mode: 'CPAP_PS' as const, peep: 5, flowTrigger: 2 / 60, minRate: 'off' as const, pmax: 40 };
@@ -174,7 +191,7 @@ export const CLINICAL_CASES: Scenario[] = [
       ],
       criteria: [{ id: 'mide', text: 'Mediste la presión meseta con un bloqueo inspiratorio', test: 'inspHold' }],
       reveal:
-        'Con flujo constante, Paw = PEEP + R·Q + VT/C. El bloqueo inspiratorio detiene el flujo: lo que cae de Ppico a Pplat es la carga resistiva y lo que queda sobre la PEEP es la elástica. Este paciente tiene una resistencia inspiratoria de 30 cmH₂O·s/L —el triple del banco de referencia— con distensibilidad normal (50 mL/cmH₂O). En la cabecera, el siguiente paso es buscar la causa: aspirar secreciones, revisar el tubo y valorar broncoespasmo.',
+        'Con flujo constante, Paw = PEEP + R·Q + VT/C. El bloqueo inspiratorio detiene el flujo: lo que cae de Ppico a Pplat es la carga resistiva y lo que queda sobre la PEEP es la elástica. La carga resistiva medida es de ≈ 28 cmH₂O·s/L —su vía aérea, 25, más el tubo de 8,0 mm, que pesa más cuanto mayor es el flujo—, casi el triple del banco de referencia, con distensibilidad normal (50 mL/cmH₂O). En la cabecera, el siguiente paso es buscar la causa: aspirar secreciones, revisar el tubo y valorar broncoespasmo.',
       references: [
         REF.hess2014,
         {
@@ -187,7 +204,7 @@ export const CLINICAL_CASES: Scenario[] = [
     },
     question: '¿Por qué un bloqueo inspiratorio separa la causa resistiva de la elástica?',
     answer: 'Porque con flujo cero desaparece el término R·Q: la presión que queda (Pplat) es sólo elástica.',
-    patient: { crs: 0.05, rInsp: 30, rExp: 20, r2: 0, p0: 0 },
+    patient: { crs: 0.05, rInsp: 25, rExp: 20, p0: 0, ...INTUBADO_H },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.45, rr: 16, ie: 1 / 3, peep: 5, pmax: 50, plimit: 100, pausePct: 0 },
@@ -221,13 +238,13 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'La constante de tiempo espiratoria de esta paciente es Rexp·C = 45 × 0,06 = 2,7 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP intrínseca de ≈ 8 cmH₂O. El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 (Te 4 s ≈ 1,5 τ) la PEEP intrínseca cae a ≈ 2,5. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32) baja su PaCO₂ por debajo de lo habitual para ella y la deja alcalémica: con la programación inicial el pH de equilibrio sería ≈ 7,56.',
+        'La constante de tiempo espiratoria de esta paciente es (Rexp + rama espiratoria del ventilador)·C = (40 + 3) × 0,06 ≈ 2,6 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP intrínseca de ≈ 8 cmH₂O. El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 (Te 4 s ≈ 1,5 τ) la PEEP intrínseca cae a ≈ 2,6. Para medirla, el bloqueo espiratorio necesita unos segundos: los tejidos siguen redistribuyendo presión después de cerrar la válvula, y una oclusión corta no llega a una meseta estable. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32) baja su PaCO₂ por debajo de lo habitual para ella y la deja alcalémica: con la programación inicial el pH de equilibrio sería ≈ 7,56.',
       references: [REF.marini2011, REF.hess2014],
     },
     question: '¿Por qué bajar la frecuencia reduce el atrapamiento más que alargar sólo el I:E?',
     answer:
       'Porque el tiempo espiratorio depende de la duración del ciclo: a menor frecuencia, más segundos para vaciar el pulmón con la misma constante de tiempo.',
-    patient: { crs: 0.06, rInsp: 20, rExp: 45, r2: 0, p0: 0, gas: { ...EPOC_GAS, hco3: 32 } },
+    patient: { crs: 0.06, rInsp: 20, rExp: 40, p0: 0, ...INTUBADA_M, gas: EPOC_GAS },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.5, rr: 20, ie: 1 / 2, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
@@ -263,13 +280,13 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'ph', text: 'pH de equilibrio entre 7,30 y 7,45', test: 'phEqRange', params: { min: 7.3, max: 7.45 } },
         { id: 'fr', text: 'FR de 35 o menos', test: 'rrMax', params: { max: 35 } },
       ],
-      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Con una distensibilidad de 30 mL/cmH₂O, bajar el VT de 600 a 425 mL lleva la presión motriz de 20 a ≈ 14 cmH₂O —la variable que mejor estratificó la supervivencia en el análisis de Amato— y la Pplat a ≈ 24. El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,60 con 425 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 64 mmHg (pH 7,20). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 22 el pH de equilibrio vuelve a ≈ 7,34 y con FR 28, a ≈ 7,44.`,
+      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Con una distensibilidad de ≈ 31 mL/cmH₂O, bajar el VT de 600 a 425 mL lleva la presión motriz de ≈ 20 a ≈ 15 cmH₂O —la variable que mejor estratificó la supervivencia en el análisis de Amato— y la Pplat a ≈ 25. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,60 con 425 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 64 mmHg (pH 7,20). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 22 el pH de equilibrio vuelve a ≈ 7,34 y con FR 28, a ≈ 7,44.`,
       references: [REF.ardsnet2000, REF.amato2015, REF.ardsnetCard, REF.nuckton2002],
     },
     question: '¿Por qué hay que subir la frecuencia al bajar el volumen corriente en un SDRA?',
     answer:
       'Porque el espacio muerto de la vía aérea no cambia: con un VT menor pesa más, el alvéolo se ventila menos y, sin más frecuencia, la PaCO₂ sube.',
-    patient: { crs: 0.03, rInsp: 10, rExp: 10, r2: 0, p0: 0, gas: { alveolarDeadspaceFrac: 0.35 } },
+    patient: { crs: 0.032, rInsp: 10, rExp: 10, p0: 0, r2: INTUBADO_H.r2, ...SDRA_TEJIDO, gas: { alveolarDeadspaceFrac: 0.35 } },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.6, rr: 16, ie: 1 / 2, peep: 10, pmax: 50, plimit: 100, pausePct: 0 },
@@ -300,12 +317,20 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'peep', text: 'La PEEP final queda en 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
       ],
       reveal:
-        'Este pulmón tiene unidades que sólo abren por encima de ≈ 28 cmH₂O de distensión y no se cierran hasta bajar de ≈ 9: histéresis. A PEEP 5 están cerradas y la Cstat es ≈ 30 mL/cmH₂O. Tras abrirlas con PEEP 20, a PEEP 10–12 siguen abiertas y la Cstat sube a ≈ 46: la misma PEEP da distinta mecánica según la historia, que es lo que aprovecha la titulación decremental (Suarez-Sipmann). Pero mecánica no es pronóstico: en el ensayo ART, en SDRA moderado-grave, la estrategia de reclutamiento con PEEP titulada aumentó la mortalidad a 28 días frente a PEEP baja (55,3 % frente a 49,3 %) y el barotrauma. El máximo de Cstat no identifica por sí solo una PEEP segura.',
+        'Este pulmón tiene unidades que sólo abren por encima de ≈ 28 cmH₂O de distensión y no se cierran hasta bajar de ≈ 9: histéresis. A PEEP 5 están cerradas y la Cstat es ≈ 29 mL/cmH₂O. Tras abrirlas con PEEP 20, a PEEP 10–12 siguen abiertas y la Cstat sube a ≈ 43: la misma PEEP da distinta mecánica según la historia, que es lo que aprovecha la titulación decremental (Suarez-Sipmann). Pero mecánica no es pronóstico: en el ensayo ART, en SDRA moderado-grave, la estrategia de reclutamiento con PEEP titulada aumentó la mortalidad a 28 días frente a PEEP baja (55,3 % frente a 49,3 %) y el barotrauma. El máximo de Cstat no identifica por sí solo una PEEP segura.',
       references: [REF.suarez2007, REF.art2017],
     },
     question: '¿Por qué la PEEP decremental encuentra más distensibilidad que la ascendente a la misma PEEP?',
     answer: 'Porque lo abierto a presión alta no se cierra hasta caer por debajo de su presión de cierre, que es menor.',
-    patient: { crs: 0.03, rInsp: 10, rExp: 12, r2: 0, p0: 0, recruit: { frac: 0.6, pOpen: 28, pClose: 9, tauOpenS: 0.6, tauCloseS: 8 } },
+    patient: {
+      crs: 0.03,
+      rInsp: 10,
+      rExp: 12,
+      p0: 0,
+      r2: INTUBADA_M.r2,
+      ...SDRA_TEJIDO,
+      recruit: { frac: 0.6, pOpen: 28, pClose: 9, tauOpenS: 0.6, tauCloseS: 8 },
+    },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.4, rr: 18, ie: 1 / 2, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
@@ -346,7 +371,7 @@ export const CLINICAL_CASES: Scenario[] = [
     answer:
       'Porque el espacio muerto se paga en cada respiración: con menos respiraciones de más volumen, la fracción desperdiciada (VD/VT) es menor.',
     // Sedado: VCO₂ algo menor que la de un adulto despierto en reposo (≈ 2,5 mL/kg/min, P).
-    patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, gas: { deadspaceL: 0.2, vco2MlMin: 180 } },
+    patient: { crs: 0.05, rInsp: 10, rExp: 10, p0: 0, ...INTUBADO_H, gas: { deadspaceL: 0.2, vco2MlMin: 180 } },
     effort: passive,
     sensors: idealSensors,
     settings: { vt: 0.4, rr: 10, ie: 1 / 2, peep: 5, pmax: 40, plimit: 100, pausePct: 0 },
@@ -385,16 +410,18 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'Con soporte 20 el volumen corriente es grande (≈ 780 mL, 12 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. La mitad de los esfuerzos se pierde. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 11–16 cmH₂O disparan todos con VT ≈ 340–385 mL. La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 31 mmHg (pH 7,58); con 12–13, en ≈ 47–50 (pH 7,37–7,40), su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
+        'Con soporte 20 el volumen corriente es grande (≈ 700 mL, 10,6 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. La mitad de los esfuerzos se pierde. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 12–16 cmH₂O disparan todos con VT ≈ 335–355 mL: el tubo y la obstrucción frenan los flujos altos del soporte. La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 35 mmHg (pH 7,58); con 12–13, en ≈ 52–55 (pH 7,39–7,41), su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
       references: [REF.thille2008, REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
     },
     question: '¿Por qué más soporte puede significar peor sincronía?',
     answer:
       'Porque un VT mayor deja menos tiempo para vaciar el pulmón: la PEEP intrínseca resultante se interpone entre el esfuerzo y el disparo.',
-    patient: { ...EPOC_PS, rExp: 30 },
+    patient: { ...EPOC_PS, ...INTUBADO_H, rExp: 24 },
     effort: ESFUERZO_THILLE,
     sensors: idealSensors,
     settings: { ...PS_BASE, psupport: 20, expTriggerPct: 0.25 },
+    // Límite de VT alto programado para este paciente: ≈ 10 mL/kg de peso predicho (66 kg), no el 750 mL por omisión.
+    alarmLimits: { vteHigh: 0.65 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Frecuencia del ventilador menor que la del paciente.',
@@ -425,7 +452,7 @@ export const CLINICAL_CASES: Scenario[] = [
     question: '¿Cómo distinguir un autodisparo de una respiración del paciente?',
     answer:
       'En el autodisparo no hay deflexión negativa de presión ni esfuerzo previo, y aparece aunque el paciente esté sedado y sin esfuerzo.',
-    patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, leakLpmAt10: 6 },
+    patient: { crs: 0.05, rInsp: 10, rExp: 10, p0: 0, ...INTUBADA_M, leakLpmAt10: 6 },
     effort: passive,
     sensors: idealSensors,
     settings: {
@@ -480,7 +507,7 @@ export const CLINICAL_CASES: Scenario[] = [
     question: '¿Por qué el ciclado tardío es más frecuente en pulmones obstructivos?',
     answer:
       'Porque con una constante de tiempo larga el flujo inspiratorio tarda en caer al porcentaje del pico que termina la inspiración.',
-    patient: EPOC_PS,
+    patient: { ...EPOC_PS, ...INTUBADA_M },
     effort: ESFUERZO_EPOC,
     sensors: idealSensors,
     settings: { ...PS_BASE, psupport: 12, expTriggerPct: 0.05 },

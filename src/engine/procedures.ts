@@ -179,18 +179,16 @@ export class ProcedureManager {
       // misma mecánica (P, E-035). La PEEPe igual no basta: la autoPEEP depende de toda la mecánica — tras
       // cambiar la resistencia espiratoria la PEEPtot vieja contamina la Cstat nueva (publicaba 118,9 mL/cmH₂O
       // en un pulmón de 50). Si la firma cambió, se cae a PEEPe con el motivo explícito.
+      // La firma ya incluye la PEEP programada (todos los ajustes salvo FiO₂). No se exige además la misma PEEPe medida:
+      // con la rama espiratoria del equipo la PEEPe queda unas décimas sobre la programada y varía entre respiraciones,
+      // y esa igualdad exacta (que sólo se cumplía con una válvula ideal) descartaba en silencio la PEEPtot válida.
       const prevExp = this.last.expHold;
       const peepTotPrev =
-        prevExp &&
-        prevExp.quality === 'valid' &&
-        prevExp.contextSig !== undefined &&
-        prevExp.contextSig === this.contextSig() &&
-        Math.abs((prevExp.values.peepe?.value ?? Number.NaN) - o.peepeStart) < 1e-9
+        prevExp && prevExp.quality === 'valid' && prevExp.contextSig !== undefined && prevExp.contextSig === this.contextSig()
           ? (prevExp.values.peepTot?.value ?? null)
           : null;
-      // Había PEEPtot con la misma PEEPe pero medida bajo otra mecánica: el motivo dice por qué no se combinó.
-      const peepTotDeOtraMecanica =
-        peepTotPrev === null && prevExp?.quality === 'valid' && Math.abs((prevExp.values.peepe?.value ?? Number.NaN) - o.peepeStart) < 1e-9;
+      // Había PEEPtot válida, pero medida bajo otra mecánica o con otros ajustes: el motivo dice por qué no se combinó.
+      const peepTotDeOtraMecanica = peepTotPrev === null && prevExp?.quality === 'valid';
       const denom = o.pawEnd - (peepTotPrev ?? o.peepeStart);
       if (quality === 'valid' && denom >= MIN_CSTAT_DENOMINATOR && o.vtInspL > 0) {
         values.cstat = mkSample('cstatHold', o.vtInspL / denom, 'L/cmH2O', {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
-import { TISSUE_PRESETS, TUBE_PRESETS } from '../../src/ui/mechanicsPresets';
+import { TISSUE_PRESETS, TUBE_PRESETS } from '../../src/domain/mechanicsPresets';
 
 // BM-VE · presets de referencia (U-37): con el preset sano la caída P1→P2 de una oclusión queda en el rango de la
 // literatura de oclusión rápida; con SDRA se amplifica; y el K₂ del TET 7,0 suma ≈ K₂·Q² a la presión pico.

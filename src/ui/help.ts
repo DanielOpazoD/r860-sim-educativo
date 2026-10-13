@@ -272,7 +272,7 @@ export const HELP: Record<string, HelpEntry> = {
   'patient.reverseDelay': {
     title: 'Latencia del disparo reverso',
     text: [
-      'Tiempo desde que arranca la insuflación de la máquina hasta que empieza la contracción evocada. Con latencias cortas el pulso cae antes del ciclado; con latencias largas sobrevive y dispara una respiración apilada (en SC-24, a partir de ≈ 0,7 s).',
+      'Tiempo desde que arranca la insuflación de la máquina hasta que empieza la contracción evocada. Con latencias cortas el pulso cae antes del ciclado; con latencias largas sobrevive y dispara una respiración apilada (en SC-24, a partir de ≈ 0,8 s).',
       'Baedorf Kassis (2021) midió en el SDRA 0,34–0,47 s en los fenotipos tempranos y a mitad del ciclo, y 0,68 s en los que apilan respiraciones.',
     ],
   },
@@ -295,16 +295,16 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Resistencia de la rama espiratoria',
     text: [
       'Resistencia del circuito y la válvula espiratoria, en serie con la vía aérea. Mientras sale gas, la presión medida en la pieza en Y queda algo por encima de la PEEP, proporcional al flujo.',
-      'Las normas del sistema respiratorio limitan esta resistencia a unos 6 cmH₂O al flujo de referencia; 0 representa una válvula ideal.',
+      'Por omisión vale 3 cmH₂O·s/L: la que dejó el Carescape en el banco de válvulas espiratorias de Pinède (2021). Las normas la limitan a unos 6 cmH₂O al flujo de referencia; 0 representa una válvula ideal.',
     ],
   },
   'patient.expResistance': {
     title: 'Resistencia espiratoria',
     text: [
-      'Oposición a la salida de gas durante la espiración. Una resistencia mayor enlentece el vaciamiento.',
+      'Oposición a la salida de gas durante la espiración. Una resistencia mayor enlentece el vaciamiento. El gas también atraviesa la rama y la válvula espiratorias del ventilador (Rrama).',
       'Si el siguiente ciclo empieza antes de vaciarse suficientemente, queda gas atrapado y aumenta la PEEP intrínseca.',
     ],
-    equation: 'Constante de tiempo espiratoria: τ = Rexp × CEST',
+    equation: 'Constante de tiempo espiratoria: τ = (Rexp + Rrama) × CEST',
   },
   'patient.effortExp': {
     title: 'Esfuerzo espiratorio',
@@ -502,7 +502,7 @@ export const HELP: Record<string, HelpEntry> = {
       'Describe la rapidez de vaciamiento de un compartimento pasivo. Combina compliance y resistencia espiratoria.',
       'En una constante de tiempo se elimina aproximadamente el 63% del volumen por encima del equilibrio. Un valor mayor significa que se necesita más tiempo para espirar.',
     ],
-    equation: 'τ = Rexp × CEST (en L/cmH₂O)',
+    equation: 'τ = (Rexp + Rrama) × CEST (en L/cmH₂O)',
   },
   'teacher.auto': {
     title: 'PEEP intrínseca · PEEPi',

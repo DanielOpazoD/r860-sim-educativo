@@ -13,12 +13,13 @@ import { contextualHelpPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
 import { matchesProfile, PATIENT_PROFILES, profileHint, profileShort, profileState } from './patientProfiles';
 import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetHtml, type PhysSpec } from './patientControls';
-import { TISSUE_PRESETS, TUBE_PRESETS } from './mechanicsPresets';
+import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
 import { createSideFlyouts, type SideFlyouts } from './sideFlyouts';
 import { savePrefs } from './prefs';
 import { isMobile } from './labels';
+import { DEFAULT_EXP_BRANCH_R_CMH2O_S_L } from '../engine/controller';
 
 export interface InstructorPanel {
   readonly teacherVisible: boolean;
@@ -111,7 +112,8 @@ export function createInstructorPanel(
       () => '',
     );
     put('#truth-tauin', `${f(p.rInsp * p.crs, 2)} s`);
-    put('#truth-tau', `${f(p.rExp * p.crs, 2)} s`);
+    // El vaciamiento pasa también por la rama espiratoria del equipo: es la constante que se lee en la curva.
+    put('#truth-tau', `${f((p.rExp + (p.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L)) * p.crs, 2)} s`);
     put('#truth-auto', `${f(fr.truth.peepiEndExp, 1)} cmH₂O`);
     put('#truth-vabs', `${f(fr.truth.vAbsL * 1000, 0)} mL`);
     put('#truth-o2', `${f(fr.truth.fio2Delivered * 100, 0)} / ${f((fr.metrics.fio2?.value ?? 0) * 100, 1)} %`);
@@ -130,7 +132,7 @@ export function createInstructorPanel(
     if ((p.rExpVolumeDep?.gain ?? 0) > 0) opciones.push('Rexp(V)');
     if (p.second) opciones.push('2.ª unidad');
     if ((p.leakLpmAt10 ?? 0) > 0) opciones.push('fuga');
-    if ((p.rExpValve ?? 0) > 0) opciones.push('rama esp.');
+    if ((p.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L) !== DEFAULT_EXP_BRANCH_R_CMH2O_S_L) opciones.push('rama esp.');
     if ((p.circuitComplianceLPerCmH2O ?? 0) > 0) opciones.push('circuito compresible');
     if ((fr.truth.effort.expAmplitude ?? 0) > 0) opciones.push('espiración activa');
     if (fr.truth.effort.variability) opciones.push('esfuerzo variable');

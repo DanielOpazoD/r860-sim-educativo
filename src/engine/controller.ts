@@ -46,8 +46,18 @@ export const ACTUATOR_MAX_FLOW_LPS = 160 / 60;
 export const EXP_MAX_FLOW_LPS = -200 / 60;
 /** Flujo de base espiratorio por omisión (D rango 2–10 L/min ficha 2014; valor inicial P). Ajustable en `settings.biasFlow`. */
 export const EXP_BIAS_FLOW_LPS = 2 / 60;
-/** Apertura de la válvula espiratoria por omisión (ms): dentro del rango habitual de 20–50 ms (P, U-42). */
-export const DEFAULT_EXP_VALVE_OPEN_MS = 40;
+/**
+ * Apertura de la válvula espiratoria por omisión (ms). Pinède (Respir Care 2021, banco de 7 ventiladores de UCI) midió
+ * 0,110 s (0,105–0,110) con el Carescape de GE, y de 0,072 a 0,145 s entre los siete equipos. Antes era 40 ms (P).
+ */
+export const DEFAULT_EXP_VALVE_OPEN_MS = 110;
+/**
+ * Resistencia de la rama y la válvula espiratorias por omisión (cmH2O·s/L), en serie con la vía aérea. En el mismo
+ * banco el Carescape dejó, con PEEP 5 y VT 0,8 L, un producto presión-tiempo sobre la PEEP de 2,4 cmH2O·s durante la
+ * espiración; en una resistencia lineal ese producto es R·VT, así que R ≈ 2,4 / 0,8 = 3 (derivación P sobre un dato D),
+ * la mitad del techo de 6 cmH2O que cita el manual. Antes era 0: la Pva espiratoria era exactamente la PEEP (U-42).
+ */
+export const DEFAULT_EXP_BRANCH_R_CMH2O_S_L = 3;
 /** Resistencia equivalente de la válvula cerrada (cmH2O·s/L): el flujo arranca casi en cero al abrirse. */
 const VALVE_CLOSED_R = 200;
 /** La PEEPe se lee este tiempo antes del disparo detectado (s), P: la muestra aún no lleva la caída del esfuerzo. */
@@ -587,9 +597,9 @@ export class VcController {
       case 'exp': {
         const peep = this.peepTarget;
         // La válvula espiratoria mantiene la PEEP hasta el flujo de base programado (D 2–10 L/min); un esfuerzo mayor hunde la Pva.
-        // La rama espiratoria + válvula añaden una resistencia en serie (D techo ≤ 6 cmH2O a 60 L/min; valor P): la Pva en la pieza en Y
-        // queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
-        const rValve = p.params.rExpValve ?? 0;
+        // La rama espiratoria + válvula añaden una resistencia en serie (D techo ≤ 6 cmH2O; valor del banco de Pinède): la Pva
+        // en la pieza en Y queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
+        const rValve = p.params.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L;
         const tOpen = Math.max(0, (p.params.expValveOpenMs ?? DEFAULT_EXP_VALVE_OPEN_MS) / 1000);
         // Regulador de PEEP con ancho de banda finito (U-43): si el paciente tira gas (demanda > 0) la fuente no es
         // ideal sino peep + K·demandaYaCompensada con una resistencia extra K. En álgebra, py = peep − rValve·q −
@@ -597,7 +607,11 @@ export class VcController {
         const K = PEEP_REGULATOR_DROOP_CMH2O_S_L;
         const qLibre = p.flowForPaw(peep, this.pmusAt(this.simT), p.v, rValve);
         const pawSrc = qLibre > 0 ? peep + K * this.qDemandFilt : peep,
-          rDroop = qLibre > 0 ? K : 0;
+          rDroop = qLibre > 0 ? K : 0,
+          // La rama y la válvula espiratorias sólo frenan el gas que SALE del paciente: lo que inhala durante la espiración
+          // le llega del flujo de base por la rama inspiratoria, y eso lo representa el regulador de PEEP (rDroop).
+          rRama = qLibre > 0 ? 0 : rValve,
+          rCerrada = qLibre > 0 ? 0 : VALVE_CLOSED_R;
         let dV = 0,
           dVLeak = 0,
           qEnd = 0,
@@ -610,7 +624,7 @@ export class VcController {
           const hs = h / nSub;
           for (let i = 0; i < nSub; i++) {
             const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
-            const rNow = rValve + rDroop + VALVE_CLOSED_R * u * u;
+            const rNow = rRama + rDroop + rCerrada * u * u;
             const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
             dV += r.dV;
             dVLeak += r.dVLeak;
@@ -619,7 +633,7 @@ export class VcController {
             pyEnd = r.pyEnd;
           }
         } else {
-          const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT, h, false, s.biasFlow, rValve + rDroop, EXP_MAX_FLOW_LPS);
+          const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT, h, false, s.biasFlow, rRama + rDroop, EXP_MAX_FLOW_LPS);
           dV = r.dV;
           dVLeak = r.dVLeak;
           qEnd = r.qEnd;

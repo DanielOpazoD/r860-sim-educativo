@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TISSUE_PRESETS, TUBE_PRESETS } from '../../src/ui/mechanicsPresets';
+import { TISSUE_PRESETS, TUBE_PRESETS } from '../../src/domain/mechanicsPresets';
 import { PATIENT_EXTRA, PATIENT_MAIN, PHYS } from '../../src/ui/patientControls';
 
 // PRE · presets de referencia (U-37): datos sanos, dentro de los rangos de los deslizadores, y 'none' = por omisión.
