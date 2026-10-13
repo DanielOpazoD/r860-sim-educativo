@@ -366,18 +366,12 @@ describe('ALM · los límites por omisión vigilan sin molestar', () => {
       if (vistas.size) ruidosos.push(`${e.id}: ${[...vistas].sort().join(',')}`);
     }
     // Los casos alarman cuando su problema es justo ése, y la viñeta lo cuenta: la hipoventilación de CC-05 (volumen
-    // minuto bajo) y el soporte excesivo de CC-06 (VT espirado alto). Con la rama espiratoria del equipo, las dos fugas
-    // (CC-07 y SC-22) devuelven menos de 250 mL y avisan como en la cabecera: VT espirado bajo (en SC-22 también el
-    // volumen minuto; CC-07 lo sostiene con el autodisparo y su flujo de base de 8 L/min). CC-08 ya no avisa: con el
-    // lazo de presión del equipo el soporte no hace el pico de flujo inicial de la fuente ideal, el ciclado por
+    // minuto bajo) y el soporte excesivo de CC-06 (VT espirado alto). Las dos fugas (CC-07 y SC-22) ya no avisan: con la
+    // ley del orificio escapa menos gas a la presión pico que con la lineal y devuelven 267–278 mL, por encima del
+    // límite de 250, aunque pierden ≈ 45 % del VTi; la fuga se ve en la tabla y en el autodisparo. CC-08 tampoco: con
+    // el lazo de presión del equipo el soporte no hace el pico de flujo inicial de la fuente ideal, el ciclado por
     // flujo deja de cortar antes de tiempo las respiraciones de esfuerzo débil y ninguna sale bajo 250 mL.
-    expect(ruidosos.sort()).toEqual([
-      'CC-05: mveLow',
-      'CC-06: vteHigh',
-      'CC-07: vteLow',
-      'SC-18: ppeakLow,vteHigh,vteLow',
-      'SC-22: mveLow,vteLow',
-    ]);
+    expect(ruidosos.sort()).toEqual(['CC-05: mveLow', 'CC-06: vteHigh', 'SC-18: ppeakLow,vteHigh,vteLow']);
   });
 });
 

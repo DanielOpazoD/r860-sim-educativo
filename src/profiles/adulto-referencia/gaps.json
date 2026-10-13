@@ -88,7 +88,7 @@
     {
       "id": "U-10",
       "question": "Trigger, sincronización y compensaciones precisas.",
-      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s y retardo 40 ms (P; banco de Thille 2009, C04); fuga lineal en la Y y desconexión modeladas desde v0.4.2 (E-088), sin compensación de fuga ni de disparo; sin compensación de tubo.",
+      "policy": "Trigger de flujo sobre el modelo con refractario 0.25 s y retardo 40 ms (P; banco de Thille 2009, C04); fuga en la Y con la ley del orificio (E-104) y desconexión modeladas desde v0.4.2 (E-088), sin compensación de fuga ni de disparo; sin compensación de tubo.",
       "status": "parcialmente cerrada (v0.4.2): fuga y desconexión modeladas; compensaciones no",
       "blocks": [
         "Leak Comp",

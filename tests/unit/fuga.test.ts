@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { validatePatientParams } from '../../src/domain/validation';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
-// Fuga en la pieza en Y (E-088): conductancia lineal con la presión del nodo. Lo que entrega el ventilador no es lo que
+// Fuga en la pieza en Y (E-088): un orificio, Q = Q10·(Py/10)^0,56 (E-104). Lo que entrega el ventilador no es lo que
 // recibe el pulmón, la PEEP depende del flujo de base y el sensor de flujo ve la fuga como si fuera el paciente.
 
-const FUGA = { ...BENCH_PATIENT, leakLpmAt10: 6 };
+/** 4,4 L/min a 10 cmH₂O: ≈ 3 L/min a la PEEP de 5 y ≈ 5,5 a 15, como un orificio. */
+const FUGA = { ...BENCH_PATIENT, leakLpmAt10: 4.4 };
 /** Mínimo de Pva y máximo de flujo «hacia el paciente» durante las espiraciones, tras `breaths` respiraciones. */
 function espiraciones(sim: ReturnType<typeof benchSim>, breaths: number): { pawMin: number; qMax: number } {
   let pawMin = Infinity,
@@ -22,22 +23,21 @@ function espiraciones(sim: ReturnType<typeof benchSim>, breaths: number): { pawM
 }
 
 describe('LEAK-01 · lo entregado no es lo recibido', () => {
-  it('VC con fuga 6 L/min a 10 cmH₂O: VTi es el programado, VTe lo que vuelve, y la diferencia es la fuga', () => {
+  it('VC con fuga 4,4 L/min a 10 cmH₂O: VTi es el programado, VTe lo que vuelve, y la diferencia es la fuga', () => {
     const sim = benchSim({ patient: FUGA, settings: { ...BENCH_SETTINGS, assistControl: true, biasFlow: 4 / 60, flowTrigger: 4 / 60 } });
     runUntilBreath(sim, 7);
-    // Gas perdido por la fuga durante la respiración 8 entera: conductancia lineal por la presión del nodo.
-    const g = 6 / 60 / 10;
+    // Gas perdido por la fuga durante la respiración 8 entera, con la ley del orificio a la presión del nodo.
     let fugaL = 0;
     while (sim.breaths.length < 8) {
       sim.step();
-      fugaL += g * Math.max(0, sim.frame().live.paw) * 0.004;
+      fugaL += sim.patient.leakFlow(sim.frame().live.paw) * 0.004;
     }
     const b = sim.breaths.at(-1)!;
     expect(b.vtInsp).toBeCloseTo(0.5, 6); // el ventilador entrega lo programado, fuga incluida
-    expect(b.vtExp / b.vtInsp).toBeGreaterThan(0.4);
-    expect(b.vtExp / b.vtInsp).toBeLessThan(0.5);
+    expect(b.vtExp / b.vtInsp).toBeGreaterThan(0.48);
+    expect(b.vtExp / b.vtInsp).toBeLessThan(0.58);
     const m = sim.frame().metrics;
-    expect(m.leakPct!.value!).toBeGreaterThan(0.5);
+    expect(m.leakPct!.value!).toBeGreaterThan(0.42);
     // En régimen el pulmón no acumula: VTi − VTe es toda la fuga del ciclo, la de la inspiración y la que se lleva el
     // flujo de base en la espiración (el sensor integra el flujo con su signo), no una parte de ella.
     const prev = sim.breaths.at(-2)!;
@@ -65,6 +65,33 @@ describe('LEAK-01 · lo entregado no es lo recibido', () => {
   });
 });
 
+describe('LEAK-06 · la fuga es un orificio: crece con la raíz de la presión, no en proporción', () => {
+  it('reproduce la curva presión-flujo publicada de un orificio calibrado (ResMed AirFit F20) con error ≤ 3 %', () => {
+    // Guía de usuario de la mascarilla, «Pressure-flow curve» (C13): 37 L/min a 10 cmH₂O.
+    const F20: [number, number][] = [
+      [3, 19],
+      [8, 32],
+      [12, 41],
+      [16, 48],
+      [20, 54],
+      [24, 60],
+      [30, 69],
+      [40, 82],
+    ];
+    const sim = benchSim({ patient: { ...BENCH_PATIENT, leakLpmAt10: 37 } });
+    for (const [p, q] of F20) expect(Math.abs((sim.patient.leakFlow(p) * 60) / q - 1), `${p} cmH₂O`).toBeLessThan(0.03);
+    // Una ley lineal con el mismo punto a 10 cmH₂O se equivoca en más de la mitad a 40.
+    expect(Math.abs((37 * 40) / 10 / 82 - 1)).toBeGreaterThan(0.5);
+  });
+
+  it('es simétrica: si el nodo queda bajo el ambiente entra aire; sin fuga, nada', () => {
+    const sim = benchSim({ patient: FUGA });
+    expect(sim.patient.leakFlow(-5)).toBeCloseTo(-sim.patient.leakFlow(5), 12);
+    expect(sim.patient.leakFlow(5) / sim.patient.leakFlow(10)).toBeCloseTo(Math.pow(0.5, 0.56), 12);
+    expect(benchSim().patient.leakFlow(10)).toBe(0);
+  });
+});
+
 describe('LEAK-02 · la PEEP se sostiene mientras el flujo de base cubra la fuga', () => {
   it('con base 4 L/min y fuga de 3 a la PEEP la Pva espiratoria queda en 5; con base 2 cae por debajo de 4', () => {
     // Sin disparo asistido: se mira la espiración entera (con umbral ≤ fuga la fuga dispararía y la cortaría antes).
@@ -74,15 +101,16 @@ describe('LEAK-02 · la PEEP se sostiene mientras el flujo de base cubra la fuga
       b = espiraciones(noCubre, 6);
     expect(a.pawMin).toBeGreaterThan(4.95);
     expect(cubre.breaths.at(-1)!.peepe).toBeCloseTo(5, 1);
-    // Sin flujo de base suficiente el nodo baja hasta que base = G·Py: 2 L/min / (6 L/min por 10 cmH₂O) = 3,3 cmH₂O.
-    // El pulmón alimenta la fuga mientras se vacía (constante C/G = 5 s), así que en 4,5 s de espiración la Pva llega a 4,4 y sigue bajando.
+    // Sin flujo de base suficiente el nodo baja hasta que la base iguala la fuga: 2 = 4,4·(Py/10)^0,56 → Py = 2,45 cmH₂O.
+    // El pulmón alimenta la fuga mientras se vacía, así que en 4,5 s de espiración la Pva llega a ≈ 4,3 y sigue bajando.
     expect(b.pawMin).toBeLessThan(4.5);
-    expect(b.pawMin).toBeGreaterThan(3.3);
-    // Una fuga grande que el flujo de base no cubre hunde la PEEP sólo hasta donde el pulmón, al vaciarse, la sostiene; mientras
+    expect(b.pawMin).toBeGreaterThan(2.45);
+    // Una fuga grande que el flujo de base no cubre (23 L/min a 10 cmH₂O, ≈ 15,6 a la PEEP) hunde la PEEP sólo hasta donde
+    // el pulmón, al vaciarse, la sostiene; mientras
     // la Pva no caiga 3 bajo la programada el disparo sigue evaluándose y la fuga dispara sin parar (sin compensación, es lo que
     // pasa). La inhibición del disparo con el circuito sin presión la comprueba LEAK-05 con la desconexión.
     const grande = benchSim({
-      patient: { ...BENCH_PATIENT, leakLpmAt10: 30 },
+      patient: { ...BENCH_PATIENT, leakLpmAt10: 23 },
       settings: { ...BENCH_SETTINGS, rr: 10, assistControl: true, biasFlow: 2 / 60, flowTrigger: 2 / 60 },
     });
     const c = espiraciones(grande, 8);
@@ -127,7 +155,7 @@ describe('LEAK-04 · en soporte la fuga retrasa el ciclado: el flujo medido no c
       expect(b.length).toBeGreaterThan(2);
       return b.reduce((a, x) => a + x.tInspS, 0) / b.length;
     };
-    // El sensor ve el flujo del paciente más la fuga (9 L/min a 15 cmH₂O): tarda más en caer al 25 % del pico.
+    // El sensor ve el flujo del paciente más la fuga (≈ 5,5 L/min a 15 cmH₂O): tarda más en caer al 25 % del pico.
     expect(ti(FUGA)).toBeGreaterThan(ti(BENCH_PATIENT) + 0.03);
   });
 });
