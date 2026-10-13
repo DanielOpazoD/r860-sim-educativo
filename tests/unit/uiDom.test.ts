@@ -198,6 +198,22 @@ describe('edición, medición y navegación de diálogos', () => {
     expect(ctx.dialog.kind).toBe('');
   });
 
+  it('VMesp y FiO2 baja no se apagan, como en el equipo: el campo vacío es un error con el mínimo', async () => {
+    const { ctx } = harness;
+    const alarms = createAlarmsUi(ctx);
+    alarms.alarmSetup();
+    const field = $<HTMLInputElement>('[data-limit="mveLow"]');
+    expect(field.placeholder).toBe('');
+    expect($<HTMLInputElement>('[data-limit="vteLow"]').placeholder).toBe('Off');
+    field.value = '';
+    expect(alarms.readLimits().join()).toMatch(/no deja apagarla; el mínimo es 0.01 L\/min/);
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    await alarms.confirmLimits();
+    expect(ctx.send).not.toHaveBeenCalled();
+    field.value = '0.35';
+    expect(alarms.readLimits()).toEqual([]);
+  });
+
   it('actualiza métricas, enmascara examen y fija la referencia al abrir la estimación', () => {
     const { ctx, sim } = harness;
     while (sim.simTimeMs < 12_000) sim.step();

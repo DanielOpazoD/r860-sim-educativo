@@ -25,13 +25,16 @@ describe('escalones por tramo (D ficha 2014) en ambos sentidos', () => {
     expect(stepDisplayValue(r, 3, 1)).toBeCloseTo(3.5, 9);
     expect(stepDisplayValue(r, 3, -1)).toBeCloseTo(2.9, 9);
   });
-  it('I:E discreto: 1:1.5 sube a 1:1 y baja a 1:2; extremos 1:9 y 4:1', () => {
+  it('I:E de 0,1 en 0,1 (URM 13-12): 1:1.5 sube a 1:1.4 y baja a 1:1.6; 1:1.1 → 1:1 → 1.1:1; extremos 1:9 y 4:1', () => {
     const r = VC_ADULT_RULES.ie;
-    expect(stepDisplayValue(r, 1 / 1.5, 1)).toBeCloseTo(1, 9);
-    expect(stepDisplayValue(r, 1 / 1.5, -1)).toBeCloseTo(0.5, 9);
+    expect(stepDisplayValue(r, 1 / 1.5, 1)).toBeCloseTo(1 / 1.4, 9);
+    expect(stepDisplayValue(r, 1 / 1.5, -1)).toBeCloseTo(1 / 1.6, 9);
+    expect(stepDisplayValue(r, 1 / 1.1, 1)).toBeCloseTo(1, 9);
+    expect(stepDisplayValue(r, 1, 1)).toBeCloseTo(1.1, 9);
     expect(stepDisplayValue(r, 1 / 9, -1)).toBeCloseTo(1 / 9, 9);
     expect(stepDisplayValue(r, 4, 1)).toBe(4);
-    expect(IE_VALUES.length).toBe(17 + 6);
+    // 1:9.0 … 1:1.1 (80), 1:1 y 1.1:1 … 4.0:1 (30).
+    expect(IE_VALUES.length).toBe(80 + 1 + 30);
   });
   it('propiedad: subir y bajar desde un valor en rejilla (no extremo) devuelve el mismo valor', () => {
     for (const rule of [VC_ADULT_RULES.vt, VC_ADULT_RULES.flowTrigger, VC_ADULT_RULES.rr, VC_ADULT_RULES.peep]) {

@@ -1,6 +1,6 @@
 /** Banda de alarmas, diálogo de alarmas, edición de límites y audio de alarmas (dueño de AlarmAudio). */
 import type { AlarmLimits, AlarmState } from '../domain/types';
-import { isOnGrid, nearestGridValue } from '../domain/validation';
+import { gridValues, isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
 import { AlarmAudio } from './audio';
@@ -112,12 +112,12 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
       const r = ctx.profile.alarmLimitRules[k];
       const v = limitsDraft![k];
       const id = `help-limit-${k}`;
-      return `<div class="limit-field contextual-field"><div class="limit-input"><button class="step-button" type="button" data-limit-step="${k}" data-direction="-1" aria-label="Disminuir ${label} ${which}" aria-describedby="${id}">−</button><input class="form-control" type="number" data-limit="${k}" value="${v === 'off' ? '' : (v as number) * r.displayFactor}" placeholder="Off" step="${Math.min(...r.domain.map((s) => s.step))}" aria-label="${label} ${which}" aria-describedby="${id}"><button class="step-button" type="button" data-limit-step="${k}" data-direction="1" aria-label="Aumentar ${label} ${which}" aria-describedby="${id}">+</button></div>${contextualHelpPanel('procedure.alarms', id)}</div>`;
+      return `<div class="limit-field contextual-field"><div class="limit-input"><button class="step-button" type="button" data-limit-step="${k}" data-direction="-1" aria-label="Disminuir ${label} ${which}" aria-describedby="${id}">−</button><input class="form-control" type="number" data-limit="${k}" value="${v === 'off' ? '' : (v as number) * r.displayFactor}" placeholder="${r.allowOff ? 'Off' : ''}" step="${Math.min(...r.domain.map((s) => s.step))}" aria-label="${label} ${which}" aria-describedby="${id}"><button class="step-button" type="button" data-limit-step="${k}" data-direction="1" aria-label="Aumentar ${label} ${which}" aria-describedby="${id}">+</button></div>${contextualHelpPanel('procedure.alarms', id)}</div>`;
     };
     ctx.dialog.open(
       'alarmSetup',
       'Límites de alarma',
-      `<div class="context-help-row"><span>Información sobre límites</span>${infoButton('procedure.alarms', 'help-alarm-limits')}</div>${infoPanel('procedure.alarms', 'help-alarm-limits')}<div class="alarm-edit-grid"><b>Parámetro</b><b>Bajo</b><b>Alto</b>${rows.map(([label, u, lo, hi]) => `<label>${label} <small>${u}</small></label>${cell(lo, label, 'bajo')}${cell(hi, label, 'alto')}`).join('')}</div><p class="settings-annotation">Vacío = Off (la alarma no se evalúa). Pmáx se ajusta en la tecla rápida y termina la inspiración.</p><div id="limits-error" class="mode-error" role="status"></div>`,
+      `<div class="context-help-row"><span>Información sobre límites</span>${infoButton('procedure.alarms', 'help-alarm-limits')}</div>${infoPanel('procedure.alarms', 'help-alarm-limits')}<div class="alarm-edit-grid"><b>Parámetro</b><b>Bajo</b><b>Alto</b>${rows.map(([label, u, lo, hi]) => `<label>${label} <small>${u}</small></label>${cell(lo, label, 'bajo')}${cell(hi, label, 'alto')}`).join('')}</div><p class="settings-annotation">Vacío = Off (la alarma no se evalúa); VMesp y FiO₂ baja no se apagan, como en el equipo. Pmáx se ajusta en la tecla rápida y termina la inspiración.</p><div id="limits-error" class="mode-error" role="status"></div>`,
       btn('Ver alarmas', 'alarms', 'secondary-button') + btn('Confirmar límites', 'confirmLimits'),
     );
   }
@@ -128,6 +128,11 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
       const k = el.dataset.limit as keyof AlarmLimits;
       const r = ctx.profile.alarmLimitRules[k];
       const raw = el.value.trim();
+      if (raw === '' && !r.allowOff) {
+        el.setAttribute('aria-invalid', 'true');
+        errors.push(`${r.label}: el equipo no deja apagarla; el mínimo es ${gridValues(r)[0]} ${unitText(r.displayUnit)}.`);
+        continue;
+      }
       if (raw === '') {
         el.removeAttribute('aria-invalid');
         limitsDraft[k] = 'off';

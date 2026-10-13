@@ -131,7 +131,7 @@
         "sha256": "bb2f742971a73149c34910f10d4a96ca9734144e8d7e341c74cde0d83ace80a3",
         "pages": 510,
         "readFully": false,
-        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21). El intento del 2026-09-06 había fallado con HTTP 502."
+        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21), valores de fábrica (11-9 a 11-10), procedimientos (7-5 a 7-9), rangos y pasos de ajustes y alarmas para adulto (13-12 a 13-15) y especificaciones de monitorización (13-18 a 13-24). El intento del 2026-09-06 había fallado con HTTP 502."
       }
     },
     {
@@ -1517,6 +1517,18 @@
       "implemented": "src/engine/gasExchange.ts (GasExchange.step, onBreath, slowTauMin, DEFAULT_GAS.storeL); src/ui/teachingView.ts (Por qué)",
       "tests": [
         "tests/unit/gasometria.test.ts (GAS-08)"
+      ]
+    },
+    {
+      "id": "E-115",
+      "claim": "Rangos y pasos de ajustes y límites de alarma como en las tablas del manual para adulto. I:E de 1:9 a 4:1 en pasos de 0,1 en las dos partes. Tiempo de apnea 5–60 s, de 1 en 1 hasta 20 y de 5 en 5 después. Tinsp de respaldo 0,25–15 s (0,05 hasta 1 s, 0,1 hasta 4, 0,25 después) y Pinsp de respaldo 1–98. VTesp bajo (1–1950 mL) y alto (3–2000) en tramos de 0,5 / 1 / 5 / 25 / 50 mL con fronteras en 20, 100, 350 y 1000. VMesp bajo (0,01–40 L/min) y alto (0,02–99) en tramos de 0,01 / 0,1 / 1 con fronteras en 1 y 10, sin Off en ventilación invasiva (sólo la VNI lo admite para el bajo); FiO₂ baja 18–99 % sin Off. Los valores por omisión y los de todos los escenarios caen en la rejilla.",
+      "status": "D (tablas de ajustes y de alarmas del manual, R21); antes P los pasos de I:E, VTesp y VMesp, el tramo de Tinsp de respaldo y el Off de VMesp y FiO₂ baja",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 13-12 a 13-13 «Ventilation settings» (adulto: Backup Pinsp, Backup Tinsp, I:E); 13-14 a 13-15 «Alarm settings» (Apnea Time, MVexp Low/High, VTexp Low/High, FiO2 Low)",
+      "implemented": "src/profiles/adulto-referencia/settings.ts (IE_VALUES, VC_ADULT_RULES.backupPinsp, backupTinspS, apneaTimeS, ALARM_LIMIT_RULES.vteLow, vteHigh, mveLow, mveHigh, fio2Low); src/ui/alarmsUi.ts (campo vacío sin Off)",
+      "tests": [
+        "tests/unit/rangosEquipo.test.ts (RAN-URM)",
+        "tests/unit/validation.test.ts (I:E de 0,1 en 0,1)"
       ]
     }
   ]

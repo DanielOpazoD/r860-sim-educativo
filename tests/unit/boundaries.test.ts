@@ -21,7 +21,7 @@ describe('setAlarmLimits se valida como cualquier ajuste', () => {
       expect(r.accepted, JSON.stringify(bad)).toBe(false);
     }
     expect(sim.frame().alarmLimits).not.toHaveProperty('foo');
-    expect(sim.command({ type: 'setAlarmLimits', changes: { vteLow: 'off', mveHigh: 12.5, rrHigh: 35 } }).accepted).toBe(true);
+    expect(sim.command({ type: 'setAlarmLimits', changes: { vteLow: 'off', mveHigh: 12, rrHigh: 35 } }).accepted).toBe(true);
     expect(sim.frame().alarmLimits.rrHigh).toBe(35);
   });
   it('increaseO2Start con delta negativo, NaN o > 100 % se rechaza; setSpeed no numérico se ignora', () => {

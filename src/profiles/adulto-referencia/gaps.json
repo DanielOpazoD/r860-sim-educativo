@@ -45,7 +45,7 @@
     {
       "id": "U-05",
       "question": "Reglas cruzadas y escalones por modo/edad.",
-      "policy": "Escalones D de la ficha 2014; I:E con paso 0.5 (P); relaciones Tinsp/Texp/flujo (P).",
+      "policy": "Escalones D de la ficha 2014 y del manual SW10 (13-12 a 13-15), entre ellos I:E de 0,1 en 0,1 (E-115); relaciones Tinsp/Texp/flujo (P).",
       "status": "abierta",
       "blocks": [
         "pediátrico",
