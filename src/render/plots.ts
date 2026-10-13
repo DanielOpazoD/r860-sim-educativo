@@ -831,7 +831,9 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   } else marker(s.ppeak, 'Ppico', '#c9f9ff');
   marker(s.peep, 'PEEP', '#81e1e1');
   text(ctx, 'VTesp', w / 2, 420, 10, '#9adaff', 'center');
-  text(ctx, format(s.standby ? null : s.vteMl, 0), w / 2, 449, 29, '#e0feff', 'center', '600');
+  // Resolución del equipo: VT en pasos de 0,1 mL bajo 50 mL y de 1 mL desde ahí (URM SW10 13-24).
+  const vte = s.standby ? null : s.vteMl;
+  text(ctx, format(vte, vte !== null && Math.abs(vte) < 50 ? 1 : 0), w / 2, 449, 29, '#e0feff', 'center', '600');
   text(ctx, `FiO₂ ${format(s.fio2Pct, 0)} %`, w / 2, 477, 12, '#ace9ff', 'center');
 }
 

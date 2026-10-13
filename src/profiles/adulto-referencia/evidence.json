@@ -1440,6 +1440,18 @@
         "tests/bench/circuito.test.ts (BM-CC)",
         "tests/unit/circuitoIdentidad.test.ts (CIR)"
       ]
+    },
+    {
+      "id": "E-109",
+      "claim": "Números del monitor como el equipo. Ppico, Pmedia, Pplat, PEEPe, PEEPi y los volúmenes: el valor de la última respiración detectada. FR, VMesp, VMinsp y sus variantes espontáneas y mecánicas: el valor corrido del último minuto más una respiración. Aquí se toman respiraciones desde la última hacia atrás hasta cubrir 60 s, incluida la que cruza el borde, y se divide por su duración, sin cuantización; antes eran las 8 últimas (P). La potencia mecánica usa la misma ventana. Consecuencias: tras un cambio de ajuste FR y VMesp tardan un minuto en asentarse (SC-21 espera ese minuto), y una respiración ocluida pesa en ellos un minuto, coherente con el retardo de 60 s de sus alarmas tras un bloqueo (E-106). Resolución de pantalla: VMesp en pasos de 0,01 L/min de 0 a 1,0 y de 0,1 de 1,0 a 99,9; VT en pasos de 0,1 mL de 5 a 50 y de 1 mL de 50 a 2500.",
+      "status": "D (técnica de filtrado y resolución, R21) / P (lectura exacta de «último minuto + una respiración» como suma hasta cubrir 60 s)",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 13-22 a 13-24 «Ventilation monitoring specifications» (columnas Resolution y Filtering Technique)",
+      "implemented": "src/engine/metrics.ts (MINUTE_WINDOW_MS, ventanaDeUnMinuto); src/ui/metricsTable.ts (decimalesMostrados); src/ui/metricsView.ts; src/render/plots.ts (VTesp de la barra)",
+      "tests": [
+        "tests/unit/metricasEquipo.test.ts (MON)",
+        "tests/unit/objetivos.test.ts (SC-21)"
+      ]
     }
   ]
 }

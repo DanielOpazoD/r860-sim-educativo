@@ -182,7 +182,8 @@ describe('OBJ · las lecciones se pueden terminar', () => {
     expect(a.hechos.has('dp')).toBe(true);
     expect(sim.command({ type: 'confirmSettings', changes: { vt: 0.35 } }).accepted).toBe(true);
     a.settingsChangeMs = sim.simTimeMs;
-    runUntilBreath(sim, sim.breaths.length + 10);
+    // La potencia se promedia como VMesp: el último minuto más una respiración (URM SW10 13-23). Hay que esperar ese minuto.
+    sim.run(65_000);
     a.mirar(bloqueo(sim, 3));
     expect(a.hechos.has('vt')).toBe(true);
     expect(a.hechos.has('mp')).toBe(true);

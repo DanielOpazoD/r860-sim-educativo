@@ -114,6 +114,17 @@ export function metricValue(frame: EngineFrame | null, spec: MetricSpec): number
  * cerca de cero ese porcentaje miente (contra un 0 real cualquier respuesta daba «error 0 %», auditoría), así que
  * se informa la diferencia absoluta. Caer dentro del medio dígito mostrado cuenta como exacto.
  */
+/**
+ * Decimales con que el equipo muestra un valor (D, URM SW10 13-23 y 13-24, columna Resolution): VMesp de 0 a 1,0 L/min
+ * en pasos de 0,01 y de 1,0 a 99,9 en pasos de 0,1; VT de 5 a 50 mL en pasos de 0,1 y de 50 a 2500 en pasos de 1. El
+ * resto, con los decimales fijos de su especificación.
+ */
+export function decimalesMostrados(m: MetricSpec, valor: number | null): number {
+  if (valor === null || !Number.isFinite(valor)) return m.decimals;
+  if (m.key === 'mve' || m.key === 'mveSpont') return Math.abs(valor) < 1 ? 2 : 1;
+  if (m.key === 'vte' || m.key === 'vti' || m.key === 'vteSpont') return Math.abs(valor) < 50 ? 1 : 0;
+  return m.decimals;
+}
 export function veredictoEstimacion(guess: number, actual: number, decimals: number, unit: string): string {
   const err = guess - actual;
   const paso = Math.pow(10, -decimals) / 2;

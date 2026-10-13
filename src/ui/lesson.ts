@@ -217,7 +217,7 @@ export function updateLessonFlags(frame: EngineFrame, flags: Record<string, unkn
   if (frame.truth.sensors.fio2Bias !== 0) flags.biasWasSet = true;
   if (frame.alarms.some((a) => a.conditionActive)) flags.alarmActiveSeen = true;
   // Una respiración asistida se cuenta cuando ocurre. Antes se deducía de que la FR MEDIA superara a la programada,
-  // que es otra cosa: con la ventana móvil de ocho respiraciones hacen falta muchos disparos seguidos para moverla,
+  // que es otra cosa: con la ventana móvil de un minuto hacen falta muchos disparos seguidos para moverla,
   // así que el objetivo parecía roto aunque el alumno hubiera conseguido lo que se le pedía.
   for (const e of frame.eventsTail) {
     const tipo = e.kind === 'breath' ? (e.payload as { type?: string }).type : undefined;

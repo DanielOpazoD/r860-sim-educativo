@@ -21,6 +21,7 @@ import {
   metricValue,
   type MetricSpec,
   veredictoEstimacion,
+  decimalesMostrados,
 } from './metricsTable';
 
 const EVENT_KIND: Record<string, string> = {
@@ -128,7 +129,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           setAttributeIfChanged(el, 'aria-label', accesible);
         } else {
           valor.classList.remove('sin-dato');
-          put(valor, oculto(m.key) ? '?' : f(medido, m.decimals));
+          put(valor, oculto(m.key) ? '?' : f(medido, decimalesMostrados(m, medido)));
           if (muestra?.quality === 'invalid') {
             motivoCorto = 'Mecánica no válida';
             setAttributeIfChanged(el, 'title', `${m.label}: presión observada · ${razon}`);
@@ -160,7 +161,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
       }
       for (const e of $$('#big-metrics [data-metric]')) {
         const spec = METRICS.find((m) => m.key === e.dataset.metric) as MetricSpec;
-        put(e.querySelector('b'), oculto(spec.key) && value(spec) !== null ? '?' : f(value(spec), spec.decimals));
+        put(e.querySelector('b'), oculto(spec.key) && value(spec) !== null ? '?' : f(value(spec), decimalesMostrados(spec, value(spec))));
       }
       if (ctx.view === 'data') {
         const fila = (key: string): HTMLTableRowElement[] => {
@@ -168,7 +169,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
           if (!m) return [];
           const est = examEstimates.get(m.key);
           const status = metricStatus(ctx.frame, m);
-          const valor = oculto(m.key) && value(m) !== null ? '?' : f(value(m), m.decimals);
+          const valor = oculto(m.key) && value(m) !== null ? '?' : f(value(m), decimalesMostrados(m, value(m)));
           const name = element('button', 'metric-name', m.label, iconNode('info'));
           name.dataset.metric = m.key;
           const cell = element(
