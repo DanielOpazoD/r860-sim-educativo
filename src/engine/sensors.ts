@@ -35,29 +35,63 @@ export class FlowSensor {
 }
 
 /**
- * Capa de sensores virtuales (P): la mezcla objetivo, la mezcla entregada y el sensor de O2 son estados distintos.
- * El sensor sigue a la mezcla con retardo de primer orden y un sesgo configurable por el instructor (SC-12).
+ * Mezclador de O2, constante de tiempo (s), P dentro de un D: el manual da para el paso de 21 a 90 % «< 6 breaths or 30
+ * seconds, whichever is longer» (URM SW10 13-21). Con 8 s el paso llega al 90 % en 18 s y al 95 % en 24 s. Antes la
+ * mezcla entregada saltaba al objetivo.
+ */
+export const O2_MIXER_TAU_S = 8;
+/** Ventana de la media móvil con que el equipo muestra la FiO2 (s): «10 s moving average» (D, URM SW10 13-24). */
+export const FIO2_DISPLAY_AVERAGE_S = 10;
+
+/**
+ * Capa de sensores virtuales: la mezcla objetivo, la mezcla entregada y el sensor de O2 son estados distintos. La mezcla
+ * entregada sigue al objetivo con la constante del mezclador; el sensor la sigue con retardo de primer orden (P) y un
+ * sesgo configurable por el instructor (SC-12); lo que se muestra y vigila es la media móvil de 10 s del sensor (D).
  * Presión, flujo y volumen son canales ideales en esta etapa (sin ruido ni retraso), declarados como tales.
  */
 export class O2Sensor {
   params: SensorParams;
-  /** Fracción entregada por el mezclador (sigue al objetivo de inmediato en esta etapa, P). */
+  /** Fracción que el mezclador quiere entregar (el ajuste). */
+  target: number;
+  /** Fracción entregada por el mezclador: sigue al objetivo con O2_MIXER_TAU_S. */
   delivered: number;
-  /** Lectura del sensor (fracción). */
+  /** Lectura instantánea del sensor (fracción). */
+  sensor: number;
+  /** Media móvil de 10 s del sensor: lo que muestra el equipo y comparan sus alarmas (fracción). */
   measured: number;
+  /** Muestras del sensor de los últimos 10 s en un anillo, y su suma (paso fijo: media aritmética). */
+  private ventana: Float64Array | null = null;
+  private llenas = 0;
+  private cabeza = 0;
+  private suma = 0;
   constructor(params: SensorParams, initialFraction: number) {
     this.params = { ...params };
+    this.target = initialFraction;
     this.delivered = initialFraction;
-    this.measured = initialFraction + params.fio2Bias;
+    this.sensor = initialFraction + params.fio2Bias;
+    this.measured = this.sensor;
   }
   setTarget(fraction: number): void {
-    this.delivered = fraction;
+    this.target = fraction;
   }
   step(dtS: number): void {
+    this.delivered += (1 - Math.exp(-dtS / O2_MIXER_TAU_S)) * (this.target - this.delivered);
     const tau = Math.max(1e-3, this.params.fio2TauS);
-    const target = this.delivered + this.params.fio2Bias;
-    const a = 1 - Math.exp(-dtS / tau);
-    this.measured += a * (target - this.measured);
+    const objetivo = this.delivered + this.params.fio2Bias;
+    this.sensor += (1 - Math.exp(-dtS / tau)) * (objetivo - this.sensor);
+    const n = Math.max(1, Math.round(FIO2_DISPLAY_AVERAGE_S / Math.max(1e-6, dtS)));
+    if (!this.ventana || this.ventana.length !== n) {
+      this.ventana = new Float64Array(n);
+      this.llenas = 0;
+      this.cabeza = 0;
+      this.suma = 0;
+    }
+    if (this.llenas === n) this.suma -= this.ventana[this.cabeza] as number;
+    else this.llenas += 1;
+    this.ventana[this.cabeza] = this.sensor;
+    this.suma += this.sensor;
+    this.cabeza = (this.cabeza + 1) % n;
+    this.measured = this.suma / this.llenas;
   }
 }
 

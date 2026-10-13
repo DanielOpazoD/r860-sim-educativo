@@ -16,11 +16,13 @@ describe('H1 · ↑O2: ajuste, mezclador y sensor vuelven juntos (regla 1)', () 
   it('fin por temporizador restaura también el mezclador', () => {
     const sim = benchSim();
     sim.command({ type: 'increaseO2Start' });
-    expect(sim.o2.delivered).toBe(1.0);
+    // El objetivo del mezclador cambia al instante; la mezcla entregada lo sigue con su constante (URM SW10 13-21).
+    expect(sim.o2.target).toBe(1.0);
     sim.run(130_000);
     expect(sim.frame().settings.fio2).toBe(0.21);
-    expect(sim.o2.delivered).toBe(0.21);
+    expect(sim.o2.target).toBe(0.21);
     sim.run(60_000);
+    expect(sim.o2.delivered).toBeCloseTo(0.21, 3);
     expect(sim.o2.measured).toBeCloseTo(0.21, 2);
   });
   it('fin por espera restaura también el mezclador', () => {
@@ -29,7 +31,7 @@ describe('H1 · ↑O2: ajuste, mezclador y sensor vuelven juntos (regla 1)', () 
     sim.run(2000);
     sim.command({ type: 'enterStandby' });
     expect(sim.frame().settings.fio2).toBe(0.21);
-    expect(sim.o2.delivered).toBe(0.21);
+    expect(sim.o2.target).toBe(0.21);
   });
 });
 
