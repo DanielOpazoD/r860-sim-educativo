@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { validatePatientParams } from '../../src/domain/validation';
-import { ALVEOLAR_K, DEFAULT_GAS, GasExchange, bicarbonate, phFrom, steadyPaco2 } from '../../src/engine/gasExchange';
+import {
+  ALVEOLAR_K,
+  DEFAULT_GAS,
+  GasExchange,
+  LUNG_CO2_STORE_L,
+  VENOARTERIAL_PCO2_MMHG,
+  bicarbonate,
+  phFrom,
+  slowTauMin,
+  steadyPaco2,
+} from '../../src/engine/gasExchange';
 import { exportSession, importSession, replaySession } from '../../src/history/session';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
@@ -18,6 +28,30 @@ function respirar(g: GasExchange, t: number, vt: number, p = DEFAULT_GAS, durS =
 /** V̇A de una respiración regular con los parámetros por omisión (L/min). */
 const vaRegular = (vt: number, fr: number): number => (vt - DEFAULT_GAS.deadspaceL) * (1 - DEFAULT_GAS.alveolarDeadspaceFrac) * fr;
 const minutos = (sim: ReturnType<typeof benchSim>, min: number): void => sim.run(Math.round(min * 60_000));
+/** Segundos sin ventilación, a paso de 4 ms como el motor. */
+function apnea(g: GasExchange, segundos: number, p = DEFAULT_GAS): void {
+  for (let i = 0; i < Math.round(segundos / 0.004); i++) g.step(0.004, p);
+}
+/** Ventilación regular a paso de 4 ms: inspiración, espiración y cierre de cada respiración de `durS` segundos. */
+function ventilar(g: GasExchange, t0: number, segundos: number, vt = 0.5, durS = 4, p = DEFAULT_GAS): number {
+  const pasos = Math.round(durS / 0.004);
+  let t = t0;
+  for (let n = 0; n < Math.round(segundos / durS); n++) {
+    for (let i = 0; i < pasos; i++) {
+      g.step(0.004, p);
+      if (i === Math.round(pasos / 3)) g.move(vt, p);
+      if (i === Math.round(pasos / 2)) g.move(-vt, p);
+    }
+    t += durS;
+    g.onBreath(t, durS, p);
+  }
+  return t;
+}
+/** Un paciente ventilado 30 min con VT 0,5 a 15/min: en su equilibrio de dos compartimentos. */
+function enEquilibrio(): { g: GasExchange; t: number } {
+  const g = new GasExchange();
+  return { g, t: ventilar(g, 0, 1800) };
+}
 const gas = (sim: ReturnType<typeof benchSim>) => sim.frame().truth.gas!;
 
 describe('GAS-01 · ecuaciones', () => {
@@ -29,11 +63,13 @@ describe('GAS-01 · ecuaciones', () => {
     expect(phFrom(24, 40) - phFrom(24, 80)).toBeCloseTo(Math.log10(2), 9);
   });
 
-  it('en apnea la PaCO₂ sube 0,863·VCO₂/C mmHg por minuto', () => {
+  it('en apnea, pasado el tramo rápido, la PaCO₂ sube 0,863·VCO₂/C mmHg por minuto', () => {
     const g = new GasExchange(40);
-    for (let i = 0; i < 60_000 / 4; i++) g.step(0.004, DEFAULT_GAS);
-    expect(g.paco2 - 40).toBeCloseTo((ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / DEFAULT_GAS.storeL, 6);
-    expect(g.state(60, DEFAULT_GAS).vaLMin).toBeNull();
+    apnea(g, 180);
+    const a = g.paco2;
+    apnea(g, 120);
+    expect((g.paco2 - a) / 2).toBeCloseTo((ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / DEFAULT_GAS.storeL, 3);
+    expect(g.state(300, DEFAULT_GAS).vaLMin).toBeNull();
   });
 
   it('una respiración menor que el espacio muerto no ventila el alvéolo', () => {
@@ -170,8 +206,8 @@ describe('GAS-06 · equilibrio inicial con atrapamiento', () => {
   });
 });
 
-describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇A', () => {
-  it('duplicar la frecuencia lleva la PaCO₂ hacia la mitad y recorre ≈ 63 % en una τ', () => {
+describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con el tramo lento de los tejidos', () => {
+  it('duplicar la frecuencia lleva la PaCO₂ hacia la mitad y, pasado el tramo rápido, recorre ≈ 63 % en una τ', () => {
     const sim = benchSim();
     // Pasada la ventana inicial (EQUILIBRIUM_WINDOW_S) la PaCO₂ ya sólo cambia por el balance de masa.
     sim.run(25_000);
@@ -185,7 +221,12 @@ describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con τ = C/V̇
     expect(objetivo).toBeLessThan(p0 * 0.6);
     expect(g.vaLMin!).toBeGreaterThan(1.8 * vaRegular(0.5, 15));
     const tau = g.tauMin!;
-    expect(tau).toBeCloseTo(DEFAULT_GAS.storeL / g.vaLMin!, 9);
+    expect(tau).toBeCloseTo(slowTauMin(DEFAULT_GAS.storeL, g.vaLMin!)!, 9);
+    // El tramo lento es el de los tejidos, que se vacían por la sangre y el pulmón en serie: τ ≈ C_t · (1/V̇A + 1/G).
+    const g1 = (ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / VENOARTERIAL_PCO2_MMHG,
+      serie = 1 / g.vaLMin! + 1 / g1;
+    expect(tau).toBeGreaterThan((DEFAULT_GAS.storeL - LUNG_CO2_STORE_L) * serie);
+    expect(tau).toBeLessThan(DEFAULT_GAS.storeL * serie);
     const p1 = g.paco2;
     minutos(sim, tau);
     const recorrido = (p1 - gas(sim).paco2) / (p1 - objetivo);
@@ -245,5 +286,104 @@ describe('GAS-04 · validación y reproducción', () => {
     if (!imp.ok) return;
     const re = replaySession(imp.session);
     expect(re.frame().truth.gas).toEqual(sim.frame().truth.gas);
+  });
+});
+
+// Dos compartimentos (Farhi y Rahn): pulmón pequeño y rápido, sangre y tejidos grandes y lentos. Oráculos medidos:
+// apnea de anestesiados con el tubo ocluido —Stock 1989 (PMID 2516732): +12 mmHg el primer minuto y 3,4 mmHg/min
+// después, aproximación lineal por tramos de una curva logarítmica; Kobayashi 1994 (PMID 7933492): +9,8 ± 1,9 el
+// primer minuto y 3,4–4,4 mmHg/min después—, la hipocapnia aguda previa (Gentz 1998, PMID 9603587) y la respuesta a
+// un cambio de ventilación de ±10 % (Taskar 1995, PMID 7606958).
+describe('GAS-08 · cinética de dos compartimentos', () => {
+  it('apnea: el primer minuto sube rápido y después 3,4–4,4 mmHg/min, como en los anestesiados con el tubo ocluido', () => {
+    const { g } = enEquilibrio();
+    const p0 = g.paco2;
+    apnea(g, 60);
+    const primerMinuto = g.paco2 - p0;
+    const p1 = g.paco2;
+    apnea(g, 240);
+    const despues = (g.paco2 - p1) / 4;
+    // Dentro de una desviación de Kobayashi (9,8 ± 1,9) y por debajo de los 12 de Stock: el modelo no lleva lo que
+    // añaden el colapso del pulmón que absorbe O₂ ni el efecto Haldane.
+    expect(primerMinuto).toBeGreaterThan(7.9);
+    expect(primerMinuto).toBeLessThan(12);
+    expect(despues).toBeGreaterThan(3.4);
+    expect(despues).toBeLessThan(4.4);
+    // La forma: el primer minuto vale el doble que cualquiera de los siguientes.
+    expect(primerMinuto).toBeGreaterThan(2 * despues);
+  });
+
+  it('en equilibrio la sangre venosa queda ≈ 6 mmHg por encima de la arterial, y en proporción a la producción', () => {
+    const { g } = enEquilibrio();
+    expect(g.venosa - g.paco2).toBeCloseTo(VENOARTERIAL_PCO2_MMHG, 0);
+    const p = { ...DEFAULT_GAS, vco2MlMin: 250 };
+    const h = new GasExchange();
+    ventilar(h, 0, 1800, 0.5, 4, p);
+    expect((h.venosa - h.paco2) / (g.venosa - g.paco2)).toBeCloseTo(250 / 200, 1);
+  });
+
+  it('tras una hiperventilación aguda el primer minuto de apnea sube más: el gradiente venoarterial está abierto (Gentz)', () => {
+    const subida = (minutosHiper: number) => {
+      const { g, t } = enEquilibrio();
+      if (minutosHiper) ventilar(g, t, minutosHiper * 60, 0.8);
+      const gradiente = g.venosa - g.paco2,
+        p0 = g.paco2;
+      apnea(g, 60);
+      return { gradiente, primerMinuto: g.paco2 - p0 };
+    };
+    const eucapnia = subida(0),
+      aguda = subida(5),
+      asentada = subida(30);
+    expect(aguda.gradiente).toBeGreaterThan(eucapnia.gradiente + 1);
+    expect(aguda.primerMinuto).toBeGreaterThan(eucapnia.primerMinuto + 1);
+    // Con la hipocapnia ya asentada el gradiente vuelve al de reposo y la subida es la misma.
+    expect(asentada.gradiente).toBeCloseTo(eucapnia.gradiente, 0);
+    expect(asentada.primerMinuto).toBeCloseTo(eucapnia.primerMinuto, 0);
+  });
+
+  it('±10 % de VT: la PaCO₂ apenas se mueve en diez respiraciones y recorre la mayor parte en 20 min; bajando, más lento', () => {
+    const camino = (factor: number) => {
+      const { g, t } = enEquilibrio();
+      const p0 = g.paco2,
+        vt = 0.5 * factor;
+      let tt = ventilar(g, t, 40, vt);
+      const diez = g.paco2;
+      tt = ventilar(g, tt, 20 * 60 - 40, vt);
+      const veinte = g.paco2;
+      const tau = g.state(tt, DEFAULT_GAS).tauMin!;
+      ventilar(g, tt, 120 * 60, vt);
+      const final = g.paco2;
+      return { diez: (diez - p0) / (final - p0), veinte: (veinte - p0) / (final - p0), tau };
+    };
+    const sube = camino(1.1),
+      baja = camino(0.9);
+    for (const c of [sube, baja]) {
+      expect(c.diez).toBeLessThan(0.2);
+      expect(c.veinte).toBeGreaterThan(0.7);
+    }
+    expect(baja.tau).toBeGreaterThan(sube.tau * 1.2);
+  });
+
+  it('la muestra arterial no oscila con cada respiración; el alvéolo sí', () => {
+    const { g, t } = enEquilibrio();
+    let min = Infinity,
+      max = -Infinity,
+      aMin = Infinity,
+      aMax = -Infinity;
+    // Cuatro respiraciones más de 4 s (1000 pasos), leídas paso a paso.
+    for (let n = 1; n <= 4; n++) {
+      for (let i = 0; i < 1000; i++) {
+        g.step(0.004, DEFAULT_GAS);
+        if (i === 333) g.move(0.5, DEFAULT_GAS);
+        if (i === 500) g.move(-0.5, DEFAULT_GAS);
+        min = Math.min(min, g.paco2);
+        max = Math.max(max, g.paco2);
+        aMin = Math.min(aMin, g.alveolar);
+        aMax = Math.max(aMax, g.alveolar);
+      }
+      g.onBreath(t + 4 * n, 4, DEFAULT_GAS);
+    }
+    expect(max - min).toBeLessThan(0.3);
+    expect(aMax - aMin).toBeGreaterThan(2);
   });
 });
