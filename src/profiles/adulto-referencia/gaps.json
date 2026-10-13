@@ -257,7 +257,7 @@
     {
       "id": "U-30",
       "question": "Forma real de la rampa de presión en A/C PC (lineal, exponencial o servocontrolada) y su relación exacta con el ajuste de tiempo de subida.",
-      "policy": "P: rampa de primer orden de PEEP a PEEP + Pinsp (o PS), ≈95 % en riseMs (τ = riseMs/3), servida por un lazo de presión de ganancia finita (E-100): la válvula parte del flujo de base y su flujo crece con el error de presión, así que ni con riseMs = 0 la subida es un escalón y la Pva tarda más en volver sobre la PEEP cuanto más tira el paciente. La ganancia (4 L/s² por cmH₂O) está calibrada con el banco de Thille 2009 (C04: retardo inspiratorio y producto presión-tiempo del Engström); la forma y la ganancia propias del R860 siguen sin ensayo de banco.",
+      "policy": "P: rampa de primer orden de PEEP a PEEP + Pinsp (o PS), 90 % en riseMs (τ = riseMs / ln 10; el 90 % es la definición del equipo, E-110), servida por un lazo de presión de ganancia finita (E-100): la válvula parte del flujo de base y su flujo crece con el error de presión, así que ni con riseMs = 0 la subida es un escalón y la Pva tarda más en volver sobre la PEEP cuanto más tira el paciente. La ganancia (4 L/s² por cmH₂O) está calibrada con el banco de Thille 2009 (C04: retardo inspiratorio y producto presión-tiempo del Engström); la forma y la ganancia propias del R860 siguen sin ensayo de banco.",
       "status": "revisada (Thille 2009, lazo de presión)",
       "blocks": []
     },
@@ -416,7 +416,7 @@
     {
       "id": "U-52",
       "question": "CPAP/PS: tiempo inspiratorio máximo de una respiración soportada, cadencia y salida del respaldo por apnea, y si el tiempo de apnea del equipo cuenta también las respiraciones de respaldo o sólo las del paciente.",
-      "policy": "P: Ti máximo 3 s; respaldo a 12/min mientras dura la apnea, que termina con el primer disparo del paciente; la apnea se cuenta desde la última respiración de cualquier tipo y sólo en CPAP/PS. Los rangos (PS, trigger espiratorio, apnea, frecuencia mínima) son D (E-084); la lógica es P (E-085).",
+      "policy": "D: Ti máximo 4 s (Tsupp de adulto) y corte por presión sobre PEEP + PS + 2,5 (E-110). P: respaldo a 12/min mientras dura la apnea, que termina con el primer disparo del paciente; la apnea se cuenta desde la última respiración de cualquier tipo y sólo en CPAP/PS. Los rangos (PS, trigger espiratorio, apnea, frecuencia mínima) son D (E-084); la lógica es P (E-085).",
       "status": "nueva (v0.4.0)",
       "blocks": []
     },

@@ -19,7 +19,8 @@ test.describe('CPAP/PS', () => {
     await page.click('.mode-option[data-mode="CPAP_PS"]');
     await expect(page.locator('#mode-fields')).toContainText('Presión de soporte sobre CPAP');
     await expect(page.locator('#mode-fields')).toContainText('Respaldo');
-    await expect(page.locator('#mode-timing')).toContainText('apnea a los 20 s');
+    // Tiempo de apnea de fábrica del equipo en adultos: 30 s (URM SW10 11-10).
+    await expect(page.locator('#mode-timing')).toContainText('apnea a los 30 s');
     await page.click('[data-action="confirmModes"]');
     await expect(page.locator('#scenario-sub')).toContainText('CPAP/PS');
     await expect.poll(async () => (await frame(page)).settings.mode, { timeout: 15_000 }).toBe('CPAP_PS');

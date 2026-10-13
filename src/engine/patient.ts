@@ -622,7 +622,9 @@ export class PatientModel {
     const qFree = this.flowForPaw(paw, pmusAt(t), v, rSeries, v2);
     const qFin = f(paw, pmusAt(t), v);
     const qEnd = Number.isFinite(qFin) ? qFin : q;
-    const clamped = qFree > maxFlow || qFree < minFlow;
+    // También cuenta como tope la válvula de un solo sentido: con flujo libre negativo el nodo queda ocluido y su presión
+    // es la del pulmón, no la impuesta.
+    const clamped = qFree > maxFlow || qFree < minFlow || (nonNegativeFlow && qFree < 0);
     // Sin fuga la presión del nodo es la impuesta menos la caída en la resistencia en serie (o la del flujo topado).
     const pyEnd = clamped ? this.pawForFlow(qEnd, pmusAt(t), v) : paw - rSeries * qEnd;
     return { dV: v - v0, qEnd, clamped, dVLeak: 0, qLeakEnd: 0, pyEnd };

@@ -207,7 +207,7 @@ function eventSentenceBody(e: SessionEvent): string {
         spontaneous: 'espontánea',
         backup: 'de respaldo',
       };
-      return `Respiración ${String(p.breathId).replace('b', '')} ${type[String(p.type)] ?? ''} · VTe ${Math.round((p.vte as number) * 1000)} mL · Ppico ${(p.ppeak as number).toFixed(0)}${p.cause === 'pmax' ? ' · terminada por Pmáx' : p.cause === 'tiMax' ? ' · soporte cortado por Ti máximo' : ''}`;
+      return `Respiración ${String(p.breathId).replace('b', '')} ${type[String(p.type)] ?? ''} · VTe ${Math.round((p.vte as number) * 1000)} mL · Ppico ${(p.ppeak as number).toFixed(0)}${p.cause === 'pmax' ? ' · terminada por Pmáx' : p.cause === 'tiMax' ? ' · soporte cortado por Ti máximo' : p.cause === 'pressure' ? ' · soporte cortado por presión (PEEP + PS + 2,5)' : ''}`;
     }
     case 'alarm':
       if (p.pmaxReached !== undefined) return `Alarma: Pmáx alcanzada (${(p.pmaxReached as number).toFixed(1)} cmH₂O)`;

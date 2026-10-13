@@ -202,3 +202,45 @@ describe('PHY-03c · validación y cambio de modo', () => {
     expect((r as { warnings: string[] }).warnings.join(' ')).toMatch(/completados con el valor por omisión/);
   });
 });
+
+// SUP-URM · el soporte termina y sube como el del equipo (URM SW10 5-3, 5-4 y 11-9).
+describe('SUP-URM · ciclado por presión, rampa propia y Tsupp del equipo', () => {
+  it('si algo empuja el gas de vuelta de golpe (tos), la inspiración termina al pasar PEEP + PS + 2,5 cmH₂O', () => {
+    // A mitad de una inspiración soportada la compliance cae de 50 a 15 mL/cmH₂O (como una tos o una compresión): el
+    // pulmón empuja el gas de vuelta, la válvula inspiratoria no lo admite, la Pva sube y el equipo corta por presión.
+    const sim = benchSim({ settings: { ...PS, expTriggerPct: 0.05 }, effort: esfuerzo });
+    runUntilBreath(sim, 3);
+    while (sim.controller.phase !== 'inspSupport') sim.step();
+    sim.run(200);
+    sim.command({ type: 'setPatient', params: { crs: 0.015 } });
+    const n = sim.breaths.length;
+    while (sim.breaths.length === n) sim.step();
+    const b = sim.breaths.at(-1)!;
+    expect(b.cyclingCause).toBe('pressure');
+    // Con un esfuerzo suave el flujo cae bajo el 5 % antes de invertirse: cicla por flujo, también en el equipo.
+    const suave = benchSim({ settings: { ...PS, expTriggerPct: 0.05 }, effort: { ...esfuerzo, shape: 'riseRelax', expAmplitude: 10 } });
+    runUntilBreath(suave, 8);
+    expect(suave.breaths.some((x) => x.cyclingCause === 'pressure')).toBe(false);
+  });
+
+  it('la rampa del soporte llega al 90 % de PS en el tiempo programado, como define el equipo la PS Rise Time', () => {
+    // Fuente ideal (sin el lazo de presión) para leer la rampa sola; 50 ms es la PS Rise Time de fábrica del equipo.
+    const sim = benchSim({ patient: { ...BENCH_PATIENT, pressureLoopGain: 0 }, settings: { ...PS, riseMs: 50 }, effort: esfuerzo });
+    runUntilBreath(sim, 3);
+    let t0: number | null = null,
+      t90: number | null = null;
+    while (sim.breaths.length < 4 && t90 === null) {
+      sim.step();
+      const f = sim.frame();
+      if (f.live.phase === 'inspSupport' && t0 === null) t0 = sim.simTimeMs - 4;
+      if (t0 !== null && t90 === null && f.live.paw >= 5 + 0.9 * 10) t90 = sim.simTimeMs - t0;
+    }
+    expect(t90).not.toBeNull();
+    expect(t90!).toBeGreaterThan(40);
+    expect(t90!).toBeLessThan(62);
+  });
+
+  it('Tsupp: el tope de la inspiración soportada es 4 s en adultos', () => {
+    expect(SUPPORT_TI_MAX_S).toBe(4);
+  });
+});

@@ -23,11 +23,17 @@ import {
 } from './trigger';
 
 /**
- * Tiempo inspiratorio máximo de una respiración soportada (s), P. El ciclado por flujo puede no llegar —esfuerzo
- * sostenido, flujo que se aplana por encima del umbral— y el soporte no puede durar indefinidamente; 3 s es un tope
- * habitual en la literatura de soporte de presión (U-52).
+ * Tiempo inspiratorio máximo de una respiración soportada (s): «Tsupp or 4 seconds for adults» (D, URM SW10 5-4; valor
+ * de fábrica de Tsupp, 11-9). El ciclado por flujo puede no llegar —esfuerzo sostenido, fuga, flujo que se aplana por
+ * encima del umbral— y el soporte no puede durar indefinidamente. Antes era 3 s (P).
  */
-export const SUPPORT_TI_MAX_S = 3;
+export const SUPPORT_TI_MAX_S = 4;
+/**
+ * La inspiración soportada termina también si la presión supera PEEP + PS + 2,5 cmH2O (D, URM SW10 5-4): un paciente
+ * que empieza a espirar contra el soporte (la válvula espiratoria está cerrada y la inspiratoria no admite flujo de
+ * vuelta) hace subir la Pva, y el equipo corta la inspiración.
+ */
+export const PS_PRESSURE_CYCLE_CMH2O = 2.5;
 /** Julios por cmH2O·litro: la energía de la ventilación se mide en presión × volumen (1 cmH2O = 98,07 Pa; 1 L = 1e-3 m³). */
 export const JOULES_PER_CMH2O_L = 0.09807;
 /** Frecuencia de las respiraciones de respaldo mientras dura la apnea sin frecuencia mínima programada (/min), P (U-52). */
@@ -74,8 +80,12 @@ const VALVE_CLOSED_R = 200;
 export const PEEPE_PRE_TRIGGER_S = 0.15;
 /** Ventana de Paw espiratoria conservada para buscar la PEEPe pre-disparo (s). */
 export const PEEPE_TRACE_S = 0.6;
-/** Constante de tiempo de la rampa de primer orden como fracción de riseMs: ~95 % del escalón en 3τ (P). */
-export const RISE_TIME_TAU_FRACTION = 3;
+/**
+ * Constante de tiempo de la rampa de primer orden como fracción de riseMs: la rampa es «the time in milliseconds for
+ * pressure to reach 90% of the set inspiratory pressure» (D, URM SW10 5-3), así que τ = riseMs / ln 10. La forma
+ * exponencial es P. Antes se tomaba el 95 % (3τ).
+ */
+export const RISE_TIME_TAU_FRACTION = Math.LN10;
 
 const EPS = 1e-9;
 const INSP_PHASES: ReadonlySet<ControllerPhase> = new Set(['inspFlow', 'inspLimited', 'inspPause', 'inspPressure', 'inspSupport']);
@@ -567,9 +577,11 @@ export class VcController {
       case 'inspSupport': {
         // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma exponencial P).
         // CPAP/PS: la misma fuente de presión con PEEP + PS (D ficha 2014), ciclada por la caída del flujo (más abajo).
+        // Una sola «Rampa» por modo: en PC es el Rise Time y en CPAP/PS hace de PS Rise Time (el equipo tiene las dos por
+        // separado, 100 y 50 ms de fábrica, URM SW10 11-9; aquí el diálogo de cada modo muestra la suya).
         const rise = s.riseMs / 1000;
         const pAbove = this.breath?.pAbove ?? s.pinsp;
-        // Rampa de primer orden: riseMs es el tiempo hasta ~95 % del escalón (3τ), forma P; el equipo real no publica la curva.
+        // Rampa de primer orden: el tiempo de rampa es el que tarda en llegar al 90 % (D), forma exponencial P.
         const tauRise = rise / RISE_TIME_TAU_FRACTION; // 0 → escalón
         const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? 1 - Math.exp(-tb / tauRise) : 1);
         const tb0 = this.tBreath;
@@ -589,7 +601,8 @@ export class VcController {
           // Fuente de presión con el flujo que la válvula alcanza a servir dentro del integrador: si ese tope actúa, la
           // presión queda por debajo del objetivo y el error acelera la válvula (lazo de ganancia finita).
           const tope = Math.min(ACTUATOR_MAX_FLOW_LPS, b0?.qValvula ?? ACTUATOR_MAX_FLOW_LPS);
-          const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, false, tope);
+          // En soporte la válvula inspiratoria no admite flujo de vuelta: si el paciente empuja, la Pva sube (ciclado por presión).
+          const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, this.phase === 'inspSupport', tope);
           if (r.clamped && b0 && r.qEnd + r.qLeakEnd > 0) {
             limito = true;
             b0.qValvula = Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula + this.gananciaLazo() * Math.max(0, tg - r.pyEnd) * hs);
@@ -618,7 +631,8 @@ export class VcController {
           // que comparar; el tope de tiempo (SUPPORT_TI_MAX_S) lo pone el temporizador de la fase.
           const b = this.breath;
           if (tb0 + h >= rise) b.qPeak = Math.max(b.qPeak, qLast);
-          if (b.qPeak > 1e-6 && qLast < b.qPeak - 1e-9 && qLast <= s.expTriggerPct * b.qPeak)
+          if (this.paw > this.peepTarget + pAbove + PS_PRESSURE_CYCLE_CMH2O) this.transition = () => this.endInspiration('pressure');
+          else if (b.qPeak > 1e-6 && qLast < b.qPeak - 1e-9 && qLast <= s.expTriggerPct * b.qPeak)
             this.transition = () => this.endInspiration('flow');
         }
         return h;

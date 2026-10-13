@@ -113,7 +113,8 @@ test.describe('A/C PC y edición', () => {
   test('menú de modo: flujo de base y disparo por presión; el disparo por flujo no puede superar el flujo de base', async ({ page }) => {
     await open(page, { speed: 4 });
     await page.locator('[data-action="modes"]').first().click();
-    await expect(page.locator('[data-mode-field="biasFlow"]')).toHaveValue('2');
+    // Flujo de base de fábrica del equipo en adultos: 3 L/min (URM SW10 11-9).
+    await expect(page.locator('[data-mode-field="biasFlow"]')).toHaveValue('3');
     await expect(page.locator('[data-mode-field="pressureTrigger"]')).toHaveValue('-2');
     await page.fill('[data-mode-field="flowTrigger"]', '5');
     await page.dispatchEvent('[data-mode-field="flowTrigger"]', 'input');

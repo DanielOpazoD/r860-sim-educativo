@@ -265,7 +265,7 @@ export interface SensorParams {
 /** `backup`: respaldo por apnea en CPAP/PS; `mandatory` en CPAP/PS es la respiración de la frecuencia mínima. */
 export type BreathType = 'mandatory' | 'assisted' | 'manual' | 'spontaneous' | 'backup';
 /** `flow`: ciclado por caída del flujo (soporte); `tiMax`: soporte cortado por el tiempo inspiratorio máximo. */
-export type CyclingCause = 'time' | 'pmax' | 'standby' | 'procedureAbort' | 'flow' | 'tiMax';
+export type CyclingCause = 'time' | 'pmax' | 'standby' | 'procedureAbort' | 'flow' | 'tiMax' | 'pressure';
 
 export interface BreathRecord {
   breathId: string;
