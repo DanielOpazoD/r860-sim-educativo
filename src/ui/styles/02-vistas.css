@@ -269,6 +269,10 @@
   line-height: 1.1;
   font-weight: 700;
 }
+/* Medición sin resultado: X roja, como el equipo (URM SW10 7-7). */
+.hold-result > b.hold-x {
+  color: #ff7a80;
+}
 .hold-result > small {
   font-size: var(--type-2xs);
   color: #d6dee8;

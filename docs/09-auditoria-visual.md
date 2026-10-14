@@ -55,6 +55,10 @@ Los contrastes se recalcularon sobre el extremo más claro del nuevo fondo (#3b4
 
 La foto P1 (E-025, O) y las pantallas del manual (Advanced Waveform y Flow-Volume: «Leak % 5») muestran la fuga como una línea centrada sobre el grupo de VMesp y FR. La interfaz la tuvo hasta v0.1 y se perdió al pasar a la de R860 Lab en v0.2: la medición siguió en la tabla, pero no en el monitor. Vuelve en su sitio, en enteros de la última respiración (`aud-07-fuga.png`). En la vista de seis casillas no aparece, y en móvil va al pie de la rejilla para no dejar una fila a medias.
 
+## Medición de bloqueo sin resultado: X roja (13-10-2026)
+
+El manual (7-7) dice que, si el bloqueo no da Pplat o Cstat, «a red X will display indicating a failure». La ventana de bloqueo mostraba el mismo guion que antes de medir. Ahora una medición terminada sin resultado pone una ✕ roja en su casilla (≥ 3:1 sobre la ventana), con el nombre accesible «Medición no disponible»; el motivo sigue en la línea de estado (E-113).
+
 ## Pendiente con las fotografías originales
 
 - Comprobar con P1–P3 los colores de las curvas y del relleno que tenía configurados ese equipo (el manual deja elegirlos) y la tipografía.

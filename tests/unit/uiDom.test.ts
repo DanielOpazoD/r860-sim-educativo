@@ -7,6 +7,7 @@ import { refCorta } from '../../src/ui/caseView';
 import { createMetricsView } from '../../src/ui/metricsView';
 import { createQuickEditor } from '../../src/ui/quickEditor';
 import { createHoldPanel } from '../../src/ui/holdPanel';
+import { benchSim, runUntilBreath } from '../helpers';
 import { createModeDialog } from '../../src/ui/modeDialog';
 import { createAlarmsUi } from '../../src/ui/alarmsUi';
 import { SCENARIOS } from '../../src/scenarios';
@@ -162,6 +163,28 @@ describe('edición, medición y navegación de diálogos', () => {
     expect($<HTMLButtonElement>('#hold-run').disabled).toBe(false);
     hold.closeHoldPanel();
     expect(hold.isOpen).toBe(false);
+  });
+
+  it('una medición de bloqueo sin resultado se marca con una X roja, como el equipo; sin medir, un guion', () => {
+    const { ctx } = harness;
+    const quick = createQuickEditor(ctx);
+    const hold = createHoldPanel(ctx, { quick });
+    // Con el paciente respirando la oclusión no da una meseta estable: Cstat no sale (URM SW10 7-7: «a red X»).
+    const sim = benchSim({ effort: { enabled: true, amplitude: 8, ratePerMin: 20, tiS: 0.8, phaseS: 0.5 } });
+    runUntilBreath(sim, 3);
+    ctx.frame = sim.frame();
+    hold.openHold('inspHold');
+    hold.updateHold();
+    expect($('#hold-second').textContent).toBe('—');
+    expect($('#hold-second').classList.contains('hold-x')).toBe(false);
+    sim.command({ type: 'requestHold', kind: 'inspHold', durationS: 3 });
+    for (let i = 0; i < 20_000 && !sim.procedures.last.inspHold; i++) sim.step();
+    expect(sim.procedures.last.inspHold!.quality).not.toBe('valid');
+    ctx.frame = sim.frame();
+    hold.updateHold();
+    expect($('#hold-second').textContent).toBe('✕');
+    expect($('#hold-second').classList.contains('hold-x')).toBe(true);
+    expect($('#hold-second').getAttribute('aria-label')).toBe('Medición no disponible');
   });
 
   it('selecciona modos en el equipo y descarta el borrador al cerrar', async () => {

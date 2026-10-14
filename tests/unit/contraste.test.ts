@@ -144,4 +144,9 @@ describe('CTR-05 · los colores del equipo', () => {
     for (const borde of [ambar, rojo]) expect(contraste(borde, FONDO_MONITOR), borde).toBeGreaterThanOrEqual(3);
     expect(bloque('.numeric.alarm-value')).not.toMatch(/(?<![-\w])color:/);
   });
+  it('la X roja de una medición de bloqueo sin resultado se lee sobre la ventana (texto grande, ≥ 3:1)', () => {
+    const fondos = degradado('.hold-panel');
+    expect(fondos).toHaveLength(2);
+    for (const f of fondos) expect(contraste(color('.hold-result > b.hold-x'), f), f).toBeGreaterThanOrEqual(3);
+  });
 });
