@@ -264,8 +264,8 @@
     {
       "id": "U-31",
       "question": "Flujo inspiratorio máximo que entrega el actuador en presión control (tope de válvula) y su comportamiento con resistencia muy baja.",
-      "policy": "P: tope de 160 L/min (ficha 2014 flujo máximo); si el tope actúa, la presión queda por debajo del objetivo y se anota en el ciclo.",
-      "status": "nueva (v0.3)",
+      "policy": "D: cada válvula inspiratoria dosifica de 0,05 a 160 L/min y los sensores de flujo miden de 0 a 160 L/min (URM SW10 15-8, 15-9; ficha 2014): tope de 160 L/min. P: si el tope actúa, la presión queda por debajo del objetivo y se anota en el ciclo; el comportamiento con resistencia muy baja.",
+      "status": "cerrada en el tope (URM SW10); abierta la forma con R muy baja",
       "blocks": []
     },
     {
@@ -402,8 +402,8 @@
     {
       "id": "U-50",
       "question": "Cuál es el flujo espiratorio máximo que deja pasar el conjunto válvula + rama espiratoria del R860. La ficha de 2014 documenta el rango inspiratorio (2–160 L/min) y no dice nada del espiratorio.",
-      "policy": "P: 200 L/min, por encima de todo lo fisiológico, para que el techo sólo actúe en regímenes irreales y no altere ningún escenario (el más obstructivo llega a 149 L/min). Si aparece la cifra documentada, se sustituye.",
-      "status": "nueva (v0.4.8)",
+      "policy": "P: 200 L/min, por encima de todo lo fisiológico, para que el techo sólo actúe en regímenes irreales y no altere ningún escenario (el más obstructivo llega a 149 L/min). Si aparece la cifra documentada, se sustituye. Revisado el URM SW10: el sensor de flujo espiratorio mide de 0 a 160 L/min (15-9), así que el equipo no podría mostrar un pico mayor; el techo físico del conjunto no se publica.",
+      "status": "revisada (URM SW10: rango del sensor, no el techo físico)",
       "blocks": []
     },
     {

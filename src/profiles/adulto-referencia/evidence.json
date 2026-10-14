@@ -1598,6 +1598,15 @@
         "tests/unit/uiDom.test.ts (en espera, como el equipo)",
         "tests/unit/contraste.test.ts (CTR-05)"
       ]
+    },
+    {
+      "id": "E-121",
+      "claim": "La Pva y el VT que muestra el equipo son los de la vía aérea: el circuito no aparece en ellos. El R860 mide la compliance del circuito y la resistencia de la rama inspiratoria en el System Check y usa esos datos «for all internal compensations» (sin System Check, los del último completado). Su sistema respiratorio adulto con los circuitos recomendados mide 1,98–2,41 mL/cmH₂O de compliance y 3,00–5,93 cmH₂O·s/L de resistencia inspiratoria a 60 L/min. La presión se toma con dos transductores internos, el inspiratorio y el espiratorio. Por eso el simulador no añade una rama inspiratoria a la Pva ni resta volumen por la compliance del circuito: el equipo ya lo compensa. Lo que no se compensa es físico, no de medida: la rama y la válvula espiratorias frenan el gas que sale (E-041).",
+      "status": "D (compensación del circuito, rangos y puntos de medida, R21) / P (que la compensación sea completa)",
+      "source": "R21",
+      "locator": "URM SW10 6-6 «the system uses the compliance and resistance data from the last completed system check … for all internal compensations» y «The resistance is the measured resistance of the inspiratory limb of the patient circuit»; 13-21 «Ventilator breathing system compliance and resistance»; 15-8 y 15-9 «Airway pressure is sensed and verified by the inspiratory and expiratory pressure sensors»",
+      "implemented": "src/engine/controller.ts (sin rama inspiratoria ni compliance de circuito en la Pva y el VT); src/engine/patient.ts (rSeries sólo al espirar)",
+      "tests": []
     }
   ]
 }
