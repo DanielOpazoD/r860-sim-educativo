@@ -10,7 +10,7 @@ Bloques, en README.md y en docs/: `<!-- hechos:CLAVE -->…<!-- /hechos:CLAVE --
 
 Fuentes, todas artefactos o código real:
   coverage/coverage-summary.json   `npm run test:coverage`
-  test-results/vitest.json          `npm run results:doc`
+  test-results/vitest.json          `npm run test:coverage`
   test-results/e2e-results.json     `npm run e2e`
   vitest.config.ts · playwright.config.ts · src/scenarios/index.ts · src/engine/version.ts · package.json
   el perfil de referencia (modos habilitados)
@@ -64,7 +64,7 @@ def num(x):
 
 # --- fuentes ------------------------------------------------------------------------------------------------------
 cov = load('coverage/coverage-summary.json', 'npm run test:coverage')
-vit = load('test-results/vitest.json', 'npm run results:doc')
+vit = load('test-results/vitest.json', 'npm run test:coverage')
 e2e = load('test-results/e2e-results.json', 'npm run e2e')
 
 vitest_cfg = read('vitest.config.ts')

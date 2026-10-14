@@ -3,6 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 // Capturas con viewport, hora y semilla fijas (VIS-03). El servidor es `vite preview` sobre el build.
 export default defineConfig({
   testDir: 'tests/e2e',
+  // Playwright vacía su carpeta de salida al arrancar: la suya es una subcarpeta, para que no borre la salida de Vitest
+  // (test-results/vitest.json, escrita por `npm run test:coverage`) que después leen results:doc y docs:facts.
+  outputDir: 'test-results/e2e',
   timeout: 60_000,
   retries: 0,
   reporter: [['list'], ['json', { outputFile: 'test-results/e2e-results.json' }]],

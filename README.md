@@ -17,12 +17,13 @@ npm run dev        # http://127.0.0.1:5173
 
 ```bash
 npm run check          # puerta rápida: oxlint + fronteras de capas + Prettier + tsc + Vitest (sin cobertura)
-npm run test:coverage  # Vitest con cobertura v8 y umbrales (vitest.config.ts)
+npm run test:coverage  # Vitest con cobertura v8 y umbrales (vitest.config.ts); escribe test-results/vitest.json
 npm run build          # bundle en dist/
 npx playwright install chromium   # una vez
 npm run e2e            # Playwright: 1440×1000, 1280×900, Pixel 7
-npm run results:doc    # regenera docs/01-resultados.md desde las salidas JSON reales
+npm run results:doc    # regenera docs/01-resultados.md desde las salidas JSON de esa corrida (no repite pruebas)
 npm run docs:facts     # sincroniza los números de README y docs/ con los artefactos reales
+npm run ci             # todo lo anterior en el orden de la integración continua, en un solo pase
 ```
 
 CI (GitHub Actions, `.github/workflows/ci.yml`) ejecuta lint, fronteras de capas, formato, tipos, Vitest con cobertura, build y Playwright; después comprueba que los números de esta documentación coincidan con los artefactos recién producidos (`npm run docs:facts -- --check`) y publica `coverage/coverage-summary.json` y los JSON de `test-results/`.
