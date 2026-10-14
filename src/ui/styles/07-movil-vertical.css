@@ -73,6 +73,10 @@
   .pressure-column {
     display: none;
   }
+  /* Sin barra de presión, el panel de espera cubre el ancho entero del área de datos (dejaba curvas a la vista). */
+  .standby-overlay {
+    inset: 4px 0 0;
+  }
   .view-basic > canvas {
     display: none;
   }
