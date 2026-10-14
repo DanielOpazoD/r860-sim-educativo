@@ -235,6 +235,24 @@ describe('edición, medición y navegación de diálogos', () => {
     expect(alarms.readLimits()).toEqual([]);
   });
 
+  it('«Fuga % N» encabeza el grupo de volumen como en el equipo: entero de la última respiración, «—» sin dato', () => {
+    const { ctx, sim } = harness;
+    ctx.frame = sim.frame();
+    const metrics = createMetricsView(ctx);
+    metrics.init();
+    metrics.updateMetrics();
+    expect($('#numeric-leak').textContent).toBe('Fuga % —');
+    // Entre Pmedia y VMesp, como «Leak % 5» en las pantallas del manual.
+    const orden = [...$('#numeric-grid').children].map((e) => (e as HTMLElement).dataset.metric ?? e.id);
+    expect(orden.indexOf('numeric-leak')).toBe(orden.indexOf('pmean') + 1);
+    expect(orden.indexOf('mve')).toBe(orden.indexOf('numeric-leak') + 1);
+    while (sim.simTimeMs < 12_000) sim.step();
+    ctx.frame = sim.frame();
+    metrics.updateMetrics();
+    const fuga = ctx.frame.metrics.leakPct!.value!;
+    expect($('#numeric-leak b').textContent).toBe(String(Math.round(fuga * 100)));
+  });
+
   it('actualiza métricas, enmascara examen y fija la referencia al abrir la estimación', () => {
     const { ctx, sim } = harness;
     while (sim.simTimeMs < 12_000) sim.step();

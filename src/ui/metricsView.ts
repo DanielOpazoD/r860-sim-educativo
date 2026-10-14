@@ -92,9 +92,11 @@ export function createMetricsView(ctx: AppContext): MetricsView {
             `<div><dt>${esc(m.label)}</dt><dd>${esc(helpEntry(METRIC_HELP[m.key] ?? '')?.text[0] ?? 'Descripción no disponible.')}</dd></div>`,
         ).join('') +
         '</dl>';
+      // «Fuga % N» encabeza el grupo de volumen y frecuencia, como en la foto P1 y en las pantallas del manual (E-025).
       $('#numeric-grid').innerHTML = METRICS.map(
         (m, i) =>
-          `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}</span><strong class="numeric-value"><span>—</span></strong><span class="numeric-unit">${m.unit}</span><span class="numeric-age"></span></button>`,
+          `<button class="numeric" data-metric="${m.key}" data-core="${CORE_METRICS.includes(m.key)}" tabindex="${i === 0 ? 0 : -1}" title="${m.label}: información y medición" aria-label="${m.label}. Información y medición"><span class="numeric-label">${m.label}</span><strong class="numeric-value"><span>—</span></strong><span class="numeric-unit">${m.unit}</span><span class="numeric-age"></span></button>` +
+          (m.key === 'pmean' ? '<div class="numeric-leak" id="numeric-leak">Fuga % <b>—</b></div>' : ''),
       ).join('');
       $('#big-metrics').innerHTML = BIG_METRICS.map(
         ([k, l, u], i) =>
@@ -103,6 +105,12 @@ export function createMetricsView(ctx: AppContext): MetricsView {
     },
     updateMetrics() {
       const fr = ctx.frame as EngineFrame;
+      // Fuga de la última respiración en enteros, como la muestra el equipo («Leak % 5»).
+      const fuga = fr.metrics.leakPct;
+      put(
+        document.querySelector('#numeric-leak b'),
+        fuga?.value === null || fuga?.value === undefined || fuga.quality === 'unavailable' ? '—' : String(Math.round(fuga.value * 100)),
+      );
       for (const m of METRICS) {
         const el = $(`#numeric-grid [data-metric="${m.key}"]`);
         const valor = el.querySelector('.numeric-value > span') as HTMLElement;

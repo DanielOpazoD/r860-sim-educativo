@@ -485,10 +485,11 @@
       "claim": "Composición y etiquetas: vista avanzada (P1) y básica (P3), Pva/Flujo/Volumen, Ppico/PEEPe/Pplat/Pmedia/VMesp/FR/VTesp/FiO2, «Fuga % 0», espontáneas, ventana de bloqueo (Tiempo, ▶, Pplat, Cstat, fecha, hora), reloj HH:MM, teclas rápidas, «EN ESPERA», punto decimal.",
       "status": "O",
       "source": "P1, P2, P3",
-      "implemented": "src/ui/app.ts + src/ui/styles.css (sistema visual derivado de R860 Lab, MIT); fixtures en modo transcripción",
+      "implemented": "src/ui/app.ts + src/ui/styles.css (sistema visual derivado de R860 Lab, MIT); fixtures en modo transcripción; src/ui/metricsView.ts y src/ui/styles/01-base.css («Fuga % N» entre presiones y volumen, desde 13-10-2026: se había perdido con la interfaz v0.2)",
       "tests": [
         "VIS-01",
-        "VIS-02"
+        "VIS-02",
+        "tests/unit/uiDom.test.ts («Fuga % N»)"
       ]
     },
     {

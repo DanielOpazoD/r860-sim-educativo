@@ -51,6 +51,10 @@ Las capturas del manual son la imagen que genera el propio equipo, sin cámara d
 
 Los contrastes se recalcularon sobre el extremo más claro del nuevo fondo (#3b4f68): las cifras pequeñas de la columna numérica superan 6:1, el texto de ejes 6,5:1 y los bordes de alarma 3:1 (CTR-02, CTR-03 y CTR-05). La tipografía sigue siendo Arial: el equipo usa una sans humanista en negrita que no se distribuye con el navegador.
 
+## «Fuga %» vuelve a la columna numérica (13-10-2026)
+
+La foto P1 (E-025, O) y las pantallas del manual (Advanced Waveform y Flow-Volume: «Leak % 5») muestran la fuga como una línea centrada sobre el grupo de VMesp y FR. La interfaz la tuvo hasta v0.1 y se perdió al pasar a la de R860 Lab en v0.2: la medición siguió en la tabla, pero no en el monitor. Vuelve en su sitio, en enteros de la última respiración (`aud-07-fuga.png`). En la vista de seis casillas no aparece, y en móvil va al pie de la rejilla para no dejar una fila a medias.
+
 ## Pendiente con las fotografías originales
 
 - Comprobar con P1–P3 los colores de las curvas y del relleno que tenía configurados ese equipo (el manual deja elegirlos) y la tipografía.

@@ -50,6 +50,12 @@
     padding: 2px 6px 8px;
     gap: 2px 10px;
   }
+  /* En tres columnas la línea de «Fuga %» dejaría una fila a medias: va al pie de la rejilla. */
+  .numeric-leak {
+    order: 1;
+    text-align: left;
+    padding-top: 4px;
+  }
   /* En móvil la vista de seis casillas conserva tres columnas: dos filas en vez de una columna. */
   .numeric-grid.six {
     grid-template-columns: repeat(3, minmax(0, 1fr));
