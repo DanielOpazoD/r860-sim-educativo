@@ -375,11 +375,6 @@
 .mode-error:empty {
   display: none;
 }
-.numeric:focus-visible,
-.big-numeric:focus-visible {
-  outline: 2px solid #d6f7ff;
-  outline-offset: -2px;
-}
 /* v1.1 — Información bajo demanda. La jerarquía del monitor se conserva. */
 .info-button {
   display: inline-flex;

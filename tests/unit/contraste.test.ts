@@ -207,3 +207,49 @@ describe('CTR-06 · la paleta del monitor, en un solo sitio', () => {
       expect(readFileSync(new URL(f, import.meta.url), 'utf8').match(/#[0-9a-f]{6}/gi), f).toBeNull();
   });
 });
+
+// CTR-07 · el foco de teclado del equipo se ve en todas sus superficies. Es un indicador no textual: WCAG 2.2 (1.4.11)
+// pide 3:1 contra lo que lo rodea. Amarillo sobre pizarra, grafito, ventanas, editor, fila de vistas, bisel y las bandas
+// verde, roja y gris; oscuro sobre el ámbar de la banda media y el tostado de la espera (09-instrument.css).
+describe('CTR-07 · el anillo de foco del equipo contrasta 3:1 donde aparece', () => {
+  const NO_TEXTO = 3;
+  const p = (t: string): string => PALETA[`--mon-${t}`]!;
+  /** Bisel del equipo (08-minimal, @media ≥ 701 px): no es de la paleta del monitor. */
+  const BISEL = ['#3a4047', '#23282d'];
+  it('el bisel sigue siendo el que se mide aquí', () => {
+    expect(fuente).toContain(`linear-gradient(160deg, ${BISEL[0]}, ${BISEL[1]})`);
+  });
+  const claros = [
+    'pantalla-claro',
+    'pantalla',
+    'pantalla-borde',
+    'grafito-alto',
+    'grafito-bajo',
+    'ventana',
+    'ventana-barra',
+    'bloqueo-alto',
+    'bloqueo-bajo',
+    'nav-alto',
+    'nav-bajo',
+    'reposo-alto',
+    'reposo-bajo',
+    'banda-alta-a',
+    'banda-alta-b',
+    'banda-previa-a',
+    'banda-previa-b',
+  ];
+  for (const fondo of claros)
+    it(`amarillo sobre --mon-${fondo}`, () => expect(contraste(p('foco'), p(fondo))).toBeGreaterThanOrEqual(NO_TEXTO));
+  for (const fondo of BISEL)
+    it(`amarillo sobre el bisel ${fondo}`, () => expect(contraste(p('foco'), fondo)).toBeGreaterThanOrEqual(NO_TEXTO));
+  it('oscuro sobre el ámbar de la banda media y el tostado de la espera', () => {
+    for (const fondo of ['banda-media-a', 'banda-media-b']) expect(contraste(p('media-texto'), p(fondo))).toBeGreaterThanOrEqual(NO_TEXTO);
+    expect(contraste(p('tinta'), p('tostado'))).toBeGreaterThanOrEqual(NO_TEXTO);
+  });
+  it('el anillo de las hojas del equipo es éste y no otro', () => {
+    expect(css).toMatch(
+      /:is\(\.device-shell, \.device-dialog\) :is\(button, a, summary, input, select\):focus-visible \{\s*outline: 2px solid #ffdf75;/,
+    );
+    expect(fuente).not.toMatch(/\.device-shell > :not\(#screen-window\)[^{]*:focus-visible/);
+  });
+});

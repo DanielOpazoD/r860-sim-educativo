@@ -59,6 +59,7 @@
   --mon-nav-alto: #0f1727; /* fila de vistas */
   --mon-nav-bajo: #050b16; /* fila de vistas */
   --mon-halo: #57b6e6; /* tecla o vista activa: halo cian */
+  --mon-foco: #ffdf75; /* foco de teclado: anillo amarillo, distinto del halo cian de lo activo */
   --mon-eje: #dbe3ec; /* ejes, ticks y rótulos pequeños sobre la pantalla (también en canvas) */
   --mon-trazo: #7d93ad; /* marco de las gráficas y borde de la ventana de bloqueo */
   --mon-bloqueo-alto: #3a4c63; /* ventana de bloqueo y editor rápido: parte alta */

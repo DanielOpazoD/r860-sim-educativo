@@ -176,9 +176,35 @@
     grid-template-columns: 44px minmax(0, 1fr) 44px;
   }
 }
-.device-dialog :is(button, input, select, summary):focus-visible {
-  outline: 2px solid #ffdf75;
+/*
+ * Foco de teclado en el equipo (teclas, bisel, editor y ventanas): un solo anillo amarillo. El cian queda para lo activo
+ * —el halo de la tecla o vista elegida— y el foco no se confunde con él. Sobre el ámbar de la banda media y el tostado de
+ * la espera el amarillo no se vería: ahí el anillo es oscuro. Contrastes en CTR-07 (tests/unit/contraste.test.ts).
+ */
+:is(.device-shell, .device-dialog) :is(button, a, summary, input, select):focus-visible {
+  outline: 2px solid var(--mon-foco);
   outline-offset: 2px;
+}
+.alarm-band.medium button:focus-visible {
+  outline-color: var(--mon-media-texto);
+}
+:is(.standby-overlay button, .quick-key.active-standby):focus-visible {
+  outline-color: var(--mon-tinta);
+}
+/*
+ * Las cifras van pegadas, y su borde (outline) es el de la alarma con el color de la prioridad (URM SW10 8-7): el foco va
+ * por dentro, como sombra, y recorrerlas con el teclado no borra el borde de la que alarma.
+ */
+.device-shell :is(.numeric, .big-numeric):focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--mon-foco);
+}
+.device-shell .numeric.alarm-value:focus-visible {
+  outline: 2px solid var(--mon-media);
+  outline-offset: 0;
+}
+.device-shell .numeric.alarm-value.alarm-high:focus-visible {
+  outline-color: var(--mon-alta);
 }
 @media (max-width: 700px) {
   .device-dialog .dialog-header {
