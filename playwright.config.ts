@@ -9,6 +9,8 @@ export default defineConfig({
   timeout: 60_000,
   retries: 0,
   reporter: [['list'], ['json', { outputFile: 'test-results/e2e-results.json' }]],
+  // Regresión visual (VR-01): referencias por plataforma, porque macOS y el Linux del CI dibujan distinto las fuentes.
+  snapshotPathTemplate: '{testDir}/capturas/{platform}/{projectName}/{arg}{ext}',
   use: {
     baseURL: 'http://127.0.0.1:4173',
     timezoneId: 'America/Santiago',
