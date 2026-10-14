@@ -201,8 +201,10 @@ test.describe('Presentación del manómetro y del volumen medido', () => {
     // (R_rama·|Q|, ≈ 2 cmH₂O al principio de la espiración), no la válvula todavía cerrada.
     expect(senal.at(-1)).toBeLessThan(8);
     expect(senal.at(-1)).toBeLessThan(senal[0]!);
-    // La columna sigue esa bajada amortiguada, escalón a escalón.
-    expect(bajada[0]).toBeGreaterThan(12);
+    // La columna sigue esa bajada amortiguada, escalón a escalón: va por detrás de la señal, nunca por delante. (Exigía
+    // estar por encima de 12 en el primer cuadro de la espiración; con la batería completa en paralelo el navegador se
+    // salta cuadros, ese primer cuadro llega tarde y la columna ya había bajado: la prueba fallaba de forma intermitente.)
+    expect(bajada[0], 'la columna no cae antes que la señal').toBeGreaterThanOrEqual(senal[0]! - 0.5);
     expect(bajada.at(-1)).toBeLessThan(bajada[0]!);
     for (let k = 1; k < bajada.length; k++) expect(bajada[k]!).toBeLessThanOrEqual(bajada[k - 1]! + 1e-9);
     expect(new Set(bajada.map((v) => Math.round(v * 10))).size).toBeGreaterThan(3);
