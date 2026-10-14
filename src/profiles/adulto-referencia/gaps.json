@@ -190,8 +190,8 @@
     {
       "id": "U-21",
       "question": "Qué ocurre con la temporización tras un bloqueo (¿la espiración posterior dura Texp completo?).",
-      "policy": "P: tras un bloqueo inspiratorio sigue una espiración de Texp completo; tras uno espiratorio empieza la siguiente respiración.",
-      "status": "nueva",
+      "policy": "P: tras un bloqueo inspiratorio sigue una espiración de Texp completo; tras uno espiratorio empieza la siguiente respiración. Revisados el URM SW10 (7-7 y 7-8: las válvulas se cierran al final de la siguiente fase; 2–40 s el inspiratorio y 2–60 s el espiratorio; no se repiten hasta la siguiente respiración) y R23: ninguno dice qué hace el temporizador después. TMP-01 fija la política.",
+      "status": "revisada (URM SW10 y R23: sin dato)",
       "blocks": []
     },
     {
@@ -227,8 +227,8 @@
     {
       "id": "U-26",
       "question": "Qué ocurre con el periodo obligatorio cuando Pmáx acorta la inspiración (¿la espiración dura Texp completo o el temporizador de FR gobierna?).",
-      "policy": "P: el temporizador de FR gobierna la siguiente obligatoria; el tiempo no usado va a la espiración (FR medida = FR programada).",
-      "status": "nueva (revisión adversarial)",
+      "policy": "D que las obligatorias van «at intervals based on the set respiratory rate» (URM SW10 5-11 y 5-13; R23: «a una frecuencia respiratoria programada»); P que eso valga también cuando Pmáx acorta la inspiración: la siguiente llega a su hora y el tiempo no usado va a la espiración (FR medida = FR programada). TMP-01 lo fija.",
+      "status": "revisada (URM SW10 y R23: intervalo de la FR; ninguna fuente trata el caso de Pmáx)",
       "blocks": []
     },
     {
