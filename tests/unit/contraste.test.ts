@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { MON_CSS } from '../../src/render/monitorPalette';
+import { DOCENTE, MON_CSS, SHELL_CSS } from '../../src/render/monitorPalette';
 import { alarmBandLabel } from '../../src/ui/humanize';
 
 // Los tonos de la banda de alarmas y de las cifras pequeñas de la columna numérica están calculados, no elegidos a ojo.
@@ -202,8 +202,13 @@ describe('CTR-06 · la paleta del monitor, en un solo sitio', () => {
     }
   });
 
-  it('las curvas y la captura exportada no escriben colores a mano: todos vienen de monitorPalette.ts', () => {
-    for (const f of ['../../src/render/plots.ts', '../../src/ui/exports.ts'])
+  it('los gráficos del exterior usan los mismos valores que su hoja (SHELL_CSS ↔ --shell-*)', () => {
+    for (const [clave, valor] of Object.entries(SHELL_CSS))
+      expect(fuente, `--shell-${clave}`).toMatch(new RegExp(`--shell-${clave}: ${valor};`));
+  });
+
+  it('las curvas, la captura exportada y los diagramas de Fundamentos no escriben colores a mano: vienen de monitorPalette.ts', () => {
+    for (const f of ['../../src/render/plots.ts', '../../src/ui/exports.ts', '../../src/ui/teachingView.ts'])
       expect(readFileSync(new URL(f, import.meta.url), 'utf8').match(/#[0-9a-f]{6}/gi), f).toBeNull();
   });
 });
@@ -251,5 +256,24 @@ describe('CTR-07 · el anillo de foco del equipo contrasta 3:1 donde aparece', (
       /:is\(\.device-shell, \.device-dialog\) :is\(button, a, summary, input, select\):focus-visible \{\s*outline: 2px solid #ffdf75;/,
     );
     expect(fuente).not.toMatch(/\.device-shell > :not\(#screen-window\)[^{]*:focus-visible/);
+  });
+});
+
+// CTR-08 · los diagramas de Fundamentos (Aula) son pantalla: se dibujan sobre la pizarra del monitor y cada componente
+// de la presión lleva su color. Texto ≥ 4,5:1 (AA); trazos y ejes ≥ 3:1 (1.4.11). Las siluetas del índice de estrés
+// apagadas conservan un rótulo legible sobre su ficha.
+describe('CTR-08 · los diagramas de Fundamentos contrastan sobre la pizarra', () => {
+  const p = (t: string): string => PALETA[`--mon-${t}`]!;
+  it('el fondo de los diagramas es la pizarra del monitor', () => {
+    expect(DOCENTE.fondo).toBe(p('pantalla'));
+    expect(fuente).toMatch(/\.classroom \.edu-titulacion \{\s*background: var\(--mon-pantalla\);/);
+  });
+  for (const k of ['texto', 'formula', 'resistiva', 'elastica', 'peep', 'peepi'] as const)
+    it(`texto ${k} (${DOCENTE[k]}) ≥ ${AA}:1`, () => expect(contraste(DOCENTE[k], DOCENTE.fondo)).toBeGreaterThanOrEqual(AA));
+  for (const k of ['traza', 'inactiva', 'eje'] as const)
+    it(`trazo ${k} (${DOCENTE[k]}) ≥ 3:1`, () => expect(contraste(DOCENTE[k], DOCENTE.fondo)).toBeGreaterThanOrEqual(3));
+  it('rótulos de las siluetas: apagado sobre su ficha y activo sobre la suya', () => {
+    expect(contraste(p('apagado'), p('panel-bajo'))).toBeGreaterThanOrEqual(AA);
+    expect(contraste(p('texto-suave'), p('panel-alto'))).toBeGreaterThanOrEqual(AA);
   });
 });

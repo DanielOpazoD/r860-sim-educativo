@@ -799,10 +799,11 @@
 .classroom .edu-falta {
   color: #886118;
 }
+/* Los diagramas son pantalla: la pizarra del monitor (era el azul anterior a la paleta medida, #138). */
 .classroom .edu-diagram,
 .classroom .edu-siluetas,
 .classroom .edu-titulacion {
-  background: #063c72;
+  background: var(--mon-pantalla);
   border-radius: var(--radius-lg);
 }
 @media (max-width: 1000px) {

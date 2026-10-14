@@ -1,5 +1,5 @@
 import { formatNumber as format } from '../domain/units';
-import { alfa, AYUDA, MON, MON_CSS, MON_FS, PLOT_TEXT_COLORS, type PasoTipo } from './monitorPalette';
+import { alfa, AYUDA, EXTERIOR, MON, MON_CSS, MON_FS, PLOT_TEXT_COLORS, type PasoTipo } from './monitorPalette';
 /**
  * Renderizado exclusivamente visual (canvas). Nunca modifica el estado de la simulación.
  * Estilo de curvas, bucles, manómetro, tendencias y esfuerzo derivado de «R860 Lab» v1.1 (src/plots.js, MIT 2026),
@@ -903,6 +903,7 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   columna(w * 0.74, 'FiO₂', format(s.fio2Pct, 0), '%');
 }
 
+/** Presión muscular de los últimos 10 s, en el panel claro de «Datos del modelo»: paleta EXTERIOR, no la del monitor. */
 export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: number): void {
   const { ctx, w, h } = context(canvas),
     recent = points.filter((p) => p[0] >= end - 10 && p[0] <= end),
@@ -912,8 +913,8 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
     hi = Math.max(10, ...recent.map((p) => p[4] * 1.3)),
     lo = Math.min(0, ...recent.map((p) => p[4] * 1.3)),
     y = (v: number) => bottom - ((v - lo) / (hi - lo)) * (bottom - top);
-  line(ctx, 0, bottom, w, bottom, AYUDA.esfuerzoEje[0]);
-  line(ctx, 0, lo < 0 ? y(0) : (top + bottom) / 2, w, lo < 0 ? y(0) : (top + bottom) / 2, AYUDA.esfuerzoEje[1]);
+  line(ctx, 0, bottom, w, bottom, EXTERIOR.rejilla);
+  line(ctx, 0, lo < 0 ? y(0) : (top + bottom) / 2, w, lo < 0 ? y(0) : (top + bottom) / 2, EXTERIOR.cero);
   if (!recent.length) return;
   ctx.beginPath();
   recent.forEach((p, i) => {
@@ -922,21 +923,21 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
     if (i) ctx.lineTo(x, yy);
     else ctx.moveTo(x, yy);
   });
-  ctx.strokeStyle = AYUDA.esfuerzo;
+  ctx.strokeStyle = EXTERIOR.esfuerzo;
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.lineTo(w, bottom);
   ctx.lineTo(0, bottom);
   ctx.closePath();
   const g = ctx.createLinearGradient(0, top, 0, bottom);
-  g.addColorStop(0, AYUDA.esfuerzoRelleno[0]);
-  g.addColorStop(1, AYUDA.esfuerzoRelleno[1]);
+  g.addColorStop(0, EXTERIOR.esfuerzoRelleno[0]);
+  g.addColorStop(1, EXTERIOR.esfuerzoRelleno[1]);
   ctx.fillStyle = g;
   ctx.fill();
 }
 
 /**
- * Bucle docente (no va al monitor): Pva·V del ciclo y, superpuesta, la presión total (Pva+Pmus)·V — la presión que
+ * Bucle docente (no va al monitor; se dibuja sobre el panel claro, con la paleta EXTERIOR): Pva·V del ciclo y, superpuesta, la presión total (Pva+Pmus)·V — la presión que
  * realmente distiende pulmón y vía aérea (Paw + Pmus = Pel + R·Q). El área entre ambos bucles es el trabajo que
  * aporta el paciente. Sin esfuerzo sólo se dibuja Pva·V y se anota que ambas coinciden.
  */
@@ -975,18 +976,18 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     ];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, 'Pva · V', left, top - 9, '2xs', MON_CSS.texto, 'left');
-  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, '2xs', AYUDA.esfuerzo, 'left');
+  text(ctx, 'Pva · V', left, top - 9, '2xs', EXTERIOR.trazo, 'left');
+  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, '2xs', EXTERIOR.esfuerzo, 'left');
   for (let k = 0; k <= 3; k++) {
     const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 3,
       y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 3;
-    line(ctx, xf(x), top, xf(x), bottom, MON.rejilla);
-    line(ctx, left, yf(y), w - right, yf(y), MON.rejilla);
-    text(ctx, format(x), xf(x), bottom + 12, '2xs', PLOT_TEXT_COLORS.tickBucles, 'center');
-    text(ctx, format(y), left - 5, yf(y) + 3, '2xs', PLOT_TEXT_COLORS.tickBucles, 'right');
+    line(ctx, xf(x), top, xf(x), bottom, EXTERIOR.rejilla);
+    line(ctx, left, yf(y), w - right, yf(y), EXTERIOR.rejilla);
+    text(ctx, format(x), xf(x), bottom + 12, '2xs', EXTERIOR.eje, 'center');
+    text(ctx, format(y), left - 5, yf(y) + 3, '2xs', EXTERIOR.eje, 'right');
   }
-  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, MON.cero, 1);
-  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), MON.cero, 1);
+  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, EXTERIOR.cero, 1);
+  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), EXTERIOR.cero, 1);
   const path = (data: Point[], xOf: (p: Point) => number, color: string, alpha: number): void => {
     if (!data.length) return;
     ctx.save();
@@ -1008,13 +1009,12 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
   };
   // El ciclo en curso se dibuja primero y el completo encima, para que el bucle cerrado mande.
   if (completo.length) {
-    path(actual, (p) => p[1], MON_CSS.texto, 0.45);
-    if (esfActual) path(actual, (p) => p[1] + p[4], AYUDA.esfuerzo, 0.45);
+    path(actual, (p) => p[1], EXTERIOR.trazo, 0.45);
+    if (esfActual) path(actual, (p) => p[1] + p[4], EXTERIOR.esfuerzo, 0.45);
   }
-  path(base, (p) => p[1], MON_CSS.texto, 1);
-  if (esfBase) path(base, (p) => p[1] + p[4], AYUDA.esfuerzo, 1);
-  if (!esfBase && !esfActual)
-    text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, '2xs', PLOT_TEXT_COLORS.tickBucles, 'center');
+  path(base, (p) => p[1], EXTERIOR.trazo, 1);
+  if (esfBase) path(base, (p) => p[1] + p[4], EXTERIOR.esfuerzo, 1);
+  if (!esfBase && !esfActual) text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, '2xs', EXTERIOR.eje, 'center');
 }
 
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {

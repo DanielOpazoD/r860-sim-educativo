@@ -166,8 +166,8 @@
   gap: 9px;
 }
 .edu-diagram {
-  background: #0c4a8c33;
-  border: 1px solid #3d7bb0;
+  background: var(--mon-pantalla);
+  border: 1px solid var(--mon-panel-borde);
   border-radius: 6px;
   padding: 6px 10px 2px;
 }
@@ -182,8 +182,8 @@
   gap: 10px;
 }
 .edu-card {
-  background: #0c4a8c33;
-  border: 1px solid #3d7bb0;
+  background: var(--mon-panel-bajo);
+  border: 1px solid var(--mon-panel-borde);
   border-left-width: 3px;
   border-radius: 6px;
   padding: 8px 11px 9px;
@@ -235,8 +235,8 @@
   padding: 4px 8px;
   border-radius: 4px;
   display: block;
-  background: #08325e66;
-  color: #bfe6ff;
+  background: var(--mon-panel-bajo);
+  color: var(--mon-texto-suave);
   line-height: 1.5;
 }
 .edu-formula b {
@@ -316,9 +316,9 @@
   margin-left: auto;
 }
 .edu-tabs .chosen {
-  background: #1f6fb2;
-  border-color: #7cc0ee;
-  color: #eaffff;
+  background: var(--mon-panel-alto);
+  border-color: var(--mon-halo);
+  color: var(--mon-texto);
 }
 .edu-prot {
   display: grid;
@@ -328,8 +328,8 @@
   min-height: 0;
 }
 .edu-bloque {
-  background: #0c4a8c33;
-  border: 1px solid #3d7bb0;
+  background: var(--mon-panel-bajo);
+  border: 1px solid var(--mon-panel-borde);
   border-radius: 6px;
   padding: 10px 13px 12px;
   display: flex;
@@ -392,14 +392,14 @@
 .edu-silueta {
   margin: 0;
   padding: 5px 4px 4px;
-  border: 1px solid #3d7bb0;
+  border: 1px solid var(--mon-panel-borde);
   border-radius: 5px;
-  background: #08325e55;
+  background: var(--mon-panel-bajo);
 }
-/* La forma activa no se distingue sólo por color: lleva borde propio y su rótulo en claro. */
+/* La forma activa no se distingue sólo por color: lleva borde propio (el halo de lo activo) y su rótulo en claro. */
 .edu-silueta.activa {
-  border-color: #7cc0ee;
-  background: #0a3d6e;
+  border-color: var(--mon-halo);
+  background: var(--mon-panel-alto);
 }
 .edu-silueta svg {
   display: block;
@@ -415,18 +415,18 @@
 }
 .edu-silueta figcaption b {
   font-size: var(--type-xs);
-  color: #7fa9c9;
+  color: var(--mon-apagado);
   font-weight: 600;
 }
 .edu-silueta figcaption span {
   font-size: var(--type-2xs);
-  color: #7fa9c9;
+  color: var(--mon-apagado);
 }
 .edu-silueta.activa figcaption b {
-  color: #eaffff;
+  color: var(--mon-texto);
 }
 .edu-silueta.activa figcaption span {
-  color: #bfe6ff;
+  color: var(--mon-texto-suave);
 }
 .edu-titulacion {
   display: block;
