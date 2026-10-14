@@ -102,6 +102,7 @@ body {
 }
 button {
   cursor: pointer;
+  color: inherit;
 }
 button,
 select,
@@ -127,9 +128,6 @@ input:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-}
-button {
-  color: inherit;
 }
 a {
   color: var(--shell-accent);
@@ -525,6 +523,7 @@ a {
 .alarm-silence small {
   font-size: var(--mon-fs-2xs);
   display: block;
+  min-height: 11px;
 }
 .alarm-message {
   text-align: left;
@@ -650,6 +649,9 @@ a {
   grid-template-columns: 1fr 1fr;
   padding: 2px 2px 2px 0;
   gap: 2px 5px;
+  /* Dos filas de presiones, la línea de «Fuga %» a su altura justa y cuatro filas más; la última (índice de estrés) es implícita. */
+  grid-template-rows: repeat(2, minmax(0, 1fr)) auto repeat(4, minmax(0, 1fr));
+  min-height: 0;
 }
 /* Vista reducida a las seis casillas que muestra el equipo (Ppico, PEEPe, Pplat, VTesp, FR, FiO₂). */
 .numeric-grid.six {
@@ -698,8 +700,9 @@ a {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 4px 3px;
+  padding: 2px 3px 1px;
   border-radius: 3px;
+  min-height: 0;
 }
 .numeric:hover {
   background: #ffffff0f;
@@ -846,6 +849,8 @@ a {
   display: grid;
   gap: 2px;
   padding-top: 1px;
+  --nkeys: 6;
+  grid-template-columns: 150px repeat(var(--nkeys, 6), 1fr) 100px 46px;
 }
 .quick-key {
   padding: 7px 2px 5px;
@@ -929,6 +934,9 @@ a {
   display: flex;
   align-items: center;
   position: relative;
+  height: 68px;
+  padding: 0 16px 0 20px;
+  gap: 14px;
 }
 .power-led {
   position: absolute;
@@ -980,6 +988,8 @@ a {
   color: #c6cbd0;
   text-shadow: 0 1px #000a;
   line-height: 1.15;
+  font-size: var(--type-lg);
+  letter-spacing: 1px;
 }
 .bezel-signature > span {
   font-weight: 300;
@@ -1008,6 +1018,10 @@ a {
   flex: none;
   padding: 0;
   transform: rotate(var(--knob-rotation, 0deg));
+  --knob-angle: 0deg;
+  --knob-rotation: 0deg;
+  width: 54px;
+  height: 54px;
 }
 .trim-knob span {
   display: block;
@@ -1019,6 +1033,8 @@ a {
   left: calc(50% - 2px);
   top: 5px;
   box-shadow: 0 0 5px #64cde8a0;
+  transform: rotate(var(--knob-angle, 0deg));
+  transform-origin: center 24px;
 }
 .trim-knob:hover {
   border-color: #a0f6eb;

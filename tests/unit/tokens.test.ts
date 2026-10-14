@@ -114,9 +114,10 @@ describe('tokens CSS', () => {
       }
     }
     const acrossSheets = [...owners.values()].filter((set) => set.size > 1).length;
-    // Trinquete: sólo puede bajar. Las 9 repeticiones restantes separan propiedades que otra regla intermedia también declara.
-    expect(repeatedWithin.length).toBeLessThanOrEqual(9);
-    expect(acrossSheets).toBeLessThanOrEqual(76);
+    // Trinquete: sólo puede bajar. Las 6 repeticiones restantes separan propiedades que otra regla intermedia (casi siempre
+    // un @media) también declara: juntarlas cambiaría qué gana. Las del monitor ya están reunidas en su hoja (01, 02, 07).
+    expect(repeatedWithin.length).toBeLessThanOrEqual(6);
+    expect(acrossSheets).toBeLessThanOrEqual(50);
   });
 
   it('reserva !important para [hidden], movimiento reducido e impresión', () => {

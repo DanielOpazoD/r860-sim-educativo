@@ -595,9 +595,6 @@
     padding-left: 34px;
     padding-right: 34px;
   }
-  .bezel-bottom {
-    height: 96px;
-  }
   .bezel-top {
     height: 46px;
   }
@@ -628,11 +625,6 @@
   .bezel-top {
     height: 36px;
   }
-  .bezel-bottom {
-    height: 72px;
-    padding-left: 12px;
-    gap: 10px;
-  }
   .hard-keys {
     gap: 12px;
   }
@@ -644,13 +636,6 @@
   .hard-key .icon {
     width: 21px;
     height: 21px;
-  }
-  .trim-knob {
-    height: 53px;
-    width: 53px;
-  }
-  .bezel-signature {
-    font-size: 18px;
   }
   .bezel-signature small {
     font-size: 5px;
@@ -711,13 +696,6 @@
   .bezel-top {
     height: 39px;
   }
-  .bezel-bottom {
-    height: 80px;
-  }
-  .trim-knob {
-    width: 61px;
-    height: 61px;
-  }
   .hard-keys {
     gap: 18px;
   }
@@ -729,9 +707,6 @@
   .hard-key .icon {
     width: 23px;
     height: 23px;
-  }
-  .bezel-signature {
-    font-size: 23px;
   }
   .stage-sub {
     display: inline;

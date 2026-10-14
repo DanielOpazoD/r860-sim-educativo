@@ -201,12 +201,20 @@
 }
 .hold-title b {
   font-weight: 500;
+  margin-right: auto;
+  flex: 1 1 auto; /* el título ocupa el ancho sobrante */
+  min-width: 0;
 }
 .hold-title button {
   background: none;
   border: 0;
   color: var(--mon-texto-suave);
   padding: 0;
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .hold-title .icon {
   width: 16px;
@@ -289,6 +297,7 @@
 }
 .hold-status.invalid {
   background: #795421;
+  color: #ffdda5;
 }
 /*
  * Espera como en el equipo (URM SW10 3-6 y figura 3-4): un panel tostado (var(--mon-tostado) medido) sobre el área de datos, con la
@@ -385,6 +394,10 @@
   padding: 18px;
   color: var(--mon-texto);
   font-family: Arial, sans-serif;
+  max-height: min(590px, calc(100% - 165px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #718fa5 transparent;
 }
 .editor-top {
   display: flex;
@@ -430,9 +443,6 @@
   color: #a8cde3;
   width: 31px;
   line-height: 1.5;
-}
-.step-button {
-  height: 38px;
 }
 .quick-editor > input[type='range'] {
   width: 100%;
