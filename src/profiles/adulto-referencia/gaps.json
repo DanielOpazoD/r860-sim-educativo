@@ -337,8 +337,8 @@
     {
       "id": "U-41",
       "question": "Reparto de compliance y resistencia entre unidades rápida y lenta en un pulmón adulto enfermo, y si dos unidades bastan para el fenómeno.",
-      "policy": "P: por omisión hay una sola unidad. SC-17 usa 40 mL/cmH2O con R 8 y 20 mL/cmH2O con R 80. La segunda unidad es lineal (sin sigmoide, viscoelástico, Rohrer ni limitación al flujo, que actúan sobre la principal).",
-      "status": "nueva (v0.4.3)",
+      "policy": "P: por omisión hay una sola unidad. SC-17 usa 35 mL/cmH₂O con R 5 y 25 mL/cmH₂O con R 200 (la ficha decía 40/R 8 y 20/R 80, valores de una versión anterior del escenario). La segunda unidad es lineal (sin sigmoide, viscoelástico, Rohrer ni limitación al flujo, que actúan sobre la principal). El reparto en un pulmón adulto enfermo concreto sigue sin fuente.",
+      "status": "revisada (2026-10-14: la ficha recoge los valores reales de SC-17)",
       "blocks": []
     },
     {
@@ -392,9 +392,9 @@
     },
     {
       "id": "U-49",
-      "question": "Cómo advertir al alumno de que, con dos unidades alveolares, la Cstat y la resistencia que mide el equipo no son las del pulmón: en SC-17 la Cstat sale un 24 % baja y la resistencia aparente un 98 % alta con una oclusión de 2 s.",
-      "policy": "U: no resuelto. Es un fenómeno real y merece enseñarse, no esconderse. Falta decidir si la advertencia va en el escenario, en el panel de bloqueo o en la propia medición marcada con un motivo.",
-      "status": "nueva (v0.4.7)",
+      "question": "Cómo advertir al alumno de que, con dos unidades alveolares, la Cstat y la resistencia que mide el equipo no son las del pulmón.",
+      "policy": "Resuelto en el escenario: la lección de SC-17 lo enseña —mide la meseta con 4 s y con 15 s, ve que baja alrededor de 1 cmH₂O y compara en «Datos del modelo» la compliance local con la de cada unidad—, y la respuesta explica el pendelluft. Medido (PEN-03): con 2 s la meseta no es válida; con 4 s la Cstat sale 49,5 mL/cmH₂O y con 15 s 54,8, frente a 60 del modelo, y la resistencia aparente 12,0 cmH₂O·s/L frente a 4,9 de las dos ramas en paralelo. La medición no lleva un motivo propio: el equipo real tampoco sabe cuántas unidades hay. (La ficha decía «24 % baja con una oclusión de 2 s», cifras de una versión anterior del escenario.)",
+      "status": "resuelta en el escenario (2026-10-14; PEN-03)",
       "blocks": []
     },
     {

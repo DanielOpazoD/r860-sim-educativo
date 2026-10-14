@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SCENARIOS } from '../../src/scenarios';
+import { Simulator } from '../../src/engine/simulator';
+import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { PatientModel } from '../../src/engine/patient';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
 
@@ -109,5 +112,54 @@ describe('PEN-02 · consecuencias en las curvas', () => {
     const sim = benchSim({ patient: dos });
     runUntilBreath(sim, 3);
     expect(sim.frame().truth.vAbsL).toBeCloseTo(sim.patient.v + sim.patient.v2, 9);
+  });
+});
+
+// PEN-03 · lo que la lección de SC-17 le dice al alumno es lo que mide el equipo simulado (U-49). Dos unidades en paralelo
+// —35 mL/cmH₂O con R 5 y 25 con R 200, 60 en total— y una oclusión de 2, 4 o 15 s a los 30 s.
+describe('PEN-03 · SC-17: la meseta, la Cstat y la resistencia aparente dependen de la oclusión', () => {
+  const e = SCENARIOS.find((s) => s.id === 'SC-17')!;
+  type Bloqueo = { quality: string; reason?: string; values: Record<string, { value: number | null } | undefined> };
+  function ocluir(durationS: number): Bloqueo {
+    const base = defaultInit({});
+    const sim = new Simulator(
+      defaultInit({
+        patient: { ...e.patient },
+        effort: { ...e.effort },
+        sensors: { ...e.sensors },
+        settings: { ...base.settings, ...(e.settings ?? {}) },
+        initialV: 'equilibrium',
+      }),
+      REFERENCE_PROFILE,
+    );
+    let pedido = false;
+    while (sim.simTimeMs < 60_000) {
+      sim.step();
+      if (!pedido && sim.simTimeMs >= 30_000) {
+        sim.command({ type: 'requestHold', kind: 'inspHold', durationS });
+        pedido = true;
+      }
+    }
+    return sim.frame().procedure.last.inspHold as unknown as Bloqueo;
+  }
+  const v = (b: Bloqueo, k: string): number => b.values[k]!.value!;
+  const corta = ocluir(4),
+    larga = ocluir(15);
+
+  it('con 2 s la presión aún cae demasiado deprisa: el equipo no da la meseta por válida', () => {
+    expect(ocluir(2).quality).toBe('invalid');
+  });
+  it('entre 4 y 15 s la meseta baja alrededor de 1 cmH₂O (pendelluft)', () => {
+    expect(corta.quality).toBe('valid');
+    expect(larga.quality).toBe('valid');
+    expect(v(corta, 'pplat') - v(larga, 'pplat')).toBeGreaterThan(0.7);
+    expect(v(corta, 'pplat') - v(larga, 'pplat')).toBeLessThan(1.3);
+  });
+  it('la Cstat sale baja y se acerca a la del pulmón (60 mL/cmH₂O) con la oclusión larga; la resistencia aparente, más del doble', () => {
+    expect(v(corta, 'cstat') * 1000).toBeLessThan(60 * 0.85);
+    expect(v(larga, 'cstat')).toBeGreaterThan(v(corta, 'cstat'));
+    expect(v(larga, 'cstat') * 1000).toBeLessThan(60);
+    const rParalelo = (5 * 200) / (5 + 200);
+    expect(v(corta, 'raw')).toBeGreaterThan(2 * rParalelo);
   });
 });
