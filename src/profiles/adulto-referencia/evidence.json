@@ -280,9 +280,11 @@
       "status": "D",
       "source": "R02",
       "locator": "p.9 «Alarm Priority»",
-      "implemented": "alarms.ts (colores), audio.ts (patrón; timbre y cadencia P, U-12); styles.css (.bezel-light.high y .medium intermitentes, .low fija; todas fijas con prefers-reduced-motion; ver E-116); humanize.ts (alarmBandLabel: la prioridad también en palabras, P)",
+      "implemented": "src/engine/alarms.ts (colores), src/ui/audio.ts (patrón; timbre y cadencia P, U-12); src/ui/styles/01-base.css (.bezel-light.high y .medium intermitentes, .low fija; todas fijas con prefers-reduced-motion; ver E-116); src/ui/humanize.ts (alarmBandLabel: la prioridad también en palabras, P)",
       "tests": [
-        "ALM-06",
+        "tests/unit/alarms.test.ts (ALM-URM)",
+        "tests/unit/alarmLimits.test.ts (ALM-URM-AUDIO)",
+        "tests/unit/uiDom.test.ts (luz del bisel)",
         "tests/unit/contraste.test.ts (CTR-03)",
         "tests/e2e/visual.spec.ts (VIS-04)"
       ]
@@ -295,7 +297,9 @@
       "locator": "p.4 (3a)",
       "implemented": "Simulator.audioPauseUntilMs (120 000 ms); src/ui/audio.ts",
       "tests": [
-        "ALM-04 (no automatizado en E2E: pendiente)"
+        "tests/unit/review.test.ts (audioPause fija audioPauseUntilMs)",
+        "tests/unit/uiActions.test.ts (mute)",
+        "tests/unit/alarmLimits.test.ts (ALM-URM-AUDIO)"
       ]
     },
     {
@@ -327,10 +331,9 @@
       "status": "D",
       "source": "R02",
       "locator": "p.13",
-      "implemented": "src/ui/app.ts: vistas Presente básica (P3), curvas, bucles, tabla, tendencias y registro; Pasado/Futuro no implementados",
+      "implemented": "src/ui/app.ts y src/ui/views.ts: vistas Presente básica (P3), curvas, bucles, tabla, tendencias y registro; Pasado/Futuro y la vista dividida no implementados",
       "tests": [
-        "INT-05",
-        "CFG-05 (overlay)"
+        "tests/e2e/interaction.spec.ts (INT-05)"
       ]
     },
     {
