@@ -9,10 +9,12 @@ import {
   expandBounds,
   getBounds,
   labelBaseline,
+  phaseBaseline,
   nearestSample,
   referenceShift,
   stableBounds,
   timeAxisLabels,
+  traceSpan,
   visiblePoints,
   waveformFeatures,
   waveMarkers,
@@ -414,5 +416,50 @@ describe('CUR-04 · los rótulos de las marcas no se pisan', () => {
   });
   it('si abajo también choca, se queda en su sitio (no salta a ciegas)', () => {
     expect(labelBaseline([inicio, { x0: 100, x1: 160, y: 33 }], 102, 140, 20, 33, 10)).toBe(20);
+  });
+});
+
+describe('CUR-05 · los rótulos de fase no tachan la traza', () => {
+  // Lienzo de 0 (arriba) a 120 (abajo); un rótulo de 10 px con base y ocupa [y − 10, y].
+  const plana = (y: number) => [
+    [
+      { x: 0, y },
+      { x: 200, y },
+    ],
+  ];
+  it('el alto de la traza se mide en el tramo del rótulo, también con un tramo que lo cruza entero', () => {
+    expect(traceSpan(plana(80), 50, 90)).toEqual([80, 80]);
+    expect(
+      traceSpan(
+        [
+          [
+            { x: 0, y: 30 },
+            { x: 40, y: 30 },
+          ],
+        ],
+        50,
+        90,
+      ),
+    ).toBeNull();
+    expect(
+      traceSpan(
+        [
+          [
+            { x: 40, y: 10 },
+            { x: 60, y: 90 },
+          ],
+        ],
+        50,
+        90,
+      ),
+    ).toEqual([10, 90]);
+  });
+  it('SC-09: la PEEP pasa a la altura de «Ciclado» → el rótulo sube por encima de la traza', () => {
+    expect(phaseBaseline(traceSpan(plana(103), 50, 90), 104, 10, 0, 120)).toBe(100);
+  });
+  it('sin cruce se queda donde estaba; sin sitio encima, baja; sin sitio en ninguno, no salta', () => {
+    expect(phaseBaseline(traceSpan(plana(80), 50, 90), 104, 10, 0, 120)).toBe(104);
+    expect(phaseBaseline([8, 9], 10, 10, 0, 120)).toBe(21);
+    expect(phaseBaseline([5, 115], 104, 10, 0, 120)).toBe(104);
   });
 });
