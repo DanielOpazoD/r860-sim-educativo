@@ -1,6 +1,6 @@
 import type { SensorParams } from '../domain/types';
 
-/** Variabilidad por omisión del canal de volumen (P: ±2,5 % ciclo a ciclo, dentro de la envolvente D de ±10 %). */
+/** Variabilidad por omisión del canal de volumen (P: ±2,5 % ciclo a ciclo, σ ≈ 1,44 %; dentro de la exactitud D de ±10 % y de la repetibilidad 1σ de ±2 %, URM SW10 13-20, E-122). */
 export const DEFAULT_FLOW_NOISE = 0.025;
 
 /**

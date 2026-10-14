@@ -1607,6 +1607,17 @@
       "locator": "URM SW10 6-6 «the system uses the compliance and resistance data from the last completed system check … for all internal compensations» y «The resistance is the measured resistance of the inspiratory limb of the patient circuit»; 13-21 «Ventilator breathing system compliance and resistance»; 15-8 y 15-9 «Airway pressure is sensed and verified by the inspiratory and expiratory pressure sensors»",
       "implemented": "src/engine/controller.ts (sin rama inspiratoria ni compliance de circuito en la Pva y el VT); src/engine/patient.ts (rSeries sólo al espirar)",
       "tests": []
+    },
+    {
+      "id": "E-122",
+      "claim": "La exactitud que publica el equipo es una cota y el simulador cabe en ella, sin imitar su peor caso. VT entregado: ± 10 % del ajuste o ± 5 mL, repetibilidad 1σ ± 2 % o ± 3 mL; presión inspiratoria y PEEP en presión control: ± 2 cmH₂O, 1σ ± 1. El simulador entrega el VT y las presiones programadas sin error propio, y el canal de volumen lee cada respiración con una ganancia uniforme de ± 2,5 % (σ ≈ 1,44 %, U-36): la dispersión ciclo a ciclo que se ve en VTesp es la de un sensor dentro de especificación. El instructor puede subirla hasta ± 10 %; por encima de ± 3,5 % el canal ya no cumpliría la repetibilidad del equipo y sirve para enseñar un sensor degradado.",
+      "status": "D (cotas, R21) / P (la dispersión elegida dentro de la cota)",
+      "source": "R21",
+      "locator": "URM SW10 13-20 «Tidal volume delivery», «Inspired pressure control», «PEEP control»",
+      "implemented": "src/engine/sensors.ts (FlowSensor, DEFAULT_FLOW_NOISE); src/engine/simulator.ts (vtInspMeasured, vtExpMeasured)",
+      "tests": [
+        "tests/unit/exactitudVolumen.test.ts (VTD-01)"
+      ]
     }
   ]
 }

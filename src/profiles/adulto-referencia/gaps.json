@@ -304,8 +304,8 @@
     {
       "id": "U-36",
       "question": "Dispersión real del canal de volumen del R860 entre ciclos consecutivos con un pulmón de prueba estable (la ficha sólo publica la envolvente de exactitud, ±10 %).",
-      "policy": "P: ±2,5 % uniforme por respiración, determinista por semilla; ajustable por el instructor entre 0 y 10 % (0 = canal ideal del banco analítico).",
-      "status": "nueva (v0.3.8)",
+      "policy": "D las cotas: exactitud ± 10 % o ± 5 mL y repetibilidad 1σ ± 2 % o ± 3 mL (URM SW10 13-20). P: ± 2,5 % uniforme por respiración (σ ≈ 1,44 %, dentro de la cota; E-122), determinista por semilla; ajustable por el instructor entre 0 y 10 % (0 = canal ideal del banco analítico). La dispersión real de un equipo concreto sigue sin dato.",
+      "status": "revisada (URM SW10: cotas publicadas)",
       "blocks": []
     },
     {
