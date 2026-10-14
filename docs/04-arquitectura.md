@@ -20,7 +20,7 @@ domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui
 | `fixtures` | Transcripción de las fotografías P1/P3 a un cuadro congelado, sin física | `domain`, `engine`, `profiles` | app, ui, render |
 | `history` | Exportación, importación validada y reproducción de sesiones | `domain`, `engine`, `profiles` | app, ui |
 | `app` | Protocolo del Worker, anfitrión, cliente, máquina de estados de edición | `domain`, `engine`, `profiles`, `scenarios`, `history` | ui |
-| `render` | Dibujo en canvas (curvas, bucles, manómetro, tendencias) | `domain` | engine, app, ui |
+| `render` | Dibujo en canvas: `canvas` (lienzo y primitivas), `signal` (puntos), `waves` (curvas), `loops`, `gauge` (barra de presión), `effortCharts` (esfuerzo del panel), `trends`; `monitorPalette` (paleta y escala tipográfica) y `plots` como fachada que lo reexporta | `domain` | engine, app, ui |
 | `ui` | Composición de la interfaz, panel lateral Paciente/Casos, gasometría del modelo, espacio educativo bajo el equipo, diálogos, editor y perfiles de paciente basados en escenarios | todo lo anterior | — |
 | `workers` | Punto de entrada del Worker | `app` | — |
 
