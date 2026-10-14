@@ -86,18 +86,24 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
       v2 = insp ? h?.values.cstat : h?.values.peepi;
     // En examen el resultado es justo lo que se pide estimar: el panel lo tapa como las casillas numéricas.
     const tapar = ctx.examMode;
-    put(
-      '#hold-value',
-      tapar && v1?.value !== null && v1?.value !== undefined ? '?' : v1?.value !== null && v1?.value !== undefined ? f(v1.value, 0) : '—',
-    );
+    const hay1 = v1?.value !== null && v1?.value !== undefined,
+      hay2 = h?.quality === 'valid' && v2?.value !== null && v2?.value !== undefined;
+    // Medición terminada sin resultado: el equipo pone una X roja en su casilla (URM SW10 7-7); sin medir, un guion.
+    const falta = (hay: boolean): string => (h && !hay ? '✕' : '—');
+    put('#hold-value', tapar && hay1 ? '?' : hay1 ? f(v1!.value as number, 0) : falta(hay1));
     put(
       '#hold-second',
-      tapar && h?.quality === 'valid'
-        ? '?'
-        : h?.quality === 'valid' && v2?.value !== null && v2?.value !== undefined
-          ? f(insp ? v2.value * 1000 : v2.value, insp ? 0 : 1)
-          : '—',
+      tapar && h?.quality === 'valid' ? '?' : hay2 ? f(insp ? v2!.value! * 1000 : v2!.value!, insp ? 0 : 1) : falta(hay2),
     );
+    for (const [sel, hay] of [
+      ['#hold-value', hay1],
+      ['#hold-second', hay2],
+    ] as const) {
+      const fallo = !!h && !hay;
+      $(sel).classList.toggle('hold-x', fallo);
+      if (fallo) $(sel).setAttribute('aria-label', 'Medición no disponible');
+      else $(sel).removeAttribute('aria-label');
+    }
     // ▶ sólo inicia; mientras hay una solicitud en cola o en curso queda deshabilitado y aparece «Cancelar».
     const run = $<HTMLButtonElement>('#hold-run');
     const busy = !!active || holdRequestInFlight;
