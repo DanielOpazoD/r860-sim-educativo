@@ -1567,9 +1567,9 @@
       "status": "D (colores y disposición medidos en las capturas del manual, R21; borde de la medición en alarma, R21 8-7); P los tonos exactos elegidos dentro de lo medido, el ajuste de contraste de la banda verde y la tipografía Arial",
       "source": "R21",
       "locator": "URM SW10 2065490-001, capturas de 3-12 a 3-14 (Basic, Basic Waveform, Advanced Waveform, Flow-Volume) y 8-8 (VTexp low); 8-7 «Measured data alarms»: «the number and alarm limits are shown with a border around them. The color of the border … shows the priority»",
-      "implemented": "src/ui/styles/01-base.css (.monitor, .device-key, .numeric*, .numeric.alarm-value, .pressure-column, .monitor-nav, .nav-key, .quick-key, .alarm-band); src/ui/styles/02-vistas.css (vistas, ventana de bloqueo, editor); src/render/plots.ts (curvas, bucles, drawGauge); src/render/plotColors.ts; src/ui/metricsTable.ts (metricInHighAlarm); src/ui/metricsView.ts; src/ui/styles/09-instrument.css (ventanas del equipo)",
+      "implemented": "src/ui/styles/01-base.css (.monitor, .device-key, .numeric*, .numeric.alarm-value, .pressure-column, .monitor-nav, .nav-key, .quick-key, .alarm-band); src/ui/styles/02-vistas.css (vistas, ventana de bloqueo, editor); src/render/plots.ts (curvas, bucles, drawGauge); src/render/monitorPalette.ts (paleta del canvas, misma que --mon-*); src/ui/exports.ts (la captura exportada, con la misma paleta); src/ui/metricsTable.ts (metricInHighAlarm); src/ui/metricsView.ts; src/ui/styles/09-instrument.css (ventanas del equipo)",
       "tests": [
-        "tests/unit/contraste.test.ts (CTR-01, CTR-02, CTR-05)",
+        "tests/unit/contraste.test.ts (CTR-01, CTR-02, CTR-05, CTR-06)",
         "tests/unit/contrastePlots.test.ts (CTR-03)",
         "tests/e2e/visual.spec.ts (VIS-04)"
       ]

@@ -3,15 +3,15 @@
  * 8-6): panel gris oscuro, cajas de valor más claras, cabecera y pie algo más claros, texto blanco.
  */
 .app-dialog.device-dialog {
-  --shell-surface: #2c2f36;
-  --shell-raised: #3a3e46;
-  --shell-hover: #484d57;
-  --shell-text: #ffffff;
+  --shell-surface: var(--mon-ventana);
+  --shell-raised: var(--mon-ventana-caja);
+  --shell-hover: var(--mon-ventana-hover);
+  --shell-text: var(--mon-texto);
   --shell-muted: #d6dae0;
   --shell-dim: #b8bec7;
   --shell-line: #626975;
-  --shell-accent: #ffffff;
-  --shell-accent-soft: #484d57;
+  --shell-accent: var(--mon-texto);
+  --shell-accent-soft: var(--mon-ventana-hover);
   --shell-accent-ink: #22252b;
   --shell-danger: #ffb2ab;
   position: fixed;
@@ -38,7 +38,7 @@
   flex-shrink: 0;
   padding: 9px 14px;
   gap: 8px;
-  background: #3d424b;
+  background: var(--mon-ventana-barra);
 }
 .device-dialog .dialog-header h2 {
   font-size: 16px;
@@ -62,7 +62,7 @@
   min-height: 0;
   padding: 8px 14px;
   gap: 8px;
-  background: #3d424b;
+  background: var(--mon-ventana-barra);
 }
 .device-dialog .mode-layout {
   gap: 8px;
