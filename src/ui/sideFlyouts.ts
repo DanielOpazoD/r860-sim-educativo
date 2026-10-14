@@ -69,6 +69,9 @@ export function createSideFlyouts(ctx: AppContext): SideFlyouts {
     launcher(id).setAttribute('aria-expanded', 'true');
     launcher(id).classList.add('active');
     if (id === 'model') ctx.lesson.flags.truthOpen = true;
+    // El esfuerzo muscular y su bucle sólo se dibujan si el panel está a la vista: con la simulación en pausa no llega
+    // ningún cuadro nuevo que los pinte, y se abrían vacíos hasta reanudar.
+    ctx.markDirty();
     position();
     $<HTMLElement>(`#flyout-${id}-title`).focus({ preventScroll: true });
   }
