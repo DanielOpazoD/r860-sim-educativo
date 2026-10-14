@@ -21,13 +21,17 @@ const nice = (value: number, steps: number[]): number =>
   steps.find((x) => x >= value) ?? Math.ceil(value / (steps[steps.length - 1] as number)) * (steps[steps.length - 1] as number);
 
 function context(canvas: HTMLCanvasElement) {
-  if (!setups.has(canvas)) {
-    const w = Number(canvas.getAttribute('width')),
-      h = Number(canvas.getAttribute('height')),
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const previo = setups.get(canvas);
+  // La densidad cambia al llevar la ventana a otra pantalla (o con el zoom del navegador): el lienzo se rehace a la nueva,
+  // o la curva queda borrosa o se dibuja a otra escala. El tamaño lógico es el del primer montaje: el atributo `width`
+  // ya refleja el lienzo multiplicado.
+  if (!previo || previo.dpr !== dpr) {
+    const w = previo?.w ?? Number(canvas.getAttribute('width')),
+      h = previo?.h ?? Number(canvas.getAttribute('height'));
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
-    setups.set(canvas, { w, h, dpr, ctx: canvas.getContext('2d', { alpha: true }) as CanvasRenderingContext2D });
+    setups.set(canvas, { w, h, dpr, ctx: previo?.ctx ?? (canvas.getContext('2d', { alpha: true }) as CanvasRenderingContext2D) });
   }
   const o = setups.get(canvas)!;
   o.ctx.setTransform(o.dpr, 0, 0, o.dpr, 0, 0);

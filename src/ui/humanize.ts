@@ -1,5 +1,6 @@
 /** Diccionario de textos para el alumno: la procedencia técnica (códigos, canales, motivos internos) vive en evidence.json y en el registro exportado. */
 import type { MetricSample, SessionEvent } from '../domain/types';
+import { ieText } from './format';
 
 const REASONS: Record<string, string> = {
   volumenInspiradoInsuficiente: 'volumen inspirado insuficiente para calcular el porcentaje de fuga',
@@ -120,7 +121,6 @@ const SETTING: Record<string, string> = {
   riseMs: 'Rampa',
   mode: 'Modo',
 };
-const ieText = (r: number): string => (r <= 1 + 1e-9 ? `1:${Math.round((1 / r) * 100) / 100}` : `${Math.round(r * 100) / 100}:1`);
 function settingText(k: string, v: unknown): string {
   if (v === 'off') return 'Off';
   if (typeof v === 'boolean') return v ? 'sí' : 'no';
