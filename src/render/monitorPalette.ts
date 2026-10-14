@@ -72,15 +72,27 @@ export const MON = {
   separadorEspera: '#cbbd98',
 } as const;
 
-/** Ayudas docentes y series de tendencias: no son del equipo (las ayudas se encienden con «Ayudas»). */
+const AMBAR = '#ffd66e',
+  CELESTE = '#9fd7ff',
+  ORO = '#edc87e';
+/**
+ * Ayudas docentes y series de tendencias: no son del equipo (las ayudas se encienden con «Ayudas»). Las líneas van con
+ * transparencia para no competir con la curva, pero cada una llega a 3:1 sobre el extremo más claro de la pizarra
+ * (WCAG 2.2, 1.4.11; CTR-10): Pmáx, el ciclado, las marcas de inicio y fin y el bucle previo no llegaban (2,0–2,7).
+ */
 export const AYUDA = {
-  peep: '#ffd66e',
-  vt: '#9fd7ff',
-  pmaxLinea: '#ff7b7bb0',
-  ciclado: '#ffd36e80',
-  marca: '#b4dcf060',
-  referencia: '#edc87e',
-  previo: '#b7c4d466',
+  peep: AMBAR,
+  vt: CELESTE,
+  referencia: ORO,
+  /** Líneas, con la opacidad con que se dibujan. */
+  peepLinea: alfa(AMBAR, '99'),
+  vtLinea: alfa(CELESTE, '99'),
+  pmaxLinea: '#ff7b7be8',
+  ciclado: '#ffd36e90',
+  marca: '#b4dcf090',
+  referenciaCurva: alfa(ORO, 'b3'),
+  referenciaBucle: alfa(ORO, 'cc'),
+  previo: '#b7c4d4aa',
   union: '#c4f5ffaa',
   cursor: alfa(MON_CSS.texto, 'd0'),
   tendenciaPeep: '#64d7c4',

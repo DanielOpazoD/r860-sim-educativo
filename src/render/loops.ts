@@ -1,5 +1,5 @@
 import { formatNumber as format } from '../domain/units';
-import { alfa, AYUDA, MON, MON_CSS, PLOT_TEXT_COLORS } from './monitorPalette';
+import { AYUDA, MON, MON_CSS, PLOT_TEXT_COLORS } from './monitorPalette';
 import { context, line, text } from './canvas';
 import { cyclePoints, type Point } from './signal';
 import { getBounds } from './waves';
@@ -113,7 +113,7 @@ export function drawLoop(
   if (type === 'pv' && peep > 0 && peep > xrange[0]! && peep < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
-    line(ctx, xf(peep), top, xf(peep), bottom, alfa(AYUDA.peep, '99'), 0.9);
+    line(ctx, xf(peep), top, xf(peep), bottom, AYUDA.peepLinea, 0.9);
     ctx.restore();
     line(ctx, xf(peep), bottom, xf(peep), bottom + 5, AYUDA.peep, 1);
     text(ctx, 'PEEP', xf(peep) + 3, top + 10, '2xs', PLOT_TEXT_COLORS.lineaPeep, 'left');
@@ -122,21 +122,21 @@ export function drawLoop(
   if (options.vtMark && vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
-    line(ctx, left, yf(vtMl), w - right, yf(vtMl), alfa(AYUDA.vt, '99'), 0.9);
+    line(ctx, left, yf(vtMl), w - right, yf(vtMl), AYUDA.vtLinea, 0.9);
     ctx.restore();
     text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, '2xs', PLOT_TEXT_COLORS.lineaVt, 'right');
   }
   if (options.vtMark && vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
-    line(ctx, xf(vtMl), top, xf(vtMl), bottom, alfa(AYUDA.vt, '99'), 0.9);
+    line(ctx, xf(vtMl), top, xf(vtMl), bottom, AYUDA.vtLinea, 0.9);
     ctx.restore();
     text(ctx, 'VT', xf(vtMl) + 3, top + 10, '2xs', PLOT_TEXT_COLORS.lineaVt, 'left');
   }
-  path(ref, reference ? alfa(AYUDA.referencia, 'cc') : AYUDA.previo, true);
+  path(ref, reference ? AYUDA.referenciaBucle : AYUDA.previo, true);
   path(current, MON_CSS.texto, false);
   line(ctx, w - 140, 20, w - 122, 20, MON_CSS.texto, 2);
   text(ctx, 'Actual', w - 116, 24, '2xs', MON_CSS.texto);
-  line(ctx, w - 140, 34, w - 122, 34, reference ? alfa(AYUDA.referencia, 'cc') : AYUDA.previo, 1.5);
+  line(ctx, w - 140, 34, w - 122, 34, reference ? AYUDA.referenciaBucle : AYUDA.previo, 1.5);
   text(ctx, reference ? 'Referencia' : 'Previo', w - 116, 38, '2xs', reference ? PLOT_TEXT_COLORS.referencia : PLOT_TEXT_COLORS.tickBucles);
 }

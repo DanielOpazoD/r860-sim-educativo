@@ -402,7 +402,7 @@ export function drawWave(
       ctx.save();
       ctx.setLineDash([4, 4]);
       if (peep > 0) {
-        line(ctx, left, yf(peep), w - right, yf(peep), alfa(AYUDA.peep, '99'), 0.9);
+        line(ctx, left, yf(peep), w - right, yf(peep), AYUDA.peepLinea, 0.9);
         text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, '2xs', PLOT_TEXT_COLORS.lineaPeep, 'right');
       }
       if (typeof options.pmax === 'number' && Number.isFinite(options.pmax) && options.pmax > sp.min && options.pmax < sp.max) {
@@ -455,7 +455,7 @@ export function drawWave(
     if (ref && refShift !== null) {
       ctx.save();
       ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = alfa(AYUDA.referencia, 'b3');
+      ctx.strokeStyle = AYUDA.referenciaCurva;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       let refStarted = false,

@@ -1576,7 +1576,7 @@
       "implemented": "src/ui/styles/01-base.css (.monitor, .device-key, .numeric*, .numeric.alarm-value, .pressure-column, .monitor-nav, .nav-key, .quick-key, .alarm-band); src/ui/styles/02-vistas.css (vistas, ventana de bloqueo, editor); src/render/waves.ts (curvas); src/render/loops.ts (bucles); src/render/gauge.ts (drawGauge); src/render/monitorPalette.ts (paleta y escala tipográfica del canvas, las mismas que --mon-* y --mon-fs-*; EXTERIOR para los gráficos del panel claro y DOCENTE para los diagramas de Fundamentos); src/ui/teachingView.ts (diagramas sobre la pizarra del monitor); src/ui/exports.ts (la captura exportada, con la misma paleta, la prioridad y el mensaje de la banda, el borde de la medición en alarma y la línea «Fuga %»); src/ui/metricsTable.ts (metricInHighAlarm); src/ui/metricsView.ts; src/ui/styles/09-instrument.css (ventanas del equipo; un solo anillo de foco de teclado, amarillo, distinto del halo cian de lo activo)",
       "tests": [
         "tests/unit/contraste.test.ts (CTR-01, CTR-02, CTR-05, CTR-06, CTR-07, CTR-08)",
-        "tests/unit/contrastePlots.test.ts (CTR-03, CTR-09)",
+        "tests/unit/contrastePlots.test.ts (CTR-03, CTR-09, CTR-10)",
         "tests/unit/captura.test.ts (CAP-01)",
         "tests/unit/typeScale.test.ts (TIP-02)",
         "tests/e2e/visual.spec.ts (VIS-04)"
