@@ -144,6 +144,15 @@ describe('CTR-05 · los colores del equipo', () => {
     for (const borde of [ambar, rojo]) expect(contraste(borde, FONDO_MONITOR), borde).toBeGreaterThanOrEqual(3);
     expect(bloque('.numeric.alarm-value')).not.toMatch(/(?<![-\w])color:/);
   });
+  it('en espera: panel y tecla tostados del equipo (#e7dab8) con texto oscuro legible, y el botón de iniciar naranja', () => {
+    const TOSTADO = '#e7dab8';
+    expect(bloque('.standby-overlay')).toMatch(/background: #e7dab8/);
+    expect(bloque('.quick-key.active-standby')).toMatch(/background: #e7dab8/);
+    for (const sel of ['.standby-overlay', '.standby-overlay p', '.standby-overlay small', '.quick-key.active-standby'])
+      expect(contraste(color(sel), TOSTADO), sel).toBeGreaterThanOrEqual(AA);
+    for (const f of degradado('.standby-overlay .primary-button'))
+      expect(contraste(color('.standby-overlay .primary-button'), f), f).toBeGreaterThanOrEqual(AA);
+  });
   it('la X roja de una medición de bloqueo sin resultado se lee sobre la ventana (texto grande, ≥ 3:1)', () => {
     const fondos = degradado('.hold-panel');
     expect(fondos).toHaveLength(2);

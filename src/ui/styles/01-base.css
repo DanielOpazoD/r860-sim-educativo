@@ -807,9 +807,22 @@ a {
   width: 27px;
   height: 27px;
 }
+/* En espera la tecla se vuelve tostada con rótulo oscuro, como en el equipo (URM SW10 3-6). */
 .quick-key.active-standby {
-  background: #9c871a;
-  color: white;
+  background: #e7dab8;
+  border-color: #f3ead2;
+  color: #413a30;
+  text-shadow: none;
+}
+.quick-key.active-standby small {
+  color: #413a30;
+}
+/* Las teclas de procedimiento sin ventilación: grises, como en la pantalla de espera del equipo. */
+.device-key:disabled {
+  opacity: 1;
+  background: linear-gradient(#9a9ea6, #7d828b);
+  color: #3a3f47;
+  text-shadow: none;
 }
 .bezel-bottom {
   display: flex;

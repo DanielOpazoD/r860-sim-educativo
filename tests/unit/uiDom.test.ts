@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { uiHarness } from '../uiHarness';
-import { $, element, iconNode } from '../../src/ui/dom';
+import { $, $$, element, iconNode } from '../../src/ui/dom';
 import { createCaseSpace } from '../../src/ui/caseSpace';
 import { refCorta } from '../../src/ui/caseView';
 import { createMetricsView } from '../../src/ui/metricsView';
@@ -185,6 +185,30 @@ describe('edición, medición y navegación de diálogos', () => {
     expect($('#hold-second').textContent).toBe('✕');
     expect($('#hold-second').classList.contains('hold-x')).toBe(true);
     expect($('#hold-second').getAttribute('aria-label')).toBe('Medición no disponible');
+  });
+
+  it('en espera, como el equipo: barra de presión tostada y teclas de procedimiento grises e inactivas', () => {
+    const { ctx, sim } = harness;
+    const quick = createQuickEditor(ctx);
+    const procedimientos = () =>
+      $$<HTMLButtonElement>(
+        '.monitor-top [data-action="inspiratory"], .monitor-top [data-action="expiratory"], .monitor-top [data-action="manual"], .monitor-top [data-action="oxygen"]',
+      );
+    ctx.frame = sim.frame();
+    quick.updateQuick();
+    expect($('.monitor-body').classList.contains('en-espera')).toBe(false);
+    expect(procedimientos().every((b) => !b.disabled)).toBe(true);
+    sim.command({ type: 'enterStandby' });
+    ctx.frame = sim.frame();
+    quick.updateQuick();
+    expect($('#standby-overlay').hidden).toBe(false);
+    expect($('.monitor-body').classList.contains('en-espera')).toBe(true);
+    expect(procedimientos()).toHaveLength(4);
+    expect(procedimientos().every((b) => b.disabled)).toBe(true);
+    sim.command({ type: 'startVentilation' });
+    ctx.frame = sim.frame();
+    quick.updateQuick();
+    expect(procedimientos().every((b) => !b.disabled)).toBe(true);
   });
 
   it('selecciona modos en el equipo y descarta el borrador al cerrar', async () => {

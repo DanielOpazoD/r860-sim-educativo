@@ -801,8 +801,11 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
     x = 47,
     bw = 43;
   const yf = (v: number): number => bottom - (clamp(v, 0, max) / max) * (bottom - top);
-  text(ctx, 'Pva', x + bw / 2, 20, 13, '#ffffff', 'center', '700');
-  text(ctx, 'cmH₂O', x + bw / 2, 37, 10, PLOT_TEXT_COLORS.tickCurvas, 'center');
+  // En espera el panel es tostado (URM SW10 3-6): el texto pasa a oscuro.
+  const tinta = s.standby ? '#413a30' : '#ffffff',
+    tintaSuave = s.standby ? '#5c5345' : PLOT_TEXT_COLORS.tickCurvas;
+  text(ctx, 'Pva', x + bw / 2, 20, 13, tinta, 'center', '700');
+  text(ctx, 'cmH₂O', x + bw / 2, 37, 10, tintaSuave, 'center');
   // Tubo: negro con un brillo vertical, como un cilindro.
   const tubo = ctx.createLinearGradient(x, 0, x + bw, 0);
   tubo.addColorStop(0, '#060708');
@@ -823,15 +826,17 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   fill.addColorStop(0, '#2b8a3b');
   fill.addColorStop(0.5, '#74d67f');
   fill.addColorStop(1, '#2b8a3b');
-  const paw = s.standby ? 0 : s.paw;
-  ctx.fillStyle = fill;
-  ctx.fillRect(x + 1, yf(paw), bw - 2, bottom - yf(paw) + 13);
+  // En espera no hay presión que mostrar: el tubo queda vacío y sin marcas, como en el equipo (figura 3-4).
+  if (!s.standby) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x + 1, yf(s.paw), bw - 2, bottom - yf(s.paw) + 13);
+  }
   ctx.restore();
   const tick = max / 3;
   for (let i = 0; i <= 3; i++) {
     const v = i * tick;
     line(ctx, x + 1, yf(v), x + bw - 1, yf(v), '#3e8fa3', 1);
-    text(ctx, format(v), x - 8, yf(v) + 4, 12, '#ffffff', 'right', '700');
+    text(ctx, format(v), x - 8, yf(v) + 4, 12, tinta, 'right', '700');
   }
   const marker = (value: number | null, label: string, color: string, dy = 3): void => {
     if (value === null || !Number.isFinite(value)) return;
@@ -840,16 +845,18 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
     text(ctx, label, x + bw + 5, y + dy, 11, color, 'left', '700');
   };
   // Ppico junto a Pmáx: el rótulo baja para no pisar el de Pmáx, y la línea roja de Pmáx se dibuja encima.
-  marker(s.ppeak, 'Ppico', '#f2f5f8', s.ppeak !== null && Math.abs(s.ppeak - s.pmax) < max * 0.04 ? 15 : 3);
-  marker(s.peep, 'PEEP', '#f2f5f8');
-  marker(s.pmax, 'Pmáx', '#ff4a4f');
-  line(ctx, 8, 400, w - 8, 400, '#4d6480', 1);
+  if (!s.standby) {
+    marker(s.ppeak, 'Ppico', '#f2f5f8', s.ppeak !== null && Math.abs(s.ppeak - s.pmax) < max * 0.04 ? 15 : 3);
+    marker(s.peep, 'PEEP', '#f2f5f8');
+    marker(s.pmax, 'Pmáx', '#ff4a4f');
+  }
+  line(ctx, 8, 400, w - 8, 400, s.standby ? '#cbbd98' : '#4d6480', 1);
   // Resolución del equipo: VT en pasos de 0,1 mL bajo 50 mL y de 1 mL desde ahí (URM SW10 13-24).
   const vte = s.standby ? null : s.vteMl;
   const columna = (cx: number, rotulo: string, valor: string, unidad: string): void => {
-    text(ctx, rotulo, cx, 420, 11, '#ffffff', 'center', '700');
-    text(ctx, valor, cx, 450, 26, '#ffffff', 'center', '700');
-    text(ctx, unidad, cx, 467, 10, PLOT_TEXT_COLORS.tickCurvas, 'center');
+    text(ctx, rotulo, cx, 420, 11, tinta, 'center', '700');
+    text(ctx, valor, cx, 450, 26, tinta, 'center', '700');
+    text(ctx, unidad, cx, 467, 10, tintaSuave, 'center');
   };
   columna(w * 0.3, 'VTesp', format(vte, vte !== null && Math.abs(vte) < 50 ? 1 : 0), 'mL');
   columna(w * 0.74, 'FiO₂', format(s.fio2Pct, 0), '%');
