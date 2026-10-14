@@ -34,6 +34,7 @@ import {
   PEEPE_PRE_TRIGGER_S,
   PEEPE_TRACE_S,
   RISE_TIME_TAU_FRACTION,
+  VC_COMPENSACION_PASO_MAX,
 } from './ventilatorConstants';
 
 const EPS = 1e-9;
@@ -99,6 +100,11 @@ export class VcController {
   private modoConfirmadoT = Number.NEGATIVE_INFINITY;
   private events: ControllerEvent[] = [];
   private transition: (() => void) | null = null;
+  /**
+   * Compensación del VT en volumen control (U-19, E-124): ganancia del flujo de la próxima respiración. Sube cuando Plimit
+   * dejó el VT corto, se mantiene mientras hace falta y vuelve a 1 en cuanto una respiración entrega sin tocar Plimit.
+   */
+  private ganVc = 1;
 
   constructor(
     private readonly patient: PatientModel,
@@ -199,6 +205,8 @@ export class VcController {
     this.pending = null;
     this.settings = { ...this.settings, ...changes };
     this.timing = deriveVcTiming(this.settings);
+    // Con otro VT, otro tiempo, otro Plimit u otro modo, la compensación aprendida ya no vale.
+    if (['vt', 'rr', 'ie', 'pausePct', 'plimit', 'mode'].some((k) => k in changes)) this.ganVc = 1;
     this.events.push({ type: 'settingsApplied', changes, simTimeS: this.simT, breathId });
     // Fuera de CPAP/PS no hay respaldo que mantener.
     if (this.settings.mode !== 'CPAP_PS') this.salirDeRespaldo();
@@ -235,6 +243,7 @@ export class VcController {
 
   enterStandby(): void {
     if (this.phase === 'standby') return;
+    this.ganVc = 1;
     if (this.hold) this.finishHold(true, false, 'standby');
     this.holdRequest = null;
     this.manualRequested = false;
@@ -364,8 +373,13 @@ export class VcController {
   private timeToScheduledEvent(): number {
     const t = this.timing;
     switch (this.phase) {
-      case 'inspFlow':
-        return Math.max(0, t.tFlowS - this.tBreath);
+      case 'inspFlow': {
+        const b = this.breath;
+        const fin = Math.max(0, t.tFlowS - this.tBreath);
+        // Con el flujo compensado, el volumen programado llega antes del fin del tiempo de flujo: ahí acaba la entrega.
+        if (b && b.ganVc > 1 && b.vtSetL !== null) return Math.min(fin, Math.max(0, (b.vtSetL - b.vtInsp) / b.qVc));
+        return fin;
+      }
       case 'inspLimited':
         return Math.max(0, t.tInspS - this.tBreath);
       case 'inspPause':
@@ -496,7 +510,7 @@ export class VcController {
         return h;
       }
       case 'inspFlow': {
-        const qCmd = this.timing.qTargetLps;
+        const qCmd = this.breath?.qVc ?? this.timing.qTargetLps;
         const cc = p.circuitComplianceL;
         if (cc > 0) {
           // Circuito compresible: el sensor es de la máquina, así que lo ordenado (qCmd) es flujo de pulmón más
@@ -526,7 +540,7 @@ export class VcController {
           this.vCirc += cc * (py - pyPrev);
           this.paw = py;
           if (this.breath) this.breath.vtInsp += qCmd * used; // VTi de pantalla: lo que entregó la máquina
-          this.q = qCmd;
+          this.q = used > 0 || hit !== 'plimit' ? qCmd : Math.max(0, p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v));
           if (this.breath && used > 0) {
             this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
             if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
@@ -546,7 +560,9 @@ export class VcController {
         const used = Math.max(0, Math.min(h, frac * h));
         const { dV } = p.integrateFlowSource(qCmd, used, this.pmusAt(this.simT));
         if (this.breath) this.breath.vtInsp += dV;
-        this.q = qCmd;
+        // Si la presión ya está en Plimit al empezar, no entra el flujo ordenado: el del instante es el que deja pasar
+        // Plimit (el de la fase limitada). Antes se anotaba el ordenado y la curva mostraba un pico que nunca entró.
+        this.q = used > 0 || hit !== 'plimit' ? qCmd : Math.max(0, p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v));
         this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
         if (this.breath && used > 0) {
           this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
@@ -650,6 +666,13 @@ export class VcController {
         }
         this.q = qEnd + qLeakEnd + delta / h;
         this.paw = s.plimit;
+        // Con el flujo compensado el VT puede completarse bajo Plimit: entregado, el resto de la inspiración es pausa.
+        const bv = this.breath;
+        if (bv && bv.ganVc > 1 && bv.vtSetL !== null && bv.vtInsp >= bv.vtSetL)
+          this.transition = () => {
+            this.phase = 'inspPause';
+            this.tPhase = 0;
+          };
         return h;
       }
       case 'inspPause':
@@ -799,7 +822,7 @@ export class VcController {
   private onScheduledEvent(): void {
     switch (this.phase) {
       case 'inspFlow':
-        if (this.timing.tPauseS > EPS) {
+        if (this.timing.tPauseS > EPS || ((this.breath?.ganVc ?? 1) > 1 && this.timing.tInspS - this.tBreath > EPS)) {
           this.phase = 'inspPause';
           this.tPhase = 0;
         } else this.endInspiration('time');
@@ -875,6 +898,7 @@ export class VcController {
         b.pplatReason = 'endedByPmax';
       }
       b.cause = cause;
+      if (b.vtSetL !== null && cause !== 'pmax') this.compensarVt(b);
     }
     if (this.holdRequest?.kind === 'inspHold') {
       if (cause === 'pmax') {
@@ -895,6 +919,16 @@ export class VcController {
     this.tPhase = 0;
     this.peepHeldS = 0;
     this.peepDemostrada = false;
+  }
+
+  /** Ajusta el flujo de la próxima respiración de volumen control a lo que entregó ésta (U-19, E-124). */
+  private compensarVt(b: BreathAccum): void {
+    const vt = b.vtSetL!;
+    if (b.plimitReached && b.vtInsp < vt * 0.99) {
+      const q = this.timing.qTargetLps;
+      const tope = Number.isFinite(q) && q > 0 ? ACTUATOR_MAX_FLOW_LPS / q : 1;
+      this.ganVc = Math.max(1, Math.min(tope, this.ganVc * Math.min(VC_COMPENSACION_PASO_MAX, vt / Math.max(b.vtInsp, 1e-6))));
+    } else if (!b.plimitReached) this.ganVc = 1;
   }
 
   /**
@@ -1073,6 +1107,8 @@ export class VcController {
       plimitReached: false,
       pmaxReached: false,
       vtSetL: s.mode === 'AC_VC' ? s.vt : null,
+      qVc: s.mode === 'AC_VC' ? this.timing.qTargetLps * this.ganVc : this.timing.qTargetLps,
+      ganVc: s.mode === 'AC_VC' ? this.ganVc : 1,
       pauseSamples: [],
       effortDuringPause: false,
       flowSamples: [],

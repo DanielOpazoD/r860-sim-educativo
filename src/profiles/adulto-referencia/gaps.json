@@ -176,11 +176,9 @@
     {
       "id": "U-19",
       "question": "Compensación de flujo entre respiraciones en VC cuando Plimit recorta el VT (R23: «ajusta el flujo inspiratorio necesario para mantener el VT en las próximas respiraciones»). Ganancias y límites no publicados.",
-      "policy": "No implementada: el VT real permanece por debajo del programado hasta que el usuario cambie ajustes (comportamiento visible y registrado).",
-      "status": "nueva",
-      "blocks": [
-        "adaptación de flujo en VC"
-      ]
+      "policy": "D el comportamiento (URM SW10 5-11; R23): implementado (E-124). P el paso de ajuste —como mucho ×1,5 por respiración, banda de ±1 %, pausa al completar el VT—: las ganancias del equipo no se publican.",
+      "status": "cerrada en el comportamiento (2026-10-14); P las ganancias",
+      "blocks": []
     },
     {
       "id": "U-20",

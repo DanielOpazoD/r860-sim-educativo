@@ -79,3 +79,12 @@ export const PEEPE_TRACE_S = 0.6;
  * exponencial es P. Antes se tomaba el 95 % (3τ).
  */
 export const RISE_TIME_TAU_FRACTION = Math.LN10;
+
+/**
+ * Compensación del VT en volumen control (U-19): el equipo «monitors delivered tidal volume and adjusts the delivered
+ * inspiratory flow as needed to maintain the set tidal volume for subsequent breaths» (D, URM SW10 5-11; R23, A/C VC y
+ * SIMV VC). Cuánto ajusta en cada respiración no se publica (P): como mucho ×1,5 del flujo anterior, hasta el tope del
+ * actuador. Si ni con el flujo máximo cabe el VT bajo Plimit, sigue corto y salta «VT no entregado» (URM SW10, solución de
+ * problemas: «The Plimit setting prevents the full VT from being delivered»).
+ */
+export const VC_COMPENSACION_PASO_MAX = 1.5;
