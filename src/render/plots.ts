@@ -90,6 +90,20 @@ export interface WaveMarker {
   label: string;
   value?: number;
 }
+/** Caja de un rótulo ya escrito sobre la curva: extremos en x y línea base. */
+export interface LabelBox {
+  x0: number;
+  x1: number;
+  y: number;
+}
+/**
+ * Línea base de un rótulo de marca (Ppico, Pplat, esfuerzo) que no pise los ya escritos: el sitio preferido es encima
+ * del punto; si ahí choca —en una oclusión Ppico cae justo en «Inicio», los dos arriba del todo—, va debajo del punto.
+ */
+export function labelBaseline(taken: LabelBox[], x0: number, x1: number, preferred: number, below: number, height: number): number {
+  const choca = (y: number): boolean => taken.some((b) => x0 < b.x1 + 4 && x1 > b.x0 - 4 && Math.abs(y - b.y) < height + 2);
+  return choca(preferred) && !choca(below) ? below : preferred;
+}
 export interface WaveformFeatures {
   ppeak: number;
   minPressure: number;
@@ -569,6 +583,11 @@ export function drawWave(
       seg.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       ctx.stroke();
     }
+    const escritos: LabelBox[] = [];
+    const rotular = (s: string, x: number, y: number, color: string): void => {
+      text(ctx, s, x, y, '2xs', color);
+      escritos.push({ x0: x, x1: x + ctx.measureText(s).width, y });
+    };
     for (const marker of options.markers ?? []) {
       if (marker.t < end - win || marker.t > end) continue;
       const x = xfn(marker.t);
@@ -580,7 +599,7 @@ export function drawWave(
         ctx.restore();
         if (i === 0) {
           const labelY = marker.kind === 'start' ? ytop + 10 : marker.kind === 'cycle' ? ybottom - 16 : ybottom - 5;
-          text(ctx, marker.label, x + 3, labelY, '2xs', PLOT_TEXT_COLORS.anotacion);
+          rotular(marker.label, x + 3, labelY, PLOT_TEXT_COLORS.anotacion);
         }
       } else if (i === 0) {
         const value = marker.value ?? sp.min;
@@ -595,7 +614,17 @@ export function drawWave(
         ctx.beginPath();
         ctx.arc(x, y, 2.8, 0, Math.PI * 2);
         ctx.fill();
-        text(ctx, marker.label, x + 4, Math.max(ytop + 10, y - 4), '2xs', markerColor);
+        ctx.font = `normal ${MON_FS['2xs']}px Arial,sans-serif`;
+        const ancho = ctx.measureText(marker.label).width;
+        const base = labelBaseline(
+          escritos,
+          x + 4,
+          x + 4 + ancho,
+          Math.max(ytop + 10, y - 4),
+          Math.min(ybottom - 3, y + 13),
+          MON_FS['2xs'],
+        );
+        rotular(marker.label, x + 4, base, markerColor);
       }
     }
     if (style === 'sweep' && !options.frozen) {

@@ -8,6 +8,7 @@ import {
   cyclePoints,
   expandBounds,
   getBounds,
+  labelBaseline,
   nearestSample,
   referenceShift,
   stableBounds,
@@ -398,5 +399,20 @@ describe('CUR-03 · congeladas, el eje y el cursor dicen el mismo tiempo', () =>
     expect(formatNumber(-0.06, 1), 'lo que no redondea a cero conserva el signo').toBe('-0.1');
     expect(formatNumber(-12.34, 1)).toBe('-12.3');
     expect(formatNumber(null)).toBe('—');
+  });
+});
+
+describe('CUR-04 · los rótulos de las marcas no se pisan', () => {
+  const inicio = { x0: 100, x1: 124, y: 20 };
+  it('en una oclusión Ppico cae en «Inicio», los dos arriba: Ppico baja bajo su punto', () => {
+    expect(labelBaseline([inicio], 102, 140, 20, 33, 10)).toBe(33);
+  });
+  it('lejos de otro rótulo, o a otra altura, queda encima del punto', () => {
+    expect(labelBaseline([inicio], 200, 238, 20, 33, 10)).toBe(20);
+    expect(labelBaseline([inicio], 102, 140, 60, 73, 10)).toBe(60);
+    expect(labelBaseline([], 102, 140, 20, 33, 10)).toBe(20);
+  });
+  it('si abajo también choca, se queda en su sitio (no salta a ciegas)', () => {
+    expect(labelBaseline([inicio, { x0: 100, x1: 160, y: 33 }], 102, 140, 20, 33, 10)).toBe(20);
   });
 });

@@ -1592,7 +1592,7 @@
       "status": "D (tostado de la tecla y de la barra de presión, panel de espera, botón de iniciar y teclas grises: R21 3-6 y figura 3-4); P los tonos exactos y el contenido del panel, que en el equipo trae paciente nuevo, comprobación del sistema y circuito",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 3-6 «Standby»: «the Standby quick key and the patient status (airway pressure) bar are colored tan»; figura 3-4 «Standby menu»",
-      "implemented": "src/ui/quickEditor.ts (updateQuick: en-espera, teclas inactivas); src/ui/styles/02-vistas.css (.standby-overlay, .monitor-body.en-espera .pressure-column); src/ui/styles/01-base.css (.quick-key.active-standby, .device-key:disabled); src/render/plots.ts (drawGauge en espera)",
+      "implemented": "src/ui/quickEditor.ts (updateQuick: en-espera, teclas inactivas); src/ui/styles/02-vistas.css (.standby-overlay, .monitor-body.en-espera .pressure-column); src/ui/styles/07-movil-vertical.css (en el teléfono, sin barra de presión, cubre el ancho entero); src/ui/styles/01-base.css (.quick-key.active-standby, .device-key:disabled); src/render/plots.ts (drawGauge en espera)",
       "tests": [
         "tests/unit/uiDom.test.ts (en espera, como el equipo)",
         "tests/unit/contraste.test.ts (CTR-05)"
