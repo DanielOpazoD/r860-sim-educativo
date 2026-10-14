@@ -909,7 +909,7 @@
       "status": "P (la ficha 2014 documenta el rango inspiratorio 2–160 L/min y no el espiratorio; U-50)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (EXP_MAX_FLOW_LPS); src/engine/patient.ts (minFlow en nodeState e integratePressureSource)",
+      "implemented": "src/engine/ventilatorConstants.ts (EXP_MAX_FLOW_LPS); src/engine/patient.ts (minFlow en nodeState e integratePressureSource)",
       "tests": [
         "tests/unit/review5.test.ts (R5-03)"
       ]
@@ -966,7 +966,7 @@
       "status": "D (la excursión negativa es una consecuencia de la definición de la traza, verificada en SC-18)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/render/plots.ts (getBounds, minVolume)",
+      "implemented": "src/render/waves.ts (getBounds, minVolume)",
       "tests": [
         "tests/unit/cobertura.test.ts"
       ]
@@ -1123,7 +1123,7 @@
       "status": "P (decisión de presentación del proyecto)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/render/plots.ts (appendSamples, TRACE_CAP, nearestSample, cyclePoints); src/ui/plotsView.ts (ingest)",
+      "implemented": "src/render/signal.ts (appendSamples, TRACE_CAP, nearestSample, cyclePoints); src/ui/plotsView.ts (ingest)",
       "tests": [
         "tests/unit/curvas.test.ts (CUR-01)"
       ]
@@ -1134,7 +1134,7 @@
       "status": "P (legibilidad; decisión del proyecto)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/render/plots.ts (stableBounds); src/ui/plotsView.ts (waveBounds)",
+      "implemented": "src/render/waves.ts (stableBounds); src/ui/plotsView.ts (waveBounds)",
       "tests": [
         "tests/unit/curvas.test.ts (CUR-02)"
       ]
@@ -1145,7 +1145,7 @@
       "status": "P (interfaz; decisión del proyecto)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/ui/plotsView.ts (drawStyle, setCursorAt, onPointer); src/render/plots.ts (cursorTimeAt, timeAxisLabels, WAVE_MARGIN, marca de unión en drawWave); index.html (#cursor-slider)",
+      "implemented": "src/ui/plotsView.ts (drawStyle, setCursorAt, onPointer); src/render/waves.ts (cursorTimeAt, timeAxisLabels, WAVE_MARGIN, marca de unión en drawWave); index.html (#cursor-slider)",
       "tests": [
         "tests/unit/curvas.test.ts (CUR-03)",
         "tests/e2e/interaction.spec.ts (CUR · medir sobre la curva congelada)"
@@ -1183,7 +1183,7 @@
       "status": "P (U-52); D para los ajustes de sincronización de CPAP/PS y la existencia de una duración máxima de la respiración soportada (R23)",
       "source": "R23",
       "locator": "R23 diap. 14 (tabla de modos de soporte: CPAP/PS con Insp Trigger, Exp Trigger, Bias Flow, PS Rise Time; Tsupp sólo en VS) y diap. 35 (fin por el disparo espiratorio o la duración máxima de la respiración soportada)",
-      "implemented": "src/engine/controller.ts (inspSupport, SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN, onPlazoDeRespaldo, esperarDisparo); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
+      "implemented": "src/engine/controller.ts (inspSupport, onPlazoDeRespaldo, esperarDisparo); src/engine/ventilatorConstants.ts (SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)",
         "tests/unit/objetivos.test.ts (SC-19, SC-20)",
@@ -1349,7 +1349,7 @@
       "status": "P (U-30: la ganancia del lazo del R860 no está publicada; valor calibrado sobre el banco); D el rango de banco y las cifras del Engström de GE (C04)",
       "source": "C04",
       "locator": "Thille 2009, Resultados · Trigger function (DI 94 ms, 54–177; < 70 y < 100 en el peor caso con el Engström; 107 con esfuerzo muy fuerte; 122 con PS 5 frente a 80 con 20) y Pressurization capacity (PTP 1,6, 0,1–2,6; 1,8 fuerte, 1,4 muy fuerte)",
-      "implemented": "src/engine/controller.ts (PRESSURE_LOOP_GAIN, qValvula de la respiración, fases inspPressure e inspSupport); src/domain/types.ts (pressureLoopGain: 0 = fuente ideal del banco analítico)",
+      "implemented": "src/engine/controller.ts (qValvula de la respiración, fases inspPressure e inspSupport); src/engine/ventilatorConstants.ts (PRESSURE_LOOP_GAIN); src/domain/types.ts (pressureLoopGain: 0 = fuente ideal del banco analítico)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-05)",
         "tests/unit/objetivos.test.ts (ALM)"
@@ -1463,7 +1463,7 @@
       "status": "D (técnica de filtrado y resolución, R21) / P (lectura exacta de «último minuto + una respiración» como suma hasta cubrir 60 s)",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 13-22 a 13-24 «Ventilation monitoring specifications» (columnas Resolution y Filtering Technique)",
-      "implemented": "src/engine/metrics.ts (MINUTE_WINDOW_MS, ventanaDeUnMinuto); src/ui/metricsTable.ts (decimalesMostrados); src/ui/metricsView.ts; src/render/plots.ts (VTesp de la barra)",
+      "implemented": "src/engine/metrics.ts (MINUTE_WINDOW_MS, ventanaDeUnMinuto); src/ui/metricsTable.ts (decimalesMostrados); src/ui/metricsView.ts; src/render/gauge.ts (VTesp de la barra)",
       "tests": [
         "tests/unit/metricasEquipo.test.ts (MON)",
         "tests/unit/objetivos.test.ts (SC-21)"
@@ -1475,7 +1475,7 @@
       "status": "D (definición de la rampa, criterios de fin del soporte y valores de fábrica, R21) / P (forma exponencial de la rampa; una sola rampa por modo)",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 5-3 (Rise Time, PS Rise Time, Tsupp), 5-4 (Pressure support: fin de la inspiración), 11-9 y 11-10 (Factory default settings)",
-      "implemented": "src/engine/controller.ts (RISE_TIME_TAU_FRACTION, PS_PRESSURE_CYCLE_CMH2O, SUPPORT_TI_MAX_S); src/engine/patient.ts (válvula de un solo sentido como tope); src/profiles/adulto-referencia/settings.ts (biasFlow, backupTinspS, apneaTimeS); src/domain/types.ts (CyclingCause 'pressure')",
+      "implemented": "src/engine/ventilatorConstants.ts (RISE_TIME_TAU_FRACTION, PS_PRESSURE_CYCLE_CMH2O, SUPPORT_TI_MAX_S); src/engine/patient.ts (válvula de un solo sentido como tope); src/profiles/adulto-referencia/settings.ts (biasFlow, backupTinspS, apneaTimeS); src/domain/types.ts (CyclingCause 'pressure')",
       "tests": [
         "tests/unit/soporte.test.ts (SUP-URM)",
         "tests/unit/rampa.test.ts",
@@ -1573,7 +1573,7 @@
       "status": "D (colores y disposición medidos en las capturas del manual, R21; borde de la medición en alarma, R21 8-7); P los tonos exactos elegidos dentro de lo medido, el ajuste de contraste de la banda verde y la tipografía Arial",
       "source": "R21",
       "locator": "URM SW10 2065490-001, capturas de 3-12 a 3-14 (Basic, Basic Waveform, Advanced Waveform, Flow-Volume) y 8-8 (VTexp low); 8-7 «Measured data alarms»: «the number and alarm limits are shown with a border around them. The color of the border … shows the priority»",
-      "implemented": "src/ui/styles/01-base.css (.monitor, .device-key, .numeric*, .numeric.alarm-value, .pressure-column, .monitor-nav, .nav-key, .quick-key, .alarm-band); src/ui/styles/02-vistas.css (vistas, ventana de bloqueo, editor); src/render/plots.ts (curvas, bucles, drawGauge); src/render/monitorPalette.ts (paleta y escala tipográfica del canvas, las mismas que --mon-* y --mon-fs-*; EXTERIOR para los gráficos del panel claro y DOCENTE para los diagramas de Fundamentos); src/ui/teachingView.ts (diagramas sobre la pizarra del monitor); src/ui/exports.ts (la captura exportada, con la misma paleta, la prioridad y el mensaje de la banda, el borde de la medición en alarma y la línea «Fuga %»); src/ui/metricsTable.ts (metricInHighAlarm); src/ui/metricsView.ts; src/ui/styles/09-instrument.css (ventanas del equipo; un solo anillo de foco de teclado, amarillo, distinto del halo cian de lo activo)",
+      "implemented": "src/ui/styles/01-base.css (.monitor, .device-key, .numeric*, .numeric.alarm-value, .pressure-column, .monitor-nav, .nav-key, .quick-key, .alarm-band); src/ui/styles/02-vistas.css (vistas, ventana de bloqueo, editor); src/render/waves.ts (curvas); src/render/loops.ts (bucles); src/render/gauge.ts (drawGauge); src/render/monitorPalette.ts (paleta y escala tipográfica del canvas, las mismas que --mon-* y --mon-fs-*; EXTERIOR para los gráficos del panel claro y DOCENTE para los diagramas de Fundamentos); src/ui/teachingView.ts (diagramas sobre la pizarra del monitor); src/ui/exports.ts (la captura exportada, con la misma paleta, la prioridad y el mensaje de la banda, el borde de la medición en alarma y la línea «Fuga %»); src/ui/metricsTable.ts (metricInHighAlarm); src/ui/metricsView.ts; src/ui/styles/09-instrument.css (ventanas del equipo; un solo anillo de foco de teclado, amarillo, distinto del halo cian de lo activo)",
       "tests": [
         "tests/unit/contraste.test.ts (CTR-01, CTR-02, CTR-05, CTR-06, CTR-07, CTR-08)",
         "tests/unit/contrastePlots.test.ts (CTR-03, CTR-09)",
@@ -1588,7 +1588,7 @@
       "status": "D (retardos y a qué alarmas se aplican, R21); P que confirmar cualquier ajuste con el modo cuente como cambio de modo",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 8-26 y 8-27 «Alarm delays»: «10 seconds since the last Backup ventilation on alarm was active», «10 seconds since the last ventilation mode change · Backup ventilation on (due to Apnea)», «60 seconds since the last vent mode change · Backup ventilation on (due to MVexp)», «60 seconds after an inspiratory or expiratory hold procedure» y «60 seconds upon transition to therapy · Backup ventilation on (due to MVexp)»",
-      "implemented": "src/engine/controller.ts (BACKUP_DELAY_AFTER_BACKUP_S, BACKUP_DELAY_AFTER_MODE_S, respaldoRetenido, entrarEnRespaldo, salirDeRespaldo, plazoDeRespaldo, onPlazoDeRespaldo); src/engine/simulator.ts (respaldo por VMesp)",
+      "implemented": "src/engine/controller.ts (respaldoRetenido, entrarEnRespaldo, salirDeRespaldo, plazoDeRespaldo, onPlazoDeRespaldo); src/engine/ventilatorConstants.ts (BACKUP_DELAY_AFTER_BACKUP_S, BACKUP_DELAY_AFTER_MODE_S); src/engine/simulator.ts (respaldo por VMesp)",
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03d)"
       ]
@@ -1599,7 +1599,7 @@
       "status": "D (tostado de la tecla y de la barra de presión, panel de espera, botón de iniciar y teclas grises: R21 3-6 y figura 3-4); P los tonos exactos y el contenido del panel, que en el equipo trae paciente nuevo, comprobación del sistema y circuito",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 3-6 «Standby»: «the Standby quick key and the patient status (airway pressure) bar are colored tan»; figura 3-4 «Standby menu»",
-      "implemented": "src/ui/quickEditor.ts (updateQuick: en-espera, teclas inactivas); src/ui/styles/02-vistas.css (.standby-overlay, .monitor-body.en-espera .pressure-column); src/ui/styles/07-movil-vertical.css (en el teléfono, sin barra de presión, cubre el ancho entero); src/ui/styles/01-base.css (.quick-key.active-standby, .device-key:disabled); src/render/plots.ts (drawGauge en espera)",
+      "implemented": "src/ui/quickEditor.ts (updateQuick: en-espera, teclas inactivas); src/ui/styles/02-vistas.css (.standby-overlay, .monitor-body.en-espera .pressure-column); src/ui/styles/07-movil-vertical.css (en el teléfono, sin barra de presión, cubre el ancho entero); src/ui/styles/01-base.css (.quick-key.active-standby, .device-key:disabled); src/render/gauge.ts (drawGauge en espera)",
       "tests": [
         "tests/unit/uiDom.test.ts (en espera, como el equipo)",
         "tests/unit/contraste.test.ts (CTR-05)"

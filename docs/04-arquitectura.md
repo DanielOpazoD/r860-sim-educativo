@@ -20,7 +20,7 @@ domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui
 | `fixtures` | Transcripción de las fotografías P1/P3 a un cuadro congelado, sin física | `domain`, `engine`, `profiles` | app, ui, render |
 | `history` | Exportación, importación validada y reproducción de sesiones | `domain`, `engine`, `profiles` | app, ui |
 | `app` | Protocolo del Worker, anfitrión, cliente, máquina de estados de edición | `domain`, `engine`, `profiles`, `scenarios`, `history` | ui |
-| `render` | Dibujo en canvas (curvas, bucles, manómetro, tendencias) | `domain` | engine, app, ui |
+| `render` | Dibujo en canvas: `canvas` (lienzo y primitivas), `signal` (puntos), `waves` (curvas), `loops`, `gauge` (barra de presión), `effortCharts` (esfuerzo del panel), `trends`; `monitorPalette` (paleta y escala tipográfica) y `plots` como fachada que lo reexporta | `domain` | engine, app, ui |
 | `ui` | Composición de la interfaz, panel lateral Paciente/Casos, gasometría del modelo, espacio educativo bajo el equipo, diálogos, editor y perfiles de paciente basados en escenarios | todo lo anterior | — |
 | `workers` | Punto de entrada del Worker | `app` | — |
 
@@ -36,7 +36,7 @@ domain  ←  engine  ←  profiles · scenarios  ←  history  ←  app  ←  ui
 ## 3. Motor
 
 - `patient.ts`: mecánica del sistema respiratorio. Por omisión, un compartimento lineal con volumen absoluto; opcionalmente, relajación viscoelástica, curva P-V sigmoidea, resistencia de Rohrer, limitación al flujo espiratorio, calibre dependiente del volumen y una segunda unidad alveolar en paralelo. Integrador RK2 con sub-pasos de 0,2·τ; la resistencia del circuito y el tope de flujo del ventilador se resuelven en el nodo de la vía aérea.
-- `controller.ts`: fases (`inspFlow`, `inspLimited`, `inspPause`, `inspPressure`, `exp`, bloqueos), eventos programados con sub-paso exacto, transiciones diferidas, cola de eventos que el `Simulator` drena en orden.
+- `controller.ts`: fases (`inspFlow`, `inspLimited`, `inspPause`, `inspPressure`, `exp`, bloqueos), eventos programados con sub-paso exacto, transiciones diferidas, cola de eventos que el `Simulator` drena en orden. Le acompañan `ventilatorConstants.ts` (las constantes del equipo y del modelo, cada una con su origen), `trigger.ts` (disparo y regulador de PEEP), `breathAnalysis.ts` (meseta, índice de estrés y τ espiratoria de cada respiración) y `controllerTypes.ts`.
 - `metrics.ts`, `alarms.ts`, `procedures.ts`, `sensors.ts`, `effort.ts`: componentes pequeños que sólo hablan por `BreathRecord`, `MetricSample`, `AlarmState` y `ProcedureResult`.
 - `gasExchange.ts`: gasometría de modelo. Recibe el volumen que espira el pulmón en cada respiración y publica `truth.gas`; no realimenta la mecánica ni entra en las métricas del monitor.
 - `simulator.ts`: composición, validación de fronteras, reloj y construcción del cuadro. `commandHandlers.ts`: un manejador por tipo de comando sobre una interfaz `CommandContext` (validar → aplicar → registrar); la prueba ARQ-02 exige un manejador por cada tipo declarado en el dominio.

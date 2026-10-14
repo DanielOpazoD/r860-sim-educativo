@@ -208,7 +208,11 @@ describe('CTR-06 · la paleta del monitor, en un solo sitio', () => {
   });
 
   it('las curvas, la captura exportada y los diagramas de Fundamentos no escriben colores a mano: vienen de monitorPalette.ts', () => {
-    for (const f of ['../../src/render/plots.ts', '../../src/ui/exports.ts', '../../src/ui/teachingView.ts'])
+    const render = readdirSync(new URL('../../src/render/', import.meta.url))
+      .filter((f) => f.endsWith('.ts') && f !== 'monitorPalette.ts')
+      .map((f) => `../../src/render/${f}`);
+    expect(render.length).toBeGreaterThanOrEqual(7);
+    for (const f of [...render, '../../src/ui/exports.ts', '../../src/ui/teachingView.ts'])
       expect(readFileSync(new URL(f, import.meta.url), 'utf8').match(/#[0-9a-f]{6}/gi), f).toBeNull();
   });
 });

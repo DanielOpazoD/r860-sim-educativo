@@ -3,7 +3,7 @@ import { drawMuscleLoop, type Point } from '../../src/render/plots';
 
 // BLD · bucle Pva–V docente con presión total (Pva+Pmus)–V. El canvas se falsifica grabando las llamadas:
 // no hay DOM real en vitest, así que el mock sólo necesita la API que usa el dibujo.
-// plots.ts lee window.devicePixelRatio al configurar el canvas.
+// canvas.ts (vía plots.ts) lee window.devicePixelRatio al configurar el lienzo.
 (globalThis as { window?: unknown }).window ??= { devicePixelRatio: 1 };
 
 function canvasFalsa() {
