@@ -63,8 +63,10 @@ export async function openFundamentos(page: Page): Promise<void> {
   await page.locator('.palette-trigger').click();
   await page.locator('#palette-input').fill('Aula: fundamentos');
   await page.locator('#palette-input').press('Enter');
-  await expect(page.locator('#learn-theory')).toBeInViewport();
-  await expect(page.locator('#teaching-body > *').first()).toBeVisible();
+  // La vista docente se carga diferida y el desplazamiento llega cuando ya existe: con la máquina cargada (la batería
+  // completa en paralelo) tardaba más de los 5 s por omisión y la prueba fallaba de forma intermitente.
+  await expect(page.locator('#teaching-body > *').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#learn-theory')).toBeInViewport({ timeout: 15_000 });
 }
 /** Vuelve al ventilador desde el espacio educativo. */
 export async function backToMonitor(page: Page): Promise<void> {
