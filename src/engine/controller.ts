@@ -500,308 +500,350 @@ export class VcController {
 
   /** Integra hasta h segundos en la fase actual; devuelve el tiempo efectivamente integrado (menor si hubo cruce de umbral). */
   private integrate(h: number): number {
-    const p = this.patient;
-    const s = this.settings;
+    // Un paso del integrador en la fase en curso: cada fase tiene su física y su propio método.
     switch (this.phase) {
-      case 'standby': {
-        const { qEnd, qLeakEnd } = p.integratePressureSource(0, this.pmusAt, this.simT, h);
-        this.paw = 0;
-        this.q = qEnd + qLeakEnd + this.circuitTransfer(0, h, qEnd + qLeakEnd) / h;
-        return h;
-      }
-      case 'inspFlow': {
-        const qCmd = this.breath?.qVc ?? this.timing.qTargetLps;
-        const cc = p.circuitComplianceL;
-        if (cc > 0) {
-          // Circuito compresible: el sensor es de la máquina, así que lo ordenado (qCmd) es flujo de pulmón más
-          // compresión. El nodo Py resuelve Paw(qPulmón) = Py con qPulmón = qCmd − Cc·(Py − PyPrev)/Δt: función
-          // decreciente en Py, raíz única por bisección (los límites se evalúan sobre esa misma Py).
-          const pyPrev = this.paw;
-          const nodo = (dt: number, vEst: number, pmus: number): number => {
-            const f = (py: number): number => p.pawForFlow(qCmd - (cc * (py - pyPrev)) / dt, pmus, vEst) - py;
-            let lo = Math.min(pyPrev, p.pel(vEst)) - 30,
-              hi = Math.max(pyPrev, p.pel(vEst)) + 80;
-            for (let i = 0; i < 60 && f(lo) < 0; i++) lo -= Math.max(1, Math.abs(lo));
-            for (let i = 0; i < 60 && f(hi) > 0; i++) hi += Math.max(1, Math.abs(hi));
-            for (let i = 0; i < 48; i++) {
-              const mid = (lo + hi) / 2;
-              if (f(mid) > 0) lo = mid;
-              else hi = mid;
-            }
-            return (lo + hi) / 2;
-          };
-          const paw0 = nodo(h * 1e-3, p.v, this.pmusAt(this.simT)); // la presión de nodo casi instantánea al entrar el flujo
-          const paw1 = nodo(h, p.v + qCmd * h, this.pmusAt(this.simT + h));
-          const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
-          const used = Math.max(0, Math.min(h, frac * h));
-          const py = nodo(Math.max(used, 1e-9), p.v, this.pmusAt(this.simT + used));
-          const qLung = qCmd - (cc * (py - pyPrev)) / Math.max(used, 1e-9);
-          p.integrateFlowSource(qLung, used, this.pmusAt(this.simT));
-          this.vCirc += cc * (py - pyPrev);
-          this.paw = py;
-          if (this.breath) this.breath.vtInsp += qCmd * used; // VTi de pantalla: lo que entregó la máquina
-          this.q = used > 0 || hit !== 'plimit' ? qCmd : Math.max(0, p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v));
-          if (this.breath && used > 0) {
-            this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
-            if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
-          }
-          if (hit === 'pmax') {
-            this.paw = s.pmax;
-            this.transition = () => this.onPmax();
-          } else if (hit === 'plimit') {
-            this.paw = s.plimit;
-            this.transition = () => this.onPlimit();
-          }
-          return used;
-        }
-        const paw0 = p.pawForFlow(qCmd, this.pmusAt(this.simT), p.v);
-        const paw1 = p.pawForFlow(qCmd, this.pmusAt(this.simT + h), p.v + qCmd * h);
-        const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
-        const used = Math.max(0, Math.min(h, frac * h));
-        const { dV } = p.integrateFlowSource(qCmd, used, this.pmusAt(this.simT));
-        if (this.breath) this.breath.vtInsp += dV;
-        // Si la presión ya está en Plimit al empezar, no entra el flujo ordenado: el del instante es el que deja pasar
-        // Plimit (el de la fase limitada). Antes se anotaba el ordenado y la curva mostraba un pico que nunca entró.
-        this.q = used > 0 || hit !== 'plimit' ? qCmd : Math.max(0, p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v));
-        this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
-        if (this.breath && used > 0) {
-          this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
-          if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
-        }
-        // En el instante del cruce la presión de vía aérea es exactamente el umbral: la válvula actúa allí (no se registra
-        // la presión hipotética que habría producido el flujo completo).
-        if (hit === 'pmax') {
-          this.paw = s.pmax;
-          this.transition = () => this.onPmax();
-        } else if (hit === 'plimit') {
-          this.paw = s.plimit;
-          this.transition = () => this.onPlimit();
-        }
-        return used;
-      }
+      case 'standby':
+        return this.integrarEspera(h);
+      case 'inspFlow':
+        return this.integrarFlujo(h);
       case 'inspPressure':
-      case 'inspSupport': {
-        // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma exponencial P).
-        // CPAP/PS: la misma fuente de presión con PEEP + PS (D ficha 2014), ciclada por la caída del flujo (más abajo).
-        // Una sola «Rampa» por modo: en PC es el Rise Time y en CPAP/PS hace de PS Rise Time (el equipo tiene las dos por
-        // separado, 100 y 50 ms de fábrica, URM SW10 11-9; aquí el diálogo de cada modo muestra la suya).
-        const rise = s.riseMs / 1000;
-        const pAbove = this.breath?.pAbove ?? s.pinsp;
-        // Rampa de primer orden: el tiempo de rampa es el que tarda en llegar al 90 % (D), forma exponencial P.
-        const tauRise = rise / RISE_TIME_TAU_FRACTION; // 0 → escalón
-        const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? 1 - Math.exp(-tb / tauRise) : 1);
-        const tb0 = this.tBreath;
-        const b0 = this.breath;
-        // Sub-pasos de 1 ms mientras dura la rampa o mientras la válvula limita: el flujo servible cambia rápido.
-        const nSub = (rise > 0 && tb0 < rise) || b0?.valvulaLimita ? Math.max(1, Math.ceil(h / 0.001)) : 1;
-        let limito = false;
-        let dVtot = 0;
-        let dVLeakTot = 0;
-        let qLast = 0;
-        let pawLast = targetAt(tb0 + h);
-        const hs = h / nSub;
-        let dVexp = 0;
-        for (let i = 0; i < nSub; i++) {
-          const tb = tb0 + (i + 1) * hs;
-          const tg = targetAt(tb);
-          // Fuente de presión con el flujo que la válvula alcanza a servir dentro del integrador: si ese tope actúa, la
-          // presión queda por debajo del objetivo y el error acelera la válvula (lazo de ganancia finita).
-          const tope = Math.min(ACTUATOR_MAX_FLOW_LPS, b0?.qValvula ?? ACTUATOR_MAX_FLOW_LPS);
-          // En soporte la válvula inspiratoria no admite flujo de vuelta: si el paciente empuja, la Pva sube (ciclado por presión).
-          const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, this.phase === 'inspSupport', tope);
-          if (r.clamped && b0 && r.qEnd + r.qLeakEnd > 0) {
-            limito = true;
-            b0.qValvula = Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula + this.gananciaLazo() * Math.max(0, tg - r.pyEnd) * hs);
-          }
-          if (r.dV >= 0) dVtot += r.dV;
-          else dVexp -= r.dV; // flujo negativo (válvula espiratoria activa tras bajar la PEEP): cuenta como espirado, nunca VTi negativo
-          dVLeakTot += r.dVLeak;
-          qLast = r.qEnd + r.qLeakEnd; // lo que mide el ventilador: al pulmón y a la fuga
-          pawLast = r.clamped ? r.pyEnd : tg;
-        }
-        // El circuito compresible también entrega/recoge gas por el sensor de la máquina (la fuente de presión no lo mueve).
-        // El gas comprimido comparte el mismo presupuesto del actuador que el flujo al pulmón+fuga: sin qOther el
-        // sensor podía mostrar 2×160 L/min (320) — un tope para cada gasto es como no tener tope.
-        if (b0) b0.valvulaLimita = limito;
-        const delta = this.circuitTransfer(pawLast, h, qLast, b0 ? Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula) : ACTUATOR_MAX_FLOW_LPS);
-        if (this.breath) {
-          this.breath.vtInsp += dVtot + dVLeakTot + Math.max(0, delta); // VTi de pantalla: lo entregado, fuga incluida
-          this.breath.vtExp += dVexp + Math.max(0, -delta);
-        }
-        this.q = qLast + delta / h;
-        this.paw = pawLast;
-        if (this.paw >= s.pmax) this.transition = () => this.onPmax();
-        else if (this.phase === 'inspSupport' && this.breath) {
-          // Ciclado por flujo (D ficha 2014 «Trigger Espiratorio: % de flujo pico»): pasada la rampa se registra el flujo pico y
-          // la inspiración termina cuando el flujo ya cayó al porcentaje programado. Con el flujo aún subiendo no hay pico
-          // que comparar; el tope de tiempo (SUPPORT_TI_MAX_S) lo pone el temporizador de la fase.
-          const b = this.breath;
-          if (tb0 + h >= rise) b.qPeak = Math.max(b.qPeak, qLast);
-          if (this.paw > this.peepTarget + pAbove + PS_PRESSURE_CYCLE_CMH2O) this.transition = () => this.endInspiration('pressure');
-          else if (b.qPeak > 1e-6 && qLast < b.qPeak - 1e-9 && qLast <= s.expTriggerPct * b.qPeak)
-            this.transition = () => this.endInspiration('flow');
-        }
-        return h;
-      }
-      case 'inspLimited': {
-        const qCheck = p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v);
-        if (qCheck <= 0) {
-          // La válvula inspiratoria no admite flujo negativo: sistema ocluido. Misma física que una pausa, así que
-          // el elemento viscoelástico relaja y el gas se redistribuye igual que allí.
-          this.q = 0;
-          p.integrateFlowSource(0, h, this.pmusAt(this.simT));
-          this.occludeCircuit(h);
-          this.paw = p.pawForFlow(0, this.pmusAt(this.simT + h));
-          if (this.paw >= s.pmax) {
-            this.transition = () => this.onPmax();
-            return 0;
-          }
-          return h;
-        }
-        const { dV, dVLeak, qEnd, qLeakEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
-        const delta = this.circuitTransfer(s.plimit, h, qEnd + qLeakEnd);
-        if (this.breath) {
-          this.breath.vtInsp += dV + dVLeak + Math.max(0, delta);
-          this.breath.vtExp += Math.max(0, -delta);
-        }
-        this.q = qEnd + qLeakEnd + delta / h;
-        this.paw = s.plimit;
-        // Con el flujo compensado el VT puede completarse bajo Plimit: entregado, el resto de la inspiración es pausa.
-        const bv = this.breath;
-        if (bv && bv.ganVc > 1 && bv.vtSetL !== null && bv.vtInsp >= bv.vtSetL)
-          this.transition = () => {
-            this.phase = 'inspPause';
-            this.tPhase = 0;
-          };
-        return h;
-      }
+      case 'inspSupport':
+        return this.integrarPresion(h);
+      case 'inspLimited':
+        return this.integrarLimitada(h);
       case 'inspPause':
       case 'holdInsp':
-      case 'holdExp': {
-        this.q = 0;
-        // El músculo se lee antes de integrar: el generador puede cambiar de período a mitad de paso y una consulta
-        // retrospectiva devolvería 0. El latido se suma aparte y no cuenta como esfuerzo.
-        const effortStart = this.effortAt(this.simT);
-        const pmusStart = effortStart + this.cardiacAt(this.simT);
-        p.integrateFlowSource(0, h, pmusStart); // oclusión del ventilador: puede salir gas por fuga y redistribuirse entre unidades
-        this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
-        // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
-        const effortEnd = this.effortAt(this.simT + h);
-        const pmusEnd = effortEnd + this.cardiacAt(this.simT + h);
-        this.paw = p.pawForFlow(0, pmusEnd);
-        const effortDuringOcclusion = Math.max(Math.abs(effortStart), Math.abs(effortEnd)) > 0.05;
-        if (this.phase === 'inspPause' && this.breath) {
-          this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
-          if (effortDuringOcclusion) this.breath.effortDuringPause = true;
-        }
-        if (this.hold) {
-          this.hold.samples.push({ t: this.tPhase + h, paw: this.paw });
-          // Toda la maniobra, incluido el arranque que el filtro de estabilidad descarta.
-          if (effortDuringOcclusion) this.hold.effortDuringHold = true;
-          if (this.paw >= s.pmax) this.hold.pmaxHit = true;
-        }
-        if (this.phase === 'inspPause' && this.paw >= s.pmax) this.transition = () => this.onPmax();
-        return h;
-      }
-      case 'exp': {
-        const peep = this.peepTarget;
-        // La válvula espiratoria mantiene la PEEP hasta el flujo de base programado (D 2–10 L/min); un esfuerzo mayor hunde la Pva.
-        // La rama espiratoria + válvula añaden una resistencia en serie (D techo ≤ 6 cmH2O; valor del banco de Pinède): la Pva
-        // en la pieza en Y queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
-        const rValve = p.params.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L;
-        const tOpen = Math.max(0, (p.params.expValveOpenMs ?? DEFAULT_EXP_VALVE_OPEN_MS) / 1000);
-        // Regulador de PEEP con ancho de banda finito (U-43): si el paciente tira gas (demanda > 0) la fuente no es
-        // ideal sino peep + K·demandaYaCompensada con una resistencia extra K. En álgebra, py = peep − rValve·q −
-        // K·(q − qFilt): la caída es proporcional a la demanda NO compensada y desaparece en régimen cuando qFilt ≈ q.
-        const K = PEEP_REGULATOR_DROOP_CMH2O_S_L;
-        const qLibre = p.flowForPaw(peep, this.pmusAt(this.simT), p.v, rValve);
-        const pawSrc = qLibre > 0 ? peep + K * this.qDemandFilt : peep,
-          rDroop = qLibre > 0 ? K : 0,
-          // La rama y la válvula espiratorias sólo frenan el gas que SALE del paciente: lo que inhala durante la espiración
-          // le llega del flujo de base por la rama inspiratoria, y eso lo representa el regulador de PEEP (rDroop).
-          rRama = qLibre > 0 ? 0 : rValve,
-          rCerrada = qLibre > 0 ? 0 : VALVE_CLOSED_R;
-        let dV = 0,
-          dVLeak = 0,
-          qEnd = 0,
-          qLeakEnd = 0,
-          pyEnd = peep;
-        if (this.tPhase < tOpen) {
-          // La válvula se abre progresivamente: su resistencia decae desde la de cerrada hasta la de la rama.
-          // El flujo arranca casi nulo y la Pva parte de la presión alveolar, en vez de saltar a la PEEP.
-          const nSub = Math.max(1, Math.ceil(h / 0.001));
-          const hs = h / nSub;
-          for (let i = 0; i < nSub; i++) {
-            const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
-            const rNow = rRama + rDroop + rCerrada * u * u;
-            const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
-            dV += r.dV;
-            dVLeak += r.dVLeak;
-            qEnd = r.qEnd;
-            qLeakEnd = r.qLeakEnd;
-            pyEnd = r.pyEnd;
-          }
-        } else {
-          const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT, h, false, s.biasFlow, rRama + rDroop, EXP_MAX_FLOW_LPS);
-          dV = r.dV;
-          dVLeak = r.dVLeak;
-          qEnd = r.qEnd;
-          qLeakEnd = r.qLeakEnd;
-          pyEnd = r.pyEnd;
-        }
-        // Acción integral del regulador: la demanda ya compensada sigue al flujo que la máquina realmente sirve
-        // (q > 0 = hacia el paciente) con τ de 0,1 s. En espiración pasiva decae a 0 y la vía queda como antes.
-        const qVent = Math.max(0, qEnd + qLeakEnd);
-        this.qDemandFilt += Math.min(1, h / PEEP_REGULATOR_TAU_S) * (qVent - this.qDemandFilt);
-        // El gas comprimido en el circuito vuelve por la válvula como un flujo más: lo ve el sensor de la máquina.
-        const delta = this.circuitTransfer(pyEnd, h, qEnd + qLeakEnd);
-        // VTe de pantalla: la integral del flujo que ve el sensor de la máquina durante la espiración, con su signo. Lo que el
-        // paciente inhala en la espiración (latido, esfuerzo que no dispara) y la fuga que se lleva el flujo de base se
-        // restan, como en un sensor diferencial; antes cada paso de 4 ms se rectificaba y esos tramos se perdían.
-        if (this.breath) this.breath.vtExp += -dV - dVLeak - delta;
-        // Flujo de pantalla: el del sensor del ventilador, que ve la fuga como si fuera el paciente.
-        this.q = qEnd + qLeakEnd + delta / h;
-        // La presión mostrada es la del nodo (pieza en Y): con resistencia de rama queda sobre la PEEP mientras sale gas.
-        this.paw = pyEnd;
-        this.lastExpPaw = this.paw;
-        this.expPawTrace.push({ t: this.simT + h, paw: this.paw });
-        while (this.expPawTrace.length && (this.expPawTrace[0] as { t: number }).t < this.simT + h - PEEPE_TRACE_S)
-          this.expPawTrace.shift();
-        // La guardia de disparo mira si esta espiración SOSTUVO la PEEP (dwell continuo), no si la Paw del
-        // instante está alta: un esfuerzo que la hunde debe poder disparar con cualquier umbral admitido.
-        if (this.paw > peep - TRIGGER_MIN_PEEP_DROP_CMH2O) this.peepHeldS += h;
-        else this.peepHeldS = 0;
-        if (this.peepHeldS >= TRIGGER_PEEP_DWELL_S) this.peepDemostrada = true;
-        if (this.manualRequested) {
-          // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); se sirve en cuanto la
-          // espiración lleva la pausa de 0,25 s que exige el equipo entre respiraciones (D).
-          if (this.tPhase + h >= MANUAL_BREATH_PAUSE_S - EPS) {
-            this.manualRequested = false;
-            this.transition = () => this.endExpiration('manual');
-          }
-        } else if (
-          !this.triggerPending &&
-          (s.assistControl || s.mode === 'CPAP_PS') &&
-          this.tPhase + h >= TRIGGER_REFRACTORY_S &&
-          // Sin PEEP en el circuito (desconexión, fuga mayor que el flujo de base) no hay disparo que evaluar:
-          // con el circuito abierto la espiración nunca sostiene PEEP y la bandera no se iza (P).
-          this.peepDemostrada &&
-          (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : this.q >= s.flowTrigger)
-        ) {
-          // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
-          // paciente tira del flujo de base. En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida.
-          this.triggerPending = {
-            atS: this.simT + h,
-            next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted',
-            delayS: TRIGGER_DELAY_S,
-          };
-          this.lastTriggerDetectedS = this.simT + h;
-          this.events.push({ type: 'trigger', breathId: this.breath?.breathId ?? '', simTimeS: this.simT + h, qLps: qEnd });
-        }
-        return h;
-      }
+      case 'holdExp':
+        return this.integrarOcluida(h);
+      case 'exp':
+        return this.integrarEspiracion(h);
       default:
         return h;
+    }
+  }
+
+  /** En espera: la vía aérea a presión ambiente. */
+  private integrarEspera(h: number): number {
+    const p = this.patient;
+    const { qEnd, qLeakEnd } = p.integratePressureSource(0, this.pmusAt, this.simT, h);
+    this.paw = 0;
+    this.q = qEnd + qLeakEnd + this.circuitTransfer(0, h, qEnd + qLeakEnd) / h;
+    return h;
+  }
+
+  /** Inspiración de volumen control: fuente de flujo hasta Plimit o Pmáx. */
+  private integrarFlujo(h: number): number {
+    const p = this.patient;
+    const s = this.settings;
+    const qCmd = this.breath?.qVc ?? this.timing.qTargetLps;
+    const cc = p.circuitComplianceL;
+    if (cc > 0) {
+      // Circuito compresible: el sensor es de la máquina, así que lo ordenado (qCmd) es flujo de pulmón más
+      // compresión. El nodo Py resuelve Paw(qPulmón) = Py con qPulmón = qCmd − Cc·(Py − PyPrev)/Δt: función
+      // decreciente en Py, raíz única por bisección (los límites se evalúan sobre esa misma Py).
+      const pyPrev = this.paw;
+      const nodo = (dt: number, vEst: number, pmus: number): number => {
+        const f = (py: number): number => p.pawForFlow(qCmd - (cc * (py - pyPrev)) / dt, pmus, vEst) - py;
+        let lo = Math.min(pyPrev, p.pel(vEst)) - 30,
+          hi = Math.max(pyPrev, p.pel(vEst)) + 80;
+        for (let i = 0; i < 60 && f(lo) < 0; i++) lo -= Math.max(1, Math.abs(lo));
+        for (let i = 0; i < 60 && f(hi) > 0; i++) hi += Math.max(1, Math.abs(hi));
+        for (let i = 0; i < 48; i++) {
+          const mid = (lo + hi) / 2;
+          if (f(mid) > 0) lo = mid;
+          else hi = mid;
+        }
+        return (lo + hi) / 2;
+      };
+      const paw0 = nodo(h * 1e-3, p.v, this.pmusAt(this.simT)); // la presión de nodo casi instantánea al entrar el flujo
+      const paw1 = nodo(h, p.v + qCmd * h, this.pmusAt(this.simT + h));
+      const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
+      const used = Math.max(0, Math.min(h, frac * h));
+      const py = nodo(Math.max(used, 1e-9), p.v, this.pmusAt(this.simT + used));
+      const qLung = qCmd - (cc * (py - pyPrev)) / Math.max(used, 1e-9);
+      p.integrateFlowSource(qLung, used, this.pmusAt(this.simT));
+      this.vCirc += cc * (py - pyPrev);
+      this.paw = py;
+      if (this.breath) this.breath.vtInsp += qCmd * used; // VTi de pantalla: lo que entregó la máquina
+      this.q = used > 0 || hit !== 'plimit' ? qCmd : Math.max(0, p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v));
+      if (this.breath && used > 0) {
+        this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
+        if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
+      }
+      if (hit === 'pmax') {
+        this.paw = s.pmax;
+        this.transition = () => this.onPmax();
+      } else if (hit === 'plimit') {
+        this.paw = s.plimit;
+        this.transition = () => this.onPlimit();
+      }
+      return used;
+    }
+    const paw0 = p.pawForFlow(qCmd, this.pmusAt(this.simT), p.v);
+    const paw1 = p.pawForFlow(qCmd, this.pmusAt(this.simT + h), p.v + qCmd * h);
+    const { frac, hit } = thresholdCrossing(paw0, paw1, s.plimit, s.pmax);
+    const used = Math.max(0, Math.min(h, frac * h));
+    const { dV } = p.integrateFlowSource(qCmd, used, this.pmusAt(this.simT));
+    if (this.breath) this.breath.vtInsp += dV;
+    // Si la presión ya está en Plimit al empezar, no entra el flujo ordenado: el del instante es el que deja pasar
+    // Plimit (el de la fase limitada). Antes se anotaba el ordenado y la curva mostraba un pico que nunca entró.
+    this.q = used > 0 || hit !== 'plimit' ? qCmd : Math.max(0, p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v));
+    this.paw = p.pawForFlow(qCmd, this.pmusAt(this.simT + used), p.v);
+    if (this.breath && used > 0) {
+      this.breath.flowSamples.push({ t: this.tBreath, paw: this.paw });
+      if (Math.abs(this.effortAt(this.simT)) > 0.05) this.breath.effortInFlow = true;
+    }
+    // En el instante del cruce la presión de vía aérea es exactamente el umbral: la válvula actúa allí (no se registra
+    // la presión hipotética que habría producido el flujo completo).
+    if (hit === 'pmax') {
+      this.paw = s.pmax;
+      this.transition = () => this.onPmax();
+    } else if (hit === 'plimit') {
+      this.paw = s.plimit;
+      this.transition = () => this.onPlimit();
+    }
+    return used;
+  }
+
+  /** Inspiración por presión (A/C PC, respaldo) o de soporte: lazo de presión con la válvula inspiratoria. */
+  private integrarPresion(h: number): number {
+    const p = this.patient;
+    const s = this.settings;
+    // A/C PC (D JB72469XX: presión objetivo = PEEP + Pinsp; alto flujo inicial que decae; rampa D ficha 2014, forma exponencial P).
+    // CPAP/PS: la misma fuente de presión con PEEP + PS (D ficha 2014), ciclada por la caída del flujo (más abajo).
+    // Una sola «Rampa» por modo: en PC es el Rise Time y en CPAP/PS hace de PS Rise Time (el equipo tiene las dos por
+    // separado, 100 y 50 ms de fábrica, URM SW10 11-9; aquí el diálogo de cada modo muestra la suya).
+    const rise = s.riseMs / 1000;
+    const pAbove = this.breath?.pAbove ?? s.pinsp;
+    // Rampa de primer orden: el tiempo de rampa es el que tarda en llegar al 90 % (D), forma exponencial P.
+    const tauRise = rise / RISE_TIME_TAU_FRACTION; // 0 → escalón
+    const targetAt = (tb: number): number => this.peepTarget + pAbove * (rise > 0 ? 1 - Math.exp(-tb / tauRise) : 1);
+    const tb0 = this.tBreath;
+    const b0 = this.breath;
+    // Sub-pasos de 1 ms mientras dura la rampa o mientras la válvula limita: el flujo servible cambia rápido.
+    const nSub = (rise > 0 && tb0 < rise) || b0?.valvulaLimita ? Math.max(1, Math.ceil(h / 0.001)) : 1;
+    let limito = false;
+    let dVtot = 0;
+    let dVLeakTot = 0;
+    let qLast = 0;
+    let pawLast = targetAt(tb0 + h);
+    const hs = h / nSub;
+    let dVexp = 0;
+    for (let i = 0; i < nSub; i++) {
+      const tb = tb0 + (i + 1) * hs;
+      const tg = targetAt(tb);
+      // Fuente de presión con el flujo que la válvula alcanza a servir dentro del integrador: si ese tope actúa, la
+      // presión queda por debajo del objetivo y el error acelera la válvula (lazo de ganancia finita).
+      const tope = Math.min(ACTUATOR_MAX_FLOW_LPS, b0?.qValvula ?? ACTUATOR_MAX_FLOW_LPS);
+      // En soporte la válvula inspiratoria no admite flujo de vuelta: si el paciente empuja, la Pva sube (ciclado por presión).
+      const r = p.integratePressureSource(tg, this.pmusAt, this.simT + i * hs, hs, this.phase === 'inspSupport', tope);
+      if (r.clamped && b0 && r.qEnd + r.qLeakEnd > 0) {
+        limito = true;
+        b0.qValvula = Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula + this.gananciaLazo() * Math.max(0, tg - r.pyEnd) * hs);
+      }
+      if (r.dV >= 0) dVtot += r.dV;
+      else dVexp -= r.dV; // flujo negativo (válvula espiratoria activa tras bajar la PEEP): cuenta como espirado, nunca VTi negativo
+      dVLeakTot += r.dVLeak;
+      qLast = r.qEnd + r.qLeakEnd; // lo que mide el ventilador: al pulmón y a la fuga
+      pawLast = r.clamped ? r.pyEnd : tg;
+    }
+    // El circuito compresible también entrega/recoge gas por el sensor de la máquina (la fuente de presión no lo mueve).
+    // El gas comprimido comparte el mismo presupuesto del actuador que el flujo al pulmón+fuga: sin qOther el
+    // sensor podía mostrar 2×160 L/min (320) — un tope para cada gasto es como no tener tope.
+    if (b0) b0.valvulaLimita = limito;
+    const delta = this.circuitTransfer(pawLast, h, qLast, b0 ? Math.min(ACTUATOR_MAX_FLOW_LPS, b0.qValvula) : ACTUATOR_MAX_FLOW_LPS);
+    if (this.breath) {
+      this.breath.vtInsp += dVtot + dVLeakTot + Math.max(0, delta); // VTi de pantalla: lo entregado, fuga incluida
+      this.breath.vtExp += dVexp + Math.max(0, -delta);
+    }
+    this.q = qLast + delta / h;
+    this.paw = pawLast;
+    if (this.paw >= s.pmax) this.transition = () => this.onPmax();
+    else if (this.phase === 'inspSupport' && this.breath) {
+      // Ciclado por flujo (D ficha 2014 «Trigger Espiratorio: % de flujo pico»): pasada la rampa se registra el flujo pico y
+      // la inspiración termina cuando el flujo ya cayó al porcentaje programado. Con el flujo aún subiendo no hay pico
+      // que comparar; el tope de tiempo (SUPPORT_TI_MAX_S) lo pone el temporizador de la fase.
+      const b = this.breath;
+      if (tb0 + h >= rise) b.qPeak = Math.max(b.qPeak, qLast);
+      if (this.paw > this.peepTarget + pAbove + PS_PRESSURE_CYCLE_CMH2O) this.transition = () => this.endInspiration('pressure');
+      else if (b.qPeak > 1e-6 && qLast < b.qPeak - 1e-9 && qLast <= s.expTriggerPct * b.qPeak)
+        this.transition = () => this.endInspiration('flow');
+    }
+    return h;
+  }
+
+  /** Inspiración de volumen control sostenida en Plimit. */
+  private integrarLimitada(h: number): number {
+    const p = this.patient;
+    const s = this.settings;
+    const qCheck = p.flowForPaw(s.plimit, this.pmusAt(this.simT), p.v);
+    if (qCheck <= 0) {
+      // La válvula inspiratoria no admite flujo negativo: sistema ocluido. Misma física que una pausa, así que
+      // el elemento viscoelástico relaja y el gas se redistribuye igual que allí.
+      this.q = 0;
+      p.integrateFlowSource(0, h, this.pmusAt(this.simT));
+      this.occludeCircuit(h);
+      this.paw = p.pawForFlow(0, this.pmusAt(this.simT + h));
+      if (this.paw >= s.pmax) {
+        this.transition = () => this.onPmax();
+        return 0;
+      }
+      return h;
+    }
+    const { dV, dVLeak, qEnd, qLeakEnd } = p.integratePressureSource(s.plimit, this.pmusAt, this.simT, h, true); // válvula de un solo sentido: Q ≥ 0
+    const delta = this.circuitTransfer(s.plimit, h, qEnd + qLeakEnd);
+    if (this.breath) {
+      this.breath.vtInsp += dV + dVLeak + Math.max(0, delta);
+      this.breath.vtExp += Math.max(0, -delta);
+    }
+    this.q = qEnd + qLeakEnd + delta / h;
+    this.paw = s.plimit;
+    // Con el flujo compensado el VT puede completarse bajo Plimit: entregado, el resto de la inspiración es pausa.
+    const bv = this.breath;
+    if (bv && bv.ganVc > 1 && bv.vtSetL !== null && bv.vtInsp >= bv.vtSetL)
+      this.transition = () => {
+        this.phase = 'inspPause';
+        this.tPhase = 0;
+      };
+    return h;
+  }
+
+  /** Pausa y bloqueos: el circuito ocluido. */
+  private integrarOcluida(h: number): number {
+    const p = this.patient;
+    const s = this.settings;
+    this.q = 0;
+    // El músculo se lee antes de integrar: el generador puede cambiar de período a mitad de paso y una consulta
+    // retrospectiva devolvería 0. El latido se suma aparte y no cuenta como esfuerzo.
+    const effortStart = this.effortAt(this.simT);
+    const pmusStart = effortStart + this.cardiacAt(this.simT);
+    p.integrateFlowSource(0, h, pmusStart); // oclusión del ventilador: puede salir gas por fuga y redistribuirse entre unidades
+    this.occludeCircuit(h); // el gas comprimido en el circuito pasa al pulmón y la meseta cae un poco más
+    // Con dos unidades la presión de la vía aérea es la del NODO (media ponderada por conductancias), no la de una de ellas.
+    const effortEnd = this.effortAt(this.simT + h);
+    const pmusEnd = effortEnd + this.cardiacAt(this.simT + h);
+    this.paw = p.pawForFlow(0, pmusEnd);
+    const effortDuringOcclusion = Math.max(Math.abs(effortStart), Math.abs(effortEnd)) > 0.05;
+    if (this.phase === 'inspPause' && this.breath) {
+      this.breath.pauseSamples.push({ t: this.tPhase + h, paw: this.paw });
+      if (effortDuringOcclusion) this.breath.effortDuringPause = true;
+    }
+    if (this.hold) {
+      this.hold.samples.push({ t: this.tPhase + h, paw: this.paw });
+      // Toda la maniobra, incluido el arranque que el filtro de estabilidad descarta.
+      if (effortDuringOcclusion) this.hold.effortDuringHold = true;
+      if (this.paw >= s.pmax) this.hold.pmaxHit = true;
+    }
+    if (this.phase === 'inspPause' && this.paw >= s.pmax) this.transition = () => this.onPmax();
+    return h;
+  }
+
+  /** Espiración: fuente de presión a PEEP, apertura de la válvula y detección del disparo. */
+  private integrarEspiracion(h: number): number {
+    const p = this.patient;
+    const s = this.settings;
+    const peep = this.peepTarget;
+    // La válvula espiratoria mantiene la PEEP hasta el flujo de base programado (D 2–10 L/min); un esfuerzo mayor hunde la Pva.
+    // La rama espiratoria + válvula añaden una resistencia en serie (D techo ≤ 6 cmH2O; valor del banco de Pinède): la Pva
+    // en la pieza en Y queda por encima de PEEP mientras sale gas, proporcional al flujo espiratorio.
+    const rValve = p.params.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L;
+    const tOpen = Math.max(0, (p.params.expValveOpenMs ?? DEFAULT_EXP_VALVE_OPEN_MS) / 1000);
+    // Regulador de PEEP con ancho de banda finito (U-43): si el paciente tira gas (demanda > 0) la fuente no es
+    // ideal sino peep + K·demandaYaCompensada con una resistencia extra K. En álgebra, py = peep − rValve·q −
+    // K·(q − qFilt): la caída es proporcional a la demanda NO compensada y desaparece en régimen cuando qFilt ≈ q.
+    const K = PEEP_REGULATOR_DROOP_CMH2O_S_L;
+    const qLibre = p.flowForPaw(peep, this.pmusAt(this.simT), p.v, rValve);
+    const pawSrc = qLibre > 0 ? peep + K * this.qDemandFilt : peep,
+      rDroop = qLibre > 0 ? K : 0,
+      // La rama y la válvula espiratorias sólo frenan el gas que SALE del paciente: lo que inhala durante la espiración
+      // le llega del flujo de base por la rama inspiratoria, y eso lo representa el regulador de PEEP (rDroop).
+      rRama = qLibre > 0 ? 0 : rValve,
+      rCerrada = qLibre > 0 ? 0 : VALVE_CLOSED_R;
+    let dV = 0,
+      dVLeak = 0,
+      qEnd = 0,
+      qLeakEnd = 0,
+      pyEnd = peep;
+    if (this.tPhase < tOpen) {
+      // La válvula se abre progresivamente: su resistencia decae desde la de cerrada hasta la de la rama.
+      // El flujo arranca casi nulo y la Pva parte de la presión alveolar, en vez de saltar a la PEEP.
+      const nSub = Math.max(1, Math.ceil(h / 0.001));
+      const hs = h / nSub;
+      for (let i = 0; i < nSub; i++) {
+        const u = Math.max(0, 1 - (this.tPhase + (i + 0.5) * hs) / tOpen);
+        const rNow = rRama + rDroop + rCerrada * u * u;
+        const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT + i * hs, hs, false, s.biasFlow, rNow, EXP_MAX_FLOW_LPS);
+        dV += r.dV;
+        dVLeak += r.dVLeak;
+        qEnd = r.qEnd;
+        qLeakEnd = r.qLeakEnd;
+        pyEnd = r.pyEnd;
+      }
+    } else {
+      const r = p.integratePressureSource(pawSrc, this.pmusAt, this.simT, h, false, s.biasFlow, rRama + rDroop, EXP_MAX_FLOW_LPS);
+      dV = r.dV;
+      dVLeak = r.dVLeak;
+      qEnd = r.qEnd;
+      qLeakEnd = r.qLeakEnd;
+      pyEnd = r.pyEnd;
+    }
+    // Acción integral del regulador: la demanda ya compensada sigue al flujo que la máquina realmente sirve
+    // (q > 0 = hacia el paciente) con τ de 0,1 s. En espiración pasiva decae a 0 y la vía queda como antes.
+    const qVent = Math.max(0, qEnd + qLeakEnd);
+    this.qDemandFilt += Math.min(1, h / PEEP_REGULATOR_TAU_S) * (qVent - this.qDemandFilt);
+    // El gas comprimido en el circuito vuelve por la válvula como un flujo más: lo ve el sensor de la máquina.
+    const delta = this.circuitTransfer(pyEnd, h, qEnd + qLeakEnd);
+    // VTe de pantalla: la integral del flujo que ve el sensor de la máquina durante la espiración, con su signo. Lo que el
+    // paciente inhala en la espiración (latido, esfuerzo que no dispara) y la fuga que se lleva el flujo de base se
+    // restan, como en un sensor diferencial; antes cada paso de 4 ms se rectificaba y esos tramos se perdían.
+    if (this.breath) this.breath.vtExp += -dV - dVLeak - delta;
+    // Flujo de pantalla: el del sensor del ventilador, que ve la fuga como si fuera el paciente.
+    this.q = qEnd + qLeakEnd + delta / h;
+    // La presión mostrada es la del nodo (pieza en Y): con resistencia de rama queda sobre la PEEP mientras sale gas.
+    this.paw = pyEnd;
+    this.lastExpPaw = this.paw;
+    this.expPawTrace.push({ t: this.simT + h, paw: this.paw });
+    while (this.expPawTrace.length && (this.expPawTrace[0] as { t: number }).t < this.simT + h - PEEPE_TRACE_S) this.expPawTrace.shift();
+    this.vigilarDisparo(h, peep, qEnd);
+    return h;
+  }
+
+  /**
+   * Al final de cada paso de la espiración: la respiración manual pendiente o el disparo del paciente. El disparo sólo se
+   * evalúa si esta espiración sostuvo la PEEP; detectado, la respiración empieza cuando pase el retardo de respuesta.
+   */
+  private vigilarDisparo(h: number, peep: number, qEnd: number): void {
+    const s = this.settings;
+    // La guardia de disparo mira si esta espiración SOSTUVO la PEEP (dwell continuo), no si la Paw del
+    // instante está alta: un esfuerzo que la hunde debe poder disparar con cualquier umbral admitido.
+    if (this.paw > peep - TRIGGER_MIN_PEEP_DROP_CMH2O) this.peepHeldS += h;
+    else this.peepHeldS = 0;
+    if (this.peepHeldS >= TRIGGER_PEEP_DWELL_S) this.peepDemostrada = true;
+    if (this.manualRequested) {
+      // La orden explícita del usuario tiene precedencia sobre un disparo simultáneo (P); se sirve en cuanto la
+      // espiración lleva la pausa de 0,25 s que exige el equipo entre respiraciones (D).
+      if (this.tPhase + h >= MANUAL_BREATH_PAUSE_S - EPS) {
+        this.manualRequested = false;
+        this.transition = () => this.endExpiration('manual');
+      }
+    } else if (
+      !this.triggerPending &&
+      (s.assistControl || s.mode === 'CPAP_PS') &&
+      this.tPhase + h >= TRIGGER_REFRACTORY_S &&
+      // Sin PEEP en el circuito (desconexión, fuga mayor que el flujo de base) no hay disparo que evaluar:
+      // con el circuito abierto la espiración nunca sostiene PEEP y la bandera no se iza (P).
+      this.peepDemostrada &&
+      (s.triggerByPressure ? this.paw <= peep + s.pressureTrigger : this.q >= s.flowTrigger)
+    ) {
+      // Detectado: la respiración empieza cuando pase el retardo de respuesta; mientras tanto la espiración sigue y el
+      // paciente tira del flujo de base. En CPAP/PS el disparo abre una respiración del paciente (soporte); en A/C, una asistida.
+      this.triggerPending = {
+        atS: this.simT + h,
+        next: s.mode === 'CPAP_PS' ? 'spontaneous' : 'assisted',
+        delayS: TRIGGER_DELAY_S,
+      };
+      this.lastTriggerDetectedS = this.simT + h;
+      this.events.push({ type: 'trigger', breathId: this.breath?.breathId ?? '', simTimeS: this.simT + h, qLps: qEnd });
     }
   }
 
