@@ -865,9 +865,9 @@
   }
 }
 
-:is(.app-top, .instructor, .signal-toolbar, .wave-options, dialog, .flyout, .learn)
-  :is(.button, .device-small, button, a, summary, input, select):focus-visible,
-.device-shell > :not(#screen-window) :is(.button, .device-small, button, a, summary, input, select):focus-visible {
+/* El exterior: anillo del cromo. El equipo —su bisel y sus ventanas— lleva el suyo (09-instrument). */
+:is(.app-top, .instructor, .signal-toolbar, .wave-options, dialog:not(.device-dialog), .flyout, .learn)
+  :is(.button, .device-small, button, a, summary, input, select):focus-visible {
   outline: none;
   box-shadow: var(--shell-focus);
 }
