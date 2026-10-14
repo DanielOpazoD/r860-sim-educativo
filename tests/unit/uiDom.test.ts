@@ -259,6 +259,10 @@ describe('edición, medición y navegación de diálogos', () => {
     alarms.updateAlarm();
     expect($('#bezel-light').classList.contains('medium')).toBe(true);
     expect($('#bezel-light').classList.contains('pausa')).toBe(false);
+    // La banda, como en el equipo: prioridad pequeña arriba y mensaje grande debajo; el texto se lee igual que antes.
+    expect($('#alarm-label .alarm-kicker').textContent).toBe('Prioridad media');
+    expect($('#alarm-label .alarm-msg').textContent).toBe('VTesp bajo');
+    expect($('#alarm-label').textContent).toBe('Prioridad media · VTesp bajo');
     sim.command({ type: 'audioPause' });
     ctx.frame = sim.frame();
     alarms.updateAlarm();

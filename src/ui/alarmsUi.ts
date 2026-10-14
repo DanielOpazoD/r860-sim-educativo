@@ -60,6 +60,30 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     if (bar.pendingAckCount) return 'Reconocer eventos anteriores';
     return `${audioTxt[0]!.toUpperCase() + audioTxt.slice(1)} · Simulación`;
   }
+  /**
+   * Como en la banda del equipo (capturas del manual SW10, 8-8): la prioridad arriba, pequeña, y el mensaje debajo, en
+   * grande. El texto sigue siendo «Prioridad alta · mensaje» (el separador sólo se oye), para lectores de pantalla.
+   */
+  function pintarEtiqueta(texto: string): void {
+    const el = $('#alarm-label');
+    if (el.dataset.texto === texto) return;
+    el.dataset.texto = texto;
+    const [prioridad, ...resto] = texto.split(' · ');
+    if (!resto.length) {
+      el.textContent = texto;
+      return;
+    }
+    const kicker = document.createElement('span'),
+      sep = document.createElement('span'),
+      msg = document.createElement('span');
+    kicker.className = 'alarm-kicker';
+    kicker.textContent = prioridad ?? '';
+    sep.className = 'sr-only';
+    sep.textContent = ' · ';
+    msg.className = 'alarm-msg';
+    msg.textContent = resto.join(' · ');
+    el.replaceChildren(kicker, sep, msg);
+  }
   function updateAlarm(): void {
     const fr = ctx.frame as EngineFrame;
     const bar = fr.alarmBar;
@@ -70,7 +94,7 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     // a la izquierda azul mientras dura la pausa de audio (URM SW10 8-6, D).
     const luz = bar.color === 'blue' ? 'low' : lev === 'previous' ? '' : lev;
     $('#bezel-light').className = `bezel-light ${luz}${muteLeft > 0 ? ' pausa' : ''}`;
-    put('#alarm-label', alarmBandLabel(bar));
+    pintarEtiqueta(alarmBandLabel(bar));
     put('#alarm-detail', alarmDetailText(fr));
     put('#mute-time', muteLeft > 0 ? clock(Math.ceil(muteLeft / 1000)) : '');
     const flags = ctx.lesson.flags;
