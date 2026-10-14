@@ -48,7 +48,7 @@ function text(
   x: number,
   y: number,
   size = 11,
-  color = '#98d8ff',
+  color: string = PLOT_TEXT_COLORS.tickCurvas,
   align: CanvasTextAlign = 'left',
   weight = 'normal',
 ): void {
@@ -934,7 +934,7 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     ];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, 'Pva · V', left, top - 9, 10, '#c4f0ff', 'left');
+  text(ctx, 'Pva · V', left, top - 9, 10, '#ffffff', 'left');
   text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, 10, '#b2a5ee', 'left');
   for (let k = 0; k <= 3; k++) {
     const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 3,
@@ -944,8 +944,8 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     text(ctx, format(x), xf(x), bottom + 12, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
     text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
   }
-  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#a8e6f799', 1);
-  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), '#a8e6f799', 1);
+  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#d8e2ecc0', 1);
+  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), '#d8e2ecc0', 1);
   const path = (data: Point[], xOf: (p: Point) => number, color: string, alpha: number): void => {
     if (!data.length) return;
     ctx.save();
@@ -967,12 +967,13 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
   };
   // El ciclo en curso se dibuja primero y el completo encima, para que el bucle cerrado mande.
   if (completo.length) {
-    path(actual, (p) => p[1], '#c4f0ff', 0.45);
+    path(actual, (p) => p[1], '#ffffff', 0.45);
     if (esfActual) path(actual, (p) => p[1] + p[4], '#b2a5ee', 0.45);
   }
-  path(base, (p) => p[1], '#c4f0ff', 1);
+  path(base, (p) => p[1], '#ffffff', 1);
   if (esfBase) path(base, (p) => p[1] + p[4], '#b2a5ee', 1);
-  if (!esfBase && !esfActual) text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, '#85a3b9', 'center');
+  if (!esfBase && !esfActual)
+    text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, PLOT_TEXT_COLORS.tickBucles, 'center');
 }
 
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {
@@ -985,7 +986,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
       label: 'Presiones',
       unit: 'cmH₂O',
       keys: [
-        ['ppeak', '#cff7f4', 'Ppico'],
+        ['ppeak', '#ffffff', 'Ppico'],
         ['peep', '#64d7c4', 'PEEPe'],
       ] as [keyof TrendRow, string, string][],
       max: nice(Math.max(30, ...visible.map((x) => x.ppeak ?? 0)) * 1.15, [40, 60, 80, 120]),
@@ -993,7 +994,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
     {
       label: 'Volumen espirado',
       unit: 'mL',
-      keys: [['vte', '#abdfff', 'VTesp']] as [keyof TrendRow, string, string][],
+      keys: [['vte', '#e6ecf2', 'VTesp']] as [keyof TrendRow, string, string][],
       max: nice(Math.max(450, ...visible.map((x) => x.vte ?? 0)) * 1.15, [600, 800, 1000, 1500, 2500]),
     },
     {
@@ -1013,14 +1014,14 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
       ph = bottom - top,
       xf = (t: number): number => left + ((t - start) / span) * pw,
       yf = (v: number): number => bottom - (v / sp.max) * ph;
-    text(ctx, sp.label, left, i * row + 16, 12, '#bce5fa');
+    text(ctx, sp.label, left, i * row + 16, 12, '#ffffff', 'left', '700');
     text(ctx, sp.unit, left - 9, i * row + 16, PLOT_TYPE.unidad, PLOT_TEXT_COLORS.tickTendencias, 'right');
     for (let k = 0; k <= 4; k++) {
       const y = yf((k * sp.max) / 4);
-      line(ctx, left, y, w - right, y, '#78b8da3d');
+      line(ctx, left, y, w - right, y, '#7d93ad40');
       text(ctx, format((k * sp.max) / 4), left - 8, y + 3, 10, PLOT_TEXT_COLORS.tickTendencias, 'right');
       const x = left + (k * pw) / 4;
-      line(ctx, x, top, x, bottom, '#78b8da3d');
+      line(ctx, x, top, x, bottom, '#7d93ad40');
     }
     sp.keys.forEach(([key, color, label], j) => {
       ctx.strokeStyle = color;
@@ -1049,7 +1050,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
           left + (k * pw) / 4,
           h - 3,
           9,
-          '#81b9d9',
+          PLOT_TEXT_COLORS.tickTendencias,
           k === 0 ? 'left' : k === 4 ? 'right' : 'center',
         );
       }
