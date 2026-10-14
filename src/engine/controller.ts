@@ -43,6 +43,13 @@ export const MANUAL_BREATH_PAUSE_S = 0.25;
 export const JOULES_PER_CMH2O_L = 0.09807;
 /** Frecuencia de las respiraciones de respaldo mientras dura la apnea sin frecuencia mínima programada (/min), P (U-52). */
 export const APNEA_BACKUP_RATE_PER_MIN = 12;
+/**
+ * Retardos del respaldo (D, URM SW10 8-26 y 8-27, «Alarm delays»): «Backup ventilation on» no se activa en los 10 s
+ * siguientes a que terminó el último respaldo, ni tras confirmar un modo en los 10 s (por apnea) o 60 s (por VMesp). Los
+ * de 60 s tras un bloqueo y al empezar a ventilar, por VMesp, son los de la alarma de VMesp bajo (alarms.ts).
+ */
+export const BACKUP_DELAY_AFTER_BACKUP_S = 10;
+export const BACKUP_DELAY_AFTER_MODE_S = { apnea: 10, vmesp: 60 } as const;
 /** Duración mínima de pausa para estimar Pplat de ciclo (P). */
 export const MIN_PAUSE_FOR_PPLAT_S = 0.1;
 /** Tope de flujo del actuador virtual en PC (L/s): 160 L/min, D ficha 2014 (flujo inspiratorio adulto 2–160 L/min). */
@@ -150,6 +157,9 @@ export class VcController {
    * son entonces respiraciones asistidas por presión, no de soporte.
    */
   private respaldo: 'apnea' | 'vmesp' | null = null;
+  /** Cuándo terminó el último respaldo y cuándo se confirmó un modo por última vez (s): de ellos cuentan sus retardos. */
+  private finRespaldoT = Number.NEGATIVE_INFINITY;
+  private modoConfirmadoT = Number.NEGATIVE_INFINITY;
   private events: ControllerEvent[] = [];
   private transition: (() => void) | null = null;
 
@@ -175,16 +185,26 @@ export class VcController {
   get respaldoActivo(): 'apnea' | 'vmesp' | null {
     return this.respaldo;
   }
-  /** Pasa al respaldo (sólo en CPAP/PS y si no lo estaba ya). */
+  /** Desde cuándo (s) puede volver a entrar el respaldo por esa causa, según los retardos del equipo. */
+  private respaldoPermitidoDesde(causa: 'apnea' | 'vmesp'): number {
+    return Math.max(this.finRespaldoT + BACKUP_DELAY_AFTER_BACKUP_S, this.modoConfirmadoT + BACKUP_DELAY_AFTER_MODE_S[causa]);
+  }
+  /** ¿Retiene un retardo del equipo la entrada al respaldo por esa causa? */
+  respaldoRetenido(causa: 'apnea' | 'vmesp'): boolean {
+    return this.simT + EPS < this.respaldoPermitidoDesde(causa);
+  }
+  /** Pasa al respaldo (sólo en CPAP/PS, si no lo estaba ya y si ningún retardo lo retiene). */
   entrarEnRespaldo(causa: 'apnea' | 'vmesp'): void {
-    if (this.settings.mode !== 'CPAP_PS' || this.respaldo) return;
+    if (this.settings.mode !== 'CPAP_PS' || this.respaldo || this.respaldoRetenido(causa)) return;
     this.respaldo = causa;
     this.events.push({ type: 'backupStarted', simTimeS: this.simT, cause: causa });
   }
-  /** Confirmar un modo termina el respaldo: se vuelve a los ajustes del modo programado. */
+  /** Confirmar un modo termina el respaldo: se vuelve a los ajustes del modo programado. Sus retardos cuentan desde aquí. */
   salirDeRespaldo(): void {
+    this.modoConfirmadoT = this.simT;
     if (!this.respaldo) return;
     this.respaldo = null;
+    this.finRespaldoT = this.simT;
     this.events.push({ type: 'backupEnded', simTimeS: this.simT });
   }
 
@@ -882,7 +902,11 @@ export class VcController {
   private plazoDeRespaldo(): number {
     const s = this.settings;
     const minimo = s.minRate === 'off' ? Number.POSITIVE_INFINITY : 60 / s.minRate;
-    return Math.min(minimo, this.respaldo ? 60 / APNEA_BACKUP_RATE_PER_MIN : s.apneaTimeS);
+    let apnea = this.respaldo ? 60 / APNEA_BACKUP_RATE_PER_MIN : s.apneaTimeS;
+    // Apnea ya declarada con el respaldo retenido: el plazo es el fin de la retención, contado desde esta espera.
+    if (this.apnea && !this.respaldo)
+      apnea = Math.max(apnea, this.respaldoPermitidoDesde('apnea') - (this.simT - this.tBreath - this.tPhase));
+    return Math.min(minimo, apnea);
   }
 
   /** Venció un plazo de la espiración en CPAP/PS: apnea (alarma y respaldo) o frecuencia mínima (respiración por presión). */
@@ -894,6 +918,8 @@ export class VcController {
         this.apnea = true;
         this.events.push({ type: 'apnea', simTimeS: this.simT, apneaS: this.settings.apneaTimeS });
       }
+      // La alarma de apnea no espera; el respaldo, sí: hasta que vence su retardo no hay respiración de respaldo.
+      if (!this.respaldo && this.respaldoRetenido('apnea')) return;
       this.entrarEnRespaldo('apnea');
       this.endExpiration('backup');
     } else this.endExpiration('mandatory');

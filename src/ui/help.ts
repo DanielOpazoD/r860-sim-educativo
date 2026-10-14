@@ -147,6 +147,7 @@ export const HELP: Record<string, HelpEntry> = {
     text: [
       'Intervalo sin respiraciones detectadas antes de activar ventilación de respaldo en los modos espontáneos.',
       'El respaldo del simulador utiliza control por presión. Sus ajustes de frecuencia y presión se definen por separado.',
+      'Como en el equipo, el respaldo no vuelve en los 10 s siguientes a que terminó el anterior, y tras confirmar un modo espera 10 s (60 s si lo pide el VMesp bajo); la alarma de apnea no espera.',
     ],
   },
   'setting.minRate': {
