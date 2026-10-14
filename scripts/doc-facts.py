@@ -68,7 +68,11 @@ vit = load('test-results/vitest.json', 'npm run test:coverage')
 e2e = load('test-results/e2e-results.json', 'npm run e2e')
 
 vitest_cfg = read('vitest.config.ts')
-umbrales = {k: int(v) for k, v in re.findall(r'(lines|branches|functions|statements):\s*(\d+)', vitest_cfg)}
+_bloque_umbrales = re.search(r'thresholds:\s*\{(.*?)\n\s*\},', vitest_cfg, re.S).group(1)
+_por_carpeta = dict(re.findall(r"'src/(\w+)/\*\*':\s*\{([^}]*)\}", _bloque_umbrales))
+# Los globales son los que quedan fuera de las llaves de cada carpeta.
+umbrales = {k: int(v) for k, v in re.findall(r'(lines|branches|functions|statements):\s*(\d+)', re.sub(r"'src/\w+/\*\*':\s*\{[^}]*\}", '', _bloque_umbrales))}
+umbrales_carpeta = {c: {k: int(v) for k, v in re.findall(r'(lines|branches|functions|statements):\s*(\d+)', cuerpo)} for c, cuerpo in _por_carpeta.items()}
 excluidos = re.findall(r"'([^']+)'", re.search(r'exclude:\s*\[([^\]]*)\]', vitest_cfg).group(1))
 
 proyectos = re.findall(r"\{\s*name:\s*'([^']+)'", re.search(r'projects:\s*\[(.*?)\n\s*\],', read('playwright.config.ts'), re.S).group(1))
@@ -142,7 +146,12 @@ HECHOS = {
         f'**Cobertura honesta.** Medida sobre todo `src/` (excluidos {", ".join(f"`{e}`" for e in excluidos)}): '
         f'líneas {num(todo["lines"])} % · ramas {num(todo["branches"])} % · funciones {num(todo["functions"])} % · '
         f'sentencias {num(todo["statements"])} %. Los umbrales de `vitest.config.ts` '
-        f'({umbrales["lines"]} · {umbrales["branches"]} · {umbrales["functions"]} · {umbrales["statements"]}) van por '
+        f'({umbrales["lines"]} · {umbrales["branches"]} · {umbrales["functions"]} · {umbrales["statements"]}'
+        + ''.join(
+            f'; `src/{c}/` {u["lines"]} · {u["branches"]} · {u["functions"]} · {u["statements"]}'
+            for c, u in umbrales_carpeta.items()
+        )
+        + ') van por '
         f'debajo de lo medido para que la integración continua falle ante una regresión y pase hoy. En `src/ui/`, '
         f'las pruebas unitarias y DOM cubren líneas {num(ui["lines"])} % · ramas {num(ui["branches"])} % · '
         f'funciones {num(ui["functions"])} % · sentencias {num(ui["statements"])} %. Playwright verifica además los '
