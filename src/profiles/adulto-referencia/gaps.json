@@ -304,8 +304,8 @@
     {
       "id": "U-36",
       "question": "Dispersión real del canal de volumen del R860 entre ciclos consecutivos con un pulmón de prueba estable (la ficha sólo publica la envolvente de exactitud, ±10 %).",
-      "policy": "P: ±2,5 % uniforme por respiración, determinista por semilla; ajustable por el instructor entre 0 y 10 % (0 = canal ideal del banco analítico).",
-      "status": "nueva (v0.3.8)",
+      "policy": "D las cotas: exactitud ± 10 % o ± 5 mL y repetibilidad 1σ ± 2 % o ± 3 mL (URM SW10 13-20). P: ± 2,5 % uniforme por respiración (σ ≈ 1,44 %, dentro de la cota; E-122), determinista por semilla; ajustable por el instructor entre 0 y 10 % (0 = canal ideal del banco analítico). La dispersión real de un equipo concreto sigue sin dato.",
+      "status": "revisada (URM SW10: cotas publicadas)",
       "blocks": []
     },
     {
@@ -432,6 +432,13 @@
       "question": "Latencia del disparo reverso (tiempo entre el inicio de la insuflación de la máquina y la contracción evocada), su amplitud y el acoplamiento (ratio máquina:paciente 1:1/1:2/1:3) en pacientes reales; la literatura describe el fenómeno sin fijar cifras universales.",
       "policy": "Calibrada con Baedorf Kassis 2021 (C05): SC-24 usa la mecánica y la programación de su mediana y Pmus 8 con latencia 0,5 s (fenotipo a mitad del ciclo: 0,47 s) que pasa a 0,8 s; con la rama espiratoria del equipo el apilamiento aparece algo más tarde que en el estudio (0,68 s). La amplitud, la latencia y el ratio siguen siendo ajustables por el instructor (0–2 s; 1–3). Sigue en P la forma del pulso evocado (comparte tiS y relaxTauS del esfuerzo) y su relajación.",
       "status": "revisada (Baedorf Kassis 2021)",
+      "blocks": []
+    },
+    {
+      "id": "U-55",
+      "question": "SC-18 (doble disparo) tiene un esfuerzo alto por su producto presión-tiempo (205 cmH₂O·s/min) y bajo por su P0.1 implícito (0,94 cmH₂O): clases opuestas de Telias 2020, aunque las dos en el borde.",
+      "policy": "P: se conserva. La subida senoidal del esfuerzo (A·sin(πτ/2Ti)) no permite un P0.1 alto con una inspiración neural larga, que es lo que provoca el doble disparo; y retocar amplitud y Ti (11 cmH₂O, 1,6 s, coherente) rompe el objetivo de la lección del escenario (measurementFidelity). Recalibrarlo pide decidir antes una subida más rápida al principio (otra forma del pulso) o rehacer la lección.",
+      "status": "nueva (2026-10-14)",
       "blocks": []
     }
   ],
