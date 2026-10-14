@@ -340,3 +340,53 @@ test.describe('NAV móvil · la barra de señal vive en la cabecera fija', () =>
     await expect(page.locator('#sim-pause')).toContainText('Reanudar');
   });
 });
+
+test.describe('OBJ-01 móvil · las ventanas tienen objetivos táctiles de 44 px', () => {
+  test.skip(({ isMobile }) => !isMobile, 'sólo proyecto móvil');
+
+  /** Controles visibles de la ventana abierta con lado < 44 px, salvo los que van dentro de una etiqueta que sí los cumple. */
+  const pequeños = (page: Page) =>
+    page.evaluate(() => {
+      const dlg = [...document.querySelectorAll<HTMLElement>('dialog[open]')].pop()!;
+      return [...dlg.querySelectorAll<HTMLElement>('button, a, input, select, summary, [role="tab"]')]
+        .filter((e) => e.getClientRects().length > 0)
+        .filter((e) => {
+          const lado = (r: DOMRect) => Math.min(r.width, r.height);
+          if (lado(e.getBoundingClientRect()) >= 43.5) return false;
+          const etiqueta = e.closest('label');
+          return !etiqueta || lado(etiqueta.getBoundingClientRect()) < 43.5;
+        })
+        .map((e) => e.getAttribute('aria-label') || e.textContent?.trim().slice(0, 24) || e.tagName);
+    });
+
+  for (const [nombre, abrir] of [
+    ['modos', (p: Page) => p.locator('[data-action="modes"]').first().click()],
+    ['límites', (p: Page) => p.locator('.alarm-setup').first().click()],
+    ['menú', (p: Page) => p.locator('[data-action="menu"]').first().click()],
+    ['guía', (p: Page) => p.keyboard.press('?')],
+  ] as const)
+    test(`${nombre}: cerrar, campos, deslizadores, interruptores y pestañas`, async ({ page }) => {
+      await open(page, { instructor: 0 });
+      await abrir(page);
+      await expect(page.locator('dialog[open]').last()).toBeVisible();
+      expect(await pequeños(page)).toEqual([]);
+    });
+});
+
+test.describe('GEO-01 · la guía conserva su alto al cambiar de pestaña', () => {
+  test('las cuatro pestañas dan la misma ventana, en el mismo sitio', async ({ page }) => {
+    await open(page, { instructor: 0 });
+    await page.keyboard.press('?');
+    const dlg = page.locator('#app-dialog');
+    await expect(dlg).toBeVisible();
+    const pestañas = dlg.locator('.help-tabs button');
+    const cajas: string[] = [];
+    for (let i = 0; i < (await pestañas.count()); i++) {
+      await pestañas.nth(i).click();
+      const b = (await dlg.boundingBox())!;
+      cajas.push(`${Math.round(b.y)}·${Math.round(b.height)}`);
+    }
+    expect(cajas.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(cajas).size, cajas.join(' | ')).toBe(1);
+  });
+});

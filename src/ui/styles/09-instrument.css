@@ -235,3 +235,25 @@
     padding: 10px 12px;
   }
 }
+/* Objetivos táctiles de 44 px también en las ventanas, en el teléfono y con puntero táctil, como el resto del exterior
+   (08-minimal): cerrar (era 30 y 32 px), los campos de valor, el I:E y los deslizadores (36–42 px), los interruptores
+   (40) y la explicación del modo, que se abría tocando una línea de 18 px. */
+@media (max-width: 700px), (pointer: coarse) {
+  .app-dialog .close-button,
+  .view-options-heading .button {
+    width: 44px;
+    height: 44px;
+  }
+  .device-dialog .setting-input input,
+  .device-dialog .setting-input select,
+  .device-dialog .alarm-edit-grid .limit-input input,
+  .device-dialog .checkline {
+    min-height: 44px;
+  }
+  .device-dialog .setting-range {
+    height: 44px;
+  }
+  .device-dialog .mode-explanation summary {
+    padding-block: 13px;
+  }
+}

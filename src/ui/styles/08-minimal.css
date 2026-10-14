@@ -1135,7 +1135,8 @@
     min-height: 44px;
   }
   .app-dialog .primary-button,
-  .app-dialog .secondary-button {
+  .app-dialog .secondary-button,
+  .prefs-reset {
     min-height: 44px;
   }
   .mode-list {
