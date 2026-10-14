@@ -131,7 +131,7 @@
         "sha256": "bb2f742971a73149c34910f10d4a96ca9734144e8d7e341c74cde0d83ace80a3",
         "pages": 510,
         "readFully": false,
-        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21), valores de fábrica (11-9 a 11-10), procedimientos (7-5 a 7-9), rangos y pasos de ajustes y alarmas para adulto (13-12 a 13-15) y especificaciones de monitorización (13-18 a 13-24). El intento del 2026-09-06 había fallado con HTTP 502."
+        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21), valores de fábrica (11-9 a 11-10), procedimientos (7-5 a 7-9), rangos y pasos de ajustes y alarmas para adulto (13-12 a 13-15) y especificaciones de monitorización (13-18 a 13-24); y el 2026-10-14: cancelación por plazo (3-10, 8-5), glosario de ajustes (5-5), A/C VC y PC (5-11, 5-13), esquemas de SIMV (5-19 a 5-29), System Check y compensaciones del circuito (6-6), Auto Limits (8-6), valores de fábrica completos (11-9 a 11-11), compliance y resistencia del sistema respiratorio (13-21) y teoría de funcionamiento (15-7 a 15-9). El intento del 2026-09-06 había fallado con HTTP 502."
       }
     },
     {
@@ -643,9 +643,9 @@
     {
       "id": "E-038",
       "claim": "Flujo de base espiratorio programable 2–10 L/min en pasos de 0,5 (adulto); el disparo por flujo detecta el flujo de base desviado por el paciente, por lo que el umbral de disparo no puede superar el flujo de base.",
-      "status": "D (rango) / P (valor inicial 2 L/min y relación con el disparo)",
-      "source": "R03",
-      "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»",
+      "status": "D (rango, valor inicial de fábrica 3 L/min) / P (relación con el disparo)",
+      "source": "R03, R21",
+      "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»; URM SW10 13-12 «Bias Flow 2 to 10 l/min · 0.5 l/min»; 11-9 «Bias Flow 3 l/min» (adulto, valor de fábrica); 5-5 «The bias flow may be increased above this setting by the ventilator for some FiO2 settings»",
       "implemented": "src/profiles/adulto-referencia/settings.ts (biasFlow); src/engine/controller.ts (fase exp, tope = settings.biasFlow); src/domain/validation.ts (flowTrigger ≤ biasFlow)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-01)"
@@ -1598,6 +1598,15 @@
         "tests/unit/uiDom.test.ts (en espera, como el equipo)",
         "tests/unit/contraste.test.ts (CTR-05)"
       ]
+    },
+    {
+      "id": "E-121",
+      "claim": "La Pva y el VT que muestra el equipo son los de la vía aérea: el circuito no aparece en ellos. El R860 mide la compliance del circuito y la resistencia de la rama inspiratoria en el System Check y usa esos datos «for all internal compensations» (sin System Check, los del último completado). Su sistema respiratorio adulto con los circuitos recomendados mide 1,98–2,41 mL/cmH₂O de compliance y 3,00–5,93 cmH₂O·s/L de resistencia inspiratoria a 60 L/min. La presión se toma con dos transductores internos, el inspiratorio y el espiratorio. Por eso el simulador no añade una rama inspiratoria a la Pva ni resta volumen por la compliance del circuito: el equipo ya lo compensa. Lo que no se compensa es físico, no de medida: la rama y la válvula espiratorias frenan el gas que sale (E-041).",
+      "status": "D (compensación del circuito, rangos y puntos de medida, R21) / P (que la compensación sea completa)",
+      "source": "R21",
+      "locator": "URM SW10 6-6 «the system uses the compliance and resistance data from the last completed system check … for all internal compensations» y «The resistance is the measured resistance of the inspiratory limb of the patient circuit»; 13-21 «Ventilator breathing system compliance and resistance»; 15-8 y 15-9 «Airway pressure is sensed and verified by the inspiratory and expiratory pressure sensors»",
+      "implemented": "src/engine/controller.ts (sin rama inspiratoria ni compliance de circuito en la Pva y el VT); src/engine/patient.ts (rSeries sólo al espirar)",
+      "tests": []
     }
   ]
 }

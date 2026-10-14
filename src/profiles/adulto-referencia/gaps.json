@@ -63,8 +63,8 @@
     {
       "id": "U-07",
       "question": "Tiempo de cancelación de edición.",
-      "policy": "20 s configurable, etiquetado como propuesto.",
-      "status": "abierta",
+      "policy": "D: el equipo cancela un ajuste o un límite de alarma que no se confirma cuando vence un plazo (URM SW10 3-10 «wait for the selection to time out»; 8-5 «Alarm setting changes that are not confirmed prior to the end of a timeout period are cancelled»). P: la duración, 20 s configurable: el manual no la publica.",
+      "status": "abierta (sólo la duración; revisado el URM SW10)",
       "blocks": []
     },
     {
@@ -199,15 +199,15 @@
     {
       "id": "U-22",
       "question": "Ventana de disparo y periodo refractario en A/C (la ficha sólo documenta «ventana de trigger 80 % del tiempo espiratorio», aplicable a SIMV).",
-      "policy": "P: refractario 0.25 s desde el inicio de la espiración.",
-      "status": "nueva",
+      "policy": "P: refractario 0.25 s desde el inicio de la espiración. Revisado el URM SW10: la «trigger window» sólo aparece en los esquemas de SIMV (5-19 a 5-29), modos que el simulador no tiene; para A/C no se publica ventana ni refractario.",
+      "status": "revisada (URM SW10: sin dato para A/C)",
       "blocks": []
     },
     {
       "id": "U-23",
       "question": "Límites de alarma iniciales para un paciente nuevo y política de Auto Limits.",
-      "policy": "P: todos Off salvo Pmáx; Auto Limits desactivado con motivo.",
-      "status": "nueva",
+      "policy": "D, valores de fábrica de un paciente adulto (URM SW10 11-9 a 11-11): FiO₂ baja 44 % y alta 56 % (la FiO₂ de fábrica es 50 %), Ppico baja 4 y alta 30 cmH₂O (la Pmáx de fábrica, 11-9), VMesp bajo 2 y alto 10 L/min, VTesp, FR y PEEPe Off, apnea 30 s, límite de fuga 50 %, Tdesconexión 30 s. Auto Limits (8-6) ensancha VMesp y VTesp a ×0,5 / ×2,5 del valor medido, FR a −2 / +30 y PEEPe a ±5; nunca pone Off y no toca lo que está en Off. P: el simulador no arranca con los de fábrica sino con límites docentes (settings.ts, DEFAULT_ALARM_LIMITS), elegidos con las fotografías P1 y P3 y comprobados sobre los escenarios para que salten sólo donde la lección lo pide; Auto Limits no se implementa.",
+      "status": "cerrada (fábrica documentada; el simulador conserva límites docentes)",
       "blocks": [
         "Auto Limits"
       ]
@@ -264,8 +264,8 @@
     {
       "id": "U-31",
       "question": "Flujo inspiratorio máximo que entrega el actuador en presión control (tope de válvula) y su comportamiento con resistencia muy baja.",
-      "policy": "P: tope de 160 L/min (ficha 2014 flujo máximo); si el tope actúa, la presión queda por debajo del objetivo y se anota en el ciclo.",
-      "status": "nueva (v0.3)",
+      "policy": "D: cada válvula inspiratoria dosifica de 0,05 a 160 L/min y los sensores de flujo miden de 0 a 160 L/min (URM SW10 15-8, 15-9; ficha 2014): tope de 160 L/min. P: si el tope actúa, la presión queda por debajo del objetivo y se anota en el ciclo; el comportamiento con resistencia muy baja.",
+      "status": "cerrada en el tope (URM SW10); abierta la forma con R muy baja",
       "blocks": []
     },
     {
@@ -278,7 +278,7 @@
     {
       "id": "U-33",
       "question": "Valor del flujo de base (bias flow) espiratorio del equipo y si ofrece disparo por presión además del disparo por flujo.",
-      "policy": "CERRADA (E-038, E-039): flujo de base 2–10 L/min (0,5) y disparo por presión −10…−0,25 cmH₂O documentados en la ficha 2014; implementados como ajustes con validación flowTrigger ≤ biasFlow. Queda P el valor inicial (2 L/min) y la referencia del umbral de presión a la PEEP programada.",
+      "policy": "CERRADA (E-038, E-039): flujo de base 2–10 L/min (0,5) y disparo por presión −10…−0,25 cmH₂O documentados en la ficha 2014; implementados como ajustes con validación flowTrigger ≤ biasFlow. El valor inicial es el de fábrica, 3 L/min (D, URM SW10 11-9; rango y paso también en 13-12). Queda P la referencia del umbral de presión a la PEEP programada.",
       "status": "cerrada (v0.3.2)",
       "blocks": [
         "disparo por presión",
@@ -402,8 +402,8 @@
     {
       "id": "U-50",
       "question": "Cuál es el flujo espiratorio máximo que deja pasar el conjunto válvula + rama espiratoria del R860. La ficha de 2014 documenta el rango inspiratorio (2–160 L/min) y no dice nada del espiratorio.",
-      "policy": "P: 200 L/min, por encima de todo lo fisiológico, para que el techo sólo actúe en regímenes irreales y no altere ningún escenario (el más obstructivo llega a 149 L/min). Si aparece la cifra documentada, se sustituye.",
-      "status": "nueva (v0.4.8)",
+      "policy": "P: 200 L/min, por encima de todo lo fisiológico, para que el techo sólo actúe en regímenes irreales y no altere ningún escenario (el más obstructivo llega a 149 L/min). Si aparece la cifra documentada, se sustituye. Revisado el URM SW10: el sensor de flujo espiratorio mide de 0 a 160 L/min (15-9), así que el equipo no podría mostrar un pico mayor; el techo físico del conjunto no se publica.",
+      "status": "revisada (URM SW10: rango del sensor, no el techo físico)",
       "blocks": []
     },
     {
@@ -423,8 +423,8 @@
     {
       "id": "U-53",
       "question": "Tiempo de respuesta del disparo del R860 (detección, decisión y apertura de válvula) y ancho de banda de su regulador de PEEP durante ese lapso; no publicados en las fuentes leídas.",
-      "policy": "P: retardo de respuesta de 40 ms tras el cruce del umbral, el mismo por flujo y por presión, calibrado con el banco de ventiladores de UCI de Thille 2009 (C04: del inicio del esfuerzo a la presurización, media 58 ms y < 50 con el Engström de GE; el modelo da ≈ 44–52 ms con disparo por flujo de 1 L/min). El disparo por presión es más lento por la física del umbral, sin retardo propio. El ancho de banda del regulador de PEEP sigue en U-43. No reproduce la cifra del R860, que no está publicada.",
-      "status": "revisada (Thille 2009)",
+      "policy": "P: retardo de respuesta de 40 ms tras el cruce del umbral, el mismo por flujo y por presión, calibrado con el banco de ventiladores de UCI de Thille 2009 (C04: del inicio del esfuerzo a la presurización, media 58 ms y < 50 con el Engström de GE; el modelo da ≈ 44–52 ms con disparo por flujo de 1 L/min). El disparo por presión es más lento por la física del umbral, sin retardo propio. El ancho de banda del regulador de PEEP sigue en U-43. No reproduce la cifra del R860, que no está publicada. Revisado el URM SW10 (especificaciones 13-16 a 13-24 y teoría de funcionamiento 15-7 a 15-9): no publica el tiempo de respuesta del disparo.",
+      "status": "revisada (Thille 2009; el URM SW10 no lo publica)",
       "blocks": []
     },
     {
