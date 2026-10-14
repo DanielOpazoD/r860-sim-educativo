@@ -235,6 +235,12 @@
       "title": "Cinética del CO₂ corporal: Stock MC, Schisler JQ, McSweeney TD. The PaCO₂ rate of rise in anesthetized patients with airway obstruction. J Clin Anesth 1989;1:328–32 (PMID 2516732); Kobayashi T, Yokoyama K. [The arterial blood gas change in anesthetized patients with apnea]. Masui 1994;43:1130–4 (PMID 7933492); Gentz BA et al. Carbon dioxide dynamics during apneic oxygenation: the effects of preceding hypocapnia. J Clin Anesth 1998;10:189–94 (PMID 9603587); Taskar V et al. Dynamics of carbon dioxide elimination following ventilator resetting. Chest 1995;108:196–202 (PMID 7606958); Farhi LE, Rahn H. Dynamics of changes in carbon dioxide stores. Anesthesiology 1960;21:604–14 (PMID 13698175)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Resúmenes leídos en PubMed. Stock 1989: 14 adultos sanos anestesiados sin bloqueo, tubo traqueal pinzado, gasometrías a 0, 20, 40, 60, 120, 180, 240 y 300 s; la subida fue logarítmica y su aproximación lineal por tramos, +12 mmHg el primer minuto y 3,4 mmHg/min después. Kobayashi 1994: 15 anestesiados, apnea de 4 min sin flujo de O₂, tres grupos por ETCO₂ previo (40, 30, 20); +9,8 ± 1,9 mmHg el primer minuto y 3,4–4,4 mmHg/min después, sin diferencias entre grupos. Gentz 1998: 19 anestesiados, apnea con oxigenación tras eucapnia o tras hipocapnia aguda; con hipocapnia, mayor subida en el primer minuto y mayor gradiente venoarterial de PCO₂ previo. Taskar 1995: 44 ventilados estables, VE ±10 %; el cambio de PaCO₂ y ETCO₂ fue mínimo a las 10 respiraciones y creció durante 20 min; la τ aumentó al calcularla en periodos más largos y fue más larga al bajar la ventilación. Farhi y Rahn 1960: sólo el título verificado (sin resumen), cita de origen del modelo de depósitos. Se usan para la cinética de dos compartimentos (E-095, E-114), no para ningún ajuste."
+    },
+    {
+      "id": "C15",
+      "title": "Telias I, Junhasavasdikul D, Rittayamai N, et al. Airway Occlusion Pressure As an Estimate of Respiratory Drive and Inspiratory Effort during Assisted Ventilation. Am J Respir Crit Care Med 2020;201(9):1086–98 (PMID 32097569; doi 10.1164/rccm.201907-1425OC)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Resumen leído en Europe PMC (2026-10-14). P0.1 de referencia (oclusión) > 3,5 cmH₂O detecta esfuerzo alto, definido como producto presión-tiempo esofágico ≥ 200 cmH₂O·s/min (sensibilidad 80 %, especificidad 77 %); P0.1 ≤ 1,0 detecta esfuerzo bajo, PTPes ≤ 50 cmH₂O·s/min (sensibilidad 100 %, especificidad 92 %)."
     }
   ],
   "claims": [
@@ -1617,6 +1623,17 @@
       "implemented": "src/engine/sensors.ts (FlowSensor, DEFAULT_FLOW_NOISE); src/engine/simulator.ts (vtInspMeasured, vtExpMeasured)",
       "tests": [
         "tests/unit/exactitudVolumen.test.ts (VTD-01)"
+      ]
+    },
+    {
+      "id": "E-123",
+      "claim": "Los esfuerzos de los escenarios son coherentes con su impulso respiratorio. El P0.1 implícito de cada esfuerzo (la Pmus a los 100 ms de empezar) y su producto presión-tiempo por minuto caen en la misma franja de Telias 2020 —bajo: P0.1 ≤ 1,0 y PTP ≤ 50 cmH₂O·s/min; alto: P0.1 > 3,5 y PTP ≥ 200—: SC-05 (esfuerzo débil) P0.1 0,13 y PTP 6, bajo; SC-10, SC-19, SC-20, CC-06 y CC-08 intermedios (P0.1 1,3–2,1; PTP 64–169). SC-18 (doble disparo) queda fuera: PTP 205 con P0.1 0,94, ambos en el borde (U-55). El simulador no mide P0.1: el equipo tiene ese procedimiento (URM SW10 7-10) y no se implementa.",
+      "status": "D (umbrales, C15; procedimiento del equipo, R21) / P (los esfuerzos de cada escenario)",
+      "source": "C15, R21",
+      "locator": "Telias 2020, resumen: P0.1 > 3,5 cmH₂O para PTPes ≥ 200 cmH₂O·s/min y ≤ 1,0 para PTPes ≤ 50; URM SW10 7-10 «Measuring P 0.1»",
+      "implemented": "src/engine/effort.ts (subida A·sin(πτ/2Ti) y relajación); src/scenarios/index.ts (esfuerzos de cada escenario)",
+      "tests": [
+        "tests/unit/esfuerzoP01.test.ts (P01-01)"
       ]
     }
   ]
