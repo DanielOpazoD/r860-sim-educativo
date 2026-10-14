@@ -1,24 +1,28 @@
+/*
+ * Ventanas del equipo (modos, límites de alarma, menús) en el grafito de las del manual SW10 (configuración de alarmas,
+ * 8-6): panel gris oscuro, cajas de valor más claras, cabecera y pie algo más claros, texto blanco.
+ */
 .app-dialog.device-dialog {
-  --shell-surface: #073d78;
-  --shell-raised: #124e87;
-  --shell-hover: #226199;
+  --shell-surface: #2c2f36;
+  --shell-raised: #3a3e46;
+  --shell-hover: #484d57;
   --shell-text: #ffffff;
-  --shell-muted: #d4e4f5;
-  --shell-dim: #b2cee9;
-  --shell-line: #5c82a9;
+  --shell-muted: #d6dae0;
+  --shell-dim: #b8bec7;
+  --shell-line: #626975;
   --shell-accent: #ffffff;
-  --shell-accent-soft: #226199;
-  --shell-accent-ink: #073462;
+  --shell-accent-soft: #484d57;
+  --shell-accent-ink: #22252b;
   --shell-danger: #ffb2ab;
   position: fixed;
   margin: 0;
   padding: 0;
   max-width: none;
   max-height: none;
-  border: 1px solid #82b0dd;
-  border-radius: 2px;
+  border: 1px solid #6b717c;
+  border-radius: 4px;
   background: var(--shell-surface);
-  box-shadow: 0 0 0 2px #002b5f;
+  box-shadow: 0 0 0 2px #15171b;
   font-family: Arial, sans-serif;
   container-type: inline-size;
 }
@@ -34,7 +38,7 @@
   flex-shrink: 0;
   padding: 9px 14px;
   gap: 8px;
-  background: #1f2b3c;
+  background: #3d424b;
 }
 .device-dialog .dialog-header h2 {
   font-size: 16px;
@@ -58,7 +62,7 @@
   min-height: 0;
   padding: 8px 14px;
   gap: 8px;
-  background: #1f2b3c;
+  background: #3d424b;
 }
 .device-dialog .mode-layout {
   gap: 8px;
@@ -77,7 +81,7 @@
 }
 .device-dialog .mode-option.selected {
   background: #ffffff;
-  color: #063363;
+  color: #22252b;
   border-color: #ffffff;
 }
 .device-dialog .mode-explanation {
