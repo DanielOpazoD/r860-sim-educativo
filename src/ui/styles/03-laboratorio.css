@@ -49,6 +49,11 @@
   padding: 12px 18px;
   max-height: calc(92vh - 120px);
 }
+/* La guía tiene pestañas de largo distinto: la ventana conserva su alto al cambiar de pestaña (saltaba de 765 a 383 px y
+   se recolocaba en la pantalla) y lo que no cabe se desplaza dentro. */
+.dialog-content:has(.help-tabs) {
+  height: min(640px, calc(92vh - 120px));
+}
 .dialog-footer {
   border-top: 1px solid var(--shell-line);
   display: flex;

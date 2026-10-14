@@ -201,6 +201,7 @@
   .help-tabs button {
     font-size: var(--type-2xs);
     padding: 9px 11px;
+    min-height: 44px;
   }
   .tools-grid {
     grid-template-columns: 1fr;
