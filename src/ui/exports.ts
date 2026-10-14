@@ -2,6 +2,7 @@
 import type { SessionFile } from '../history/session';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
+import { MON_CSS as C } from '../render/monitorPalette';
 import { type Point } from '../render/plots';
 import { clock, wallDate } from './format';
 import { humanReason } from './humanize';
@@ -72,47 +73,74 @@ export interface SnapshotInput {
   /** Teclas rápidas: [etiqueta, valor con unidad]. */
   quickItems: [string, string][];
 }
-/** Pinta la captura del monitor (1600×1050) con la marca de simulación. Devuelve el lienzo listo para `toBlob`. */
+/**
+ * Pinta la captura del monitor (1600×1050) con la marca de simulación y la misma paleta que la pantalla
+ * (src/render/monitorPalette.ts, E-118). Devuelve el lienzo listo para `toBlob`.
+ */
 export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLCanvasElement {
   const { frame: fr, view } = input;
   c.width = 1600;
   c.height = 1050;
   const ctx = c.getContext('2d') as CanvasRenderingContext2D;
   ctx.scale(1600 / 1120, 1050 / 735);
-  const bg = ctx.createLinearGradient(0, 0, 1120, 735);
-  bg.addColorStop(0, '#004bae');
-  bg.addColorStop(1, '#0349a1');
+  // El degradado radial de .monitor (elipse 72 % × 62 % centrada en 46 % · 40 %): un círculo aplastado en vertical.
+  const [cx, cy, rx, ry] = [1120 * 0.46, 735 * 0.4, 1120 * 0.72, 735 * 0.62];
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(1, ry / rx);
+  const bg = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+  bg.addColorStop(0, C.pantallaClaro);
+  bg.addColorStop(0.55, C.pantalla);
+  bg.addColorStop(1, C.pantallaBorde);
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 1120, 735);
+  ctx.fillRect(-cx, -cy * (rx / ry), 1120, 735 * (rx / ry));
+  ctx.restore();
   const txt = (s: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'left', weight = 'normal'): void => {
     ctx.fillStyle = color;
     ctx.textAlign = align;
     ctx.font = `${weight} ${size}px Arial,sans-serif`;
     ctx.fillText(s, x, y);
   };
+  // La banda como en .alarm-band: verde sin alarmas (y con las de prioridad baja), roja, ámbar o gris de alarma previa.
   const bar = fr.alarmBar;
-  ctx.fillStyle = bar.color === 'red' ? '#b91d36' : bar.color === 'yellow' ? '#ba891c' : bar.color === 'grey' ? '#738090' : '#119c78';
+  const [a, b, tinta] =
+    bar.color === 'red'
+      ? [C.bandaAltaA, C.bandaAltaB, C.bandaAltaTexto]
+      : bar.color === 'yellow'
+        ? [C.bandaMediaA, C.bandaMediaB, C.mediaTexto]
+        : bar.color === 'grey'
+          ? [C.bandaPreviaA, C.bandaPreviaB, C.texto]
+          : [C.reposoAlto, C.reposoBajo, C.texto];
+  const banda = ctx.createLinearGradient(8, 0, 1112, 0);
+  banda.addColorStop(0, a);
+  banda.addColorStop(1, b);
+  ctx.fillStyle = banda;
   ctx.fillRect(8, 7, 1104, 70);
-  txt(bar.color === 'grey' ? 'Alarmas resueltas' : bar.message, 30, 33, 17, '#f4fff6');
-  txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, 10, '#d0f2e1');
+  txt(bar.color === 'grey' ? 'Alarmas resueltas' : bar.message, 30, 33, 17, tinta, 'left', '600');
+  txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, 10, tinta);
   const wc = input.waveCanvas;
   ctx.drawImage(wc, 0, 0, wc.width, wc.height, 8, 88, 608, view === 'basic' ? 138 : 488);
+  // Dos columnas en el alto que deja la fila de vistas (y = 583): con siete filas, la última quedaba debajo de ella.
+  const paso = Math.min(77, Math.floor(470 / Math.ceil(METRICS.length / 2)));
   METRICS.forEach((m, i) => {
     const x = 645 + (i % 2) * 147,
-      y = 110 + Math.floor(i / 2) * 77;
-    txt(m.label, x, y, 12, '#a8defb');
-    txt(f(metricValue(fr, m), m.decimals), x, y + 33, 32, '#eeffff', 'left', '600');
-    txt(m.unit, x, y + 50, 9, '#a8ddf5');
+      y = 110 + Math.floor(i / 2) * paso;
+    txt(m.label, x, y, 12, C.texto, 'left', '700');
+    txt(f(metricValue(fr, m), m.decimals), x, y + 33, 32, C.texto, 'left', '700');
+    txt(m.unit, x, y + 50, 10, C.unidad);
   });
   const g = input.gaugeCanvas;
   ctx.drawImage(g, 0, 0, g.width, g.height, 971, 87, 140, 488);
   const h = fr.procedure.last.inspHold;
   if (h && input.holdVisible) {
-    ctx.fillStyle = '#246caf';
+    const ventana = ctx.createLinearGradient(0, 89, 0, 201);
+    ventana.addColorStop(0, C.bloqueoAlto);
+    ventana.addColorStop(1, C.bloqueoBajo);
+    ctx.fillStyle = ventana;
     ctx.fillRect(750, 89, 354, 112);
-    ctx.strokeStyle = '#91c6e7';
+    ctx.strokeStyle = C.trazo;
     ctx.strokeRect(750, 89, 354, 112);
-    txt('Bloqueo inspiratorio', 765, 109, 12, '#dcf5ff');
+    txt('Bloqueo inspiratorio', 765, 109, 12, C.eje);
     txt(
       h.quality === 'valid'
         ? `Pplat ${f(h.values.pplat?.value ?? null, 0)} cmH₂O · Cstat ${f((h.values.cstat?.value ?? 0) * 1000, 0)} mL/cmH₂O`
@@ -120,24 +148,31 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
       765,
       140,
       16,
-      '#eefcff',
+      C.texto,
     );
-    txt(wallDate(h.wallTimeMs ?? 0), 765, 170, 12, '#c3e5f7');
+    txt(wallDate(h.wallTimeMs ?? 0), 765, 170, 12, C.eje);
   }
-  ctx.fillStyle = '#072d63';
+  const nav = ctx.createLinearGradient(0, 583, 0, 639);
+  nav.addColorStop(0, C.navAlto);
+  nav.addColorStop(1, C.navBajo);
+  ctx.fillStyle = nav;
   ctx.fillRect(8, 583, 1104, 56);
-  txt(`Tiempo simulado ${clock(fr.simTimeMs / 1000)} · ${input.scenarioName}`, 27, 615, 13, '#acd0e6');
-  txt('VENTILA LAB · datos de un modelo sintético · no reproduce el firmware de ningún equipo', 1100, 615, 12, '#c0e4f4', 'right');
+  txt(`Tiempo simulado ${clock(fr.simTimeMs / 1000)} · ${input.scenarioName}`, 27, 615, 13, C.rotulo);
+  txt('VENTILA LAB · datos de un modelo sintético · no reproduce el firmware de ningún equipo', 1100, 615, 12, C.eje, 'right');
   let x = 8;
   input.quickItems.forEach((v, i) => {
     const width = i === 0 ? 169 : 155;
     const gr = ctx.createLinearGradient(0, 645, 0, 725);
-    gr.addColorStop(0, '#266aac');
-    gr.addColorStop(1, '#0b3977');
+    // Teclas de grafito, como .device-key.
+    gr.addColorStop(0, C.grafitoAlto);
+    gr.addColorStop(0.48, C.grafito);
+    gr.addColorStop(1, C.grafitoBajo);
     ctx.fillStyle = gr;
     ctx.fillRect(x, 645, width, 80);
-    txt(v[0], x + width / 2, 662, 11, '#acddfc', 'center');
-    txt(v[1], x + width / 2, 700, 24, '#edffff', 'center', '600');
+    ctx.strokeStyle = C.grafitoBorde;
+    ctx.strokeRect(x + 0.5, 645.5, width - 1, 79);
+    txt(v[0], x + width / 2, 662, 11, C.rotulo, 'center');
+    txt(v[1], x + width / 2, 700, 24, C.texto, 'center', '700');
     x += width + 2;
   });
   return c;

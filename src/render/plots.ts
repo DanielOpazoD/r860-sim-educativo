@@ -1,5 +1,5 @@
 import { formatNumber as format } from '../domain/units';
-import { PLOT_TEXT_COLORS, PLOT_TYPE } from './plotColors';
+import { alfa, AYUDA, MON, MON_CSS, PLOT_TEXT_COLORS, PLOT_TYPE } from './monitorPalette';
 /**
  * Renderizado exclusivamente visual (canvas). Nunca modifica el estado de la simulación.
  * Estilo de curvas, bucles, manómetro, tendencias y esfuerzo derivado de «R860 Lab» v1.1 (src/plots.js, MIT 2026),
@@ -34,7 +34,15 @@ function context(canvas: HTMLCanvasElement) {
   o.ctx.clearRect(0, 0, o.w, o.h);
   return o;
 }
-function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color = '#7fbde055', width = 0.6): void {
+function line(
+  ctx: CanvasRenderingContext2D,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  color: string = MON.lineaPorOmision,
+  width = 0.6,
+): void {
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.beginPath();
@@ -392,7 +400,7 @@ export function drawWave(
           min: range.minPressure,
           max: range.pressure,
           ticks: [0, range.pressure / 2, range.pressure],
-          color: '#ffffff',
+          color: MON_CSS.texto,
           fill: 'pressure',
         },
       ]
@@ -406,7 +414,7 @@ export function drawWave(
           // Con suelo negativo hace falta su marca, como en el volumen: la excursión se ve pero también se mide.
           ticks:
             range.minPressure <= -5 ? [range.minPressure, 0, range.pressure / 2, range.pressure] : [0, range.pressure / 2, range.pressure],
-          color: '#ffffff',
+          color: MON_CSS.texto,
           fill: 'pressure',
         },
         {
@@ -416,7 +424,7 @@ export function drawWave(
           min: -range.flow,
           max: range.flow,
           ticks: [-range.flow, 0, range.flow],
-          color: '#ffffff',
+          color: MON_CSS.texto,
           fill: 'flow',
         },
         {
@@ -427,7 +435,7 @@ export function drawWave(
           max: range.volume,
           // Con suelo negativo hace falta su marca: si no, la excursión bajo la línea de base se ve pero no se mide.
           ticks: range.minVolume < -range.volume * 0.15 ? [range.minVolume, 0, range.volume] : [0, range.volume / 2, range.volume],
-          color: '#ffffff',
+          color: MON_CSS.texto,
           fill: 'volume',
         },
       ];
@@ -442,17 +450,17 @@ export function drawWave(
       ph = ybottom - ytop;
     const yf = (v: number): number => ybottom - ((v - sp.min) / (sp.max - sp.min)) * ph;
     // Rótulo blanco en negrita y unidad gris, como en las capturas del manual; rejilla discreta y línea de cero clara.
-    text(ctx, sp.label, left + 1, i * rowH + 16, 13, '#ffffff', 'left', '700');
+    text(ctx, sp.label, left + 1, i * rowH + 16, 13, MON_CSS.texto, 'left', '700');
     text(ctx, sp.unit, w - right, i * rowH + 16, 10, PLOT_TEXT_COLORS.tickCurvas, 'right');
-    for (let k = 0; k <= 6; k++) line(ctx, left + (k * plotW) / 6, ytop, left + (k * plotW) / 6, ybottom, '#5d78966b', 0.65);
+    for (let k = 0; k <= 6; k++) line(ctx, left + (k * plotW) / 6, ytop, left + (k * plotW) / 6, ybottom, MON.rejilla, 0.65);
     for (const val of sp.ticks) {
       const y = yf(val);
-      line(ctx, left, y, w - right, y, val === 0 ? '#d8e2ecc0' : '#7d93ad40', val === 0 ? 1 : 0.6);
+      line(ctx, left, y, w - right, y, val === 0 ? MON.cero : MON.rejillaSuave, val === 0 ? 1 : 0.6);
       text(ctx, String(Math.round(val)), left - 7, y + 3, 11, PLOT_TEXT_COLORS.tickCurvas, 'right');
     }
-    line(ctx, left, ytop, left, ybottom, '#7d93ad8c');
-    line(ctx, w - right, ytop, w - right, ybottom, '#7d93ad8c');
-    line(ctx, left, ybottom, w - right, ybottom, '#7d93ad8c');
+    line(ctx, left, ytop, left, ybottom, MON.marco);
+    line(ctx, w - right, ytop, w - right, ybottom, MON.marco);
+    line(ctx, left, ybottom, w - right, ybottom, MON.marco);
     const segments: { x: number; y: number }[][] = [];
     let segment: { x: number; y: number }[] = [];
     let prevX = -1,
@@ -478,11 +486,11 @@ export function drawWave(
       ctx.save();
       ctx.setLineDash([4, 4]);
       if (peep > 0) {
-        line(ctx, left, yf(peep), w - right, yf(peep), '#ffd66e99', 0.9);
+        line(ctx, left, yf(peep), w - right, yf(peep), alfa(AYUDA.peep, '99'), 0.9);
         text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaPeep, 'right');
       }
       if (typeof options.pmax === 'number' && Number.isFinite(options.pmax) && options.pmax > sp.min && options.pmax < sp.max) {
-        line(ctx, left, yf(options.pmax), w - right, yf(options.pmax), '#ff7b7bb0', 0.9);
+        line(ctx, left, yf(options.pmax), w - right, yf(options.pmax), AYUDA.pmaxLinea, 0.9);
         text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.marcaPpico, 'right');
       }
       ctx.restore();
@@ -491,7 +499,7 @@ export function drawWave(
         if (t < end - win || t > end) continue;
         const x = xfn(t);
         if (x < left || x > w - right) continue;
-        ctx.fillStyle = '#ffd66e';
+        ctx.fillStyle = AYUDA.peep;
         ctx.beginPath();
         ctx.moveTo(x, ybottom - 1);
         ctx.lineTo(x - 3.5, ybottom - 7);
@@ -504,16 +512,16 @@ export function drawWave(
     // Rellenos de fábrica del equipo en las capturas del manual SW10: presión amarilla que se aclara hacia la base (como
     // en la foto P1), flujo verde y volumen blanco que se apaga hacia la base. El equipo deja cambiarlos (URM 23-6).
     if (sp.fill === 'pressure') {
-      gradient.addColorStop(0, '#c9b4000a');
-      gradient.addColorStop(0.45, '#d8c21a66');
-      gradient.addColorStop(1, '#f4da2ed9');
+      gradient.addColorStop(0, MON.presion[0]);
+      gradient.addColorStop(0.45, MON.presion[1]);
+      gradient.addColorStop(1, MON.presion[2]);
     } else if (sp.fill === 'flow') {
-      gradient.addColorStop(0, '#43b86ccc');
-      gradient.addColorStop(0.5, '#2c934cb3');
-      gradient.addColorStop(1, '#43b86ccc');
+      gradient.addColorStop(0, MON.flujo[0]);
+      gradient.addColorStop(0.5, MON.flujo[1]);
+      gradient.addColorStop(1, MON.flujo[0]);
     } else {
-      gradient.addColorStop(0, '#ffffffd9');
-      gradient.addColorStop(1, '#8d97a540');
+      gradient.addColorStop(0, MON.volumen[0]);
+      gradient.addColorStop(1, MON.volumen[1]);
     }
     for (const seg of segments) {
       if (seg.length < 2) continue;
@@ -531,7 +539,7 @@ export function drawWave(
     if (ref && refShift !== null) {
       ctx.save();
       ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = '#edc87eb3';
+      ctx.strokeStyle = alfa(AYUDA.referencia, 'b3');
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       let refStarted = false,
@@ -568,7 +576,7 @@ export function drawWave(
       if (marker.kind === 'start' || marker.kind === 'cycle' || marker.kind === 'end') {
         ctx.save();
         ctx.setLineDash([2, 4]);
-        line(ctx, x, ytop, x, ybottom, marker.kind === 'cycle' ? '#ffd36e80' : '#b4dcf060', 0.8);
+        line(ctx, x, ytop, x, ybottom, marker.kind === 'cycle' ? AYUDA.ciclado : AYUDA.marca, 0.8);
         ctx.restore();
         if (i === 0) {
           const labelY = marker.kind === 'start' ? ytop + 10 : marker.kind === 'cycle' ? ybottom - 16 : ybottom - 5;
@@ -592,26 +600,26 @@ export function drawWave(
     }
     if (style === 'sweep' && !options.frozen) {
       const cursor = xfn(end);
-      ctx.fillStyle = '#2c405af0';
+      ctx.fillStyle = MON.barrido;
       ctx.fillRect(cursor + 1, ytop, 8, ph);
-      line(ctx, cursor, ytop, cursor, ybottom, '#e6ecf288', 0.8);
+      line(ctx, cursor, ytop, cursor, ybottom, MON.cursorBarrido, 0.8);
     } else if (style === 'sweep') {
       // Congeladas en barrido: a la izquierda de esta línea está la pasada nueva y a la derecha la anterior. Sin marca,
       // el salto de la señal en la unión se lee como un defecto de la curva.
       const union = xfn(end);
       ctx.save();
       ctx.setLineDash([3, 3]);
-      line(ctx, union, ytop, union, ybottom, '#c4f5ffaa', 0.9);
+      line(ctx, union, ytop, union, ybottom, AYUDA.union, 0.9);
       ctx.restore();
     }
     if (typeof options.cursorTime === 'number' && Number.isFinite(options.cursorTime)) {
       const x = xfn(options.cursorTime);
-      line(ctx, x, ytop, x, ybottom, '#ffffffd0', 0.8);
-      if (i === 0) text(ctx, 'A', x + 3, ytop + 11, PLOT_TYPE.nota, '#ffffff', 'left', '600');
+      line(ctx, x, ytop, x, ybottom, AYUDA.cursor, 0.8);
+      if (i === 0) text(ctx, 'A', x + 3, ytop + 11, PLOT_TYPE.nota, MON_CSS.texto, 'left', '600');
     }
     if (typeof options.cursorTimeB === 'number' && Number.isFinite(options.cursorTimeB)) {
       const x = xfn(options.cursorTimeB);
-      line(ctx, x, ytop, x, ybottom, '#ffe49ad0', 0.8);
+      line(ctx, x, ytop, x, ybottom, alfa(PLOT_TEXT_COLORS.marcaPplat, 'd0'), 0.8);
       if (i === 0) text(ctx, 'B', x + 3, ytop + 11, PLOT_TYPE.nota, PLOT_TEXT_COLORS.marcaPplat, 'left', '600');
     }
     ctx.restore();
@@ -673,19 +681,19 @@ export function drawLoop(
     yrange = type === 'pv' ? [0, ranges.volume] : [-ranges.flow, ranges.flow];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, type === 'pv' ? 'Presión · volumen' : 'Flujo · volumen', left, 23, 15, '#ffffff', 'left', '700');
+  text(ctx, type === 'pv' ? 'Presión · volumen' : 'Flujo · volumen', left, 23, 15, MON_CSS.texto, 'left', '700');
   text(ctx, type === 'pv' ? 'mL' : 'L/min', left, top - 9, 10, PLOT_TEXT_COLORS.tickBucles);
   text(ctx, type === 'pv' ? 'cmH₂O' : 'mL', w - right, h - 9, 10, PLOT_TEXT_COLORS.tickBucles, 'right');
   for (let k = 0; k <= 4; k++) {
     const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 4,
       y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 4;
-    line(ctx, xf(x), top, xf(x), bottom, '#5d78966b');
-    line(ctx, left, yf(y), w - right, yf(y), '#5d78966b');
+    line(ctx, xf(x), top, xf(x), bottom, MON.rejilla);
+    line(ctx, left, yf(y), w - right, yf(y), MON.rejilla);
     text(ctx, format(x), xf(x), bottom + 17, 10, PLOT_TEXT_COLORS.tickBucles, 'center');
     text(ctx, format(y), left - 8, yf(y) + 4, 10, PLOT_TEXT_COLORS.tickBucles, 'right');
   }
-  line(ctx, left, yf(0), w - right, yf(0), '#d8e2ecc0', 1);
-  line(ctx, left, top, left, bottom, '#d8e2ecc0', 1);
+  line(ctx, left, yf(0), w - right, yf(0), MON.cero, 1);
+  line(ctx, left, top, left, bottom, MON.cero, 1);
   const path = (data: Point[], color: string, dashed: boolean): void => {
     ctx.save();
     ctx.beginPath();
@@ -704,20 +712,20 @@ export function drawLoop(
     // El bucle flujo-volumen del equipo va relleno de verde, como la curva de flujo (capturas del manual SW10).
     if (!dashed && type === 'fv' && data.length > 2) {
       ctx.closePath();
-      ctx.fillStyle = '#2c934c8c';
+      ctx.fillStyle = MON.bucleFlujoVolumen;
       ctx.fill();
     }
     ctx.stroke();
     ctx.setLineDash([]);
     if (!dashed && data.length) {
       const p = data[data.length - 1]!;
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = MON_CSS.texto;
       ctx.beginPath();
       ctx.arc(xf(type === 'pv' ? p[1] : p[3]), yf(type === 'pv' ? p[3] : p[2]), 3, 0, Math.PI * 2);
       ctx.fill();
       // Marcas pedagógicas: inicio de inspiración (círculo hueco) y flechas del sentido del ciclo.
       const p0 = data[0]!;
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = MON_CSS.texto;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(xf(type === 'pv' ? p0[1] : p0[3]), yf(type === 'pv' ? p0[3] : p0[2]), 3.5, 0, Math.PI * 2);
@@ -726,7 +734,7 @@ export function drawLoop(
         const m = data[Math.max(0, Math.min(data.length - 1, i))]!;
         return { x: xf(type === 'pv' ? m[1] : m[3]), y: yf(type === 'pv' ? m[3] : m[2]) };
       };
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = MON_CSS.texto;
       for (const i of arrowIndices(data.length)) {
         const a = px(i - 2),
           b = px(i + 2),
@@ -751,32 +759,32 @@ export function drawLoop(
   if (type === 'pv' && peep > 0 && peep > xrange[0]! && peep < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
-    line(ctx, xf(peep), top, xf(peep), bottom, '#ffd66e99', 0.9);
+    line(ctx, xf(peep), top, xf(peep), bottom, alfa(AYUDA.peep, '99'), 0.9);
     ctx.restore();
-    line(ctx, xf(peep), bottom, xf(peep), bottom + 5, '#ffd66e', 1);
+    line(ctx, xf(peep), bottom, xf(peep), bottom + 5, AYUDA.peep, 1);
     text(ctx, 'PEEP', xf(peep) + 3, top + 10, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaPeep, 'left');
   }
   // La VT sólo es consigna en VC; en PC/PS es resultado, no ajuste.
   if (options.vtMark && vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
-    line(ctx, left, yf(vtMl), w - right, yf(vtMl), '#9fd7ff99', 0.9);
+    line(ctx, left, yf(vtMl), w - right, yf(vtMl), alfa(AYUDA.vt, '99'), 0.9);
     ctx.restore();
     text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaVt, 'right');
   }
   if (options.vtMark && vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
-    line(ctx, xf(vtMl), top, xf(vtMl), bottom, '#9fd7ff99', 0.9);
+    line(ctx, xf(vtMl), top, xf(vtMl), bottom, alfa(AYUDA.vt, '99'), 0.9);
     ctx.restore();
     text(ctx, 'VT', xf(vtMl) + 3, top + 10, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaVt, 'left');
   }
-  path(ref, reference ? '#edc87ecc' : '#b7c4d466', true);
-  path(current, '#ffffff', false);
-  line(ctx, w - 140, 20, w - 122, 20, '#ffffff', 2);
-  text(ctx, 'Actual', w - 116, 24, 10, '#ffffff');
-  line(ctx, w - 140, 34, w - 122, 34, reference ? '#edc87ecc' : '#b7c4d466', 1.5);
-  text(ctx, reference ? 'Referencia' : 'Previo', w - 116, 38, 10, reference ? '#eed49d' : PLOT_TEXT_COLORS.tickBucles);
+  path(ref, reference ? alfa(AYUDA.referencia, 'cc') : AYUDA.previo, true);
+  path(current, MON_CSS.texto, false);
+  line(ctx, w - 140, 20, w - 122, 20, MON_CSS.texto, 2);
+  text(ctx, 'Actual', w - 116, 24, 10, MON_CSS.texto);
+  line(ctx, w - 140, 34, w - 122, 34, reference ? alfa(AYUDA.referencia, 'cc') : AYUDA.previo, 1.5);
+  text(ctx, reference ? 'Referencia' : 'Previo', w - 116, 38, 10, reference ? PLOT_TEXT_COLORS.referencia : PLOT_TEXT_COLORS.tickBucles);
 }
 
 export interface GaugeState {
@@ -802,17 +810,17 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
     bw = 43;
   const yf = (v: number): number => bottom - (clamp(v, 0, max) / max) * (bottom - top);
   // En espera el panel es tostado (URM SW10 3-6): el texto pasa a oscuro.
-  const tinta = s.standby ? '#413a30' : '#ffffff',
-    tintaSuave = s.standby ? '#5c5345' : PLOT_TEXT_COLORS.tickCurvas;
+  const tinta = s.standby ? MON_CSS.tinta : MON_CSS.texto,
+    tintaSuave = s.standby ? MON_CSS.tintaSuave : PLOT_TEXT_COLORS.tickCurvas;
   text(ctx, 'Pva', x + bw / 2, 20, 13, tinta, 'center', '700');
   text(ctx, 'cmH₂O', x + bw / 2, 37, 10, tintaSuave, 'center');
   // Tubo: negro con un brillo vertical, como un cilindro.
   const tubo = ctx.createLinearGradient(x, 0, x + bw, 0);
-  tubo.addColorStop(0, '#060708');
-  tubo.addColorStop(0.45, '#26292d');
-  tubo.addColorStop(1, '#060708');
+  tubo.addColorStop(0, MON.tubo[0]);
+  tubo.addColorStop(0.45, MON.tubo[1]);
+  tubo.addColorStop(1, MON.tubo[0]);
   ctx.fillStyle = tubo;
-  ctx.strokeStyle = '#7d8a99';
+  ctx.strokeStyle = MON.tuboContorno;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(x, top - 10, bw, bottom - top + 22, [21, 21, 21, 21]);
@@ -823,9 +831,9 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   ctx.roundRect(x + 1, top - 9, bw - 2, bottom - top + 20, [20, 20, 20, 20]);
   ctx.clip();
   const fill = ctx.createLinearGradient(x, 0, x + bw, 0);
-  fill.addColorStop(0, '#2b8a3b');
-  fill.addColorStop(0.5, '#74d67f');
-  fill.addColorStop(1, '#2b8a3b');
+  fill.addColorStop(0, MON.tuboRelleno[0]);
+  fill.addColorStop(0.5, MON.tuboRelleno[1]);
+  fill.addColorStop(1, MON.tuboRelleno[0]);
   // En espera no hay presión que mostrar: el tubo queda vacío y sin marcas, como en el equipo (figura 3-4).
   if (!s.standby) {
     ctx.fillStyle = fill;
@@ -835,7 +843,7 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   const tick = max / 3;
   for (let i = 0; i <= 3; i++) {
     const v = i * tick;
-    line(ctx, x + 1, yf(v), x + bw - 1, yf(v), '#3e8fa3', 1);
+    line(ctx, x + 1, yf(v), x + bw - 1, yf(v), MON.tuboMarca, 1);
     text(ctx, format(v), x - 8, yf(v) + 4, 12, tinta, 'right', '700');
   }
   const marker = (value: number | null, label: string, color: string, dy = 3): void => {
@@ -846,11 +854,11 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   };
   // Ppico junto a Pmáx: el rótulo baja para no pisar el de Pmáx, y la línea roja de Pmáx se dibuja encima.
   if (!s.standby) {
-    marker(s.ppeak, 'Ppico', '#f2f5f8', s.ppeak !== null && Math.abs(s.ppeak - s.pmax) < max * 0.04 ? 15 : 3);
-    marker(s.peep, 'PEEP', '#f2f5f8');
-    marker(s.pmax, 'Pmáx', '#ff4a4f');
+    marker(s.ppeak, 'Ppico', MON.marcaBlanca, s.ppeak !== null && Math.abs(s.ppeak - s.pmax) < max * 0.04 ? 15 : 3);
+    marker(s.peep, 'PEEP', MON.marcaBlanca);
+    marker(s.pmax, 'Pmáx', MON.pmax);
   }
-  line(ctx, 8, 400, w - 8, 400, s.standby ? '#cbbd98' : '#4d6480', 1);
+  line(ctx, 8, 400, w - 8, 400, s.standby ? MON.separadorEspera : MON.separador, 1);
   // Resolución del equipo: VT en pasos de 0,1 mL bajo 50 mL y de 1 mL desde ahí (URM SW10 13-24).
   const vte = s.standby ? null : s.vteMl;
   const columna = (cx: number, rotulo: string, valor: string, unidad: string): void => {
@@ -871,8 +879,8 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
     hi = Math.max(10, ...recent.map((p) => p[4] * 1.3)),
     lo = Math.min(0, ...recent.map((p) => p[4] * 1.3)),
     y = (v: number) => bottom - ((v - lo) / (hi - lo)) * (bottom - top);
-  line(ctx, 0, bottom, w, bottom, '#6385a64a');
-  line(ctx, 0, lo < 0 ? y(0) : (top + bottom) / 2, w, lo < 0 ? y(0) : (top + bottom) / 2, '#6385a62a');
+  line(ctx, 0, bottom, w, bottom, AYUDA.esfuerzoEje[0]);
+  line(ctx, 0, lo < 0 ? y(0) : (top + bottom) / 2, w, lo < 0 ? y(0) : (top + bottom) / 2, AYUDA.esfuerzoEje[1]);
   if (!recent.length) return;
   ctx.beginPath();
   recent.forEach((p, i) => {
@@ -881,15 +889,15 @@ export function drawMuscle(canvas: HTMLCanvasElement, points: Point[], end: numb
     if (i) ctx.lineTo(x, yy);
     else ctx.moveTo(x, yy);
   });
-  ctx.strokeStyle = '#b2a5ee';
+  ctx.strokeStyle = AYUDA.esfuerzo;
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.lineTo(w, bottom);
   ctx.lineTo(0, bottom);
   ctx.closePath();
   const g = ctx.createLinearGradient(0, top, 0, bottom);
-  g.addColorStop(0, '#8e82d939');
-  g.addColorStop(1, '#8e82d904');
+  g.addColorStop(0, AYUDA.esfuerzoRelleno[0]);
+  g.addColorStop(1, AYUDA.esfuerzoRelleno[1]);
   ctx.fillStyle = g;
   ctx.fill();
 }
@@ -934,18 +942,18 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     ];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, 'Pva · V', left, top - 9, 10, '#ffffff', 'left');
-  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, 10, '#b2a5ee', 'left');
+  text(ctx, 'Pva · V', left, top - 9, 10, MON_CSS.texto, 'left');
+  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, 10, AYUDA.esfuerzo, 'left');
   for (let k = 0; k <= 3; k++) {
     const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 3,
       y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 3;
-    line(ctx, xf(x), top, xf(x), bottom, '#5d78966b');
-    line(ctx, left, yf(y), w - right, yf(y), '#5d78966b');
+    line(ctx, xf(x), top, xf(x), bottom, MON.rejilla);
+    line(ctx, left, yf(y), w - right, yf(y), MON.rejilla);
     text(ctx, format(x), xf(x), bottom + 12, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
     text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
   }
-  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, '#d8e2ecc0', 1);
-  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), '#d8e2ecc0', 1);
+  if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, MON.cero, 1);
+  if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), MON.cero, 1);
   const path = (data: Point[], xOf: (p: Point) => number, color: string, alpha: number): void => {
     if (!data.length) return;
     ctx.save();
@@ -967,11 +975,11 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
   };
   // El ciclo en curso se dibuja primero y el completo encima, para que el bucle cerrado mande.
   if (completo.length) {
-    path(actual, (p) => p[1], '#ffffff', 0.45);
-    if (esfActual) path(actual, (p) => p[1] + p[4], '#b2a5ee', 0.45);
+    path(actual, (p) => p[1], MON_CSS.texto, 0.45);
+    if (esfActual) path(actual, (p) => p[1] + p[4], AYUDA.esfuerzo, 0.45);
   }
-  path(base, (p) => p[1], '#ffffff', 1);
-  if (esfBase) path(base, (p) => p[1] + p[4], '#b2a5ee', 1);
+  path(base, (p) => p[1], MON_CSS.texto, 1);
+  if (esfBase) path(base, (p) => p[1] + p[4], AYUDA.esfuerzo, 1);
   if (!esfBase && !esfActual)
     text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, PLOT_TEXT_COLORS.tickBucles, 'center');
 }
@@ -986,21 +994,21 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
       label: 'Presiones',
       unit: 'cmH₂O',
       keys: [
-        ['ppeak', '#ffffff', 'Ppico'],
-        ['peep', '#64d7c4', 'PEEPe'],
+        ['ppeak', MON_CSS.texto, 'Ppico'],
+        ['peep', AYUDA.tendenciaPeep, 'PEEPe'],
       ] as [keyof TrendRow, string, string][],
       max: nice(Math.max(30, ...visible.map((x) => x.ppeak ?? 0)) * 1.15, [40, 60, 80, 120]),
     },
     {
       label: 'Volumen espirado',
       unit: 'mL',
-      keys: [['vte', '#e6ecf2', 'VTesp']] as [keyof TrendRow, string, string][],
+      keys: [['vte', MON_CSS.textoSuave, 'VTesp']] as [keyof TrendRow, string, string][],
       max: nice(Math.max(450, ...visible.map((x) => x.vte ?? 0)) * 1.15, [600, 800, 1000, 1500, 2500]),
     },
     {
       label: 'Frecuencia',
       unit: '/min',
-      keys: [['rr', '#e8d397', 'FR']] as [keyof TrendRow, string, string][],
+      keys: [['rr', AYUDA.tendenciaFr, 'FR']] as [keyof TrendRow, string, string][],
       max: nice(Math.max(30, ...visible.map((x) => x.rr ?? 0)) * 1.1, [40, 60, 90, 120]),
     },
   ];
@@ -1014,14 +1022,14 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
       ph = bottom - top,
       xf = (t: number): number => left + ((t - start) / span) * pw,
       yf = (v: number): number => bottom - (v / sp.max) * ph;
-    text(ctx, sp.label, left, i * row + 16, 12, '#ffffff', 'left', '700');
+    text(ctx, sp.label, left, i * row + 16, 12, MON_CSS.texto, 'left', '700');
     text(ctx, sp.unit, left - 9, i * row + 16, PLOT_TYPE.unidad, PLOT_TEXT_COLORS.tickTendencias, 'right');
     for (let k = 0; k <= 4; k++) {
       const y = yf((k * sp.max) / 4);
-      line(ctx, left, y, w - right, y, '#7d93ad40');
+      line(ctx, left, y, w - right, y, MON.rejillaSuave);
       text(ctx, format((k * sp.max) / 4), left - 8, y + 3, 10, PLOT_TEXT_COLORS.tickTendencias, 'right');
       const x = left + (k * pw) / 4;
-      line(ctx, x, top, x, bottom, '#7d93ad40');
+      line(ctx, x, top, x, bottom, MON.rejillaSuave);
     }
     sp.keys.forEach(([key, color, label], j) => {
       ctx.strokeStyle = color;

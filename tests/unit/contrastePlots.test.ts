@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PLOT_BACKGROUND_LIGHTEST, PLOT_TEXT_COLORS } from '../../src/render/plotColors';
+import { PLOT_BACKGROUND_LIGHTEST, PLOT_TEXT_COLORS } from '../../src/render/monitorPalette';
 
 // El texto de ejes dibujado en canvas no lo cubre el contraste CSS de CTR-02: aquí se miden los literales centralizados
 // en PLOT_TEXT_COLORS contra el extremo más claro del fondo del monitor. (Misma fórmula WCAG 2.1 que contraste.test.ts.)

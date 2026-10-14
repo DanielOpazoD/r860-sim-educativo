@@ -8,6 +8,63 @@
   --muted: #95a7ba;
   --dim: #677e94;
 }
+/*
+ * Paleta del monitor (E-118): los colores medidos en las capturas del manual SW10. Cambiar la identidad del equipo
+ * es editar aquí; las pruebas de contraste leen estos valores (tests/unit/contraste.test.ts).
+ */
+:root {
+  --mon-pantalla-claro: #3b4f68; /* centro de la pantalla: el extremo claro, el que miden los contrastes */
+  --mon-pantalla: #2c405a; /* área de datos */
+  --mon-pantalla-borde: #1b3350; /* bordes de la pantalla */
+  --mon-marco: #22364f; /* marco de la pantalla tras el monitor escalado */
+  --mon-texto: #ffffff; /* rótulos y cifras */
+  --mon-texto-suave: #e6ecf2; /* texto secundario claro */
+  --mon-unidad: #d6dee8; /* unidades y líneas pequeñas */
+  --mon-rotulo: #c9d0da; /* rótulos de las teclas de ajuste y mensajes */
+  --mon-gris: #c9d3de; /* texto gris de las vistas */
+  --mon-grafito-alto: #353b47; /* teclas: parte alta del degradado */
+  --mon-grafito: #262b35; /* teclas: centro */
+  --mon-grafito-bajo: #1c2029; /* teclas: parte baja */
+  --mon-grafito-borde: #474e5c; /* borde de las teclas */
+  --mon-grafito-claro: #6d7686; /* bordes de campos y botones pequeños */
+  --mon-boton-bajo: #1f242d; /* botones pequeños: parte baja */
+  --mon-ventana: #2c2f36; /* ventanas del equipo: panel */
+  --mon-ventana-caja: #3a3e46; /* ventanas del equipo: cajas de valor */
+  --mon-ventana-barra: #3d424b; /* ventanas del equipo: cabecera y pie */
+  --mon-ventana-hover: #484d57; /* ventanas del equipo: resalte */
+  --mon-cabecera: #1f2b3c; /* cabeceras de tablas */
+  --mon-reposo-alto: #2b6f1a; /* banda sin alarmas: verde del equipo */
+  --mon-reposo-bajo: #36832a; /* banda sin alarmas: verde del equipo */
+  --mon-reposo-borde: #6fbf55; /* banda sin alarmas: borde */
+  --mon-banda-alta-a: #a8172c; /* banda de prioridad alta: degradado */
+  --mon-banda-alta-b: #c41f31;
+  --mon-banda-alta-borde: #ef6a78;
+  --mon-banda-alta-texto: #fff2f3;
+  --mon-banda-media-a: #c9931d; /* banda de prioridad media: ámbar */
+  --mon-banda-media-b: #e0a92a;
+  --mon-banda-media-borde: #f3d27a;
+  --mon-media-texto: #1a1200; /* texto oscuro sobre ámbar: banda media y botón de espera */
+  --mon-banda-previa-a: #4a5868; /* banda de alarma previa por reconocer */
+  --mon-banda-previa-b: #5c6b7d;
+  --mon-banda-previa-borde: #9aa8b8;
+  --mon-alta: #ff7a80; /* prioridad alta: borde y X */
+  --mon-media: #f0a92e; /* prioridad media: borde */
+  --mon-baja: #4f8dff; /* prioridad baja y pausa de audio */
+  --mon-tostado: #e7dab8; /* espera: panel, tecla y barra */
+  --mon-tostado-borde: #f3ead2; /* espera: bordes */
+  --mon-tinta: #413a30; /* espera: texto oscuro */
+  --mon-tinta-suave: #5c5345; /* espera: texto secundario */
+  --mon-panel-alto: #2a4262; /* panel de la barra de presión */
+  --mon-panel-bajo: #233a58; /* panel de la barra de presión */
+  --mon-panel-borde: #3d5677; /* panel de la barra de presión: borde */
+  --mon-nav-alto: #0f1727; /* fila de vistas */
+  --mon-nav-bajo: #050b16; /* fila de vistas */
+  --mon-halo: #57b6e6; /* tecla o vista activa: halo cian */
+  --mon-eje: #dbe3ec; /* ejes, ticks y rótulos pequeños sobre la pantalla (también en canvas) */
+  --mon-trazo: #7d93ad; /* marco de las gráficas y borde de la ventana de bloqueo */
+  --mon-bloqueo-alto: #3a4c63; /* ventana de bloqueo y editor rápido: parte alta */
+  --mon-bloqueo-bajo: #273649; /* ventana de bloqueo: parte baja */
+}
 * {
   box-sizing: border-box;
 }
@@ -292,7 +349,7 @@ a {
   }
 }
 .bezel-light.low {
-  background: #4f8dff;
+  background: var(--mon-baja);
   box-shadow: 0 0 10px #4f8dff80;
 }
 /* Pausa de audio: la mitad izquierda de la luz, azul fija; la derecha sigue con la prioridad (URM SW10 8-6, D). */
@@ -301,13 +358,13 @@ a {
   position: absolute;
   inset: 0 50% 0 0;
   border-radius: 2px 0 0 2px;
-  background: #4f8dff;
+  background: var(--mon-baja);
 }
 .screen-window {
   width: 100%;
   position: relative;
   aspect-ratio: 1120/735;
-  background: #22364f;
+  background: var(--mon-marco);
   overflow: hidden;
   border-radius: 5px;
   border: 2px solid #182731;
@@ -329,9 +386,14 @@ a {
   gap: 3px;
   /*
    * Azul pizarra del equipo, medido en las capturas del manual SW10 (3-12 a 3-14): #15395b en los bordes, #2b3f58 en
-   * el área de datos y #455974 hacia el centro. El extremo más claro (#3b4f68) es el que miden los contrastes.
+   * el área de datos y #455974 hacia el centro. El extremo más claro (var(--mon-pantalla-claro)) es el que miden los contrastes.
    */
-  background: radial-gradient(ellipse 72% 62% at 46% 40%, #3b4f68 0%, #2c405a 55%, #1b3350 100%);
+  background: radial-gradient(
+    ellipse 72% 62% at 46% 40%,
+    var(--mon-pantalla-claro) 0%,
+    var(--mon-pantalla) 55%,
+    var(--mon-pantalla-borde) 100%
+  );
   font:
     14px/1.2 Arial,
     'Segoe UI',
@@ -358,9 +420,9 @@ a {
 }
 /* Teclas de grafito con rótulo blanco, como en las capturas del manual SW10 (#1e222b a #303440). */
 .device-key {
-  background: linear-gradient(#353b47, #262b35 48%, #1c2029);
-  color: #ffffff;
-  border: 1px solid #474e5c;
+  background: linear-gradient(var(--mon-grafito-alto), var(--mon-grafito) 48%, var(--mon-grafito-bajo));
+  color: var(--mon-texto);
+  border: 1px solid var(--mon-grafito-borde);
   border-right-color: #11141a;
   border-bottom-color: #0d1015;
   border-radius: 3px;
@@ -373,7 +435,7 @@ a {
 }
 .device-key:hover {
   filter: brightness(1.15);
-  border-color: #6d7686;
+  border-color: var(--mon-grafito-claro);
 }
 .device-key:active {
   background: #1a1e26;
@@ -422,9 +484,9 @@ a {
 .alarm-band {
   display: flex;
   border-radius: 3px;
-  background: linear-gradient(95deg, #2b6f1a, #36832a);
-  color: #ffffff;
-  border: 1px solid #6fbf55;
+  background: linear-gradient(95deg, var(--mon-reposo-alto), var(--mon-reposo-bajo));
+  color: var(--mon-texto);
+  border: 1px solid var(--mon-reposo-borde);
   transition: background 0.2s;
 }
 .alarm-band button {
@@ -506,19 +568,19 @@ a {
   height: 31px;
 }
 .alarm-band.high {
-  background: linear-gradient(90deg, #a8172c, #c41f31);
-  border-color: #ef6a78;
-  color: #fff2f3;
+  background: linear-gradient(90deg, var(--mon-banda-alta-a), var(--mon-banda-alta-b));
+  border-color: var(--mon-banda-alta-borde);
+  color: var(--mon-banda-alta-texto);
 }
 .alarm-band.medium {
-  background: linear-gradient(90deg, #c9931d, #e0a92a);
-  border-color: #f3d27a;
-  color: #1a1200;
+  background: linear-gradient(90deg, var(--mon-banda-media-a), var(--mon-banda-media-b));
+  border-color: var(--mon-banda-media-borde);
+  color: var(--mon-media-texto);
 }
 .alarm-band.previous {
-  background: linear-gradient(90deg, #4a5868, #5c6b7d);
-  border-color: #9aa8b8;
-  color: #ffffff;
+  background: linear-gradient(90deg, var(--mon-banda-previa-a), var(--mon-banda-previa-b));
+  border-color: var(--mon-banda-previa-borde);
+  color: var(--mon-texto);
 }
 .monitor-body {
   display: flex;
@@ -601,7 +663,7 @@ a {
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-  color: #ffffff;
+  color: var(--mon-texto);
   white-space: nowrap;
 }
 .numeric-leak b {
@@ -628,7 +690,7 @@ a {
   font-size: 12px;
   font-weight: 700;
   line-height: 1; /* la caja de 1,2 línea robaba 2 px que necesitan la unidad y la edad para caber en la fila fija */
-  color: #ffffff;
+  color: var(--mon-texto);
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
@@ -636,7 +698,7 @@ a {
   font-size: 32px; /* un píxel menos: etiqueta+valor+unidad+edad superaban la altura fija de la celda */
   font-weight: 700;
   letter-spacing: 0.1px;
-  color: #ffffff;
+  color: var(--mon-texto);
   /* 1,25 dejaba la caja 5 px más alta que los dígitos y etiqueta+valor+unidad+edad no cabían en la fila fija. */
   line-height: 1.1;
   white-space: nowrap;
@@ -644,14 +706,14 @@ a {
 }
 .numeric-unit {
   font-size: var(--type-2xs);
-  color: #d6dee8;
+  color: var(--mon-unidad);
   line-height: 1;
   /* lleva «· aprox.» cuando el dato es aproximado: una línea sola, como el resto de unidades */
   white-space: nowrap;
 }
 .numeric .numeric-age {
   font-size: var(--type-2xs);
-  color: #d6dee8;
+  color: var(--mon-unidad);
   /* La celda de la rejilla tiene alto fijo: una sola línea pegada a la unidad; si se deja envolver o se separa, se pinta sobre el rótulo de la fila siguiente. */
   margin-top: 0;
   white-space: nowrap;
@@ -661,7 +723,7 @@ a {
   font-size: inherit;
   font-weight: 400;
   font-style: normal;
-  color: #d6dee8;
+  color: var(--mon-unidad);
   letter-spacing: 0;
 }
 /*
@@ -672,13 +734,13 @@ a {
  */
 .numeric.alarm-value {
   background: #ffffff0d;
-  outline: 2px solid #f0a92e;
+  outline: 2px solid var(--mon-media);
   outline-offset: 0;
   border-radius: 6px;
   box-shadow: 0 0 9px #f0a92e66;
 }
 .numeric.alarm-value.alarm-high {
-  outline-color: #ff7a80;
+  outline-color: var(--mon-alta);
   box-shadow: 0 0 9px #ff7a8066;
 }
 /* Panel de la barra de presión: un poco más claro que la pantalla, con borde y esquinas redondeadas (capturas del manual). */
@@ -686,8 +748,8 @@ a {
   width: 142px;
   flex: none;
   height: 100%;
-  background: linear-gradient(100deg, #2a4262, #233a58);
-  border: 1px solid #3d5677;
+  background: linear-gradient(100deg, var(--mon-panel-alto), var(--mon-panel-bajo));
+  border: 1px solid var(--mon-panel-borde);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -698,7 +760,7 @@ a {
 }
 .monitor-nav {
   position: relative;
-  background: linear-gradient(#0f1727, #050b16);
+  background: linear-gradient(var(--mon-nav-alto), var(--mon-nav-bajo));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -728,10 +790,10 @@ a {
   background: radial-gradient(circle at 50% 30%, #5d646f, #2c313a 75%);
 }
 .nav-key.chosen {
-  box-shadow: 0 0 10px 3px #57b6e6;
+  box-shadow: 0 0 10px 3px var(--mon-halo);
   outline: 1px solid #a9def5;
   background: radial-gradient(#6cbde4, #2f7aa3);
-  color: #ffffff;
+  color: var(--mon-texto);
 }
 .nav-key.history-nav {
   border-radius: 4px;
@@ -755,7 +817,7 @@ a {
   position: absolute;
   left: 15px;
   bottom: 9px;
-  color: #c9d0da;
+  color: var(--mon-rotulo);
   font-size: 10px;
   width: 196px;
   white-space: nowrap;
@@ -778,13 +840,13 @@ a {
 .quick-key small {
   font-size: 11px;
   line-height: 1.4;
-  color: #c9d0da;
+  color: var(--mon-rotulo);
   font-weight: 400;
 }
 .quick-key b {
   font-size: 31px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--mon-texto);
   line-height: 1.3;
   white-space: nowrap;
 }
@@ -801,7 +863,7 @@ a {
   font-size: 10px;
   font-weight: 400;
   font-style: normal;
-  color: #c9d0da;
+  color: var(--mon-rotulo);
   margin-top: 0;
 }
 /* «Modo actual», la tecla más ancha y más oscura de la fila (capturas del manual). */
@@ -830,13 +892,13 @@ a {
 }
 /* En espera la tecla se vuelve tostada con rótulo oscuro, como en el equipo (URM SW10 3-6). */
 .quick-key.active-standby {
-  background: #e7dab8;
-  border-color: #f3ead2;
-  color: #413a30;
+  background: var(--mon-tostado);
+  border-color: var(--mon-tostado-borde);
+  color: var(--mon-tinta);
   text-shadow: none;
 }
 .quick-key.active-standby small {
-  color: #413a30;
+  color: var(--mon-tinta);
 }
 /* Las teclas de procedimiento sin ventilación: grises, como en la pantalla de espera del equipo. */
 .device-key:disabled {

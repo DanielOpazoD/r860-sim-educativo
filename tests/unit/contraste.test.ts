@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { MON_CSS } from '../../src/render/monitorPalette';
 import { alarmBandLabel } from '../../src/ui/humanize';
 
 // Los tonos de la banda de alarmas y de las cifras pequeñas de la columna numérica están calculados, no elegidos a ojo.
@@ -7,11 +8,14 @@ import { alarmBandLabel } from '../../src/ui/humanize';
 // cada degradado: si alguien retoca un color y baja de 4,5:1 (texto normal, AA), la integración lo dice.
 
 const dirStyles = new URL('../../src/ui/styles/', import.meta.url);
-const css = readdirSync(dirStyles)
+const fuente = readdirSync(dirStyles)
   .filter((f) => f.endsWith('.css'))
   .sort()
   .map((f) => readFileSync(new URL(f, dirStyles), 'utf8'))
   .join('\n');
+/** Paleta del monitor (`--mon-*` en 01-base.css): se sustituye por su valor para medir el color que de verdad se pinta. */
+export const PALETA = Object.fromEntries([...fuente.matchAll(/(--mon-[\w-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1]!, m[2]!]));
+const css = fuente.replace(/var\((--mon-[\w-]+)\)/g, (todo, token: string) => PALETA[token] ?? todo);
 
 function luminancia(hex: string): number {
   const h = hex.replace('#', '');
@@ -167,5 +171,39 @@ describe('CTR-05 · los colores del equipo', () => {
     const fondos = degradado('.hold-panel');
     expect(fondos).toHaveLength(2);
     for (const f of fondos) expect(contraste(color('.hold-result > b.hold-x'), f), f).toBeGreaterThanOrEqual(3);
+  });
+});
+
+// CTR-06 · la paleta del monitor vive en un solo sitio: sus colores no se vuelven a escribir a mano en las hojas del
+// monitor (02-vistas, 09-instrument y la parte del monitor de 01-base), sino que se usan por su nombre; y lo que se pinta
+// en canvas (curvas, barra de presión, captura exportada) toma los mismos valores de src/render/monitorPalette.ts.
+describe('CTR-06 · la paleta del monitor, en un solo sitio', () => {
+  it('declara la paleta medida y ninguna hoja del monitor repite sus colores como literal', () => {
+    expect(Object.keys(PALETA).length).toBeGreaterThanOrEqual(30);
+    const leer = (f: string): string => readFileSync(new URL(f, dirStyles), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const base = leer('01-base.css');
+    const monitor = base.slice(base.indexOf('.bezel-top {'), base.indexOf('.bezel-bottom {'));
+    const hojas: [string, string][] = [
+      ['01-base.css (monitor)', monitor],
+      ['02-vistas.css', leer('02-vistas.css')],
+      ['09-instrument.css', leer('09-instrument.css')],
+    ];
+    for (const [token, valor] of Object.entries(PALETA)) {
+      if (valor === '#ffffff') continue; // el blanco también es fondo de opciones elegidas: no es sólo texto
+      for (const [nombre, texto] of hojas)
+        expect(new RegExp(`${valor}(?![0-9a-f])`, 'i').test(texto), `${nombre} escribe ${valor} en vez de var(${token})`).toBe(false);
+    }
+  });
+
+  it('el canvas usa los mismos valores que la hoja (MON_CSS ↔ --mon-*)', () => {
+    for (const [clave, valor] of Object.entries(MON_CSS)) {
+      const token = `--mon-${clave.replace(/[A-Z]/g, (l) => `-${l.toLowerCase()}`)}`;
+      expect(PALETA[token], `${clave} → ${token}`).toBe(valor);
+    }
+  });
+
+  it('las curvas y la captura exportada no escriben colores a mano: todos vienen de monitorPalette.ts', () => {
+    for (const f of ['../../src/render/plots.ts', '../../src/ui/exports.ts'])
+      expect(readFileSync(new URL(f, import.meta.url), 'utf8').match(/#[0-9a-f]{6}/gi), f).toBeNull();
   });
 });
