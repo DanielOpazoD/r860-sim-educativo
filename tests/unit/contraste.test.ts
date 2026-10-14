@@ -153,6 +153,16 @@ describe('CTR-05 · los colores del equipo', () => {
     for (const f of degradado('.standby-overlay .primary-button'))
       expect(contraste(color('.standby-overlay .primary-button'), f), f).toBeGreaterThanOrEqual(AA);
   });
+  it('las ventanas del equipo son de grafito, como la configuración de alarmas del manual, con texto legible', () => {
+    const tokens = bloque('.app-dialog.device-dialog');
+    const tono = (t: string): string => new RegExp(`--shell-${t}: (#[0-9a-f]{6})`).exec(tokens)![1] as string;
+    for (const t of ['surface', 'raised', 'hover', 'line']) {
+      const [r, , b] = rgb(tono(t));
+      expect(Math.abs(b - r), t).toBeLessThan(25);
+    }
+    for (const t of ['text', 'muted', 'dim'])
+      for (const f of ['surface', 'raised']) expect(contraste(tono(t), tono(f)), `${t} sobre ${f}`).toBeGreaterThanOrEqual(AA);
+  });
   it('la X roja de una medición de bloqueo sin resultado se lee sobre la ventana (texto grande, ≥ 3:1)', () => {
     const fondos = degradado('.hold-panel');
     expect(fondos).toHaveLength(2);

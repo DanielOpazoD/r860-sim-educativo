@@ -48,6 +48,7 @@ Las capturas del manual son la imagen que genera el propio equipo, sin cámara d
 | Barra de presión | Panel redondeado algo más claro; tubo negro con relleno verde, marcas cian, Pmáx roja, Ppico y PEEP blancas; VTesp y FiO₂ en dos columnas | Tubo azul con relleno turquesa, Pva numérica arriba | Igual que el equipo, con «Pva» y su unidad arriba |
 | Valor en alarma | Borde del color de la prioridad alrededor de la cifra y sus límites (8-7, captura 8-8) | Bloque ámbar sólido con número negro | Borde ámbar (media) o rojo (alta), cifra blanca |
 | Banda sin alarmas | Verde amarillento #3c9225 | Verde azulado | Verde amarillento algo más profundo, por contraste |
+| Ventanas del equipo (modos, límites, menús) | Grafito: panel gris oscuro, cajas de valor más claras, cabecera y pie más claros (configuración de alarmas, 8-6) | Azul saturado | Grafito (#2c2f36, cajas #3a3e46, cabecera #3d424b) |
 
 Los contrastes se recalcularon sobre el extremo más claro del nuevo fondo (#3b4f68): las cifras pequeñas de la columna numérica superan 6:1, el texto de ejes 6,5:1 y los bordes de alarma 3:1 (CTR-02, CTR-03 y CTR-05). La tipografía sigue siendo Arial: el equipo usa una sans humanista en negrita que no se distribuye con el navegador.
 
