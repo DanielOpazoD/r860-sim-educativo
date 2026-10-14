@@ -60,7 +60,8 @@ La interfaz depende del perfil inyectado (`ctx.profile`), no del módulo de un e
 Hay dos puertas, y conviene no confundirlas.
 
 - **`npm run check`** es la puerta rápida de escritorio (unos segundos): oxlint (corrección, `eqeqeq`, `prefer-const`, `consistent-type-imports`, `import/no-cycle`) → fronteras de capas → Prettier → tsc estricto → Vitest. **No mide cobertura**: `npm run test` es `vitest run` a secas, para que la puerta que se corre veinte veces al día siga siendo instantánea.
-- **La integración continua** es la puerta real: repite lo anterior, sustituye Vitest por `npm run test:coverage` (con los umbrales de `vitest.config.ts`), añade el build y Playwright en tres viewports, y termina comprobando que los números de la documentación coincidan con los artefactos que acaba de producir.
+- **La integración continua** es la puerta real: repite lo anterior, sustituye Vitest por `npm run test:coverage` (con los umbrales de `vitest.config.ts`), añade el build y Playwright en tres viewports, y termina comprobando que los números de la documentación coincidan con los artefactos que acaba de producir. `npm run ci` la reproduce en local en un solo pase y deja escritos los hechos (`docs:facts`) en vez de sólo comprobarlos.
+- **Un solo pase de Vitest.** `test:coverage` escribe también `test-results/vitest.json`, y `results:doc` lo lee sin volver a ejecutar las pruebas. Antes las repetía al final: si el árbol había cambiado mientras corría Playwright, el README contaba pruebas que la rama no tenía (así falló el PR #139).
 
 La cobertura de `src/ui` y `src/render` la aportan las pruebas e2e y no aparece en el informe de v8; por eso el README publica las dos cifras, con y sin esa capa.
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Regenera docs/01-resultados.md desde test-results/vitest.json y test-results/e2e-results.json (salidas reales).
 
+No vuelve a ejecutar las pruebas: lee la salida JSON que escribe `npm run test:coverage` en esa misma corrida. Así el
+documento y los hechos del README describen exactamente lo que se probó, aunque el árbol cambie después.
+
 Nada del encabezado se escribe a mano: la versión sale de package.json, el motor de src/engine/version.ts, los modos
 habilitados de profile.ts, las versiones de Node/Playwright del entorno, y la lista «no ejecutado» se calcula a partir de
 los identificadores de prueba que aparecen (y pasan) en las salidas JSON.
@@ -44,7 +47,7 @@ chromium = rx(r'"chromium"[^}]*?"revision":\s*"(\d+)"', read('node_modules/playw
 # --- salidas reales ---------------------------------------------------------------------------------------------
 V_PATH, E_PATH = 'test-results/vitest.json', 'test-results/e2e-results.json'
 if not os.path.exists(V_PATH):
-    sys.exit(f'falta {V_PATH}: ejecuta `npm run results:doc` (genera la salida de Vitest)')
+    sys.exit(f'falta {V_PATH}: ejecuta `npm run test:coverage` (escribe la salida de Vitest de esa misma corrida)')
 v = json.load(open(V_PATH, encoding='utf-8'))
 e = json.load(open(E_PATH, encoding='utf-8')) if os.path.exists(E_PATH) else None
 e_note = ''
