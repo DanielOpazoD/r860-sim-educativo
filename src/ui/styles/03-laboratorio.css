@@ -637,9 +637,6 @@
     padding-left: 34px;
     padding-right: 34px;
   }
-  .bezel-top {
-    height: 46px;
-  }
 }
 @media (max-width: 1250px) {
   .workspace {
@@ -663,9 +660,6 @@
   .device-shell {
     padding-left: 12px;
     padding-right: 12px;
-  }
-  .bezel-top {
-    height: 36px;
   }
   .hard-keys {
     gap: 12px;
@@ -734,9 +728,6 @@
   .task,
   .reflection {
     font-size: var(--type-md);
-  }
-  .bezel-top {
-    height: 39px;
   }
   .hard-keys {
     gap: 18px;
