@@ -108,6 +108,34 @@ export function labelBaseline(taken: LabelBox[], x0: number, x1: number, preferr
   const choca = (y: number): boolean => taken.some((b) => x0 < b.x1 + 4 && x1 > b.x0 - 4 && Math.abs(y - b.y) < height + 2);
   return choca(preferred) && !choca(below) ? below : preferred;
 }
+/** Alto que ocupa la traza (en píxeles del lienzo) entre x0 y x1, o null si allí no pasa: cuenta todo tramo que lo cruce. */
+export function traceSpan(segments: { x: number; y: number }[][], x0: number, x1: number): [number, number] | null {
+  let lo = Infinity,
+    hi = -Infinity;
+  for (const seg of segments)
+    for (let k = 0; k < seg.length; k++) {
+      const p = seg[k]!,
+        q = seg[k + 1] ?? p;
+      if (Math.max(p.x, q.x) < x0 || Math.min(p.x, q.x) > x1) continue;
+      lo = Math.min(lo, p.y, q.y);
+      hi = Math.max(hi, p.y, q.y);
+    }
+  return lo <= hi ? [lo, hi] : null;
+}
+/**
+ * Línea base de un rótulo de fase («Inicio», «Ciclado», «Fin esp.») que no tache la traza. Si la traza cruza su banda —en
+ * SC-09 la PEEP queda justo a la altura de «Ciclado»—, el rótulo sube por encima de ella, sobre el fondo; si no cabe, baja
+ * por debajo; si tampoco, se queda donde estaba.
+ */
+export function phaseBaseline(span: [number, number] | null, preferred: number, height: number, ytop: number, ybottom: number): number {
+  const tacha = (y: number): boolean => !!span && span[0] < y + 2 && span[1] > y - height;
+  if (!span || !tacha(preferred)) return preferred;
+  const encima = span[0] - 3,
+    debajo = span[1] + height + 2;
+  if (encima >= ytop + height && !tacha(encima)) return encima;
+  if (debajo <= ybottom - 1 && !tacha(debajo)) return debajo;
+  return preferred;
+}
 export interface WaveformFeatures {
   ppeak: number;
   minPressure: number;
@@ -603,7 +631,9 @@ export function drawWave(
         ctx.restore();
         if (i === 0) {
           const labelY = marker.kind === 'start' ? ytop + 10 : marker.kind === 'cycle' ? ybottom - 16 : ybottom - 5;
-          rotular(marker.label, x + 3, labelY, PLOT_TEXT_COLORS.anotacion);
+          ctx.font = `normal ${MON_FS['2xs']}px Arial,sans-serif`;
+          const span = traceSpan(segments, x + 3, x + 3 + ctx.measureText(marker.label).width);
+          rotular(marker.label, x + 3, phaseBaseline(span, labelY, MON_FS['2xs'], ytop, ybottom), PLOT_TEXT_COLORS.anotacion);
         }
       } else if (i === 0) {
         const value = marker.value ?? sp.min;
