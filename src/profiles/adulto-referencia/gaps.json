@@ -323,8 +323,8 @@
     {
       "id": "U-39",
       "question": "Parámetros sigmoides (b, c, d) representativos de un pulmón adulto sano y de uno con SDRA.",
-      "policy": "P: por omisión la curva es lineal (Crs). El escenario SC-15 usa b 1,6 L, c 18 cmH2O y d 5 cmH2O, que sitúa los codos en 11 y 25 cmH2O y la compliance máxima en 80 mL/cmH2O. No son valores de paciente: sirven para ver la forma.",
-      "status": "nueva (v0.4.1)",
+      "policy": "P: por omisión la curva es lineal (Crs). SC-15 usa b 1,6 L, c 18 cmH₂O y d 5 cmH₂O: codos en 11,4 y 24,6 cmH₂O y compliance máxima de 80 mL/cmH₂O, dentro de una desviación de lo publicado para la rama inspiratoria en lesión pulmonar aguda (C16: 67 ± 18 mL/cmH₂O y asíntota superior 1836 ± 680 mL; E-125). Los valores medios de c y d de pulmón sano y de SDRA siguen sin estar en lo accesible: Venegas 1998 y Harris 2000 no los dan en el resumen y su texto completo no se pudo leer.",
+      "status": "revisada (Albaiceta 2007: SC-15 dentro de lo publicado; c y d medios sin dato accesible)",
       "blocks": []
     },
     {

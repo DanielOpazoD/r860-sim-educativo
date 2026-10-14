@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PatientModel, sigmoidCompliance, sigmoidPressure, sigmoidVolume } from '../../src/engine/patient';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
+import { SCENARIOS } from '../../src/scenarios';
 
 // SIG-01 · curva presión-volumen sigmoidea de Venegas: V(P) = a + b/(1 + e^(−(P−c)/d)), anclada en V(P0) = 0.
 // Cmax = b/(4d) en P = c; los codos de máxima curvatura caen en c ± 1,317·d.
@@ -84,5 +85,28 @@ describe('SIG-02 · titulación de PEEP sobre la sigmoide', () => {
   it('una sigmoide fuera de rango se rechaza', () => {
     expect(() => benchSim({ patient: { ...BENCH_PATIENT, sigmoid: { b: 9, c: 18, d: 5 } } })).toThrow(/Capacidad/);
     expect(() => benchSim({ patient: { ...BENCH_PATIENT, sigmoid: { b: 1.6, c: 18, d: 40 } } })).toThrow(/Anchura/);
+  });
+});
+
+// SIG-03 · la sigmoide de SC-15 es de pulmón con lesión aguda, no sólo una forma. Albaiceta 2007 (C16) ajustó el mismo
+// modelo en 30 pacientes con lesión pulmonar aguda (rama inspiratoria): compliance máxima 67 ± 18 mL/cmH₂O y asíntota
+// superior 1836 ± 680 mL; los puntos de máxima curvatura son c ∓ 1,317·d.
+describe('SIG-03 · los parámetros de SC-15 caen dentro de lo publicado (E-125)', () => {
+  const s = SCENARIOS.find((x) => x.id === 'SC-15')!.patient.sigmoid!;
+  it('compliance máxima dentro de una desviación de 67 ± 18 mL/cmH₂O, y es la de la curva del motor', () => {
+    const cmax = (s.b / (4 * s.d)) * 1000;
+    expect(cmax).toBeGreaterThanOrEqual(67 - 18);
+    expect(cmax).toBeLessThanOrEqual(67 + 18);
+    const dP = 1e-4; // la pendiente de la curva del motor en c, por diferencia central
+    const pendiente = (sigmoidVolume(s, 0, s.c + dP) - sigmoidVolume(s, 0, s.c - dP)) / (2 * dP);
+    expect(pendiente * 1000).toBeCloseTo(cmax, 3);
+  });
+  it('capacidad dentro de una desviación de 1836 ± 680 mL', () => {
+    expect(s.b * 1000).toBeGreaterThanOrEqual(1836 - 680);
+    expect(s.b * 1000).toBeLessThanOrEqual(1836 + 680);
+  });
+  it('codos en c ∓ 1,317·d: 11,4 y 24,6 cmH₂O, los que cita el escenario', () => {
+    expect(s.c - 1.317 * s.d).toBeCloseTo(11.4, 1);
+    expect(s.c + 1.317 * s.d).toBeCloseTo(24.6, 1);
   });
 });
