@@ -241,6 +241,12 @@
       "title": "Telias I, Junhasavasdikul D, Rittayamai N, et al. Airway Occlusion Pressure As an Estimate of Respiratory Drive and Inspiratory Effort during Assisted Ventilation. Am J Respir Crit Care Med 2020;201(9):1086–98 (PMID 32097569; doi 10.1164/rccm.201907-1425OC)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Resumen leído en Europe PMC (2026-10-14). P0.1 de referencia (oclusión) > 3,5 cmH₂O detecta esfuerzo alto, definido como producto presión-tiempo esofágico ≥ 200 cmH₂O·s/min (sensibilidad 80 %, especificidad 77 %); P0.1 ≤ 1,0 detecta esfuerzo bajo, PTPes ≤ 50 cmH₂O·s/min (sensibilidad 100 %, especificidad 92 %)."
+    },
+    {
+      "id": "C16",
+      "title": "Albaiceta GM, García E, Taboada F. Comparative study of four sigmoid models of pressure-volume curve in acute lung injury. Biomed Eng Online 2007;6:7 (PMID 17300715; PMC1802870; doi 10.1186/1475-925X-6-7)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Texto completo leído en Europe PMC (2026-10-14). 30 pacientes con lesión pulmonar aguda; con el modelo de Venegas (V = a + b/(1 + e^(−(P−c)/d))) en la rama inspiratoria: asíntota superior (a + b) 1836 ± 680 mL y compliance máxima 67 ± 18 mL/cmH₂O (media ± DE); los puntos de máxima curvatura son c ∓ 1,317·d. Los valores medios de c y d sólo aparecen en una figura."
     }
   ],
   "claims": [
@@ -1646,6 +1652,17 @@
       "tests": [
         "tests/unit/compensacionVt.test.ts (VTC-01)",
         "tests/unit/huella.test.ts (HUE-01)"
+      ]
+    },
+    {
+      "id": "E-125",
+      "claim": "La curva P-V sigmoide de SC-15 (b 1,6 L, c 18 cmH₂O, d 5 cmH₂O) es de pulmón con lesión aguda, no sólo una forma: su compliance máxima b/(4d) = 80 mL/cmH₂O y su capacidad b = 1,6 L caen dentro de una desviación de lo medido en 30 pacientes con el mismo modelo (67 ± 18 mL/cmH₂O y 1836 ± 680 mL, rama inspiratoria), y sus codos se calculan con la misma fórmula del estudio, c ∓ 1,317·d (11,4 y 24,6 cmH₂O).",
+      "status": "D (los rangos publicados, C16) / P (los valores concretos del escenario)",
+      "source": "C16",
+      "locator": "Albaiceta 2007, resultados (modelo 1, rama inspiratoria) y tabla 1 (fórmulas de los puntos de máxima curvatura)",
+      "implemented": "src/scenarios/index.ts (SC-15: sigmoid b 1,6, c 18, d 5); src/engine/patient.ts (curva sigmoide)",
+      "tests": [
+        "tests/unit/sigmoid.test.ts (SIG-03)"
       ]
     }
   ]
