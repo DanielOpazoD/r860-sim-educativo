@@ -1,9 +1,5 @@
 /* Pasada de diseño y correcciones posteriores (era styles.css 4476–4985). */
 /* ---- Pasada de diseño (06-09-2026): escala tipográfica 10/11/12/13/15, espaciado de 8 px, radios de 8 px. ---- */
-.stage-sub {
-  font-size: var(--type-xs);
-  color: var(--shell-muted);
-}
 .instructor {
   margin-top: 0;
   border-radius: var(--radius-lg);
@@ -27,17 +23,10 @@
 .phys-value small {
   font-size: var(--type-2xs);
 }
-.phys-range-labels {
-  font-size: var(--type-2xs);
-}
 .button.full {
   margin-top: 8px;
   min-height: 34px;
   font-size: var(--type-sm);
-}
-.lesson-tasks {
-  gap: 8px;
-  margin-bottom: 12px;
 }
 .signal-toolbar {
   gap: 10px;
@@ -111,10 +100,6 @@
 @media (max-width: 700px) {
   .app-top {
     overflow: hidden;
-  }
-  .top-actions {
-    min-width: 0;
-    flex-wrap: nowrap;
   }
   #teacher-toggle {
     display: none; /* en móvil el panel docente va debajo del equipo */
