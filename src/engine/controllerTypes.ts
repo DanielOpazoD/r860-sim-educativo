@@ -74,6 +74,10 @@ export interface BreathAccum {
   pmaxReached: boolean;
   /** VT programado de la respiración si es de volumen control (L), o null. */
   vtSetL: number | null;
+  /** Flujo inspiratorio que ordena esta respiración de volumen control (L/s): el nominal por la ganancia de compensación. */
+  qVc: number;
+  /** Ganancia de compensación del VT con que empezó la respiración (1 = flujo nominal). */
+  ganVc: number;
   pauseSamples: { t: number; paw: number }[];
   effortDuringPause: boolean;
   /** Muestras de la rampa a flujo constante: de su forma sale el índice de estrés. */

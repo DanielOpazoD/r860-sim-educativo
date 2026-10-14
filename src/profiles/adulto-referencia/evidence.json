@@ -1635,6 +1635,18 @@
       "tests": [
         "tests/unit/esfuerzoP01.test.ts (P01-01)"
       ]
+    },
+    {
+      "id": "E-124",
+      "claim": "En volumen control el equipo vigila el VT entregado y ajusta el flujo inspiratorio de las respiraciones siguientes para mantener el programado. Si Plimit recorta la entrega a mitad de la inspiración, la respiración siguiente sube el flujo en la proporción del déficit (como mucho ×1,5 por respiración y hasta el tope de 160 L/min del actuador); al completar el VT, el resto de la inspiración es pausa, y nunca se entrega de más. Con R 10, C 50 y Plimit 18, el VT pasa de 482 a 489, 494 y 497 mL. Si ni con el flujo máximo cabe el VT bajo Plimit —el techo con presión limitada es C·(Plimit − PEEP)·(1 − e^(−Ti/RC)), ≈ 354 mL en SC-04—, sigue corto y salta «VT no entregado». Sin Plimit, el flujo vuelve al nominal. Al chocar con Plimit en el primer instante, el flujo anotado es el que deja pasar Plimit, no el ordenado: antes la curva mostraba un pico que nunca entró.",
+      "status": "D (el ajuste del flujo para mantener el VT, R21 y R23; que Plimit puede impedirlo, R21) / P (paso máximo, banda de ±1 %, pausa al completar)",
+      "source": "R21, R23",
+      "locator": "URM SW10 5-11 «The ventilator monitors delivered tidal volume and adjusts the delivered inspiratory flow as needed to maintain the set tidal volume for subsequent breaths»; solución de problemas: «The Plimit setting prevents the full VT from being delivered in the inspiratory period»; R23, A/C VC y SIMV VC: «El ventilador monitoriza la entrega del volumen y ajusta el flujo inspiratorio necesario para mantener el volumen corriente en las próximas respiraciones»",
+      "implemented": "src/engine/controller.ts (ganVc, compensarVt, tope de volumen en inspFlow e inspLimited); src/engine/ventilatorConstants.ts (VC_COMPENSACION_PASO_MAX)",
+      "tests": [
+        "tests/unit/compensacionVt.test.ts (VTC-01)",
+        "tests/unit/huella.test.ts (HUE-01)"
+      ]
     }
   ]
 }
