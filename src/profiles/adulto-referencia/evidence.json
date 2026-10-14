@@ -1581,6 +1581,18 @@
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03d)"
       ]
+    },
+    {
+      "id": "E-120",
+      "claim": "Pantalla de espera como la del equipo. Un panel tostado (#e7dab8, medido) cubre el área de datos con «EN ESPERA», la explicación y el botón de iniciar en naranja. La barra de presión queda a la vista en su panel, también tostado: tubo vacío y sin marcas, texto oscuro. La tecla EN ESPERA se vuelve tostada con rótulo oscuro. Las teclas de procedimiento (↑O₂, bloqueos, respiración manual) quedan grises e inactivas, porque sin ventilación no pueden hacer nada. Los textos oscuros sobre el tostado cumplen 4,5:1.",
+      "status": "D (tostado de la tecla y de la barra de presión, panel de espera, botón de iniciar y teclas grises: R21 3-6 y figura 3-4); P los tonos exactos y el contenido del panel, que en el equipo trae paciente nuevo, comprobación del sistema y circuito",
+      "source": "R21",
+      "locator": "URM SW10 2065490-001, 3-6 «Standby»: «the Standby quick key and the patient status (airway pressure) bar are colored tan»; figura 3-4 «Standby menu»",
+      "implemented": "src/ui/quickEditor.ts (updateQuick: en-espera, teclas inactivas); src/ui/styles/02-vistas.css (.standby-overlay, .monitor-body.en-espera .pressure-column); src/ui/styles/01-base.css (.quick-key.active-standby, .device-key:disabled); src/render/plots.ts (drawGauge en espera)",
+      "tests": [
+        "tests/unit/uiDom.test.ts (en espera, como el equipo)",
+        "tests/unit/contraste.test.ts (CTR-05)"
+      ]
     }
   ]
 }

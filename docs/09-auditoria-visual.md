@@ -59,6 +59,18 @@ La foto P1 (E-025, O) y las pantallas del manual (Advanced Waveform y Flow-Volum
 
 El manual (7-7) dice que, si el bloqueo no da Pplat o Cstat, «a red X will display indicating a failure». La ventana de bloqueo mostraba el mismo guion que antes de medir. Ahora una medición terminada sin resultado pone una ✕ roja en su casilla (≥ 3:1 sobre la ventana), con el nombre accesible «Medición no disponible»; el motivo sigue en la línea de estado (E-113).
 
+## La espera, tostada como en el equipo (13-10-2026)
+
+El manual describe la espera así: «the Standby quick key and the patient status (airway pressure) bar are colored tan» (3-6, figura 3-4). El simulador la tapaba entera con un beige verdoso, barra de presión incluida, con un botón verde y la tecla en oliva. Ahora (E-120, `aud-08-espera.png`):
+
+- Un panel tostado (#e7dab8, medido en la figura) cubre sólo el área de datos.
+- La barra de presión queda a la vista en su propio panel tostado, con el tubo vacío y sin marcas.
+- La tecla EN ESPERA se vuelve tostada con rótulo oscuro.
+- El botón de iniciar es naranja.
+- Las teclas de procedimiento quedan grises e inactivas.
+
+Los textos oscuros sobre el tostado cumplen 4,5:1.
+
 ## Pendiente con las fotografías originales
 
 - Comprobar con P1–P3 los colores de las curvas y del relleno que tenía configurados ese equipo (el manual deja elegirlos) y la tipografía.

@@ -290,18 +290,26 @@
 .hold-status.invalid {
   background: #795421;
 }
+/*
+ * Espera como en el equipo (URM SW10 3-6 y figura 3-4): un panel tostado (#e7dab8 medido) sobre el área de datos, con la
+ * barra de presión a la vista y también tostada, la tecla EN ESPERA tostada y el botón de iniciar en naranja.
+ */
 .standby-overlay {
   position: absolute;
-  inset: 0;
+  inset: 4px 152px 0 0;
   z-index: 10;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #d7d6b8, #b9bdad);
-  color: #274045;
-  border: 1px solid #e0dfc1;
-  border-radius: 5px;
+  background: #e7dab8;
+  color: #413a30;
+  border: 1px solid #f3ead2;
+  border-radius: 10px;
+}
+.monitor-body.en-espera .pressure-column {
+  background: #e7dab8;
+  border-color: #f3ead2;
 }
 .standby-overlay > .icon {
   width: 58px;
@@ -317,7 +325,7 @@
   font-size: 15px;
   line-height: 1.7;
   text-align: center;
-  color: #4b6264;
+  color: #4d4538;
 }
 .standby-overlay > div {
   display: flex;
@@ -326,12 +334,13 @@
 }
 .standby-overlay small {
   font-size: 11px;
-  color: #627473;
+  color: #5c5345;
 }
 .standby-overlay .primary-button {
-  background: #2b804f;
-  border-color: #4a8b6a;
-  color: #e0ffea;
+  background: linear-gradient(#f7b23a, #ec9a1c);
+  border-color: #c77d0f;
+  color: #1a1200;
+  font-weight: 700;
 }
 .lock-overlay {
   position: absolute;

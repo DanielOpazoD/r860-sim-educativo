@@ -9,7 +9,7 @@ import { gridValues, isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
 import type { AppContext } from './context';
-import { $, element, icon, put } from './dom';
+import { $, $$, element, icon, put } from './dom';
 import { ieText, unitText } from './format';
 import { collapseHelp, helpNodes } from './helpPanels';
 import { joinSentences } from './humanize';
@@ -83,8 +83,16 @@ export function createQuickEditor(ctx: AppContext): QuickEditor {
       b.setAttribute('aria-pressed', String(sel));
       b.classList.toggle('pending', !!propuesto);
     }
-    $('#standby-overlay').hidden = fr.ventilation !== 'standby';
-    $('.standby-key').classList.toggle('active-standby', fr.ventilation === 'standby');
+    const enEspera = fr.ventilation === 'standby';
+    $('#standby-overlay').hidden = !enEspera;
+    $('.standby-key').classList.toggle('active-standby', enEspera);
+    // En espera la barra de presión se vuelve tostada y las teclas de procedimiento quedan grises, como en el equipo
+    // (URM SW10 3-6 y figura 3-4): ninguna de ellas puede hacer nada sin ventilación.
+    $('.monitor-body').classList.toggle('en-espera', enEspera);
+    for (const b of $$<HTMLButtonElement>(
+      '.monitor-top [data-action="oxygen"], .monitor-top [data-action="inspiratory"], .monitor-top [data-action="expiratory"], .monitor-top [data-action="manual"]',
+    ))
+      b.disabled = enEspera;
     // La tecla se explica sola: qué hace al pulsarla según el estado en que está.
     const esperaTexto =
       fr.ventilation === 'standby'
