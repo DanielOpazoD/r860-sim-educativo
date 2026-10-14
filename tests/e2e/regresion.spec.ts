@@ -51,5 +51,6 @@ for (const e of ESTADOS)
       animations: 'disabled',
       caret: 'hide',
       maxDiffPixelRatio: 0.001,
+      stylePath: 'tests/e2e/regresion.css',
     });
   });
