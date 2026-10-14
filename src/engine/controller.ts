@@ -71,7 +71,7 @@ export const PRESSURE_LOOP_GAIN = 4;
  * fisiológico (el escenario más obstructivo del simulador llega a −149 L/min) para que sólo actúe en lo irreal (U-50).
  */
 export const EXP_MAX_FLOW_LPS = -200 / 60;
-/** Flujo de base espiratorio por omisión (D rango 2–10 L/min ficha 2014; valor inicial P). Ajustable en `settings.biasFlow`. */
+/** Flujo de base espiratorio por omisión (D: rango 2–10 L/min, ficha 2014 y URM SW10 13-12; valor inicial 3 L/min, el de fábrica, 11-9). Ajustable en `settings.biasFlow`. */
 export const EXP_BIAS_FLOW_LPS = 2 / 60;
 /**
  * Apertura de la válvula espiratoria por omisión (ms). Pinède (Respir Care 2021, banco de 7 ventiladores de UCI) midió

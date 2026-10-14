@@ -131,7 +131,7 @@
         "sha256": "bb2f742971a73149c34910f10d4a96ca9734144e8d7e341c74cde0d83ace80a3",
         "pages": 510,
         "readFully": false,
-        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21), valores de fábrica (11-9 a 11-10), procedimientos (7-5 a 7-9), rangos y pasos de ajustes y alarmas para adulto (13-12 a 13-15) y especificaciones de monitorización (13-18 a 13-24). El intento del 2026-09-06 había fallado con HTTP 502."
+        "note": "Leídas: lista de alarmas adulto y pediátrico (8-8 a 8-25), filtros y retardos (8-25 a 8-27), System Check y Circuit Setup (6-5 a 6-7), datos de paciente y curvas (9-2 a 9-9), especificaciones del sistema respiratorio (13-21), valores de fábrica (11-9 a 11-10), procedimientos (7-5 a 7-9), rangos y pasos de ajustes y alarmas para adulto (13-12 a 13-15) y especificaciones de monitorización (13-18 a 13-24); y el 2026-10-14: cancelación por plazo (3-10, 8-5), glosario de ajustes (5-5), A/C VC y PC (5-11, 5-13), esquemas de SIMV (5-19 a 5-29), System Check y compensaciones del circuito (6-6), Auto Limits (8-6), valores de fábrica completos (11-9 a 11-11), compliance y resistencia del sistema respiratorio (13-21) y teoría de funcionamiento (15-7 a 15-9). El intento del 2026-09-06 había fallado con HTTP 502."
       }
     },
     {
@@ -643,9 +643,9 @@
     {
       "id": "E-038",
       "claim": "Flujo de base espiratorio programable 2–10 L/min en pasos de 0,5 (adulto); el disparo por flujo detecta el flujo de base desviado por el paciente, por lo que el umbral de disparo no puede superar el flujo de base.",
-      "status": "D (rango) / P (valor inicial 2 L/min y relación con el disparo)",
-      "source": "R03",
-      "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»",
+      "status": "D (rango, valor inicial de fábrica 3 L/min) / P (relación con el disparo)",
+      "source": "R03, R21",
+      "locator": "p.2 «Flujo de base: 2 a 10 L/min (incrementos de 0.5 L/min)»; p.2 «Trigger inspiratorio por flujo»; URM SW10 13-12 «Bias Flow 2 to 10 l/min · 0.5 l/min»; 11-9 «Bias Flow 3 l/min» (adulto, valor de fábrica); 5-5 «The bias flow may be increased above this setting by the ventilator for some FiO2 settings»",
       "implemented": "src/profiles/adulto-referencia/settings.ts (biasFlow); src/engine/controller.ts (fase exp, tope = settings.biasFlow); src/domain/validation.ts (flowTrigger ≤ biasFlow)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-01)"
