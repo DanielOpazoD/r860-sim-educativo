@@ -199,3 +199,8 @@ export function metricInAlarm(fr: EngineFrame, key: string): boolean {
   const ids = ALARM_IDS_BY_METRIC[key];
   return !!ids && fr.alarms.some((a) => a.conditionActive && !a.filteredBy && ids.includes(a.id));
 }
+/** ¿Es de prioridad alta alguna de las alarmas activas de esta medición? El borde de la casilla lleva su color (URM SW10 8-7). */
+export function metricInHighAlarm(fr: EngineFrame, key: string): boolean {
+  const ids = ALARM_IDS_BY_METRIC[key];
+  return !!ids && fr.alarms.some((a) => a.conditionActive && !a.filteredBy && a.priority === 'high' && ids.includes(a.id));
+}

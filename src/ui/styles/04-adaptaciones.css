@@ -806,7 +806,7 @@
   grid-column: 1;
   grid-row: 2;
   font-size: 54px;
-  font-weight: 500;
+  font-weight: 700;
 }
 .monitor .big-numeric em {
   grid-column: 2;
@@ -816,10 +816,10 @@
   margin: 0;
   font-size: var(--type-sm);
 }
-/* [adaptado] Dígitos algo más ligeros, como los del equipo. */
+/* Cifras en negrita, como en las capturas del manual SW10. */
 .monitor .numeric-value,
 .monitor .quick-key b {
-  font-weight: 500;
+  font-weight: 700;
 }
 /* [adaptado] Ventana de bloqueo fuera del monitor escalado en móvil. */
 .hold-panel.mobile-hold {

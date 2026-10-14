@@ -34,7 +34,8 @@ function bloque(selector: string): string {
 // «border-color:» también contiene «color:»: sólo vale la propiedad que empieza la declaración.
 const color = (selector: string): string => /(?<![-\w])color: (#[0-9a-f]{6})/.exec(bloque(selector))![1] as string;
 const degradado = (selector: string): string[] => [...bloque(selector).matchAll(/#[0-9a-f]{6}/g)].map((m) => m[0]).slice(0, 2);
-const AZUL_MONITOR = '#013c95';
+/** Extremo más claro del azul pizarra de la pantalla (capturas del manual SW10): el caso peor para el texto claro. */
+const FONDO_MONITOR = '#3b4f68';
 const AA = 4.5;
 
 describe('CTR-01 · la banda de alarmas contrasta en todos sus estados y en los dos extremos del degradado', () => {
@@ -61,7 +62,7 @@ describe('CTR-01 · la banda de alarmas contrasta en todos sus estados y en los 
   });
 });
 
-describe('CTR-02 · las cifras pequeñas de la columna numérica contrastan sobre el azul del monitor', () => {
+describe('CTR-02 · las cifras pequeñas de la columna numérica contrastan sobre el fondo del monitor', () => {
   for (const [selector, minimo] of [
     ['.numeric .numeric-age', 6],
     ['.numeric-label', 6],
@@ -70,7 +71,7 @@ describe('CTR-02 · las cifras pequeñas de la columna numérica contrastan sobr
   ] as const) {
     it(`${selector} ≥ ${minimo}:1`, () => {
       // Texto de 8–9 px: se exige más que el mínimo AA porque el tamaño ya castiga la lectura.
-      expect(contraste(color(selector), AZUL_MONITOR)).toBeGreaterThanOrEqual(minimo);
+      expect(contraste(color(selector), FONDO_MONITOR)).toBeGreaterThanOrEqual(minimo);
     });
   }
 });
@@ -106,8 +107,41 @@ describe('CTR-04 · los chips de estado y la procedencia son legibles sobre el m
     });
   }
   for (const selector of ['.q-off', '.q-src'] as const) {
-    it(`${selector}: texto ≥ ${AA}:1 sobre el azul del monitor`, () => {
-      expect(contraste(color(selector), AZUL_MONITOR)).toBeGreaterThanOrEqual(AA);
+    it(`${selector}: texto ≥ ${AA}:1 sobre el fondo del monitor`, () => {
+      expect(contraste(color(selector), FONDO_MONITOR)).toBeGreaterThanOrEqual(AA);
     });
   }
+});
+
+// CTR-05 · la cara del equipo: los colores medidos en las capturas del manual SW10 (3-12 a 3-14 y 8-8), no el azul
+// saturado de antes. Pantalla azul pizarra, teclas de grafito y valor en alarma con un borde del color de la prioridad.
+describe('CTR-05 · los colores del equipo', () => {
+  const rgb = (hex: string): [number, number, number] =>
+    [0, 2, 4].map((i) => Number.parseInt(hex.slice(1 + i, 3 + i), 16)) as [number, number, number];
+  it('la pantalla es azul pizarra: azul dominante pero poco saturado, y su extremo claro es el que miden los contrastes', () => {
+    const fondo = /\n\s*background: ([^;]+);/.exec(bloque('.monitor'))![1] as string;
+    const tonos = [...fondo.matchAll(/#[0-9a-f]{6}/g)].map((m) => m[0]);
+    expect(tonos.length).toBeGreaterThanOrEqual(3);
+    expect(tonos[0]).toBe(FONDO_MONITOR);
+    for (const t of tonos) {
+      const [r, g, b] = rgb(t);
+      expect(b, t).toBeGreaterThan(g);
+      expect(g, t).toBeGreaterThan(r);
+      expect(b - r, t).toBeLessThan(70);
+    }
+  });
+  it('las teclas son de grafito: gris neutro, con rótulo blanco', () => {
+    for (const t of degradado('.device-key')) {
+      const [r, , b] = rgb(t);
+      expect(Math.abs(b - r), t).toBeLessThan(25);
+      expect(contraste('#ffffff', t), t).toBeGreaterThanOrEqual(AA);
+    }
+    expect(color('.device-key')).toBe('#ffffff');
+  });
+  it('el valor en alarma lleva un borde de la prioridad que se distingue del fondo (≥ 3:1) y la cifra sigue blanca', () => {
+    const ambar = /outline: 2px solid (#[0-9a-f]{6})/.exec(bloque('.numeric.alarm-value'))![1] as string;
+    const rojo = /outline-color: (#[0-9a-f]{6})/.exec(bloque('.numeric.alarm-value.alarm-high'))![1] as string;
+    for (const borde of [ambar, rojo]) expect(contraste(borde, FONDO_MONITOR), borde).toBeGreaterThanOrEqual(3);
+    expect(bloque('.numeric.alarm-value')).not.toMatch(/(?<![-\w])color:/);
+  });
 });

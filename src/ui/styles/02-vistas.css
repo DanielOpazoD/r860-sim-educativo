@@ -6,31 +6,31 @@
   gap: 12px;
   padding: 14px 12px 14px;
   min-height: 55px;
-  border-bottom: 1px solid #548db970;
+  border-bottom: 1px solid #7d93ad55;
   flex: none;
 }
 .device-view-header h2 {
   font-size: 17px;
-  color: #d1f6ff;
-  font-weight: 500;
+  color: #ffffff;
+  font-weight: 700;
   margin: 0;
 }
 .device-view-header > span {
   font-size: 10px;
-  color: #97c9ed;
+  color: #c9d3de;
   margin-left: auto;
 }
 .device-small {
-  border: 1px solid #70a8cd;
-  background: linear-gradient(#326ea6, #17528c);
-  color: #d5f3ff;
+  border: 1px solid #5b6474;
+  background: linear-gradient(#353b47, #1f242d);
+  color: #ffffff;
   border-radius: 3px;
   padding: 7px 10px;
   font-size: 11px;
   font-weight: 500;
 }
 .device-small:hover {
-  background: #3c80b9;
+  background: #424a58;
 }
 .view-basic {
   flex-direction: column;
@@ -49,23 +49,25 @@
   padding: 6px 12px;
   cursor: pointer;
 }
+/* Vista de datos grandes como en las capturas del manual SW10: rótulo y cifra blancos en negrita, unidad gris. */
 .big-numeric span {
   font-size: 15px;
-  color: #a5e7ff;
+  font-weight: 700;
+  color: #ffffff;
   display: block;
   margin-bottom: 10px;
 }
 .big-numeric b {
   font-size: 60px;
   line-height: 1.05;
-  font-weight: 600;
-  color: #ecffff;
+  font-weight: 700;
+  color: #ffffff;
   letter-spacing: 0.5px;
 }
 .big-numeric em {
   font-style: normal;
   font-size: 11px;
-  color: #a6dfff;
+  color: #d6dee8;
   margin-left: 8px;
 }
 .view-basic > canvas {
@@ -90,7 +92,7 @@
 }
 .device-note {
   font-size: 11px;
-  color: #a7ccef;
+  color: #c9d3de;
   margin: 12px 15px 6px;
 }
 .data-tables {
@@ -99,14 +101,14 @@
   gap: 0 18px;
   height: 425px;
   overflow: auto;
-  scrollbar-color: #438bc0 #104893;
+  scrollbar-color: #6d7686 #1f2b3c;
   align-content: start;
   padding: 0 4px;
 }
 .device-table td:nth-child(2) small {
   font-size: 10px;
   font-weight: 400;
-  color: #a6d0ed;
+  color: #c9d3de;
   margin-left: 4px;
 }
 @media (max-width: 900px) {
@@ -118,33 +120,33 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  color: #c4e9fa;
+  color: #e6ecf2;
   font-size: 12px;
 }
 .device-table th {
   position: sticky;
   top: 0;
-  background: #123e77;
+  background: #1f2b3c;
   padding: 8px 12px;
   font-size: 10px;
   font-weight: 500;
-  color: #9ad4f5;
+  color: #c9d3de;
 }
 .device-table td {
   /* Diecinueve filas en 425 px sin esconder ninguna: con 8 px arriba y abajo las dos últimas quedaban fuera. */
   padding: 6px 10px;
-  border-bottom: 1px solid #4a87bb50;
+  border-bottom: 1px solid #7d93ad45;
 }
 .device-table td:nth-child(2) {
   white-space: nowrap;
-  color: #ecffff;
+  color: #ffffff;
   font-size: 20px;
   font-weight: 600;
 }
 .device-table td:last-child {
   font-size: 10px;
   line-height: 1.25;
-  color: #91bcd9;
+  color: #c9d3de;
   max-width: 270px;
 }
 .view-trends > canvas {
@@ -155,20 +157,20 @@
   padding: 0 14px;
   height: 424px;
   overflow: auto;
-  scrollbar-color: #438bc0 #104893;
+  scrollbar-color: #6d7686 #1f2b3c;
 }
 .event-log-row {
   display: grid;
   grid-template-columns: 70px 96px 1fr;
   gap: 10px;
   padding: 13px 4px;
-  border-bottom: 1px solid #538bbc55;
+  border-bottom: 1px solid #7d93ad45;
   font-size: 12px;
   line-height: 1.4;
-  color: #bfdeed;
+  color: #e6ecf2;
 }
 .event-log-row time {
-  color: #8abbdf;
+  color: #c9d3de;
   font-size: 11px;
   font-family: var(--font-mono);
 }
@@ -181,11 +183,11 @@
   top: 0;
   right: 0;
   width: 358px;
-  background: linear-gradient(#377aae, #15528b);
-  border: 1px solid #94c4e9;
-  border-radius: 4px;
-  box-shadow: 0 6px 15px #00204888;
-  color: #effcff;
+  background: linear-gradient(#3a4c63, #273649);
+  border: 1px solid #7d93ad;
+  border-radius: 6px;
+  box-shadow: 0 6px 15px #000a1888;
+  color: #ffffff;
   overflow: hidden;
 }
 .hold-title {
@@ -193,9 +195,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px 10px;
-  background: #235b9055;
+  background: #1a2433aa;
   font-size: 11px;
-  color: #afdafa;
+  color: #dbe3ec;
 }
 .hold-title b {
   font-weight: 500;
@@ -203,7 +205,7 @@
 .hold-title button {
   background: none;
   border: 0;
-  color: #c6efff;
+  color: #e6ecf2;
   padding: 0;
 }
 .hold-title .icon {
@@ -220,13 +222,13 @@
   display: flex;
   flex-direction: column;
   font-size: 12px;
-  color: #b8e6ff;
+  color: #e6ecf2;
   gap: 5px;
 }
 .hold-panel-body select {
-  background: linear-gradient(#407daf, #2a6395);
-  border: 1px solid #78b0d9;
-  color: #d9f8ff;
+  background: linear-gradient(#353b47, #1f242d);
+  border: 1px solid #6d7686;
+  color: #ffffff;
   padding: 5px;
   border-radius: 3px;
   width: 67px;
@@ -237,8 +239,8 @@
   border: 1px solid #7ab0d3;
   border-radius: 3px;
   padding: 5px 8px;
-  background: linear-gradient(#376fa3, #235280);
-  color: #14e9b0;
+  background: linear-gradient(#353b47, #1f242d);
+  color: #3fdc8e;
   margin-top: 21px;
   height: 37px;
   width: 45px;
@@ -259,23 +261,24 @@
 }
 .hold-result > span {
   font-size: 12px;
-  color: #ade4ff;
+  font-weight: 700;
+  color: #ffffff;
 }
 .hold-result > b {
   font-size: 29px;
   line-height: 1.1;
-  font-weight: 600;
+  font-weight: 700;
 }
 .hold-result > small {
   font-size: var(--type-2xs);
-  color: #b1daf5;
+  color: #d6dee8;
   white-space: nowrap;
 }
 .hold-status {
   padding: 7px 11px;
-  background: #1d5083;
+  background: #1a2433;
   font-size: 10px;
-  color: #b3e0ff;
+  color: #dbe3ec;
   text-align: center;
   line-height: 1.4;
   min-height: 28px;
@@ -349,9 +352,9 @@
   left: 14px;
   top: 8px;
   padding: 7px 10px;
-  border: 1px solid #c0e7f4;
-  background: #1b425ddf;
-  color: #e5f9ff;
+  border: 1px solid #9fb2c8;
+  background: #1a2433df;
+  color: #ffffff;
   font-size: 10px;
   z-index: 9;
   border-radius: 3px;
@@ -362,12 +365,12 @@
   left: calc(50% - 202px);
   bottom: 152px; /* por encima de la barra de vistas: las teclas de vista siguen accesibles mientras se edita */
   z-index: 35;
-  background: linear-gradient(135deg, #224f7d, #12365e);
-  border: 1px solid #99c9e3;
-  border-radius: 6px;
-  box-shadow: 0 6px 50px #051323cc;
+  background: linear-gradient(135deg, #3a4c63, #22303f);
+  border: 1px solid #8ea4bd;
+  border-radius: 8px;
+  box-shadow: 0 6px 50px #050b13cc;
   padding: 18px;
-  color: #e2f6ff;
+  color: #ffffff;
   font-family: Arial, sans-serif;
 }
 .editor-top {
@@ -397,10 +400,10 @@
 .editor-value input {
   font-size: 35px;
   font-weight: 600;
-  color: #f1fdff;
+  color: #ffffff;
   width: 134px;
-  background: #0e2a46;
-  border: 1px solid #698ca4;
+  background: #151c27;
+  border: 1px solid #6d7686;
   border-radius: 4px;
   text-align: center;
   padding: 6px;

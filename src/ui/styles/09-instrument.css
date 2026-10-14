@@ -34,7 +34,7 @@
   flex-shrink: 0;
   padding: 9px 14px;
   gap: 8px;
-  background: #002e64;
+  background: #1f2b3c;
 }
 .device-dialog .dialog-header h2 {
   font-size: 16px;
@@ -58,7 +58,7 @@
   min-height: 0;
   padding: 8px 14px;
   gap: 8px;
-  background: #002e64;
+  background: #1f2b3c;
 }
 .device-dialog .mode-layout {
   gap: 8px;
