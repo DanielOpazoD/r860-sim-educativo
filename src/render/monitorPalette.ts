@@ -80,11 +80,50 @@ export const AYUDA = {
   previo: '#b7c4d466',
   union: '#c4f5ffaa',
   cursor: alfa(MON_CSS.texto, 'd0'),
-  esfuerzo: '#b2a5ee',
-  esfuerzoRelleno: ['#8e82d939', '#8e82d904'],
-  esfuerzoEje: ['#6385a64a', '#6385a62a'],
   tendenciaPeep: '#64d7c4',
   tendenciaFr: '#e8d397',
+} as const;
+
+/**
+ * El exterior (panel, paneles laterales, Aula) es claro: `SHELL_CSS` repite los `--shell-*` de 08-minimal.css que usan
+ * los gráficos que viven ahí (CTR-06 comprueba que coincidan). El esfuerzo muscular y su bucle se dibujan sobre el panel
+ * blanco de «Datos del modelo»: con la paleta del monitor, la curva Pva·V y su leyenda eran blancas sobre blanco.
+ */
+export const SHELL_CSS = {
+  surface: '#ffffff',
+  text: '#111827',
+  muted: '#3f4a57',
+  dim: '#5b6573',
+  line: '#e1e5ea',
+} as const;
+const VIOLETA = '#6b4fd0';
+export const EXTERIOR = {
+  /** Pva·V y su leyenda. */
+  trazo: SHELL_CSS.text,
+  eje: SHELL_CSS.muted,
+  rejilla: SHELL_CSS.line,
+  cero: alfa(SHELL_CSS.dim, '99'),
+  /** Presión muscular y presión total (Pva+Pmus): violeta, el color del esfuerzo del paciente. */
+  esfuerzo: VIOLETA,
+  esfuerzoRelleno: [alfa(VIOLETA, '38'), alfa(VIOLETA, '06')],
+} as const;
+
+/**
+ * Diagramas de «Fundamentos» en el Aula (src/ui/teachingView.ts). Se dibujan sobre la pizarra del monitor
+ * (`--mon-pantalla`, .edu-diagram en 10-classroom.css): los neutros son los del monitor y cada componente de la presión
+ * lleva su color —resistiva ámbar, elástica verde, PEEP celeste, PEEP intrínseca rosa—. CTR-08 mide su contraste.
+ */
+export const DOCENTE = {
+  fondo: MON_CSS.pantalla,
+  traza: MON_CSS.texto,
+  inactiva: MON_CSS.trazo,
+  eje: MON_CSS.trazo,
+  texto: MON_CSS.eje,
+  formula: MON_CSS.textoSuave,
+  resistiva: '#ffd27a',
+  elastica: '#7ce0b8',
+  peep: '#9fd0f0',
+  peepi: '#ffb0c8',
 } as const;
 
 /**

@@ -64,6 +64,7 @@
   --mon-trazo: #7d93ad; /* marco de las gráficas y borde de la ventana de bloqueo */
   --mon-bloqueo-alto: #3a4c63; /* ventana de bloqueo y editor rápido: parte alta */
   --mon-bloqueo-bajo: #273649; /* ventana de bloqueo: parte baja */
+  --mon-apagado: #a3b4c8; /* texto inactivo sobre la pizarra o un panel (siluetas de Fundamentos): ≥ 4,5:1 */
 
   /*
    * Escala tipográfica del monitor: once pasos, ninguno bajo 10 px. Los usos en las capturas del manual SW10 y en esta

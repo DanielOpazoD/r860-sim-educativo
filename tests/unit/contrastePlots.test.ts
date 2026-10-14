@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PLOT_BACKGROUND_LIGHTEST, PLOT_TEXT_COLORS } from '../../src/render/monitorPalette';
+import { EXTERIOR, PLOT_BACKGROUND_LIGHTEST, PLOT_TEXT_COLORS, SHELL_CSS } from '../../src/render/monitorPalette';
 
 // El texto de ejes dibujado en canvas no lo cubre el contraste CSS de CTR-02: aquí se miden los literales centralizados
 // en PLOT_TEXT_COLORS contra el extremo más claro del fondo del monitor. (Misma fórmula WCAG 2.1 que contraste.test.ts.)
@@ -22,4 +22,13 @@ describe('CTR-03 · el texto de ejes de las gráficas en canvas contrasta sobre 
       expect(contraste(color, PLOT_BACKGROUND_LIGHTEST)).toBeGreaterThanOrEqual(4.5);
     });
   }
+});
+
+// CTR-09 · el esfuerzo muscular y su bucle viven en el panel blanco de «Datos del modelo», no en el monitor: con la
+// paleta del monitor la curva Pva·V y su leyenda eran blancas sobre blanco (1:1) y los ejes daban 1,3:1.
+describe('CTR-09 · los gráficos del panel claro contrastan sobre blanco', () => {
+  for (const clave of ['trazo', 'eje', 'esfuerzo'] as const)
+    it(`${clave} (${EXTERIOR[clave]}) ≥ 4,5:1 sobre ${SHELL_CSS.surface}`, () => {
+      expect(contraste(EXTERIOR[clave], SHELL_CSS.surface)).toBeGreaterThanOrEqual(4.5);
+    });
 });

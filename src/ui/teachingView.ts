@@ -7,6 +7,7 @@ import type { EngineFrame } from '../engine/simulator';
 import type { AppContext } from './context';
 import { $, $$, esc } from './dom';
 import { formatNumber as f } from '../domain/units';
+import { DOCENTE as D } from '../render/monitorPalette';
 import { estres, niveles, tarjetas, titulacion, type PuntoTitulacion, type Tarjeta } from './teaching';
 import { humanReason } from './humanize';
 
@@ -64,39 +65,39 @@ function esquema(fr: EngineFrame, oculto: (k: string) => boolean): string {
     return (
       `<path d="M ${xs} ${ya} h 8 V ${yb} h -8" fill="none" stroke="${color}" stroke-width="1.5"/>` +
       `<text x="${xs + 16}" y="${ym + 4}" font-size="12" fill="${color}" font-weight="600">${esc(valor)}` +
-      `<tspan fill="#a6d0ed" font-weight="400"> · ${esc(titulo)}</tspan></text>`
+      `<tspan fill="${D.texto}" font-weight="400"> · ${esc(titulo)}</tspan></text>`
     );
   };
 
   const llaves = hayMeseta
-    ? llave(pPico, pPlat, 'resistiva, R·Q', cifra(ver('ppeak') && ver('pplat'), `${f(pPico - pPlat, 1)} cmH₂O`), '#ffd27a') +
-      llave(pPlat, peep, 'elástica, ΔP', cifra(ver('pplat') && verPeep, `${f(pPlat - peep, 1)} cmH₂O`), '#7ce0b8') +
+    ? llave(pPico, pPlat, 'resistiva, R·Q', cifra(ver('ppeak') && ver('pplat'), `${f(pPico - pPlat, 1)} cmH₂O`), D.resistiva) +
+      llave(pPlat, peep, 'elástica, ΔP', cifra(ver('pplat') && verPeep, `${f(pPlat - peep, 1)} cmH₂O`), D.elastica) +
       // Con atrapamiento la carga elástica se mide desde la PEEP TOTAL, y el tramo que va de la programada a la total
       // es la PEEP intrínseca: el esquema la dibuja aparte en vez de esconderla dentro de la elástica.
       (peepe !== null
-        ? llave(peep, peepe, 'PEEP intrínseca', cifra(ver('peepe') && verPeep, `${f(peep - peepe, 1)} cmH₂O`), '#ffb0c8')
+        ? llave(peep, peepe, 'PEEP intrínseca', cifra(ver('peepe') && verPeep, `${f(peep - peepe, 1)} cmH₂O`), D.peepi)
         : '') +
       llave(
         peepe ?? peep,
         0,
         peepe !== null ? 'PEEP programada' : 'PEEP',
         cifra(peepe !== null ? ver('peepe') : verPeep, `${f(peepe ?? peep, 1)} cmH₂O`),
-        '#9fd0f0',
+        D.peep,
       )
-    : `<text x="${xFin + 14}" y="${y(pPlat)}" font-size="12" fill="#a6d0ed">Haz un bloqueo inspiratorio</text>` +
-      `<text x="${xFin + 14}" y="${y(pPlat) + 15}" font-size="12" fill="#a6d0ed">para separar las dos cargas</text>`;
+    : `<text x="${xFin + 14}" y="${y(pPlat)}" font-size="12" fill="${D.texto}">Haz un bloqueo inspiratorio</text>` +
+      `<text x="${xFin + 14}" y="${y(pPlat) + 15}" font-size="12" fill="${D.texto}">para separar las dos cargas</text>`;
 
   return (
     `<svg viewBox="0 0 ${W} ${H}" class="edu-svg" role="img" aria-label="Esquema de la presión de vía aérea en una respiración, con la carga resistiva y la elástica separadas">` +
-    `<line x1="${izq}" y1="${base}" x2="${xFin + 8}" y2="${base}" stroke="#4b7fb5" stroke-width="1"/>` +
-    `<text x="${izq + 4}" y="14" font-size="12" fill="#bfe6ff" font-family="ui-monospace, Menlo, monospace">Paw = PEEP + R·Q + V/C</text>` +
-    linea(peepe ?? peep, peepe !== null ? 'PEEP' : 'PEEP', '#9fd0f0') +
-    (peepe !== null ? linea(peep, 'PEEPtot', '#ffb0c8') : '') +
-    (hayMeseta ? linea(pPlat, 'Pplat', '#7ce0b8') + linea(pPico, 'Ppico', '#ffd27a') : '') +
-    `<path d="${curva}" fill="none" stroke="#eaffff" stroke-width="2.5" stroke-linejoin="round"/>` +
-    `<text x="${(x0 + xIns) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="#8fb8d8">flujo entrando</text>` +
-    `<text x="${(xIns + xMes) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="#8fb8d8">oclusión</text>` +
-    `<text x="${(xMes + xFin) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="#8fb8d8">espiración</text>` +
+    `<line x1="${izq}" y1="${base}" x2="${xFin + 8}" y2="${base}" stroke="${D.eje}" stroke-width="1"/>` +
+    `<text x="${izq + 4}" y="14" font-size="12" fill="${D.formula}" font-family="ui-monospace, Menlo, monospace">Paw = PEEP + R·Q + V/C</text>` +
+    linea(peepe ?? peep, peepe !== null ? 'PEEP' : 'PEEP', D.peep) +
+    (peepe !== null ? linea(peep, 'PEEPtot', D.peepi) : '') +
+    (hayMeseta ? linea(pPlat, 'Pplat', D.elastica) + linea(pPico, 'Ppico', D.resistiva) : '') +
+    `<path d="${curva}" fill="none" stroke="${D.traza}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    `<text x="${(x0 + xIns) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="${D.texto}">flujo entrando</text>` +
+    `<text x="${(xIns + xMes) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="${D.texto}">oclusión</text>` +
+    `<text x="${(xMes + xFin) / 2}" y="${base + 14}" text-anchor="middle" font-size="11" fill="${D.texto}">espiración</text>` +
     llaves +
     `</svg>`
   );
@@ -156,11 +157,11 @@ function silueta(b: number, activo: boolean, titulo: string, pie: string): strin
     const u = i / 24;
     pts.push(`${(m + u * (W - 2 * m)).toFixed(1)},${(H - m - Math.pow(u, b) * (H - 2 * m)).toFixed(1)}`);
   }
-  const color = activo ? '#eaffff' : '#5f8bae';
+  const color = activo ? D.traza : D.inactiva;
   return (
     `<figure class="edu-silueta${activo ? ' activa' : ''}">` +
     `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}">` +
-    `<polyline points="${m},${H - m} ${W - m},${H - m}" fill="none" stroke="#4b7fb5" stroke-width="1"/>` +
+    `<polyline points="${m},${H - m} ${W - m},${H - m}" fill="none" stroke="${D.eje}" stroke-width="1"/>` +
     `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>` +
     `</svg><figcaption><b>${esc(titulo)}</b><span>${esc(pie)}</span></figcaption></figure>`
   );
@@ -191,24 +192,24 @@ function graficoTitulacion(puntos: PuntoTitulacion[], oculto: (k: string) => boo
   const circulos = p
     .map(
       (q) =>
-        `<circle cx="${X(q.peep).toFixed(1)}" cy="${Y(q.cstat).toFixed(1)}" r="${q === mejor ? 5 : 3.5}" fill="${q === mejor ? '#7ce0b8' : '#bfe6ff'}"/>`,
+        `<circle cx="${X(q.peep).toFixed(1)}" cy="${Y(q.cstat).toFixed(1)}" r="${q === mejor ? 5 : 3.5}" fill="${q === mejor ? D.elastica : D.formula}"/>`,
     )
     .join('');
   const marca = mejor
-    ? `<text x="${Math.min(W - 90, X(mejor.peep) + 8).toFixed(1)}" y="${(Y(mejor.cstat) - 8).toFixed(1)}" font-size="11" fill="#7ce0b8" font-weight="600">` +
+    ? `<text x="${Math.min(W - 90, X(mejor.peep) + 8).toFixed(1)}" y="${(Y(mejor.cstat) - 8).toFixed(1)}" font-size="11" fill="${D.elastica}" font-weight="600">` +
       `${verCstat ? f(mejor.cstat, 0) : '?'} a PEEP ${f(mejor.peep, 0)}</text>`
     : '';
   return (
     `<svg viewBox="0 0 ${W} ${H}" class="edu-titulacion" role="img" aria-label="Distensibilidad estática medida a distintas PEEP">` +
-    `<line x1="${izq}" y1="${H - aba}" x2="${W - 12}" y2="${H - aba}" stroke="#4b7fb5" stroke-width="1"/>` +
-    `<line x1="${izq}" y1="12" x2="${izq}" y2="${H - aba}" stroke="#4b7fb5" stroke-width="1"/>` +
-    `<polyline points="${linea}" fill="none" stroke="#bfe6ff" stroke-width="1.5"/>` +
+    `<line x1="${izq}" y1="${H - aba}" x2="${W - 12}" y2="${H - aba}" stroke="${D.eje}" stroke-width="1"/>` +
+    `<line x1="${izq}" y1="12" x2="${izq}" y2="${H - aba}" stroke="${D.eje}" stroke-width="1"/>` +
+    `<polyline points="${linea}" fill="none" stroke="${D.formula}" stroke-width="1.5"/>` +
     circulos +
     marca +
-    `<text x="${izq + 4}" y="12" font-size="10" fill="#9dc4e2">${verCstat ? `${f(y1, 0)} mL/cmH₂O` : '?'}</text>` +
-    `<text x="${izq - 6}" y="${H - aba}" text-anchor="end" font-size="10" fill="#9dc4e2">0</text>` +
-    `<text x="${izq}" y="${H - 8}" font-size="10" fill="#9dc4e2">PEEP ${f(x0, 0)}</text>` +
-    `<text x="${W - 12}" y="${H - 8}" text-anchor="end" font-size="10" fill="#9dc4e2">PEEP ${f(x1, 0)}</text>` +
+    `<text x="${izq + 4}" y="12" font-size="10" fill="${D.texto}">${verCstat ? `${f(y1, 0)} mL/cmH₂O` : '?'}</text>` +
+    `<text x="${izq - 6}" y="${H - aba}" text-anchor="end" font-size="10" fill="${D.texto}">0</text>` +
+    `<text x="${izq}" y="${H - 8}" font-size="10" fill="${D.texto}">PEEP ${f(x0, 0)}</text>` +
+    `<text x="${W - 12}" y="${H - 8}" text-anchor="end" font-size="10" fill="${D.texto}">PEEP ${f(x1, 0)}</text>` +
     `</svg>`
   );
 }
