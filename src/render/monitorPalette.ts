@@ -1,5 +1,5 @@
 /**
- * Paleta del monitor dibujado en canvas: curvas, bucles, barra de presión, tendencias y la captura exportada. Es la
+ * Paleta y escala tipográfica del monitor dibujado en canvas: curvas, bucles, barra de presión, tendencias y la captura exportada. Es la
  * misma identidad que las variables `--mon-*` de src/ui/styles/01-base.css (E-118, colores medidos en las capturas del
  * manual SW10). `MON_CSS` repite las que también usa la hoja, con la misma clave en kebab-case (`pantallaClaro` ↔
  * `--mon-pantalla-claro`), y CTR-06 (tests/unit/contraste.test.ts) comprueba que no se separen. El texto pequeño se mide
@@ -119,13 +119,24 @@ export const PLOT_TEXT_COLORS = {
   lineaVt: AYUDA.vt,
 } as const;
 
-/** Escala tipográfica del canvas: ninguna anotación baja de 10 px (mismo mínimo que el CSS del monitor). */
-export const PLOT_TYPE = {
-  rotulo: 13,
-  tick: 11,
-  unidad: 10,
-  nota: 10,
+/**
+ * Escala tipográfica del monitor en px, la misma que `--mon-fs-*` de la hoja (TIP-02): el canvas sólo dibuja texto en
+ * uno de estos pasos, y ninguno baja de 10 px.
+ */
+export const MON_FS = {
+  '2xs': 10,
+  xs: 11,
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 28,
+  '4xl': 32,
+  '5xl': 42,
+  '6xl': 60,
 } as const;
+export type PasoTipo = keyof typeof MON_FS;
 
 /** Extremo más claro del fondo del monitor: el caso peor para el contraste del texto de ejes. */
 export const PLOT_BACKGROUND_LIGHTEST = MON_CSS.pantallaClaro;

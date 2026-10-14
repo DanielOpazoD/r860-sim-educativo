@@ -114,8 +114,8 @@ describe('tokens CSS', () => {
       }
     }
     const acrossSheets = [...owners.values()].filter((set) => set.size > 1).length;
-    // Trinquete: sólo puede bajar. Las 10 repeticiones restantes separan propiedades que otra regla intermedia también declara.
-    expect(repeatedWithin.length).toBeLessThanOrEqual(10);
+    // Trinquete: sólo puede bajar. Las 9 repeticiones restantes separan propiedades que otra regla intermedia también declara.
+    expect(repeatedWithin.length).toBeLessThanOrEqual(9);
     expect(acrossSheets).toBeLessThanOrEqual(76);
   });
 

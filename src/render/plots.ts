@@ -1,5 +1,5 @@
 import { formatNumber as format } from '../domain/units';
-import { alfa, AYUDA, MON, MON_CSS, PLOT_TEXT_COLORS, PLOT_TYPE } from './monitorPalette';
+import { alfa, AYUDA, MON, MON_CSS, MON_FS, PLOT_TEXT_COLORS, type PasoTipo } from './monitorPalette';
 /**
  * Renderizado exclusivamente visual (canvas). Nunca modifica el estado de la simulación.
  * Estilo de curvas, bucles, manómetro, tendencias y esfuerzo derivado de «R860 Lab» v1.1 (src/plots.js, MIT 2026),
@@ -55,14 +55,14 @@ function text(
   s: string,
   x: number,
   y: number,
-  size = 11,
+  paso: PasoTipo = 'xs',
   color: string = PLOT_TEXT_COLORS.tickCurvas,
   align: CanvasTextAlign = 'left',
   weight = 'normal',
 ): void {
   ctx.fillStyle = color;
   ctx.textAlign = align;
-  ctx.font = `${weight} ${size}px Arial,sans-serif`;
+  ctx.font = `${weight} ${MON_FS[paso]}px Arial,sans-serif`;
   ctx.fillText(s, x, y);
 }
 
@@ -450,13 +450,13 @@ export function drawWave(
       ph = ybottom - ytop;
     const yf = (v: number): number => ybottom - ((v - sp.min) / (sp.max - sp.min)) * ph;
     // Rótulo blanco en negrita y unidad gris, como en las capturas del manual; rejilla discreta y línea de cero clara.
-    text(ctx, sp.label, left + 1, i * rowH + 16, 13, MON_CSS.texto, 'left', '700');
-    text(ctx, sp.unit, w - right, i * rowH + 16, 10, PLOT_TEXT_COLORS.tickCurvas, 'right');
+    text(ctx, sp.label, left + 1, i * rowH + 16, 'sm', MON_CSS.texto, 'left', '700');
+    text(ctx, sp.unit, w - right, i * rowH + 16, '2xs', PLOT_TEXT_COLORS.tickCurvas, 'right');
     for (let k = 0; k <= 6; k++) line(ctx, left + (k * plotW) / 6, ytop, left + (k * plotW) / 6, ybottom, MON.rejilla, 0.65);
     for (const val of sp.ticks) {
       const y = yf(val);
       line(ctx, left, y, w - right, y, val === 0 ? MON.cero : MON.rejillaSuave, val === 0 ? 1 : 0.6);
-      text(ctx, String(Math.round(val)), left - 7, y + 3, 11, PLOT_TEXT_COLORS.tickCurvas, 'right');
+      text(ctx, String(Math.round(val)), left - 7, y + 3, 'xs', PLOT_TEXT_COLORS.tickCurvas, 'right');
     }
     line(ctx, left, ytop, left, ybottom, MON.marco);
     line(ctx, w - right, ytop, w - right, ybottom, MON.marco);
@@ -487,11 +487,11 @@ export function drawWave(
       ctx.setLineDash([4, 4]);
       if (peep > 0) {
         line(ctx, left, yf(peep), w - right, yf(peep), alfa(AYUDA.peep, '99'), 0.9);
-        text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaPeep, 'right');
+        text(ctx, 'PEEP', w - right - 2, yf(peep) - 2, '2xs', PLOT_TEXT_COLORS.lineaPeep, 'right');
       }
       if (typeof options.pmax === 'number' && Number.isFinite(options.pmax) && options.pmax > sp.min && options.pmax < sp.max) {
         line(ctx, left, yf(options.pmax), w - right, yf(options.pmax), AYUDA.pmaxLinea, 0.9);
-        text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.marcaPpico, 'right');
+        text(ctx, 'Pmáx', w - right - 2, yf(options.pmax) - 2, '2xs', PLOT_TEXT_COLORS.marcaPpico, 'right');
       }
       ctx.restore();
       // Cada disparo detectado por el sensor queda marcado en el borde inferior; no distingue esfuerzo de autodisparo por fuga.
@@ -556,8 +556,8 @@ export function drawWave(
       ctx.stroke();
       ctx.restore();
       if (i === 0) {
-        text(ctx, 'Antes', left + 5, ytop + 11, PLOT_TYPE.nota, PLOT_TEXT_COLORS.antes);
-        text(ctx, 'Después', left + 44, ytop + 11, PLOT_TYPE.nota, sp.color);
+        text(ctx, 'Antes', left + 5, ytop + 11, '2xs', PLOT_TEXT_COLORS.antes);
+        text(ctx, 'Después', left + 44, ytop + 11, '2xs', sp.color);
       }
     }
     for (const seg of segments) {
@@ -580,7 +580,7 @@ export function drawWave(
         ctx.restore();
         if (i === 0) {
           const labelY = marker.kind === 'start' ? ytop + 10 : marker.kind === 'cycle' ? ybottom - 16 : ybottom - 5;
-          text(ctx, marker.label, x + 3, labelY, PLOT_TYPE.nota, PLOT_TEXT_COLORS.anotacion);
+          text(ctx, marker.label, x + 3, labelY, '2xs', PLOT_TEXT_COLORS.anotacion);
         }
       } else if (i === 0) {
         const value = marker.value ?? sp.min;
@@ -595,7 +595,7 @@ export function drawWave(
         ctx.beginPath();
         ctx.arc(x, y, 2.8, 0, Math.PI * 2);
         ctx.fill();
-        text(ctx, marker.label, x + 4, Math.max(ytop + 10, y - 4), PLOT_TYPE.nota, markerColor);
+        text(ctx, marker.label, x + 4, Math.max(ytop + 10, y - 4), '2xs', markerColor);
       }
     }
     if (style === 'sweep' && !options.frozen) {
@@ -615,12 +615,12 @@ export function drawWave(
     if (typeof options.cursorTime === 'number' && Number.isFinite(options.cursorTime)) {
       const x = xfn(options.cursorTime);
       line(ctx, x, ytop, x, ybottom, AYUDA.cursor, 0.8);
-      if (i === 0) text(ctx, 'A', x + 3, ytop + 11, PLOT_TYPE.nota, MON_CSS.texto, 'left', '600');
+      if (i === 0) text(ctx, 'A', x + 3, ytop + 11, '2xs', MON_CSS.texto, 'left', '600');
     }
     if (typeof options.cursorTimeB === 'number' && Number.isFinite(options.cursorTimeB)) {
       const x = xfn(options.cursorTimeB);
       line(ctx, x, ytop, x, ybottom, alfa(PLOT_TEXT_COLORS.marcaPplat, 'd0'), 0.8);
-      if (i === 0) text(ctx, 'B', x + 3, ytop + 11, PLOT_TYPE.nota, PLOT_TEXT_COLORS.marcaPplat, 'left', '600');
+      if (i === 0) text(ctx, 'B', x + 3, ytop + 11, '2xs', PLOT_TEXT_COLORS.marcaPplat, 'left', '600');
     }
     ctx.restore();
     if (i === specs.length - 1)
@@ -630,7 +630,7 @@ export function drawWave(
           format(val, 0) + ' s',
           left + (k * plotW) / 6,
           h - 1,
-          10,
+          'xs',
           PLOT_TEXT_COLORS.ejeTiempo,
           k === 6 ? 'right' : k === 0 ? 'left' : 'center',
         ),
@@ -681,16 +681,16 @@ export function drawLoop(
     yrange = type === 'pv' ? [0, ranges.volume] : [-ranges.flow, ranges.flow];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, type === 'pv' ? 'Presión · volumen' : 'Flujo · volumen', left, 23, 15, MON_CSS.texto, 'left', '700');
-  text(ctx, type === 'pv' ? 'mL' : 'L/min', left, top - 9, 10, PLOT_TEXT_COLORS.tickBucles);
-  text(ctx, type === 'pv' ? 'cmH₂O' : 'mL', w - right, h - 9, 10, PLOT_TEXT_COLORS.tickBucles, 'right');
+  text(ctx, type === 'pv' ? 'Presión · volumen' : 'Flujo · volumen', left, 23, 'lg', MON_CSS.texto, 'left', '700');
+  text(ctx, type === 'pv' ? 'mL' : 'L/min', left, top - 9, '2xs', PLOT_TEXT_COLORS.tickBucles);
+  text(ctx, type === 'pv' ? 'cmH₂O' : 'mL', w - right, h - 9, '2xs', PLOT_TEXT_COLORS.tickBucles, 'right');
   for (let k = 0; k <= 4; k++) {
     const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 4,
       y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 4;
     line(ctx, xf(x), top, xf(x), bottom, MON.rejilla);
     line(ctx, left, yf(y), w - right, yf(y), MON.rejilla);
-    text(ctx, format(x), xf(x), bottom + 17, 10, PLOT_TEXT_COLORS.tickBucles, 'center');
-    text(ctx, format(y), left - 8, yf(y) + 4, 10, PLOT_TEXT_COLORS.tickBucles, 'right');
+    text(ctx, format(x), xf(x), bottom + 17, 'xs', PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, format(y), left - 8, yf(y) + 4, 'xs', PLOT_TEXT_COLORS.tickBucles, 'right');
   }
   line(ctx, left, yf(0), w - right, yf(0), MON.cero, 1);
   line(ctx, left, top, left, bottom, MON.cero, 1);
@@ -762,7 +762,7 @@ export function drawLoop(
     line(ctx, xf(peep), top, xf(peep), bottom, alfa(AYUDA.peep, '99'), 0.9);
     ctx.restore();
     line(ctx, xf(peep), bottom, xf(peep), bottom + 5, AYUDA.peep, 1);
-    text(ctx, 'PEEP', xf(peep) + 3, top + 10, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaPeep, 'left');
+    text(ctx, 'PEEP', xf(peep) + 3, top + 10, '2xs', PLOT_TEXT_COLORS.lineaPeep, 'left');
   }
   // La VT sólo es consigna en VC; en PC/PS es resultado, no ajuste.
   if (options.vtMark && vtMl > 0 && type === 'pv' && vtMl > yrange[0]! && vtMl < yrange[1]!) {
@@ -770,21 +770,21 @@ export function drawLoop(
     ctx.setLineDash([3, 3]);
     line(ctx, left, yf(vtMl), w - right, yf(vtMl), alfa(AYUDA.vt, '99'), 0.9);
     ctx.restore();
-    text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaVt, 'right');
+    text(ctx, 'VT', w - right - 2, yf(vtMl) - 2, '2xs', PLOT_TEXT_COLORS.lineaVt, 'right');
   }
   if (options.vtMark && vtMl > 0 && type === 'fv' && vtMl > xrange[0]! && vtMl < xrange[1]!) {
     ctx.save();
     ctx.setLineDash([3, 3]);
     line(ctx, xf(vtMl), top, xf(vtMl), bottom, alfa(AYUDA.vt, '99'), 0.9);
     ctx.restore();
-    text(ctx, 'VT', xf(vtMl) + 3, top + 10, PLOT_TYPE.nota, PLOT_TEXT_COLORS.lineaVt, 'left');
+    text(ctx, 'VT', xf(vtMl) + 3, top + 10, '2xs', PLOT_TEXT_COLORS.lineaVt, 'left');
   }
   path(ref, reference ? alfa(AYUDA.referencia, 'cc') : AYUDA.previo, true);
   path(current, MON_CSS.texto, false);
   line(ctx, w - 140, 20, w - 122, 20, MON_CSS.texto, 2);
-  text(ctx, 'Actual', w - 116, 24, 10, MON_CSS.texto);
+  text(ctx, 'Actual', w - 116, 24, '2xs', MON_CSS.texto);
   line(ctx, w - 140, 34, w - 122, 34, reference ? alfa(AYUDA.referencia, 'cc') : AYUDA.previo, 1.5);
-  text(ctx, reference ? 'Referencia' : 'Previo', w - 116, 38, 10, reference ? PLOT_TEXT_COLORS.referencia : PLOT_TEXT_COLORS.tickBucles);
+  text(ctx, reference ? 'Referencia' : 'Previo', w - 116, 38, '2xs', reference ? PLOT_TEXT_COLORS.referencia : PLOT_TEXT_COLORS.tickBucles);
 }
 
 export interface GaugeState {
@@ -812,8 +812,8 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   // En espera el panel es tostado (URM SW10 3-6): el texto pasa a oscuro.
   const tinta = s.standby ? MON_CSS.tinta : MON_CSS.texto,
     tintaSuave = s.standby ? MON_CSS.tintaSuave : PLOT_TEXT_COLORS.tickCurvas;
-  text(ctx, 'Pva', x + bw / 2, 20, 13, tinta, 'center', '700');
-  text(ctx, 'cmH₂O', x + bw / 2, 37, 10, tintaSuave, 'center');
+  text(ctx, 'Pva', x + bw / 2, 20, 'sm', tinta, 'center', '700');
+  text(ctx, 'cmH₂O', x + bw / 2, 37, '2xs', tintaSuave, 'center');
   // Tubo: negro con un brillo vertical, como un cilindro.
   const tubo = ctx.createLinearGradient(x, 0, x + bw, 0);
   tubo.addColorStop(0, MON.tubo[0]);
@@ -844,13 +844,13 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   for (let i = 0; i <= 3; i++) {
     const v = i * tick;
     line(ctx, x + 1, yf(v), x + bw - 1, yf(v), MON.tuboMarca, 1);
-    text(ctx, format(v), x - 8, yf(v) + 4, 12, tinta, 'right', '700');
+    text(ctx, format(v), x - 8, yf(v) + 4, 'sm', tinta, 'right', '700');
   }
   const marker = (value: number | null, label: string, color: string, dy = 3): void => {
     if (value === null || !Number.isFinite(value)) return;
     const y = yf(value);
     line(ctx, x + 1, y, x + bw - 1, y, color, 3);
-    text(ctx, label, x + bw + 5, y + dy, 11, color, 'left', '700');
+    text(ctx, label, x + bw + 5, y + dy, 'xs', color, 'left', '700');
   };
   // Ppico junto a Pmáx: el rótulo baja para no pisar el de Pmáx, y la línea roja de Pmáx se dibuja encima.
   if (!s.standby) {
@@ -862,9 +862,9 @@ export function drawGauge(canvas: HTMLCanvasElement, s: GaugeState): void {
   // Resolución del equipo: VT en pasos de 0,1 mL bajo 50 mL y de 1 mL desde ahí (URM SW10 13-24).
   const vte = s.standby ? null : s.vteMl;
   const columna = (cx: number, rotulo: string, valor: string, unidad: string): void => {
-    text(ctx, rotulo, cx, 420, 11, tinta, 'center', '700');
-    text(ctx, valor, cx, 450, 26, tinta, 'center', '700');
-    text(ctx, unidad, cx, 467, 10, tintaSuave, 'center');
+    text(ctx, rotulo, cx, 420, 'sm', tinta, 'center', '700');
+    text(ctx, valor, cx, 450, '2xl', tinta, 'center', '700');
+    text(ctx, unidad, cx, 467, '2xs', tintaSuave, 'center');
   };
   columna(w * 0.3, 'VTesp', format(vte, vte !== null && Math.abs(vte) < 50 ? 1 : 0), 'mL');
   columna(w * 0.74, 'FiO₂', format(s.fio2Pct, 0), '%');
@@ -942,15 +942,15 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
     ];
   const xf = (x: number): number => left + ((x - xrange[0]!) / (xrange[1]! - xrange[0]!)) * pw,
     yf = (y: number): number => bottom - ((y - yrange[0]!) / (yrange[1]! - yrange[0]!)) * ph;
-  text(ctx, 'Pva · V', left, top - 9, 10, MON_CSS.texto, 'left');
-  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, 10, AYUDA.esfuerzo, 'left');
+  text(ctx, 'Pva · V', left, top - 9, '2xs', MON_CSS.texto, 'left');
+  text(ctx, '(Pva+Pmus) · V = presión total', left + 58, top - 9, '2xs', AYUDA.esfuerzo, 'left');
   for (let k = 0; k <= 3; k++) {
     const x = xrange[0]! + ((xrange[1]! - xrange[0]!) * k) / 3,
       y = yrange[0]! + ((yrange[1]! - yrange[0]!) * k) / 3;
     line(ctx, xf(x), top, xf(x), bottom, MON.rejilla);
     line(ctx, left, yf(y), w - right, yf(y), MON.rejilla);
-    text(ctx, format(x), xf(x), bottom + 12, 9, PLOT_TEXT_COLORS.tickBucles, 'center');
-    text(ctx, format(y), left - 5, yf(y) + 3, 9, PLOT_TEXT_COLORS.tickBucles, 'right');
+    text(ctx, format(x), xf(x), bottom + 12, '2xs', PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, format(y), left - 5, yf(y) + 3, '2xs', PLOT_TEXT_COLORS.tickBucles, 'right');
   }
   if (xrange[0]! < 0) line(ctx, xf(0), top, xf(0), bottom, MON.cero, 1);
   if (yrange[0]! < 0) line(ctx, left, yf(0), w - right, yf(0), MON.cero, 1);
@@ -981,7 +981,7 @@ export function drawMuscleLoop(canvas: HTMLCanvasElement, points: Point[]): void
   path(base, (p) => p[1], MON_CSS.texto, 1);
   if (esfBase) path(base, (p) => p[1] + p[4], AYUDA.esfuerzo, 1);
   if (!esfBase && !esfActual)
-    text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, 10, PLOT_TEXT_COLORS.tickBucles, 'center');
+    text(ctx, 'Sin esfuerzo: Pva = presión total', (left + w - right) / 2, h - 6, '2xs', PLOT_TEXT_COLORS.tickBucles, 'center');
 }
 
 export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: number): void {
@@ -1022,12 +1022,12 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
       ph = bottom - top,
       xf = (t: number): number => left + ((t - start) / span) * pw,
       yf = (v: number): number => bottom - (v / sp.max) * ph;
-    text(ctx, sp.label, left, i * row + 16, 12, MON_CSS.texto, 'left', '700');
-    text(ctx, sp.unit, left - 9, i * row + 16, PLOT_TYPE.unidad, PLOT_TEXT_COLORS.tickTendencias, 'right');
+    text(ctx, sp.label, left, i * row + 16, 'sm', MON_CSS.texto, 'left', '700');
+    text(ctx, sp.unit, left - 9, i * row + 16, '2xs', PLOT_TEXT_COLORS.tickTendencias, 'right');
     for (let k = 0; k <= 4; k++) {
       const y = yf((k * sp.max) / 4);
       line(ctx, left, y, w - right, y, MON.rejillaSuave);
-      text(ctx, format((k * sp.max) / 4), left - 8, y + 3, 10, PLOT_TEXT_COLORS.tickTendencias, 'right');
+      text(ctx, format((k * sp.max) / 4), left - 8, y + 3, 'xs', PLOT_TEXT_COLORS.tickTendencias, 'right');
       const x = left + (k * pw) / 4;
       line(ctx, x, top, x, bottom, MON.rejillaSuave);
     }
@@ -1047,7 +1047,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
         drawn = true;
       }
       ctx.stroke();
-      text(ctx, label, w - right - j * 67, i * row + 16, 10, color, 'right');
+      text(ctx, label, w - right - j * 67, i * row + 16, '2xs', color, 'right');
     });
     if (i === 2)
       for (let k = 0; k <= 4; k++) {
@@ -1057,7 +1057,7 @@ export function drawTrends(canvas: HTMLCanvasElement, points: TrendRow[], end: n
           `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, '0')}`,
           left + (k * pw) / 4,
           h - 3,
-          9,
+          'xs',
           PLOT_TEXT_COLORS.tickTendencias,
           k === 0 ? 'left' : k === 4 ? 'right' : 'center',
         );
