@@ -11,22 +11,12 @@ import { CANCEL_BTN, CLOSE_BTN } from './dialogHost';
 import { debriefText, helpHTML, menuHTML, oxygenHTML, patientHTML, powerHTML, sessionHTML, standbyHTML, toolsHTML } from './dialogs';
 import { type CommandId, isCommandId } from './commands';
 import { $, btn } from './dom';
-import {
-  csvBlob,
-  downloadBlob,
-  paintSnapshot,
-  sessionBlob,
-  signalRows,
-  SIGNAL_HEADER,
-  textBlob,
-  TRENDS_HEADER,
-  trendsRows,
-} from './exports';
-import { stamp, unitText } from './format';
+import { downloadBlob, textBlob } from './exports';
+import { stamp } from './format';
 import { toggleHelp } from './helpPanels';
 import type { HoldPanel } from './holdPanel';
 import type { InstructorPanel } from './instructorPanel';
-import { displaySetting, isMobile, MODE_LABEL, QUICK_KEYS_BY_MODE, QUICK_LABEL } from './labels';
+import { isMobile } from './labels';
 import { clearPrefs, savePrefs } from './prefs';
 import type { MetricsView } from './metricsView';
 import type { ModeDialog } from './modeDialog';
@@ -34,6 +24,7 @@ import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
 import type { AlarmLimits, SettingsKey, VentMode } from '../domain/types';
 import { segmentedValue } from './segmented';
+import { createSessionExports } from './sessionExports';
 
 export interface Features {
   cases: CaseSpace;
@@ -88,57 +79,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       'compact',
     );
   }
-  async function exportSession(): Promise<void> {
-    const file = await ctx.client.exportSession();
-    if (!file) {
-      ctx.toast('No se pudo guardar la sesión: el motor no la entregó.', true);
-      return;
-    }
-    downloadBlob(sessionBlob(file), `Ventila_sesion_${stamp()}.json`);
-    ctx.toast(`Sesión guardada (${file.commands.length} comandos, ${file.breaths.length} respiraciones).`);
-  }
-  function exportCSV(signal: boolean): void {
-    const fr = ctx.frame;
-    if (!fr) return;
-    const rows = signal ? signalRows(plots.points) : trendsRows(fr);
-    downloadBlob(csvBlob(signal ? SIGNAL_HEADER : TRENDS_HEADER, rows), `Ventila_${signal ? 'senal' : 'tendencias'}_${stamp()}.csv`);
-    ctx.toast(`${rows.length} filas exportadas.`);
-  }
-  function snapshot(): void {
-    const fr = ctx.frame;
-    if (!fr) return;
-    plots.renderPlots();
-    const rules = ctx.profile.rules;
-    const quickItems: [string, string][] = [
-      ['Modo actual', MODE_LABEL[fr.settings.mode]],
-      ...QUICK_KEYS_BY_MODE[fr.settings.mode].map(
-        (k) =>
-          [QUICK_LABEL[k], displaySetting(rules, k, fr.settings[k]) + (k === 'ie' ? '' : ' ' + unitText(rules[k].displayUnit))] as [
-            string,
-            string,
-          ],
-      ),
-    ];
-    const view = ctx.view;
-    const c = paintSnapshot(document.createElement('canvas'), {
-      frame: fr,
-      view,
-      waveCanvas: $<HTMLCanvasElement>(view === 'basic' ? '#basic-wave-canvas' : '#waves-canvas'),
-      gaugeCanvas: $<HTMLCanvasElement>('#gauge-canvas'),
-      holdVisible: hold.isOpen,
-      scenarioName: ctx.scenario.name,
-      quickItems,
-    });
-    c.toBlob((blob) => {
-      if (!blob) {
-        ctx.toast('No se pudo crear la imagen.', true);
-        return;
-      }
-      downloadBlob(blob, `Ventila_monitor_${stamp()}.png`);
-      ctx.lesson.flags.snapshot = true;
-      ctx.lesson.evaluate();
-    }, 'image/png');
-  }
+  const exportaciones = createSessionExports(ctx, { plots, hold });
   const openHelp = (tab: string): void => ctx.dialog.open('help', 'Guía del simulador', helpHTML(tab), CLOSE_BTN, 'wide');
 
   const handlers: Record<CommandId, () => void | Promise<unknown>> = {
@@ -259,11 +200,11 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       ctx.dialog.close();
       ctx.toast('Preferencias restablecidas: se aplican al recargar');
     },
-    exportSession: () => exportSession(),
+    exportSession: () => exportaciones.exportSession(),
     importSession: () => $('#session-input').click(),
-    csv: () => exportCSV(false),
-    signalCSV: () => exportCSV(true),
-    snapshot: () => snapshot(),
+    csv: () => exportaciones.exportCSV(false),
+    signalCSV: () => exportaciones.exportCSV(true),
+    snapshot: () => exportaciones.snapshot(),
     exportDebrief: () => {
       if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `Ventila_practica_${stamp()}.txt`);
     },
