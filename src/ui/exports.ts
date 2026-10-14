@@ -5,8 +5,8 @@ import { formatNumber as f } from '../domain/units';
 import { MON_CSS as C, MON_FS, type PasoTipo } from '../render/monitorPalette';
 import { type Point } from '../render/plots';
 import { clock, wallDate } from './format';
-import { humanReason } from './humanize';
-import { METRICS, metricValue } from './metricsTable';
+import { alarmBandLabel, humanReason } from './humanize';
+import { METRICS, metricInAlarm, metricInHighAlarm, metricValue } from './metricsTable';
 
 export function csvCell(v: unknown): string {
   if (v === null || v === undefined) return '';
@@ -124,18 +124,41 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
   banda.addColorStop(1, b);
   ctx.fillStyle = banda;
   ctx.fillRect(8, 7, 1104, 70);
-  txt(bar.color === 'grey' ? 'Alarmas resueltas' : bar.message, 30, 33, 'xl', tinta, 'left', '600');
-  txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, '2xs', tinta);
+  // El mismo texto que la banda del monitor: la prioridad arriba, pequeña, y el mensaje para el alumno debajo, en grande.
+  const [prioridad, ...resto] = alarmBandLabel(bar).split(' · ');
+  if (resto.length) {
+    txt(prioridad ?? '', 30, 27, 'sm', tinta, 'left', '700');
+    txt(resto.join(' · '), 30, 51, 'xl', tinta, 'left', '600');
+    txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 69, '2xs', tinta);
+  } else {
+    txt(prioridad ?? '', 30, 33, 'xl', tinta, 'left', '600');
+    txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, '2xs', tinta);
+  }
   const wc = input.waveCanvas;
   ctx.drawImage(wc, 0, 0, wc.width, wc.height, 8, 88, 608, view === 'basic' ? 138 : 488);
-  // Dos columnas en el alto que deja la fila de vistas (y = 583): con siete filas, la última quedaba debajo de ella.
-  const paso = Math.min(77, Math.floor(470 / Math.ceil(METRICS.length / 2)));
+  // Dos columnas en el alto que deja la fila de vistas (y = 583), con la línea «Fuga %» tras las dos filas de presiones,
+  // como en el monitor. Con siete filas a paso fijo la última quedaba debajo de la fila de vistas.
+  const FUGA = 16;
+  const paso = Math.min(77, Math.floor((470 - FUGA) / Math.ceil(METRICS.length / 2)));
+  const fuga = fr.metrics.leakPct;
+  const textoFuga =
+    fuga?.value === null || fuga?.value === undefined || fuga.quality === 'unavailable' ? '—' : String(Math.round(fuga.value * 100));
+  txt(`Fuga % ${textoFuga}`, 645 + 143, 110 + 2 * paso, 'xs', C.texto, 'center', '700');
   METRICS.forEach((m, i) => {
+    const fila = Math.floor(i / 2);
     const x = 645 + (i % 2) * 147,
-      y = 110 + Math.floor(i / 2) * paso;
+      y = 110 + fila * paso + (fila >= 2 ? FUGA : 0);
+    // La medición en alarma lleva un borde con el color de su prioridad (URM SW10 8-7), como .numeric.alarm-value.
+    if (metricInAlarm(fr, m.key)) {
+      ctx.strokeStyle = metricInHighAlarm(fr, m.key) ? C.alta : C.media;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x - 6, y - 14, 141, paso - 3, 6);
+      ctx.stroke();
+    }
     txt(m.label, x, y, 'sm', C.texto, 'left', '700');
-    txt(f(metricValue(fr, m), m.decimals), x, y + 33, '4xl', C.texto, 'left', '700');
-    txt(m.unit, x, y + 50, '2xs', C.unidad);
+    txt(f(metricValue(fr, m), m.decimals), x, y + 31, '4xl', C.texto, 'left', '700');
+    txt(m.unit, x, y + 44, '2xs', C.unidad);
   });
   const g = input.gaugeCanvas;
   ctx.drawImage(g, 0, 0, g.width, g.height, 971, 87, 140, 488);

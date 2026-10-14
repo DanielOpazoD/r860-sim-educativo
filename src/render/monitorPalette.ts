@@ -38,6 +38,9 @@ export const MON_CSS = {
   mediaTexto: '#1a1200',
   bandaPreviaA: '#4a5868',
   bandaPreviaB: '#5c6b7d',
+  /** Borde de la medición en alarma, con el color de su prioridad (URM SW10 8-7). */
+  alta: '#ff7a80',
+  media: '#f0a92e',
   tinta: '#413a30',
   tintaSuave: '#5c5345',
 } as const;
