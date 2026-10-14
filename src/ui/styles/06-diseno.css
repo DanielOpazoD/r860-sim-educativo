@@ -100,21 +100,6 @@
     transform: rotate(360deg);
   }
 }
-.hold-panel.mobile-hold {
-  z-index: 210;
-}
-#quick-editor.mobile-editor {
-  box-shadow: 0 8px 65px #000b;
-  z-index: 220;
-}
-/* En móvil el viewport de disposición puede ser más ancho que el visual cuando el equipo desborda: las capas fijas usan vw. */
-.hold-title button {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 .hold-panel.mobile-hold .hold-title button {
   min-width: 44px;
   min-height: 44px;
@@ -138,26 +123,12 @@
     padding: 6px;
   }
 }
-/* Geometría estable de la ventana de bloqueo en móvil: el título ocupa el ancho sobrante y la altura no oscila con el estado. */
-.hold-title b {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.hold-panel.mobile-hold {
-  left: 8px;
-  right: auto;
-  width: calc(100vw - 16px);
-  min-height: 180px;
-}
+/* Geometría estable de la ventana de bloqueo en móvil: la altura no oscila con el estado. */
 .hold-panel.mobile-hold #hold-status {
   min-height: 20px;
 }
 
 /* Teclas de ajuste: seis en PC, siete en VC (Plimit visible junto a Pmáx). */
-.quick-controls {
-  --nkeys: 6;
-  grid-template-columns: 150px repeat(var(--nkeys, 6), 1fr) 100px 46px;
-}
 .quick-controls .quick-key b {
   font-size: var(--type-2xl);
 }
@@ -169,27 +140,12 @@
   margin-left: auto;
   margin-right: auto;
 }
-.bezel-bottom {
-  height: 68px;
-  padding: 0 16px 0 20px;
-  gap: 14px;
-}
 .bezel-bottom .hard-key {
   width: 34px;
 }
 .bezel-bottom .hard-key .icon {
   width: 20px;
   height: 20px;
-}
-.trim-knob {
-  --knob-angle: 0deg;
-  --knob-rotation: 0deg;
-  width: 54px;
-  height: 54px;
-}
-.bezel-signature {
-  font-size: var(--type-lg);
-  letter-spacing: 1px;
 }
 #simulation-clock {
   font-size: var(--type-2xs);

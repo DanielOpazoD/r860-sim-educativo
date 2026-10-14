@@ -330,21 +330,8 @@
   color: inherit;
   border-radius: 3px;
 }
-/* Dos filas de presiones, la línea de «Fuga %» a su altura justa y cuatro filas más; la última (índice de estrés) es implícita. */
-.numeric-grid {
-  grid-template-rows: repeat(2, minmax(0, 1fr)) auto repeat(4, minmax(0, 1fr));
-  min-height: 0;
-}
-.numeric {
-  min-height: 0;
-  padding-top: 2px;
-  padding-bottom: 1px;
-}
 .numeric-age:empty {
   display: none;
-}
-.hold-status.invalid {
-  color: #ffdda5;
 }
 .alarm-edit-grid input {
   min-width: 0;
@@ -387,13 +374,6 @@
 }
 .mode-error:empty {
   display: none;
-}
-.trim-knob span {
-  transform: rotate(var(--knob-angle, 0deg));
-  transform-origin: center 24px;
-}
-.alarm-silence small {
-  min-height: 11px;
 }
 .numeric:focus-visible,
 .big-numeric:focus-visible {
@@ -502,12 +482,6 @@
 }
 .help-timing:empty {
   display: none;
-}
-.quick-editor {
-  max-height: min(590px, calc(100% - 165px));
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #718fa5 transparent;
 }
 .quick-editor .parameter-help {
   margin: 16px 0 6px;
@@ -666,9 +640,6 @@
   font-size: var(--type-sm);
   margin-bottom: 12px;
 }
-.hold-title b {
-  margin-right: auto;
-}
 .hold-title #hold-help-button {
   width: 25px;
   height: 24px;
@@ -751,6 +722,8 @@
   width: min(405px, calc(100vw - 24px));
   max-height: calc(100dvh - 32px);
   padding: 20px;
+  box-shadow: 0 8px 65px #000b;
+  z-index: 220;
 }
 #quick-editor.mobile-editor .parameter-help {
   max-height: min(250px, 36dvh);
@@ -830,6 +803,12 @@
   max-width: none;
   font-size: var(--type-lg);
   transform: none;
+  z-index: 210;
+  /* En móvil el viewport de disposición puede ser más ancho que el visual cuando el equipo desborda: las capas fijas usan vw. */
+  left: 8px;
+  right: auto;
+  width: calc(100vw - 16px);
+  min-height: 180px;
 }
 .hold-panel.mobile-hold .hold-panel-body {
   flex-wrap: wrap;

@@ -783,11 +783,6 @@
     padding-left: 6px;
     padding-right: 6px;
   }
-  .device-shell {
-    padding-left: 5px;
-    padding-right: 5px;
-    border-radius: 12px 12px 18px 18px;
-  }
   .screen-window {
     aspect-ratio: auto;
     border-width: 0;
@@ -796,11 +791,6 @@
       0 -2px 2px #a6b9c033,
       inset 0 0 10px #0009,
       0 1px 2px #c9dbe533;
-  }
-  .monitor {
-    width: 610px;
-    padding-left: 1px;
-    padding-right: 1px;
   }
   .bezel-top {
     height: 24px;
@@ -1136,6 +1126,14 @@
 .contextual-field > .contextual-help {
   display: none;
   padding: 8px 10px;
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  width: max(100%, 230px);
+  max-width: calc(100vw - 64px);
+  margin: 4px 0 0;
+  box-shadow: var(--shell-shadow);
 }
 .contextual-field:focus-within > .contextual-help {
   display: block;
@@ -1171,6 +1169,7 @@
   flex: none;
   width: 32px;
   min-width: 32px;
+  height: 38px;
   min-height: 32px;
   padding: 0;
   border: 1px solid var(--shell-line);
@@ -1250,16 +1249,6 @@
 }
 .contextual-field {
   position: relative;
-}
-.contextual-field > .contextual-help {
-  position: absolute;
-  z-index: 20;
-  top: 100%;
-  left: 0;
-  width: max(100%, 230px);
-  max-width: calc(100vw - 64px);
-  margin: 4px 0 0;
-  box-shadow: var(--shell-shadow);
 }
 .limit-field > .contextual-help {
   left: auto;
