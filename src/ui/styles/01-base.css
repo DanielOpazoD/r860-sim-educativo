@@ -463,6 +463,27 @@ a {
   overflow: hidden;
   max-height: 32px;
 }
+/* Con alarma, como el equipo: la prioridad arriba, pequeña, y el mensaje debajo, en grande (capturas del manual, 8-8). */
+.alarm-message #alarm-label:has(.alarm-msg) {
+  max-height: 44px;
+}
+.alarm-message .alarm-kicker {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  max-height: none;
+}
+.alarm-message .alarm-msg {
+  display: block;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.15;
+  max-height: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 .alarm-message small {
   font-size: var(--type-2xs);
   line-height: 1.25;
