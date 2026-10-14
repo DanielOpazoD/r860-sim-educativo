@@ -909,7 +909,7 @@
       "status": "P (la ficha 2014 documenta el rango inspiratorio 2–160 L/min y no el espiratorio; U-50)",
       "source": "—",
       "locator": "—",
-      "implemented": "src/engine/controller.ts (EXP_MAX_FLOW_LPS); src/engine/patient.ts (minFlow en nodeState e integratePressureSource)",
+      "implemented": "src/engine/ventilatorConstants.ts (EXP_MAX_FLOW_LPS); src/engine/patient.ts (minFlow en nodeState e integratePressureSource)",
       "tests": [
         "tests/unit/review5.test.ts (R5-03)"
       ]
@@ -1183,7 +1183,7 @@
       "status": "P (U-52); D para los ajustes de sincronización de CPAP/PS y la existencia de una duración máxima de la respiración soportada (R23)",
       "source": "R23",
       "locator": "R23 diap. 14 (tabla de modos de soporte: CPAP/PS con Insp Trigger, Exp Trigger, Bias Flow, PS Rise Time; Tsupp sólo en VS) y diap. 35 (fin por el disparo espiratorio o la duración máxima de la respiración soportada)",
-      "implemented": "src/engine/controller.ts (inspSupport, SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN, onPlazoDeRespaldo, esperarDisparo); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
+      "implemented": "src/engine/controller.ts (inspSupport, onPlazoDeRespaldo, esperarDisparo); src/engine/ventilatorConstants.ts (SUPPORT_TI_MAX_S, APNEA_BACKUP_RATE_PER_MIN); src/engine/alarms.ts (apnea); src/engine/metrics.ts (rrSpont, mveSpont, vteSpont); src/history/session.ts (ajustes ausentes → valor por omisión)",
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03a, PHY-03b, PHY-03c)",
         "tests/unit/objetivos.test.ts (SC-19, SC-20)",
@@ -1349,7 +1349,7 @@
       "status": "P (U-30: la ganancia del lazo del R860 no está publicada; valor calibrado sobre el banco); D el rango de banco y las cifras del Engström de GE (C04)",
       "source": "C04",
       "locator": "Thille 2009, Resultados · Trigger function (DI 94 ms, 54–177; < 70 y < 100 en el peor caso con el Engström; 107 con esfuerzo muy fuerte; 122 con PS 5 frente a 80 con 20) y Pressurization capacity (PTP 1,6, 0,1–2,6; 1,8 fuerte, 1,4 muy fuerte)",
-      "implemented": "src/engine/controller.ts (PRESSURE_LOOP_GAIN, qValvula de la respiración, fases inspPressure e inspSupport); src/domain/types.ts (pressureLoopGain: 0 = fuente ideal del banco analítico)",
+      "implemented": "src/engine/controller.ts (qValvula de la respiración, fases inspPressure e inspSupport); src/engine/ventilatorConstants.ts (PRESSURE_LOOP_GAIN); src/domain/types.ts (pressureLoopGain: 0 = fuente ideal del banco analítico)",
       "tests": [
         "tests/unit/sync.test.ts (SYN-05)",
         "tests/unit/objetivos.test.ts (ALM)"
@@ -1475,7 +1475,7 @@
       "status": "D (definición de la rampa, criterios de fin del soporte y valores de fábrica, R21) / P (forma exponencial de la rampa; una sola rampa por modo)",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 5-3 (Rise Time, PS Rise Time, Tsupp), 5-4 (Pressure support: fin de la inspiración), 11-9 y 11-10 (Factory default settings)",
-      "implemented": "src/engine/controller.ts (RISE_TIME_TAU_FRACTION, PS_PRESSURE_CYCLE_CMH2O, SUPPORT_TI_MAX_S); src/engine/patient.ts (válvula de un solo sentido como tope); src/profiles/adulto-referencia/settings.ts (biasFlow, backupTinspS, apneaTimeS); src/domain/types.ts (CyclingCause 'pressure')",
+      "implemented": "src/engine/ventilatorConstants.ts (RISE_TIME_TAU_FRACTION, PS_PRESSURE_CYCLE_CMH2O, SUPPORT_TI_MAX_S); src/engine/patient.ts (válvula de un solo sentido como tope); src/profiles/adulto-referencia/settings.ts (biasFlow, backupTinspS, apneaTimeS); src/domain/types.ts (CyclingCause 'pressure')",
       "tests": [
         "tests/unit/soporte.test.ts (SUP-URM)",
         "tests/unit/rampa.test.ts",
@@ -1588,7 +1588,7 @@
       "status": "D (retardos y a qué alarmas se aplican, R21); P que confirmar cualquier ajuste con el modo cuente como cambio de modo",
       "source": "R21",
       "locator": "URM SW10 2065490-001, 8-26 y 8-27 «Alarm delays»: «10 seconds since the last Backup ventilation on alarm was active», «10 seconds since the last ventilation mode change · Backup ventilation on (due to Apnea)», «60 seconds since the last vent mode change · Backup ventilation on (due to MVexp)», «60 seconds after an inspiratory or expiratory hold procedure» y «60 seconds upon transition to therapy · Backup ventilation on (due to MVexp)»",
-      "implemented": "src/engine/controller.ts (BACKUP_DELAY_AFTER_BACKUP_S, BACKUP_DELAY_AFTER_MODE_S, respaldoRetenido, entrarEnRespaldo, salirDeRespaldo, plazoDeRespaldo, onPlazoDeRespaldo); src/engine/simulator.ts (respaldo por VMesp)",
+      "implemented": "src/engine/controller.ts (respaldoRetenido, entrarEnRespaldo, salirDeRespaldo, plazoDeRespaldo, onPlazoDeRespaldo); src/engine/ventilatorConstants.ts (BACKUP_DELAY_AFTER_BACKUP_S, BACKUP_DELAY_AFTER_MODE_S); src/engine/simulator.ts (respaldo por VMesp)",
       "tests": [
         "tests/unit/soporte.test.ts (PHY-03d)"
       ]

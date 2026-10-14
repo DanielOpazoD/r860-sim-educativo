@@ -1,3 +1,4 @@
+import type { BreathAccum } from './controllerTypes';
 /**
  * Deriva máxima admisible de la meseta, como TASA (cmH2O/s) medida sobre un tramo final de duración fija (P).
  *
@@ -264,4 +265,30 @@ export function plateauQuality(samples: { t: number; paw: number }[], windowS: n
     maxFall = Math.max(maxFall, runMax - s.paw);
   }
   return { driftRate: span > 1e-9 ? (mx - mn) / span : 0, reversal: Math.min(maxRise, maxFall) };
+}
+
+/** El índice de estrés de una respiración y, si no lo hay, por qué. La forma sólo habla del pulmón si nadie más la tocó. */
+export function indiceDeEstres(b: BreathAccum, omegaCardiaca = 0): { stressIndex: number | null; stressIndexReason: string | null } {
+  if (b.effortInFlow) return { stressIndex: null, stressIndexReason: 'esfuerzoDuranteLaRampa' };
+  if (b.plimitReached || b.pmaxReached) return { stressIndex: null, stressIndexReason: 'presionRecortadaPorElTecho' };
+  const v = stressIndex(b.flowSamples, omegaCardiaca);
+  return v === null ? { stressIndex: null, stressIndexReason: 'sinRampaAFlujoConstante' } : { stressIndex: v, stressIndexReason: null };
+}
+
+/**
+ * La constante de tiempo espiratoria de una respiración y, si no la hay, por qué.
+ *
+ * El umbral de bondad del ajuste es P y es el corazón del asunto: por debajo de 0,98 la rama espiratoria ya no es una
+ * recta, y eso significa que el pulmón no se vacía como un solo compartimento. Medido sobre los escenarios: un
+ * compartimento lineal da 1,000; el obstructivo SC-03 da 1,000 con tau larga; dos unidades dispares y la espiración
+ * estrangulada de SC-16 caen por debajo, que es exactamente lo que esos escenarios enseñan.
+ */
+export function constanteEspiratoria(b: BreathAccum, omegaCardiaca = 0): { tauExpS: number | null; tauExpReason: string | null } {
+  if (b.effortInExp) return { tauExpS: null, tauExpReason: 'esfuerzoDuranteLaEspiracion' };
+  // Con latido, la recta se ajusta junto con una sinusoide a la frecuencia cardíaca: la bondad del ajuste se juzga sobre
+  // lo que queda al restar el latido, como se lee la curva ignorando sus ondulaciones.
+  const r = expiratoryTimeConstant(b.expSamples, omegaCardiaca);
+  if (r === null) return { tauExpS: null, tauExpReason: 'espiracionInsuficienteParaAjustar' };
+  if (r.r2 < TAU_EXP_MIN_R2) return { tauExpS: null, tauExpReason: 'vaciamientoNoExponencial' };
+  return { tauExpS: r.tau, tauExpReason: null };
 }
