@@ -101,6 +101,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   min-width: 320px;
+  background: var(--shell-bg);
+  color: var(--shell-text);
 }
 button {
   cursor: pointer;
@@ -299,6 +301,8 @@ a {
 }
 .stage-sub {
   margin-left: 7px;
+  font-size: var(--type-xs);
+  color: var(--shell-muted);
 }
 .live-dot {
   width: 6px;
@@ -325,6 +329,8 @@ a {
     0 24px 60px rgba(15, 23, 42, 0.18),
     0 2px 6px rgba(15, 23, 42, 0.12);
   position: relative;
+  margin: 0 auto;
+  max-width: min(100%, max(640px, calc((100vh - 290px) * 1.524)));
 }
 .bezel-top {
   height: 41px;
@@ -1159,6 +1165,7 @@ a {
   gap: 4px;
   color: var(--shell-muted);
   white-space: nowrap;
+  align-items: center;
 }
 .phys-value input {
   color: var(--shell-text);
@@ -1223,6 +1230,7 @@ a {
   justify-content: space-between;
   color: var(--shell-dim);
   margin-top: 7px;
+  font-size: var(--type-2xs);
 }
 .truth-grid {
   display: grid;
@@ -1295,6 +1303,8 @@ a {
 .lesson-tasks {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .task {
   display: flex;

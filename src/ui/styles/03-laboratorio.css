@@ -8,6 +8,10 @@
   max-height: min(900px, 92vh);
   overflow: hidden;
   margin: auto;
+  background: var(--shell-surface);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+  width: min(820px, calc(100vw - 38px));
 }
 .app-dialog::backdrop {
   background: rgba(15, 23, 42, 0.35);
@@ -20,6 +24,7 @@
   gap: 15px;
   background: linear-gradient(110deg, var(--shell-raised), var(--shell-surface));
   border-bottom: 1px solid var(--shell-line);
+  padding: 12px 18px 10px;
 }
 .dialog-header small {
   display: block;
@@ -34,11 +39,15 @@
   margin: 0;
   font-weight: 600;
   letter-spacing: -0.4px;
+  font-size: var(--type-lg);
 }
 .dialog-content {
   overflow: auto;
   scrollbar-color: var(--shell-dim) var(--shell-raised);
   min-height: 80px;
+  overscroll-behavior: contain;
+  padding: 12px 18px;
+  max-height: calc(92vh - 120px);
 }
 .dialog-footer {
   border-top: 1px solid var(--shell-line);
@@ -48,6 +57,7 @@
   gap: 12px;
   background: var(--shell-raised);
   min-height: 68px;
+  padding: 8px 18px;
 }
 .dialog-footer:empty {
   display: none;
@@ -120,6 +130,10 @@
 .info-table {
   margin: 14px 0;
   text-align: left;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-sm);
+  line-height: 1.6;
 }
 .info-table th {
   padding: 11px 10px;
@@ -127,6 +141,7 @@
   font-size: var(--type-2xs);
   font-weight: 500;
   letter-spacing: 0.03em;
+  color: var(--shell-muted);
 }
 .info-table td {
   padding: 11px 10px;
@@ -195,6 +210,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  padding: 10px 12px;
+  min-height: 0;
 }
 .scenario-card:hover,
 .scenario-card.selected {
@@ -224,16 +241,25 @@
 }
 .mode-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
 }
 .mode-list {
   flex-direction: column;
   align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
 }
 .mode-option {
   background: var(--shell-raised);
   color: var(--shell-muted);
   border: 1px solid var(--shell-line);
   font-size: var(--type-sm);
+  padding: 8px 10px;
+  min-height: 32px;
+  border-radius: 0;
+  text-align: center;
 }
 .mode-option.selected {
   background: var(--shell-accent-soft);
@@ -248,9 +274,13 @@
   font-size: var(--type-sm);
   line-height: 1.45;
   margin: 8px 0 0;
+  margin-top: 8px;
 }
 .settings-grid {
   display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .setting-field {
   display: flex;
@@ -343,9 +373,9 @@
   height: 16px;
 }
 .settings-annotation {
-  font-size: var(--type-2xs);
+  font-size: var(--type-xs);
   color: var(--shell-muted);
-  line-height: 1.7;
+  line-height: 1.45;
   margin: 16px 0 0;
 }
 .alarm-list {
@@ -422,6 +452,7 @@
   border-radius: var(--radius-sm);
   color: var(--shell-text);
   font-size: 17px;
+  min-width: 0;
 }
 .session-actions {
   display: grid;
@@ -467,6 +498,10 @@
 .source-entry a {
   font-size: var(--type-md);
   font-weight: 500;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--shell-accent);
 }
 .source-entry p {
   font-size: var(--type-xs);
@@ -525,6 +560,8 @@
   font-size: var(--type-xs);
   line-height: 1.45;
   animation: toast-in 0.18s ease;
+  background: var(--shell-raised);
+  border-color: var(--shell-line);
 }
 .toast.warn {
   background: var(--shell-warning-soft);

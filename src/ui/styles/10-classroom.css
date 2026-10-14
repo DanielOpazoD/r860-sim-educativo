@@ -857,23 +857,12 @@
     padding: 4px 12px;
     background: var(--shell-bg);
   }
-  .wordmark strong {
-    display: none;
-  }
-  .top-actions {
-    margin-left: auto;
-  }
   .top-actions .button,
   .app-top .signal-toolbar .button.small {
     min-height: 44px;
   }
   .top-actions .button {
     min-width: 44px;
-  }
-  .wordmark {
-    min-width: 44px;
-    min-height: 44px;
-    justify-content: center;
   }
   .app-top .app-context {
     flex-basis: 100%;

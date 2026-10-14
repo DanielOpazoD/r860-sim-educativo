@@ -67,6 +67,8 @@ Hay dos puertas, y conviene no confundirlas.
   - **Tras un cambio visual intencional**: en local, `npx playwright test tests/e2e/regresion.spec.ts --update-snapshots=changed` (macOS) y revisar las imágenes; después borrar las de Linux afectadas y subir la rama. El CI las vuelve a escribir —esa pasada falla a propósito, «writing actual»— y las deja en el artefacto `capturas-linux`: `gh run download <run> -n capturas-linux -D tests/e2e/capturas/linux`, revisarlas, commit y subir; la siguiente pasada compara.
   - **Si una comparación falla sin quererlo**, el artefacto `capturas-diferencias` trae la referencia, la imagen obtenida y la diferencia.
 
+- **La cascada CSS se ordena con un verificador, no a ojo.** Antes de juntar dos reglas con el mismo selector se comprueba que ninguna regla intermedia de igual especificidad fije la misma propiedad (atajos incluidos: `padding` cubre `padding-top`). Si la hay pero una regla posterior incondicional la anula a cualquier ancho, esa declaración intermedia es código muerto: se quita primero —el aspecto no cambia— y después se junta. Así se reunieron las reglas del monitor (PR #150) y del exterior; `tokens.test` lleva el trinquete de lo que queda repartido.
+
 La cobertura de `src/ui` y `src/render` la aportan las pruebas e2e y no aparece en el informe de v8; por eso el README publica las dos cifras, con y sin esa capa.
 
 ## 6. Decisiones y alternativas descartadas
