@@ -10,13 +10,13 @@
   flex: none;
 }
 .device-view-header h2 {
-  font-size: 17px;
+  font-size: var(--mon-fs-lg);
   color: var(--mon-texto);
   font-weight: 700;
   margin: 0;
 }
 .device-view-header > span {
-  font-size: 10px;
+  font-size: var(--mon-fs-2xs);
   color: var(--mon-gris);
   margin-left: auto;
 }
@@ -26,7 +26,7 @@
   color: var(--mon-texto);
   border-radius: 3px;
   padding: 7px 10px;
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   font-weight: 500;
 }
 .device-small:hover {
@@ -51,14 +51,14 @@
 }
 /* Vista de datos grandes como en las capturas del manual SW10: rótulo y cifra blancos en negrita, unidad gris. */
 .big-numeric span {
-  font-size: 15px;
+  font-size: var(--mon-fs-lg);
   font-weight: 700;
   color: var(--mon-texto);
   display: block;
   margin-bottom: 10px;
 }
 .big-numeric b {
-  font-size: 60px;
+  font-size: var(--mon-fs-6xl);
   line-height: 1.05;
   font-weight: 700;
   color: var(--mon-texto);
@@ -66,7 +66,7 @@
 }
 .big-numeric em {
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: var(--mon-unidad);
   margin-left: 8px;
 }
@@ -91,7 +91,7 @@
   height: 380px;
 }
 .device-note {
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: var(--mon-gris);
   margin: 12px 15px 6px;
 }
@@ -106,7 +106,7 @@
   padding: 0 4px;
 }
 .device-table td:nth-child(2) small {
-  font-size: 10px;
+  font-size: var(--mon-fs-2xs);
   font-weight: 400;
   color: var(--mon-gris);
   margin-left: 4px;
@@ -121,14 +121,14 @@
   border-collapse: collapse;
   text-align: left;
   color: var(--mon-texto-suave);
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
 }
 .device-table th {
   position: sticky;
   top: 0;
   background: var(--mon-cabecera);
   padding: 8px 12px;
-  font-size: 10px;
+  font-size: var(--mon-fs-2xs);
   font-weight: 500;
   color: var(--mon-gris);
 }
@@ -140,11 +140,11 @@
 .device-table td:nth-child(2) {
   white-space: nowrap;
   color: var(--mon-texto);
-  font-size: 20px;
+  font-size: var(--mon-fs-xl);
   font-weight: 600;
 }
 .device-table td:last-child {
-  font-size: 10px;
+  font-size: var(--mon-fs-2xs);
   line-height: 1.25;
   color: var(--mon-gris);
   max-width: 270px;
@@ -165,13 +165,13 @@
   gap: 10px;
   padding: 13px 4px;
   border-bottom: 1px solid #7d93ad45;
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   line-height: 1.4;
   color: var(--mon-texto-suave);
 }
 .event-log-row time {
   color: var(--mon-gris);
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   font-family: var(--font-mono);
 }
 .event-log-row.alert-event {
@@ -196,7 +196,7 @@
   justify-content: space-between;
   padding: 6px 10px;
   background: #1a2433aa;
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: var(--mon-eje);
 }
 .hold-title b {
@@ -221,7 +221,7 @@
 .hold-panel-body > label {
   display: flex;
   flex-direction: column;
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   color: var(--mon-texto-suave);
   gap: 5px;
 }
@@ -232,7 +232,7 @@
   padding: 5px;
   border-radius: 3px;
   width: 67px;
-  font-size: 15px;
+  font-size: var(--mon-fs-lg);
   height: 38px;
 }
 .hold-play {
@@ -260,12 +260,12 @@
   min-width: 0;
 }
 .hold-result > span {
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   font-weight: 700;
   color: var(--mon-texto);
 }
 .hold-result > b {
-  font-size: 29px;
+  font-size: var(--mon-fs-3xl);
   line-height: 1.1;
   font-weight: 700;
 }
@@ -274,14 +274,14 @@
   color: var(--mon-alta);
 }
 .hold-result > small {
-  font-size: var(--type-2xs);
+  font-size: var(--mon-fs-2xs);
   color: var(--mon-unidad);
   white-space: nowrap;
 }
 .hold-status {
   padding: 7px 11px;
   background: #1a2433;
-  font-size: 10px;
+  font-size: var(--mon-fs-2xs);
   color: var(--mon-eje);
   text-align: center;
   line-height: 1.4;
@@ -317,12 +317,12 @@
   stroke-width: 1.2;
 }
 .standby-overlay h2 {
-  font-size: 37px;
+  font-size: var(--mon-fs-4xl);
   letter-spacing: 1px;
   margin: 17px 0 9px;
 }
 .standby-overlay p {
-  font-size: 15px;
+  font-size: var(--mon-fs-lg);
   line-height: 1.7;
   text-align: center;
   color: #4d4538;
@@ -333,7 +333,7 @@
   margin: 20px 0 23px;
 }
 .standby-overlay small {
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: var(--mon-tinta-suave);
 }
 .standby-overlay .primary-button {
@@ -353,7 +353,7 @@
   gap: 15px;
   backdrop-filter: blur(1px);
   color: #e8f8ff;
-  font-size: 19px;
+  font-size: var(--mon-fs-xl);
   text-shadow: 0 1px 4px #000;
 }
 .lock-overlay > .icon {
@@ -368,7 +368,7 @@
   border: 1px solid #9fb2c8;
   background: #1a2433df;
   color: var(--mon-texto);
-  font-size: 10px;
+  font-size: var(--mon-fs-2xs);
   z-index: 9;
   border-radius: 3px;
 }
@@ -394,12 +394,12 @@
   margin-bottom: 18px;
 }
 .editor-top small {
-  font-size: var(--type-2xs);
+  font-size: var(--mon-fs-2xs);
   letter-spacing: 1px;
   color: #c8d797;
 }
 .editor-top h2 {
-  font-size: 18px;
+  font-size: var(--mon-fs-lg);
   font-weight: 500;
   margin: 5px 0 0;
 }
@@ -411,7 +411,7 @@
   margin: 5px 0 21px;
 }
 .editor-value input {
-  font-size: 35px;
+  font-size: var(--mon-fs-4xl);
   font-weight: 600;
   color: var(--mon-texto);
   width: 134px;
@@ -426,7 +426,7 @@
   appearance: none;
 }
 .editor-value > span {
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: #a8cde3;
   width: 31px;
   line-height: 1.5;
@@ -439,13 +439,13 @@
   accent-color: #a9dacb;
 }
 .quick-editor > p {
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: #a7c7dd;
   line-height: 1.7;
   margin: 14px 0 6px;
 }
 .inline-validation {
-  font-size: var(--type-xs);
+  font-size: var(--mon-fs-xs);
   color: #ffd3a6;
   margin: 9px 0 12px;
   line-height: 1.5;
@@ -459,7 +459,7 @@
 }
 .knob-hint {
   display: block;
-  font-size: var(--type-2xs);
+  font-size: var(--mon-fs-2xs);
   color: #7198b2;
   margin: 16px 0 0;
   text-align: center;

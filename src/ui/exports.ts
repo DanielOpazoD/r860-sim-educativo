@@ -2,7 +2,7 @@
 import type { SessionFile } from '../history/session';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
-import { MON_CSS as C } from '../render/monitorPalette';
+import { MON_CSS as C, MON_FS, type PasoTipo } from '../render/monitorPalette';
 import { type Point } from '../render/plots';
 import { clock, wallDate } from './format';
 import { humanReason } from './humanize';
@@ -95,10 +95,18 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
   ctx.fillStyle = bg;
   ctx.fillRect(-cx, -cy * (rx / ry), 1120, 735 * (rx / ry));
   ctx.restore();
-  const txt = (s: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'left', weight = 'normal'): void => {
+  const txt = (
+    s: string,
+    x: number,
+    y: number,
+    paso: PasoTipo,
+    color: string,
+    align: CanvasTextAlign = 'left',
+    weight = 'normal',
+  ): void => {
     ctx.fillStyle = color;
     ctx.textAlign = align;
-    ctx.font = `${weight} ${size}px Arial,sans-serif`;
+    ctx.font = `${weight} ${MON_FS[paso]}px Arial,sans-serif`;
     ctx.fillText(s, x, y);
   };
   // La banda como en .alarm-band: verde sin alarmas (y con las de prioridad baja), roja, ámbar o gris de alarma previa.
@@ -116,8 +124,8 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
   banda.addColorStop(1, b);
   ctx.fillStyle = banda;
   ctx.fillRect(8, 7, 1104, 70);
-  txt(bar.color === 'grey' ? 'Alarmas resueltas' : bar.message, 30, 33, 17, tinta, 'left', '600');
-  txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, 10, tinta);
+  txt(bar.color === 'grey' ? 'Alarmas resueltas' : bar.message, 30, 33, 'xl', tinta, 'left', '600');
+  txt('SIMULACIÓN EDUCATIVA · NO USO CLÍNICO', 30, 60, '2xs', tinta);
   const wc = input.waveCanvas;
   ctx.drawImage(wc, 0, 0, wc.width, wc.height, 8, 88, 608, view === 'basic' ? 138 : 488);
   // Dos columnas en el alto que deja la fila de vistas (y = 583): con siete filas, la última quedaba debajo de ella.
@@ -125,9 +133,9 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
   METRICS.forEach((m, i) => {
     const x = 645 + (i % 2) * 147,
       y = 110 + Math.floor(i / 2) * paso;
-    txt(m.label, x, y, 12, C.texto, 'left', '700');
-    txt(f(metricValue(fr, m), m.decimals), x, y + 33, 32, C.texto, 'left', '700');
-    txt(m.unit, x, y + 50, 10, C.unidad);
+    txt(m.label, x, y, 'sm', C.texto, 'left', '700');
+    txt(f(metricValue(fr, m), m.decimals), x, y + 33, '4xl', C.texto, 'left', '700');
+    txt(m.unit, x, y + 50, '2xs', C.unidad);
   });
   const g = input.gaugeCanvas;
   ctx.drawImage(g, 0, 0, g.width, g.height, 971, 87, 140, 488);
@@ -140,25 +148,25 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
     ctx.fillRect(750, 89, 354, 112);
     ctx.strokeStyle = C.trazo;
     ctx.strokeRect(750, 89, 354, 112);
-    txt('Bloqueo inspiratorio', 765, 109, 12, C.eje);
+    txt('Bloqueo inspiratorio', 765, 109, 'sm', C.eje);
     txt(
       h.quality === 'valid'
         ? `Pplat ${f(h.values.pplat?.value ?? null, 0)} cmH₂O · Cstat ${f((h.values.cstat?.value ?? 0) * 1000, 0)} mL/cmH₂O`
         : `No válida: ${humanReason(h.reason)}`,
       765,
       140,
-      16,
+      'lg',
       C.texto,
     );
-    txt(wallDate(h.wallTimeMs ?? 0), 765, 170, 12, C.eje);
+    txt(wallDate(h.wallTimeMs ?? 0), 765, 170, 'sm', C.eje);
   }
   const nav = ctx.createLinearGradient(0, 583, 0, 639);
   nav.addColorStop(0, C.navAlto);
   nav.addColorStop(1, C.navBajo);
   ctx.fillStyle = nav;
   ctx.fillRect(8, 583, 1104, 56);
-  txt(`Tiempo simulado ${clock(fr.simTimeMs / 1000)} · ${input.scenarioName}`, 27, 615, 13, C.rotulo);
-  txt('VENTILA LAB · datos de un modelo sintético · no reproduce el firmware de ningún equipo', 1100, 615, 12, C.eje, 'right');
+  txt(`Tiempo simulado ${clock(fr.simTimeMs / 1000)} · ${input.scenarioName}`, 27, 615, 'sm', C.rotulo);
+  txt('VENTILA LAB · datos de un modelo sintético · no reproduce el firmware de ningún equipo', 1100, 615, 'sm', C.eje, 'right');
   let x = 8;
   input.quickItems.forEach((v, i) => {
     const width = i === 0 ? 169 : 155;
@@ -171,8 +179,8 @@ export function paintSnapshot(c: HTMLCanvasElement, input: SnapshotInput): HTMLC
     ctx.fillRect(x, 645, width, 80);
     ctx.strokeStyle = C.grafitoBorde;
     ctx.strokeRect(x + 0.5, 645.5, width - 1, 79);
-    txt(v[0], x + width / 2, 662, 11, C.rotulo, 'center');
-    txt(v[1], x + width / 2, 700, 24, C.texto, 'center', '700');
+    txt(v[0], x + width / 2, 662, 'xs', C.rotulo, 'center');
+    txt(v[1], x + width / 2, 700, '2xl', C.texto, 'center', '700');
     x += width + 2;
   });
   return c;

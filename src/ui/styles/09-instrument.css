@@ -41,7 +41,7 @@
   background: var(--mon-ventana-barra);
 }
 .device-dialog .dialog-header h2 {
-  font-size: 16px;
+  font-size: var(--mon-fs-lg);
   letter-spacing: 0;
 }
 .device-dialog .close-button {
@@ -76,7 +76,7 @@
 }
 .device-dialog .mode-option {
   min-height: 38px;
-  font-size: 13px;
+  font-size: var(--mon-fs-md);
   padding: 8px;
 }
 .device-dialog .mode-option.selected {
@@ -87,7 +87,7 @@
 .device-dialog .mode-explanation {
   padding: 5px 0;
   color: var(--shell-muted);
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
 }
 .device-dialog .mode-explanation summary {
   cursor: pointer;
@@ -95,7 +95,7 @@
 }
 .device-dialog .mode-explanation p {
   margin: 8px 0;
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   line-height: 1.5;
 }
 .device-dialog .settings-grid {
@@ -107,13 +107,13 @@
 }
 .device-dialog .parameter-label {
   min-height: 18px;
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   justify-content: space-between;
   flex-wrap: wrap;
 }
 .device-dialog .parameter-label small {
   position: static;
-  font-size: 11px;
+  font-size: var(--mon-fs-xs);
   color: var(--shell-muted);
 }
 .device-dialog .setting-input {
@@ -121,14 +121,14 @@
 }
 .device-dialog .setting-input input,
 .device-dialog .setting-input select {
-  font-size: 16px;
+  font-size: var(--mon-fs-lg);
 }
 .device-dialog .setting-input input {
   padding: 8px 4px;
   text-align: center;
 }
 .device-dialog .settings-subtitle {
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   padding-top: 12px;
   margin-top: 2px;
 }
@@ -143,7 +143,7 @@
 .device-dialog .info-box,
 .device-dialog .notice-box {
   padding: 12px;
-  font-size: 12px;
+  font-size: var(--mon-fs-sm);
   line-height: 1.5;
 }
 
@@ -154,7 +154,7 @@
 .device-dialog .alarm-edit-grid input {
   padding: 8px 4px;
   text-align: center;
-  font-size: 16px;
+  font-size: var(--mon-fs-lg);
   appearance: textfield;
 }
 .device-dialog .alarm-edit-grid input::-webkit-inner-spin-button {
@@ -185,7 +185,7 @@
     padding: 7px 10px;
   }
   .device-dialog .dialog-header h2 {
-    font-size: 14px;
+    font-size: var(--mon-fs-md);
   }
   .device-dialog #dialog-content {
     padding: 10px;
@@ -199,7 +199,7 @@
   }
   .device-dialog .mode-option {
     min-height: 44px;
-    font-size: 12px;
+    font-size: var(--mon-fs-sm);
   }
   .device-dialog #dialog-footer {
     padding: 8px 10px;
