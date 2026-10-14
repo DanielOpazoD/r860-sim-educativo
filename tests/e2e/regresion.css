@@ -1,0 +1,6 @@
+/* Regresión visual (VR-01): la imagen es la del equipo. El cromo exterior fijo (barra y herramientas) puede quedar encima
+   del equipo cuando la página se desplaza tras un clic, sobre todo en el teléfono: durante la captura no se pinta. */
+.app-top,
+.signal-toolbar {
+  visibility: hidden !important;
+}

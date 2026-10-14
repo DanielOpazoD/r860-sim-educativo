@@ -32,4 +32,12 @@ jobs:
         with: { name: cobertura, path: coverage/coverage-summary.json, if-no-files-found: error }
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: resultados, path: "test-results/**/*.json", if-no-files-found: ignore }
+        with: { name: resultados, path: 'test-results/**/*.json', if-no-files-found: ignore }
+      # Regresión visual (VR-01): las referencias de Linux que falten se escriben en esta pasada (la prueba falla una vez
+      # a propósito) y se descargan de aquí para commitearlas; si una comparación falla, sus diferencias van al otro.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: capturas-linux, path: tests/e2e/capturas/linux, if-no-files-found: ignore }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: capturas-diferencias, path: 'test-results/e2e/**/*.png', if-no-files-found: ignore }
