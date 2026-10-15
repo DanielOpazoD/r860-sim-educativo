@@ -384,7 +384,7 @@ La pantalla deja el azul saturado heredado de R860 Lab y toma los colores medido
 
 ## La PaCO₂ llega a su equilibrio en minutos (14-10-2026)
 
-Tras bajar la frecuencia o el VT, la PaCO₂ del modelo tardaba lo mismo que la de un paciente: τ lenta de 11,6 min con el banco y 20–30 min hasta el equilibrio. Era fiel, pero obligaba a esperar media hora para ver el efecto de un ajuste. Ahora el depósito de la sangre y los tejidos es 20 veces menor y el camino se recorre ≈ 10 veces más deprisa (E-126, P): con el banco, τ 1,2 min, y bajar la FR de 15 a 10 deja la PaCO₂ a más del 90 % de su nuevo valor en 5 min. El equilibrio no cambia, porque no depende de los depósitos.
+Tras bajar la frecuencia o el VT, la PaCO₂ del modelo tardaba lo mismo que la de un paciente: τ lenta de 11,6 min con el banco y 20–30 min hasta el equilibrio. Era fiel, pero obligaba a esperar media hora para ver el efecto de un ajuste. Ahora el depósito de la sangre y los tejidos es 20 veces menor y el camino se recorre ≈ 10 veces más deprisa (E-128, P): con el banco, τ 1,2 min, y bajar la FR de 15 a 10 deja la PaCO₂ a más del 90 % de su nuevo valor en 5 min. El equilibrio no cambia, porque no depende de los depósitos.
 
 - **Lo que no se acelera:** el pulmón. Reducirlo también agrandaría la oscilación alveolar de cada respiración y el promedio dejaría de ser el equilibrio. Por eso la aceleración del camino va de 9 a 11 veces según la ventilación, y no 20.
 - **La apnea también va más rápido:** ≈ 34 mmHg/min pasado el primer minuto, frente a 3,8 en un adulto.

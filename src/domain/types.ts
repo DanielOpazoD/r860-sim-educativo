@@ -221,7 +221,7 @@ export interface GasExchangeParams {
   paco2Basal: number;
   /**
    * Capacidad total de los depósitos de CO₂ de un adulto real (L equivalentes, pulmón más sangre y tejidos): fija la pendiente de
-   * la apnea y el tramo lento. El motor acelera la parte de la sangre y los tejidos con fines docentes (E-126).
+   * la apnea y el tramo lento. El motor acelera la parte de la sangre y los tejidos con fines docentes (E-128).
    */
   storeL: Liters;
 }

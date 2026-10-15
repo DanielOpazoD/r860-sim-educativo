@@ -60,6 +60,20 @@ export function visiblePoints(all: Point[], end: number, win: number): Point[] {
   return all.filter((p) => p[0] >= end - win - 0.05 && p[0] <= end + 0.001);
 }
 
+/**
+ * Barrido limpio tras un cambio de modo: instante (s) antes del cual no se dibuja nada, o null si no hay que ocultar.
+ *
+ * En barrido, a la derecha del cursor sigue la pasada anterior, y tras confirmar un modo la pantalla mezclaba la forma
+ * del modo viejo con la del nuevo sin decir dónde empezaba cada una. La pasada en curso se conserva entera —a la
+ * izquierda del cambio se ve cómo terminaba el modo anterior, con la marca del cambio—; la anterior sólo conserva lo
+ * posterior al cambio (`sinceS`). Pasada una ventana entera desde el cambio no oculta nada: todo lo visible es del
+ * modo nuevo. Traza, marcas de fase y disparos usan el mismo corte, para que ninguna marca quede flotando sin curva.
+ */
+export function sweepCut(end: number, win: number, sinceS: number | null): number | null {
+  if (sinceS === null || end - sinceS >= win) return null;
+  return Math.min(sinceS, Math.floor(end / win) * win);
+}
+
 /** Muestra más cercana a `t` en una traza ordenada por tiempo; ante un empate, la anterior. Búsqueda binaria. */
 export function nearestSample(points: Point[], t: number): Point | null {
   if (!points.length) return null;

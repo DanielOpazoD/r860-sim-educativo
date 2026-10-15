@@ -5,15 +5,37 @@ import { findScenario } from '../scenarios';
  * Perfiles rápidos: la fisiopatología que define a cada uno está en su nombre y, debajo, en sus números. El pulmón
  * reclutable queda para su escenario (SC-25): sin la maniobra que lo explica, como perfil suelto confundía.
  */
-export const PATIENT_PROFILES: { id: string; label: string; scenarioId: string }[] = [
+export const PATIENT_PROFILES: {
+  id: string;
+  label: string;
+  scenarioId: string;
+  /** Sus esfuerzos disparan: en A/C el paciente debe llevar el ritmo, no competir con la FR programada (E-127). */
+  lidera?: true;
+}[] = [
   { id: 'healthy', label: 'Sano, sedado', scenarioId: 'SC-01' },
   { id: 'stiff', label: 'Restrictivo', scenarioId: 'SC-21' },
   { id: 'obstructive', label: 'Obstructivo', scenarioId: 'SC-16' },
-  { id: 'spontaneous', label: 'Esfuerzo normal', scenarioId: 'SC-19' },
+  { id: 'spontaneous', label: 'Esfuerzo normal', scenarioId: 'SC-19', lidera: true },
   { id: 'weak', label: 'Esfuerzo débil', scenarioId: 'SC-05' },
 ];
 
 export type PatientProfile = (typeof PATIENT_PROFILES)[number];
+
+/**
+ * FR de A/C que deja al paciente disparar cada respiración (E-127), o null si el perfil no la pide.
+ *
+ * Con la FR programada igual a la del paciente (15 y 15/min ±20 %), cada esfuerzo que llega tarde lo adelanta una
+ * respiración mandatoria, y el esfuerzo dispara otra en cuanto termina el refractario: doble disparo y apilamiento,
+ * con la curva de volumen bajo la línea de base, en ≈ 7 % de las respiraciones. Es la asincronía real de una FR de
+ * respaldo pegada a la del paciente, pero al elegir el perfil no es lo que se quiere ver. La FR que cede es la mayor
+ * cuyo ciclo supera el período más largo del paciente: con 4,8 s, 12/min (5 s).
+ */
+export function frRespaldoQueCede(profile: PatientProfile): number | null {
+  if (!profile.lidera) return null;
+  const { effort } = profileState(profile);
+  const periodoMaxS = (60 / effort.ratePerMin) * (1 + (effort.variability?.periodFrac ?? 0));
+  return Math.ceil(60 / periodoMaxS) - 1;
+}
 
 export function profileState(profile: PatientProfile): { patient: PatientParams; effort: EffortParams } {
   const scenario = findScenario(profile.scenarioId);
