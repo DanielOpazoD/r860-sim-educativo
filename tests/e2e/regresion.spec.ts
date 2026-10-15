@@ -36,8 +36,6 @@ const ESTADOS: Estado[] = [
   { id: 'tendencias', escenario: 'SC-13', ms: 30_000, pasos: ['[data-view="trends"]'] },
   { id: 'tabla', escenario: 'SC-13', ms: 16_000, pasos: ['[data-view="data"]'] },
   { id: 'alarma-alta', escenario: 'SC-09', ms: 20_000, pasos: ['[data-view="waves"]'], movil: true },
-  // Las ayudas empiezan apagadas; encendidas, sobre la misma alarma: líneas de PEEP y Pmáx, marcas de fase y curva previa.
-  { id: 'ayudas', escenario: 'SC-09', ms: 20_000, pasos: ['[data-view="waves"]', '#wave-aids-toggle'] },
   { id: 'fuga', escenario: 'SC-22', ms: 20_000 },
   { id: 'bloqueo', escenario: 'SC-13', ms: 16_000, pasos: ['[data-action="inspiratory"]'] },
   { id: 'editor', escenario: 'SC-13', ms: 16_000, pasos: ['[data-setting-quick="peep"]'] },

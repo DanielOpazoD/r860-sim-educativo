@@ -838,8 +838,6 @@ test.describe('CUR · comparación antes/después', () => {
   test('Comparar última respiración dibuja el ciclo previo atenuado bajo la traza actual', async ({ page }) => {
     await open(page, { speed: 4 });
     await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(2);
-    // Comparar dibuja sobre las curvas: pide las ayudas encendidas (apagadas por omisión).
-    await page.locator('#wave-aids-toggle').click();
     await openPersonalization(page);
     await page.click('#wave-ref-button');
     await expect(page.locator('#wave-ref-button')).toHaveClass(/active/);

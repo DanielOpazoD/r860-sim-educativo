@@ -339,7 +339,7 @@ Dos presiones motrices distintas y una identidad que no cuadra, en un obstructiv
 - **Sin límites de alarma junto a cada valor.** El equipo fotografiado (P1, P3) los muestra a la derecha de cada casilla. Se retiraron por decisión docente: el alumno lee el valor sin ruido y los límites siguen en *Alarmas*, donde se ajustan. Es una diferencia deliberada con la cara del equipo, no una omisión.
 - **Sin la pista «Haz un bloqueo inspiratorio» dentro de la casilla de Pplat.** El guion basta; el motivo queda en el nombre accesible de la casilla y en su ayuda.
 - **Marcas sobre la curva en enteros** («Ppico 20»), como las cifras del monitor.
-- **Ayudas sobre las curvas en un solo botón con icono** junto a «Personalizar vista»: curva previa («Antes/Después»), marcas de inicio, ciclado, fin espiratorio y esfuerzo, etiquetas de Ppico y Pplat, líneas de PEEP y Pmáx y marcas de disparo se encienden y apagan juntas. Apagadas, la curva queda como en el equipo, y así empiezan: el alumno las enciende cuando las quiere y su elección se recuerda. El estado se lee en el propio botón y no se anuncia con texto.
+- **Ayudas sobre las curvas en un solo botón con icono** junto a «Personalizar vista»: curva previa («Antes/Después»), marcas de inicio, ciclado, fin espiratorio y esfuerzo, etiquetas de Ppico y Pplat, líneas de PEEP y Pmáx y marcas de disparo se encienden y apagan juntas. Apagadas, la curva queda como en el equipo. El estado se lee en el propio botón y no se anuncia con texto.
 
 ## Auditoría visual frente a las pantallas del manual (13-10-2026)
 
