@@ -10,7 +10,7 @@ import type { AppContext } from './context';
 import { CANCEL_BTN, CLOSE_BTN } from './dialogHost';
 import { debriefText, helpHTML, menuHTML, oxygenHTML, patientHTML, powerHTML, sessionHTML, standbyHTML, toolsHTML } from './dialogs';
 import { type CommandId, isCommandId } from './commands';
-import { $, btn } from './dom';
+import { $, btn, put } from './dom';
 import { downloadBlob, textBlob } from './exports';
 import { stamp } from './format';
 import { toggleHelp } from './helpPanels';
@@ -423,7 +423,11 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         plots.reset();
         ctx.clearFixture();
         ctx.dialog.close();
-        ctx.toast(`Sesión importada y reproducida en pausa. ${r.warnings?.join(' ') ?? ''} Pulsa Reanudar.`);
+        ctx.toast('Sesión importada y reproducida en pausa. Pulsa Reanudar.');
+        // El aviso de una reproducción que puede no ser idéntica (otro motor, ajustes completados) no cabe en un toast de
+        // 3 s: queda en su franja mientras la sesión siga cargada, también al reanudar (U-46).
+        put('#session-notice', r.warnings?.join(' ') ?? '');
+        $('#session-notice').hidden = !r.warnings?.length;
       } else {
         ctx.lesson.setSessionImported(false);
         ctx.toast(`Rechazada: ${r.errors?.join(' · ')}`, true);

@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import fs from 'node:fs/promises';
+import { ENGINE_VERSION } from '../../src/engine/version';
+import type { SessionFile } from '../../src/history/session';
 import { PATIENT_PROFILES, profileState } from '../../src/ui/patientProfiles';
 import {
   closePersonalization,
@@ -681,6 +684,43 @@ test.describe('IMP · sesión importada', () => {
     await showPanel(page, 'case');
     await expect(page.locator('#instructor-case')).toContainText('Sesión importada', { timeout: 15_000 });
     await expect(page.locator('#instructor-case [data-action="submitCase"]')).toHaveCount(0);
+  });
+
+  test('VER-02 · una sesión de otro motor avisa en una franja que sigue al reanudar; una desconocida se rechaza (U-46)', async ({
+    page,
+  }) => {
+    await open(page, { scenario: 'SC-01', speed: 4 });
+    await page.locator('.palette-trigger').click();
+    await page.locator('#palette-input').fill('Sesión y archivos');
+    await page.locator('#palette-input').press('Enter');
+    const [descarga] = await Promise.all([page.waitForEvent('download'), page.click('[data-action="exportSession"]')]);
+    const sesion = JSON.parse(await fs.readFile((await descarga.path())!, 'utf8')) as SessionFile;
+    await page.keyboard.press('Escape');
+    const importar = (engineVersion: string) =>
+      page.setInputFiles('#session-input', {
+        name: 'sesion.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(JSON.stringify({ ...sesion, engineVersion })),
+      });
+    const aviso = page.locator('#session-notice');
+    const ultimoToast = page.locator('#toast-stack .toast').last();
+
+    await importar('0.4.0');
+    await expect(aviso).toBeVisible({ timeout: 15_000 });
+    await expect(aviso).toContainText(`motor 0.4.0 y reproducida con el ${ENGINE_VERSION}`);
+    await expect(aviso).toContainText('la reproducción puede no ser idéntica');
+    // El aviso no es un toast: sigue a la vista mientras se mira la reproducción.
+    await page.locator('#sim-pause').click();
+    await expect.poll(() => page.evaluate(() => window.__ventila.running)).toBe(true);
+    await expect(aviso).toBeVisible();
+
+    await importar('9.9.9');
+    await expect(ultimoToast).toContainText('Rechazada: engineVersion no soportada: 9.9.9');
+    await expect(aviso).toBeVisible(); // la sesión anterior sigue cargada, y con ella su aviso
+
+    await importar(ENGINE_VERSION);
+    await expect(ultimoToast).toContainText('Sesión importada y reproducida en pausa');
+    await expect(aviso).toBeHidden();
   });
 });
 

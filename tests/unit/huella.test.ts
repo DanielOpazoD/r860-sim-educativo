@@ -7,7 +7,8 @@ import { defaultInit, REFERENCE_PROFILE } from '../../src/profiles';
 import { SCENARIOS } from '../../src/scenarios';
 
 // HUE-01 · la huella del motor. Cada escenario corre 30 s con sus perturbaciones y se resume en un hash de todas las
-// muestras (Paw, flujo, volumen, Pmus), de la banda de alarmas y de los registros de respiración. Es la red de la física,
+// muestras (Paw, flujo, volumen, Pmus), de la banda de alarmas y de los registros de respiración, y en otro de la
+// gasometría del modelo, que una sesión reproducida también recalcula aunque no realimente la mecánica. Es la red de la física,
 // como VR-01 lo es de la imagen: un refactor del motor debe dejarla idéntica, y un cambio de física intencional la cambia
 // sólo en los escenarios que toca —el diff de huella-motor.json lo muestra—. Los valores se redondean a 10 cifras
 // significativas antes de resumirlos, para que una última cifra distinta entre plataformas no la mueva.
@@ -20,6 +21,7 @@ const DURACION_MS = 30_000;
 
 interface Huella {
   hash: string;
+  gas: string;
   respiraciones: number;
 }
 interface ArchivoHuella {
@@ -42,7 +44,9 @@ function huella(id: string): Huella {
   );
   const pendientes = [...(e.perturbations ?? [])];
   const h = createHash('sha256');
+  const hGas = createHash('sha256');
   const redondear = (x: number): string => (Number.isFinite(x) ? x.toPrecision(10) : String(x));
+  const cifras = (_k: string, v: unknown): unknown => (typeof v === 'number' ? redondear(v) : v);
   let paso = 0;
   while (sim.simTimeMs < DURACION_MS) {
     sim.step();
@@ -56,10 +60,11 @@ function huella(id: string): Huella {
       const f = sim.frame();
       for (const canal of [f.samples.paw, f.samples.flow, f.samples.vol, f.samples.pmus]) h.update(Array.from(canal, redondear).join(','));
       h.update(JSON.stringify(f.alarmBar));
+      hGas.update(JSON.stringify(f.truth.gas, cifras));
     }
   }
-  h.update(JSON.stringify(sim.breaths, (_k, v: unknown) => (typeof v === 'number' ? redondear(v) : v)));
-  return { hash: h.digest('hex').slice(0, 16), respiraciones: sim.breaths.length };
+  h.update(JSON.stringify(sim.breaths, cifras));
+  return { hash: h.digest('hex').slice(0, 16), gas: hGas.digest('hex').slice(0, 16), respiraciones: sim.breaths.length };
 }
 
 const leer = (): ArchivoHuella => JSON.parse(readFileSync(ARCHIVO, 'utf8')) as ArchivoHuella;

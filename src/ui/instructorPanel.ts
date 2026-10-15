@@ -231,6 +231,7 @@ export function createInstructorPanel(
     ctx.client.loadScenario(sc, false); // la lección se reinicia al llegar el primer cuadro de la sesión nueva
     ctx.switchView('waves');
     $('#global-notice').hidden = true;
+    $('#session-notice').hidden = true;
   }
   return {
     get teacherVisible() {

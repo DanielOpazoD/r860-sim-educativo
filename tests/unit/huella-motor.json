@@ -3,122 +3,152 @@
   "escenarios": {
     "SC-01": {
       "hash": "cc699774c2dbafd5",
+      "gas": "becab909b7760482",
       "respiraciones": 7
     },
     "SC-02": {
       "hash": "a90b2ce40e2735f1",
+      "gas": "337a63011c2d07e5",
       "respiraciones": 7
     },
     "SC-03": {
       "hash": "59308e21a4ffe93d",
+      "gas": "d8d3039191d2bb85",
       "respiraciones": 12
     },
     "SC-04": {
       "hash": "ae54311a2c2b089b",
+      "gas": "5eacb73e0680890d",
       "respiraciones": 7
     },
     "SC-05": {
       "hash": "0bb8e6199520f5fa",
+      "gas": "fe5ef123e51582ed",
       "respiraciones": 6
     },
     "SC-09": {
       "hash": "7abfacb7498874db",
+      "gas": "d366624aedb795d9",
       "respiraciones": 7
     },
     "SC-18": {
       "hash": "e5fa480a802cad64",
+      "gas": "c6e6158f5c8a455d",
       "respiraciones": 11
     },
     "SC-17": {
       "hash": "8d533960850039f6",
+      "gas": "d0b5d7b41f32e7f0",
       "respiraciones": 6
     },
     "SC-16": {
       "hash": "a0ccab80b32e3e31",
+      "gas": "7446495bab0d3537",
       "respiraciones": 7
     },
     "SC-15": {
       "hash": "ab6e5a044239fe77",
+      "gas": "e85fca3eef6c3763",
       "respiraciones": 7
     },
     "SC-14": {
       "hash": "c19474a9dc5aa852",
+      "gas": "985cadcea498b6cc",
       "respiraciones": 7
     },
     "SC-10": {
       "hash": "f2b9a3a1dabfc97c",
+      "gas": "5716fe558a2c4b7b",
       "respiraciones": 7
     },
     "SC-12": {
       "hash": "cc699774c2dbafd5",
+      "gas": "becab909b7760482",
       "respiraciones": 7
     },
     "SC-24": {
       "hash": "fc28dd6276f7666c",
+      "gas": "e60ba13def471781",
       "respiraciones": 15
     },
     "SC-13": {
       "hash": "6fbad3a64fb05be3",
+      "gas": "c7a1626f7c771ccc",
       "respiraciones": 7
     },
     "SC-19": {
       "hash": "f07f9a18128fc5f3",
+      "gas": "367ed355fd52fb0d",
       "respiraciones": 7
     },
     "SC-20": {
       "hash": "2696084b0110477e",
+      "gas": "65865e91522233f4",
       "respiraciones": 7
     },
     "SC-21": {
       "hash": "c103683664b249c0",
+      "gas": "476c86a823cb4457",
       "respiraciones": 10
     },
     "SC-22": {
       "hash": "1b08ca5a8cbe6344",
+      "gas": "e5b4264a597ea9ab",
       "respiraciones": 8
     },
     "SC-23": {
       "hash": "cc699774c2dbafd5",
+      "gas": "becab909b7760482",
       "respiraciones": 7
     },
     "SC-25": {
       "hash": "3ab01a644957bd75",
+      "gas": "b8c49889f4f9ecd8",
       "respiraciones": 7
     },
     "SC-P": {
       "hash": "9900059f0b8dc32b",
+      "gas": "aef330425d22f0de",
       "respiraciones": 16
     },
     "CC-01": {
       "hash": "f508f0e24fa241ec",
+      "gas": "28f6029bdf674f40",
       "respiraciones": 8
     },
     "CC-02": {
       "hash": "83866949ea3fd0ab",
+      "gas": "3db996ac42637805",
       "respiraciones": 10
     },
     "CC-03": {
       "hash": "513e0e5fceaf0075",
+      "gas": "06eba9521e81c8d2",
       "respiraciones": 8
     },
     "CC-04": {
       "hash": "d52fe51284f0c6d4",
+      "gas": "e1125471401ff217",
       "respiraciones": 9
     },
     "CC-05": {
       "hash": "2acc7fc70b8429e6",
+      "gas": "a78b36d4a65cadc1",
       "respiraciones": 5
     },
     "CC-06": {
       "hash": "9d936764fee1c25e",
+      "gas": "13e0de336c5cc65d",
       "respiraciones": 7
     },
     "CC-07": {
       "hash": "971cbbddebe638be",
+      "gas": "1a52ca37e912756e",
       "respiraciones": 8
     },
     "CC-08": {
       "hash": "2f492a1995836d12",
+      "gas": "8530e44ffe80e07f",
       "respiraciones": 5
     }
   }

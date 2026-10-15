@@ -1,6 +1,6 @@
 # Diferencias frente al dossier y decisiones tomadas en esta etapa
 
-> **Cómo leer los encabezados.** Los `v0.x.y` de este documento numeran **rondas de trabajo**, no publicaciones: sirven para ordenar qué se decidió cuándo y tras qué revisión. La versión del paquete y la del motor son otra cosa y salen del código (`package.json`, `src/engine/version.ts`); el README las publica. Que el motor siga en 0.3.0 después de incorporar dos compartimentos, sigmoide, Rohrer y limitación al flujo espiratorio es una deuda registrada como U-46, no un descuido de este documento.
+> **Cómo leer los encabezados.** Los `v0.x.y` de este documento numeran **rondas de trabajo**, no publicaciones: sirven para ordenar qué se decidió cuándo y tras qué revisión. La versión del paquete y la del motor son otra cosa y salen del código (`package.json`, `src/engine/version.ts`); el README las publica. La versión del motor sigue a la física desde el 14-10-2026: sube con cada cambio de la huella del motor (U-46, cerrada; ver «La versión del motor sigue a la física» al final).
 
 Referencia: dossier v1.0 (06-09-2026). Se listan sólo desviaciones o precisiones; lo que coincide no se repite.
 
@@ -385,3 +385,7 @@ La pantalla deja el azul saturado heredado de R860 Lab y toma los colores medido
 ## La versión del motor sigue a la física (14-10-2026)
 
 Una sesión guardada anota la versión del motor, pero el número llevaba en 0.4.0 desde el 10-09 aunque la física cambió varias veces después: un archivo antiguo se reproducía con otra física y sin aviso (U-46). El motor pasa a **0.7.0** —el número siguiente a las etiquetas de entrega de este documento, que llegaron a v0.6.2, para que no se confundan— y las sesiones de 0.2.0, 0.3.0 y 0.4.0 se siguen aceptando con el aviso «la reproducción puede no ser idéntica». Desde ahora la versión sube con cada cambio de la huella del motor: HUE-01 guarda la versión con que se tomó y se niega a actualizarse si la física cambió sin que suba (docs/04 §5).
+
+- **La gasometría entra en la huella.** Una sesión reproducida recalcula también la PaCO₂ y el pH del modelo, aunque no realimenten la mecánica. HUE-01 suma por escenario un segundo hash con la gasometría, así que cambiar su cinética también obliga a subir la versión. Las huellas mecánicas de los 30 escenarios quedan idénticas.
+- **El aviso se queda a la vista.** Antes iba dentro del toast de importación, que se va a los 3 s. Ahora ocupa una franja bajo la cabecera que sigue al reanudar, y desaparece al cargar otro escenario o al importar una sesión sin avisos.
+- **Sin versión, se rechaza.** Una sesión sin `engineVersion` se aceptaba sin aviso; ahora se rechaza, porque no se sabe con qué física se grabó. Una versión desconocida se rechaza diciendo cuáles se aceptan (VER-01, VER-02; E-037).
