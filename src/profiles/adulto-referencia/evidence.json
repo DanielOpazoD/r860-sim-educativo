@@ -1664,6 +1664,29 @@
       "tests": [
         "tests/unit/sigmoid.test.ts (SIG-03)"
       ]
+    },
+    {
+      "id": "E-126",
+      "claim": "Un cambio de modo se marca en las curvas: una línea continua en los tres paneles y el nombre del modo nuevo («Modo A/C PC») en el instante en que el equipo lo aplica —el inicio de la primera respiración nueva, o en CPAP/PS donde A/C habría entregado la suya—, no al confirmar. En barrido, la pasada anterior al cambio se oculta —traza, marcas de fase y disparos— hasta que el cursor la reescribe: la pasada en curso se conserva entera, con el final del modo anterior a la izquierda de la marca. Antes, tras confirmar un modo, a la derecha del cursor seguía la forma del modo viejo junto a la del nuevo sin decir dónde empezaba cada una. Confirmar el modo vigente, como para salir del respaldo, no es un cambio. Las dos cosas son ayudas: con «Ayudas» apagadas la curva queda como en el equipo, sin marca y sin ocultar nada.",
+      "status": "P (legibilidad; el equipo no marca el cambio en sus curvas)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/render/signal.ts (sweepCut); src/render/waves.ts (modeChanges); src/ui/plotsView.ts (modeChangesFromEvents; traza, marcas y disparos sin la pasada anterior)",
+      "tests": [
+        "tests/unit/curvas.test.ts (CUR-06)"
+      ]
+    },
+    {
+      "id": "E-127",
+      "claim": "El perfil «Esfuerzo normal» (Pmus 8 a 15/min, período ±20 %) baja la FR programada a 12/min al elegirlo, fuera de un caso y sólo si era mayor; «Deshacer» la devuelve con el paciente. Con la FR 15 por omisión el respaldo de A/C compite con el paciente: cuando un esfuerzo llega tarde la máquina entrega una mandatoria y el esfuerzo dispara otra al terminar el refractario —doble disparo y apilamiento, VTesp hasta ≈ 1 L y la curva de volumen bajo la línea de base—, en 58 de 804 respiraciones en VC y 72 de 815 en PC (5 semillas × 10 min), y la mitad son mandatorias. Con 12/min, cuyo ciclo de 5 s supera el período más largo del paciente (4,8 s), ninguna mandatoria y ninguna apilada; con 13, ninguna apilada pero un 10 % de mandatorias. La asincronía sigue en el modelo: basta volver a subir la FR. Los demás perfiles no tocan el ventilador.",
+      "status": "P (decisión del proyecto; la regla clínica de programar la FR de respaldo por debajo de la del paciente)",
+      "source": "—",
+      "locator": "—",
+      "implemented": "src/ui/patientProfiles.ts (lidera, frRespaldoQueCede); src/ui/instructorPanel.ts (applyProfile)",
+      "tests": [
+        "tests/unit/patientProfiles.test.ts (PRF-01)",
+        "tests/unit/uiActions.test.ts (PRF-01)"
+      ]
     }
   ]
 }

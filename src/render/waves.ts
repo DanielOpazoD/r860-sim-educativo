@@ -277,6 +277,14 @@ export interface WaveOptions {
   triggerDetectionsS?: number[];
   /** Ayudas sobre las curvas (líneas de PEEP y Pmáx, marcas de disparo). Apagadas, la curva queda como en el equipo. */
   aids?: boolean;
+  /** Instantes en que el equipo empezó a ventilar en otro modo, con el nombre del modo nuevo (es una ayuda: el equipo no lo marca). */
+  modeChanges?: ModeChangeMark[];
+}
+
+export interface ModeChangeMark {
+  /** Instante en que el equipo aplicó el modo nuevo (s): el inicio de su primera respiración o, en CPAP/PS, el de la espera del primer disparo. */
+  t: number;
+  label: string;
 }
 
 /** Tres curvas apiladas (o sólo Pva con `single`) con relleno degradado y barrido con hueco por delante del cursor. */
@@ -545,6 +553,21 @@ export function drawWave(
       line(ctx, union, ytop, union, ybottom, AYUDA.union, 0.9);
       ctx.restore();
     }
+    // Cambio de modo: línea continua en los tres paneles y el nombre del modo nuevo arriba, a su derecha (a la izquierda
+    // si no cabe). Se dibuja después del hueco del barrido para que el rótulo no quede tapado justo al cambiar.
+    if (options.aids !== false)
+      for (const cambio of options.modeChanges ?? []) {
+        if (cambio.t < end - win || cambio.t > end) continue;
+        const x = xfn(cambio.t);
+        if (x < left || x > w - right) continue;
+        line(ctx, x, ytop, x, ybottom, AYUDA.cambioModo, 1.4);
+        if (i !== 0) continue;
+        ctx.font = `normal ${MON_FS['2xs']}px Arial,sans-serif`;
+        const ancho = ctx.measureText(cambio.label).width;
+        const x0 = x + 3 + ancho <= w - right - 2 ? x + 3 : x - 3 - ancho;
+        const base = labelBaseline(escritos, x0, x0 + ancho, ytop + 10, ytop + 10 + MON_FS['2xs'] + 3, MON_FS['2xs']);
+        rotular(cambio.label, x0, base, PLOT_TEXT_COLORS.cambioModo);
+      }
     if (typeof options.cursorTime === 'number' && Number.isFinite(options.cursorTime)) {
       const x = xfn(options.cursorTime);
       line(ctx, x, ytop, x, ybottom, AYUDA.cursor, 0.8);

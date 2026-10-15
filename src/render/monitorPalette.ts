@@ -74,7 +74,8 @@ export const MON = {
 
 const AMBAR = '#ffd66e',
   CELESTE = '#9fd7ff',
-  ORO = '#edc87e';
+  ORO = '#edc87e',
+  MENTA = '#9ef0cf';
 /**
  * Ayudas docentes y series de tendencias: no son del equipo (las ayudas se encienden con «Ayudas»). Las líneas van con
  * transparencia para no competir con la curva, pero cada una llega a 3:1 sobre el extremo más claro de la pizarra
@@ -94,6 +95,8 @@ export const AYUDA = {
   referenciaBucle: alfa(ORO, 'cc'),
   previo: '#b7c4d4aa',
   union: '#c4f5ffaa',
+  /** Instante en que el equipo empezó a ventilar en otro modo. */
+  cambioModo: alfa(MENTA, 'cc'),
   cursor: alfa(MON_CSS.texto, 'd0'),
   tendenciaPeep: '#64d7c4',
   tendenciaFr: '#e8d397',
@@ -167,6 +170,8 @@ export const PLOT_TEXT_COLORS = {
   marcaPpico: '#ffc9c4',
   /** Marca de esfuerzo del paciente. */
   marcaEsfuerzo: '#e3cdff',
+  /** Rótulo del cambio de modo sobre las curvas («Modo A/C PC»). */
+  cambioModo: MENTA,
   /** Rótulo de la línea de PEEP. */
   lineaPeep: AYUDA.peep,
   /** Rótulo de la línea de VT en los bucles. */
