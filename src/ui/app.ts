@@ -487,8 +487,9 @@ export function startApp(opts: AppOptions): void {
   metrics.init();
   $<HTMLInputElement>('#variable-descriptions').checked = prefs?.variableDescriptions ?? false;
   $('#variable-legend').hidden = !(prefs?.variableDescriptions ?? false);
-  // Las ayudas se encienden y apagan juntas; de preferencias antiguas con valores distintos, manda el apagado.
-  plots.setWaveAids((prefs?.waveGuides ?? true) && (prefs?.waveAnnotations ?? true));
+  // Las ayudas se encienden y apagan juntas y empiezan apagadas: la pantalla arranca como la del equipo. De preferencias
+  // antiguas con valores distintos, manda el apagado.
+  plots.setWaveAids((prefs?.waveGuides ?? false) && (prefs?.waveAnnotations ?? false));
   ctx.setTileDensity(tileDensity);
   instructor.init();
   fillStaticHelp();

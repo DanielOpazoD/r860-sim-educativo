@@ -72,15 +72,21 @@ test.describe('Controles exteriores coherentes', () => {
     const ayudasBoton = page.locator('#wave-aids-toggle');
     const toggle = page.locator('#variable-descriptions');
     const legend = page.locator('#variable-legend');
-    // Las ayudas sobre las curvas son un botón junto a «Personalizar vista»: encendidas por omisión, su estado está a la vista.
-    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'true');
-    await ayudasBoton.click();
+    // Las ayudas sobre las curvas son un botón junto a «Personalizar vista»: apagadas por omisión —la pantalla empieza como la
+    // del equipo— y su estado está a la vista.
     await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'false');
+    await openPersonalization(page);
+    await expect(page.locator('#wave-ref-button')).toBeDisabled();
+    await expect(page.locator('#wave-ref-note')).toHaveText('Se activa con las ayudas sobre las curvas.');
+    await closePersonalization(page);
+    await ayudasBoton.click();
+    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'true');
     await openPersonalization(page);
     await expect(page.locator('#wave-annotations')).toHaveCount(0);
     await expect(toggle).not.toBeChecked();
     await expect(legend).toBeHidden();
-    await expect(page.locator('#wave-ref-button')).toBeDisabled();
+    await expect(page.locator('#wave-ref-button')).toBeEnabled();
+    await expect(page.locator('#wave-ref-note')).toHaveText('También puedes fijar un ciclo manualmente.');
     await toggle.check();
     await expect(legend).toBeVisible();
     const stressIndex = legend.locator('dl > div').filter({ hasText: 'Índice de estrés' });
@@ -93,18 +99,18 @@ test.describe('Controles exteriores coherentes', () => {
         const prefs = JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}');
         return [prefs.variableDescriptions, prefs.waveGuides, prefs.waveAnnotations];
       });
-    await expect.poll(preferencias).toEqual([true, false, false]);
+    await expect.poll(preferencias).toEqual([true, true, true]);
     await closePersonalization(page);
     await page.reload();
     await expect(toggle).toBeChecked();
     await expect(legend).toBeVisible();
-    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'false');
+    await expect(ayudasBoton).toHaveAttribute('aria-pressed', 'true');
     await ayudasBoton.click();
     await openPersonalization(page);
-    await expect(page.locator('#wave-ref-button')).toBeEnabled();
+    await expect(page.locator('#wave-ref-button')).toBeDisabled();
     await toggle.uncheck();
     await expect(legend).toBeHidden();
-    await expect.poll(preferencias).toEqual([false, true, true]);
+    await expect.poll(preferencias).toEqual([false, false, false]);
   });
 
   test('las preferencias de ayudas no se escriben en una referencia fotográfica', async ({ page }) => {
@@ -120,8 +126,10 @@ test.describe('Controles exteriores coherentes', () => {
     await page.locator('#variable-descriptions').check();
     await expect(page.locator('#variable-legend')).toBeVisible();
     await closePersonalization(page);
-    await page.locator('#wave-aids-toggle').click();
+    // La referencia no lee las preferencias guardadas: empieza sin ayudas, como la foto del equipo.
     await expect(page.locator('#wave-aids-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#wave-aids-toggle').click();
+    await expect(page.locator('#wave-aids-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect
       .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}')))
       .toEqual({ v: 1, welcomed: true, variableDescriptions: false, waveGuides: true, waveAnnotations: true });
@@ -130,6 +138,8 @@ test.describe('Controles exteriores coherentes', () => {
   test('los estados activos sobreviven al cierre y la pausa conserva la velocidad', async ({ page }) => {
     await open(page, { speed: 3 });
     await expect.poll(async () => (await frame(page)).breathCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(2);
+    // Comparar dibuja sobre las curvas: pide las ayudas encendidas.
+    await page.locator('#wave-aids-toggle').click();
     await openPersonalization(page);
     await expect(page.locator('#wave-ref-button')).toBeVisible();
     await expect(page.locator('#freeze-button')).toBeHidden();

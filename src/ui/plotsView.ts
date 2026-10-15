@@ -77,7 +77,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     frozenTriggerDetections: number[] = [],
     lastTriggerSeq = 0;
   let waveWindow = 12,
-    waveAids = true,
+    waveAids = false,
     waveStyle: 'sweep' | 'scroll' = 'sweep',
     waveScaleMode: 'auto' | 'fixed' = 'auto';
   let frozen = false,
@@ -357,7 +357,9 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     },
     setWaveAids(on) {
       waveAids = on;
+      // Comparar dibuja sobre las curvas: sin ayudas queda desactivado, y la nota dice por qué.
       $<HTMLButtonElement>('#wave-ref-button').disabled = !on;
+      $('#wave-ref-note').textContent = on ? 'También puedes fijar un ciclo manualmente.' : 'Se activa con las ayudas sobre las curvas.';
       const toggle = $<HTMLButtonElement>('#wave-aids-toggle');
       toggle.classList.toggle('active', on);
       toggle.setAttribute('aria-pressed', String(on));
