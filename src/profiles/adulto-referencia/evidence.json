@@ -1303,7 +1303,7 @@
       "status": "P (modelo de dos compartimentos; C_p, la constante de la muestra y la capacidad total como aproximación docente calibrada con C14; la fracción alveolar real baja algo con el VT y aquí es constante); D-secundario el gradiente venoarterial de reposo (6 mmHg, libro de texto); D para las dos medianas de espacio muerto que fijan la vía aérea y la fracción alveolar (C03); D-secundario el tamponamiento agudo (reglas de Boston, C08)",
       "source": "C03, C08, C14",
       "locator": "Fletcher y Jonson 1984 (resumen: VDphys/VT 0,44 con VT 0,45 L y 0,31 con 0,75 L; VDaw sin cambios con el VT; VDalv/VTalv menor con VT mayor); Morán 2006 (VD fisiológico 352 → 310 mL sin intercambiador); Hinkson 2006 (VD/VT −6 % sin intercambiador, −5 % más sin codo)",
-      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, slowTauMin, phFrom, DEFAULT_GAS, LUNG_CO2_STORE_L, VENOARTERIAL_PCO2_MMHG, ARTERIAL_SAMPLE_TAU_S); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); src/ui/teachingView.ts (tramo lento τ); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04, GAS-08)"
+      "implemented": "src/engine/gasExchange.ts (GasExchange, steadyPaco2, slowTauMin, phFrom, DEFAULT_GAS, LUNG_CO2_STORE_L, VENOARTERIAL_PCO2_MMHG, ARTERIAL_SAMPLE_TAU_S, tissueStoreL); src/engine/simulator.ts (volumen espirado por el pulmón, truth.gas); src/domain/types.ts (GasExchangeParams); src/domain/validation.ts (rangos gas); src/ui/teachingView.ts (tramo lento τ); tests/unit/gasometria.test.ts (GAS-01, GAS-03, GAS-04, GAS-08)"
     },
     {
       "id": "E-096",
@@ -1529,7 +1529,7 @@
     },
     {
       "id": "E-114",
-      "claim": "Forma de la cinética del CO₂ frente a lo medido. Apnea desde el equilibrio: +8,1 mmHg el primer minuto —el pulmón alcanza a la sangre venosa en segundos— y 3,8 mmHg/min después (0,863·VCO₂/C con C 45 L), frente a +9,8 ± 1,9 y 3,4–4,4 (Kobayashi 1994) y +12 y 3,4 (Stock 1989, aproximación por tramos de una curva logarítmica): dentro de una desviación de Kobayashi y por debajo de Stock. Tras 5 min de hiperventilación el gradiente venoarterial está abierto y el primer minuto de apnea sube más (Gentz 1998); tras 30 min vuelve al de reposo. Con VT ±10 % la PaCO₂ recorre menos del 20 % del camino en diez respiraciones y más del 70 % en 20 min, con τ lenta un 30 % mayor al bajar la ventilación que al subirla (Taskar 1995).",
+      "claim": "Forma de la cinética del CO₂ frente a lo medido, en el adulto real (el simulador la recorre ≈ 10 veces más deprisa, E-128). Apnea desde el equilibrio: +8,1 mmHg el primer minuto —el pulmón alcanza a la sangre venosa en segundos— y 3,8 mmHg/min después (0,863·VCO₂/C con C 45 L), frente a +9,8 ± 1,9 y 3,4–4,4 (Kobayashi 1994) y +12 y 3,4 (Stock 1989, aproximación por tramos de una curva logarítmica): dentro de una desviación de Kobayashi y por debajo de Stock. Tras 5 min de hiperventilación el gradiente venoarterial está abierto y el primer minuto de apnea sube más (Gentz 1998); tras 30 min vuelve al de reposo. Con VT ±10 % la PaCO₂ recorre menos del 20 % del camino en diez respiraciones y más del 70 % en 20 min, con τ lenta un 30 % mayor al bajar la ventilación que al subirla (Taskar 1995).",
       "status": "D (forma de la apnea, efecto de la hipocapnia aguda y respuesta a un cambio de ventilación, C14); P la calibración que los reproduce (E-095)",
       "source": "C14",
       "locator": "Stock 1989 y Kobayashi 1994 (resúmenes: subida del primer minuto y pendiente posterior); Gentz 1998 (resumen: hipocapnia aguda previa, primer minuto y gradiente venoarterial); Taskar 1995 (resumen: cambio mínimo a las 10 respiraciones, creciente durante 20 min, τ más larga al bajar la ventilación)",
@@ -1687,6 +1687,18 @@
       "tests": [
         "tests/unit/patientProfiles.test.ts (PRF-01)",
         "tests/unit/uiActions.test.ts (PRF-01)"
+      ]
+    },
+    {
+      "id": "E-128",
+      "claim": "Aceleración docente de la cinética del CO₂. Un adulto real tarda 20–30 min en llegar a su nueva PaCO₂ tras un cambio de ventilación (τ lenta 11,6 min con el banco), demasiado para un simulador. El simulador divide el depósito de la sangre y los tejidos (C_t) por 20: el equilibrio PaCO₂ = 0,863·VCO₂/V̇A no depende de los depósitos y es el mismo, y el camino se recorre ≈ 10 veces más deprisa (τ lenta 1,2 min con el banco; de 9 a 11 veces con V̇A de 2 a 9 L/min, porque el pulmón no se acelera). El pulmón (C_p) no se toca: con uno más pequeño el lavado de cada respiración agranda la oscilación alveolar y su media deja de ser el equilibrio. La apnea también sube más rápido (≈ 34 mmHg/min pasado el primer minuto). La interfaz lo rotula donde se lee la PaCO₂ (panel lateral, «Datos del modelo», Aula · Fundamentos · Ventilación y el desarrollo del caso de hipercapnia). La calibración frente a lo medido (E-114) se comprueba sobre el adulto real, con aceleración 1.",
+      "status": "P (decisión docente: el ritmo del equilibrio no es el de un paciente y se dice; el destino sí lo es)",
+      "source": "—",
+      "locator": "petición del usuario 14-10-2026",
+      "implemented": "src/engine/gasExchange.ts (ACELERACION_TEJIDOS, ACELERACION_EQUILIBRIO, tissueStoreL, slowTauMin, GasExchange.aceleracion); src/ui/gasView.ts (salvedad); src/ui/teachingView.ts (Por qué); src/ui/dialogs.ts (Datos del modelo); src/scenarios/cases.ts (desarrollo del caso de hipercapnia)",
+      "tests": [
+        "tests/unit/gasometria.test.ts (GAS-09)",
+        "tests/unit/gasometria.test.ts (GAS-08)"
       ]
     }
   ]

@@ -1,9 +1,10 @@
 /**
  * Gasometría del modelo en el panel lateral, en dos líneas: PaCO₂ y pH de ahora con su valor al inicio, y la trayectoria
- * de la PaCO₂ con la marca del último cambio. El equipo no la mide: se rotula «modelo» y nunca va al monitor.
+ * de la PaCO₂ con la marca del último cambio. El equipo no la mide: se rotula «modelo» y nunca va al monitor. Junto al
+ * rótulo, la salvedad de que el modelo llega a su equilibrio ≈ 10 veces más deprisa que un paciente (ACELERACION_EQUILIBRIO).
  */
 import { formatNumber as f } from '../domain/units';
-import { EQUILIBRIUM_WINDOW_S } from '../engine/gasExchange';
+import { ACELERACION_EQUILIBRIO, EQUILIBRIUM_WINDOW_S } from '../engine/gasExchange';
 import type { AppContext } from './context';
 import { $, element } from './dom';
 
@@ -28,7 +29,14 @@ function tendencia(puntos: Punto[], cambioS: number | null, resumen: string): SV
   const W = 120,
     H = 18,
     PAD = 2;
-  const raiz = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'gas-trend', role: 'img', 'aria-label': resumen });
+  // Sin proporción fija: en un panel angosto la tendencia cede ancho y se estira, no se encoge entera.
+  const raiz = svg('svg', {
+    viewBox: `0 0 ${W} ${H}`,
+    preserveAspectRatio: 'none',
+    class: 'gas-trend',
+    role: 'img',
+    'aria-label': resumen,
+  });
   const t0 = puntos[0]!.t;
   const t1 = Math.max(puntos.at(-1)!.t, t0 + 60);
   const valores = puntos.map((p) => p.paco2);
@@ -114,13 +122,19 @@ export function createGasView(ctx: AppContext): { render(): void } {
         element('small', 'gas-start', `inicio ${alInicio}`),
       );
     const resumen = `PaCO₂ de ${f(inicio.paco2, 0)} al inicio a ${f(g.paco2, 0)} mmHg ahora.`;
-    const cabeza = element('span', 'gas-head', element('span', 'gas-title', 'Gasometría'), element('small', 'gas-tag', 'modelo'));
+    // La salvedad de la aceleración docente va en la cabecera, junto a «modelo»: el destino es el de un paciente, el ritmo
+    // no. En una línea propia restaba al panel el alto que necesita un caso para leerse entero. La cabecera ocupa la fila
+    // entera y la tendencia, al final, cede ancho: así la salvedad no se lo quita a las cifras de abajo.
+    const rapida = element('small', 'gas-rapida', `≈ ${ACELERACION_EQUILIBRIO}× más rápido`);
+    rapida.title = `Equilibrio ≈ ${ACELERACION_EQUILIBRIO} veces más rápido que en un paciente real`;
+    rapida.setAttribute('aria-label', rapida.title);
+    const cabeza = element('div', 'gas-head', element('span', 'gas-title', 'Gasometría'), element('small', 'gas-tag', 'modelo'), rapida);
+    if (puntos.length > 1) cabeza.append(tendencia(puntos, cambioS, resumen));
     host.replaceChildren(
       element(
         'div',
         'gas-card',
         cabeza,
-        puntos.length > 1 ? tendencia(puntos, cambioS, resumen) : element('span', ''),
         valor('PaCO₂', f(g.paco2, 0), 'mmHg', f(inicio.paco2, 0)),
         valor('pH', f(g.ph, 2), '', f(inicio.ph, 2)),
       ),
