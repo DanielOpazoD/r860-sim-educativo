@@ -381,11 +381,15 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     }
     await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'green');
   });
-  test('SEC-01/02 · sin tráfico externo; marca de simulación discreta presente en todas las vistas y en el bisel', async ({ page }) => {
+  test('SEC-01/02 · sin tráfico externo; marca de simulación discreta presente en todas las vistas y en el bisel', async ({
+    page,
+    baseURL,
+  }) => {
+    const local = new URL(baseURL!).host;
     const external: string[] = [];
     page.on('request', (r) => {
       const u = new URL(r.url());
-      if (u.host !== '127.0.0.1:4173') external.push(r.url());
+      if (u.host !== local) external.push(r.url());
     });
     await open(page, { speed: 4, instructor: 0 });
     for (const v of ['basic', 'loops', 'data', 'trends', 'log', 'waves']) {

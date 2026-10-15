@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "autoPort": true,
   "configurations": [
-    { "name": "ventila-dev", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--host", "127.0.0.1"] },
-    { "name": "ventila-preview", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "preview", "--host", "127.0.0.1"] }
+    { "name": "ventila-dev", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--host", "127.0.0.1"], "port": 5173 },
+    { "name": "ventila-preview", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "preview", "--host", "127.0.0.1"], "port": 4173 }
   ]
 }
