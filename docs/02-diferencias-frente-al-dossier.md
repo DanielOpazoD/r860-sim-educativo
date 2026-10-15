@@ -381,3 +381,7 @@ En SC-04, tras subir la resistencia, aparecen las dos: es lo que el equipo mostr
 ## Paleta del equipo (13-10-2026)
 
 La pantalla deja el azul saturado heredado de R860 Lab y toma los colores medidos en las capturas del manual SW10, que son la imagen que genera el equipo (E-118, D). Fondo azul pizarra, teclas de grafito, cifras blancas en negrita, curvas de trazo blanco con flujo verde y volumen blanco, y barra de presión con tubo negro y relleno verde. El valor en alarma pasa del bloque ámbar sólido al borde del color de la prioridad, como el equipo (8-7). Detalle, medidas y contrastes en `docs/09-auditoria-visual.md`.
+
+## La versión del motor sigue a la física (14-10-2026)
+
+Una sesión guardada anota la versión del motor, pero el número llevaba en 0.4.0 desde el 10-09 aunque la física cambió varias veces después: un archivo antiguo se reproducía con otra física y sin aviso (U-46). El motor pasa a **0.7.0** —el número siguiente a las etiquetas de entrega de este documento, que llegaron a v0.6.2, para que no se confundan— y las sesiones de 0.2.0, 0.3.0 y 0.4.0 se siguen aceptando con el aviso «la reproducción puede no ser idéntica». Desde ahora la versión sube con cada cambio de la huella del motor: HUE-01 guarda la versión con que se tomó y se niega a actualizarse si la física cambió sin que suba (docs/04 §5).
