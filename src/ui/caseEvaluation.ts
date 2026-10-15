@@ -3,7 +3,7 @@
  * (varias soluciones válidas) y con umbrales por caso. La verdad del modelo (esfuerzo, auto-PEEP verdadera, gasometría)
  * puede usarse para evaluar: no se muestra hasta entregar.
  */
-import type { ProcedureResult } from '../domain/types';
+import type { ProcedureResult, VcSettings } from '../domain/types';
 import type { CaseCriterion, ClinicalCase } from '../scenarios';
 import { LESSON_TESTS, type LessonContext } from './lesson';
 
@@ -119,6 +119,8 @@ export interface CaseResult {
   answer: { id: string; ok: boolean } | null;
   passed: boolean;
   atSimMs: number;
+  /** Programación al entregar: el desarrollo la compara con la del inicio y con la solución. */
+  settings: VcSettings;
 }
 
 function cumple(criterion: CaseCriterion, c: CaseContext): boolean {
@@ -133,5 +135,5 @@ export function evaluateCase(spec: ClinicalCase, c: CaseContext, answerId: strin
   const option = spec.kind === 'diagnostico' ? spec.options?.find((o) => o.id === answerId) : undefined;
   const answer = option ? { id: option.id, ok: option.correct } : null;
   const passed = criteria.every((x) => x.ok) && (spec.kind === 'ajuste' || !!answer?.ok);
-  return { criteria, answer, passed, atSimMs: c.frame.simTimeMs };
+  return { criteria, answer, passed, atSimMs: c.frame.simTimeMs, settings: { ...c.frame.settings } };
 }
