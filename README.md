@@ -12,7 +12,7 @@ Requisitos: Node ≥ 20; desarrollo e integración continua con Node 22 (`.nvmrc
 
 ```bash
 npm install
-npm run dev        # http://127.0.0.1:5173
+npm run dev        # http://127.0.0.1:5173 · otro puerto: PORT=5180 npm run dev
 ```
 
 ```bash
@@ -20,7 +20,7 @@ npm run check          # puerta rápida: oxlint + fronteras de capas + Prettier 
 npm run test:coverage  # Vitest con cobertura v8 y umbrales (vitest.config.ts); escribe test-results/vitest.json
 npm run build          # bundle en dist/
 npx playwright install chromium   # una vez
-npm run e2e            # Playwright: 1440×1000, 1280×900, Pixel 7
+npm run e2e            # Playwright: 1440×1000, 1280×900, Pixel 7 · otro puerto: E2E_PORT=4180 npm run e2e
 npm run results:doc    # regenera docs/01-resultados.md desde las salidas JSON de esa corrida (no repite pruebas)
 npm run docs:facts     # sincroniza los números de README y docs/ con los artefactos reales
 npm run ci             # todo lo anterior en el orden de la integración continua, en un solo pase
