@@ -2,12 +2,16 @@
  * Vistas del caso clínico. En el panel lateral: la lista de casos y, con un caso activo, qué debe lograr el alumno,
  * la entrega y sus referencias. Bajo el ventilador: el desarrollo, que se revela al entregar. Presentación pura.
  */
+import type { SettingRule } from '../domain/settingRules';
+import type { SettingsKey, VcSettings, VentMode } from '../domain/types';
 import { formatNumber as f } from '../domain/units';
 import type { EngineFrame } from '../engine/simulator';
-import type { ClinicalCase, Scenario } from '../scenarios';
+import type { CaseStep, ClinicalCase, Scenario } from '../scenarios';
 import type { CaseResult } from './caseEvaluation';
 import type { CaseStatus } from './caseProgress';
 import { element, iconNode } from './dom';
+import { unitText } from './format';
+import { displaySetting, MODE_LABEL, QUICK_LABEL } from './labels';
 
 function boton(clase: string, texto: string, action: string): HTMLButtonElement {
   const b = element('button', clase, texto);
@@ -156,8 +160,112 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
   return element('div', 'case-truth', element('h3', 'aula-kicker', 'Lo que el modelo sabía'), element('dl', 'edu-gases', ...filas));
 }
 
-/** Desarrollo del caso bajo el ventilador: oculto hasta entregar; después, respuesta, explicación y verdad del modelo. */
-export function caseDevelopmentNodes(sc: Scenario, frame: EngineFrame | null, result: CaseResult | null): HTMLElement[] {
+/** Un ajuste de la programación, el modo incluido: el alumno puede resolver (o no) cambiando de modo. */
+type Clave = keyof VcSettings;
+type Valor = VcSettings[Clave];
+const rotulo = (k: Clave): string => (k === 'mode' ? 'Modo' : QUICK_LABEL[k]);
+
+/** Un ajuste con su unidad, como en la tecla rápida: «500 mL», «1:4», «6 L/min». */
+function valorAjuste(rules: Record<SettingsKey, SettingRule>, k: Clave, v: Valor): string {
+  if (k === 'mode') return MODE_LABEL[v as VentMode];
+  const texto = displaySetting(rules, k, v as VcSettings[SettingsKey]);
+  const unidad = typeof v === 'number' && k !== 'ie' ? unitText(rules[k].displayUnit) : '';
+  return unidad ? `${texto} ${unidad}` : texto;
+}
+
+/** Programación que deja la solución: la del inicio con cada ajuste encima, en orden; con `ultimo`, éste sustituye al último. */
+function programacionFinal(inicial: VcSettings, pasos: CaseStep[], ultimo?: Partial<VcSettings>): VcSettings {
+  const ajustes = pasos.filter((p) => p.kind === 'ajuste');
+  return ajustes.reduce<VcSettings>((s, p, i) => ({ ...s, ...(ultimo && i === ajustes.length - 1 ? ultimo : p.changes) }), { ...inicial });
+}
+
+const ESPERA = (s: number): string => (s >= 60 ? `${Math.round(s / 60)} min` : `${s} s`);
+const BLOQUEO = { inspHold: 'Bloqueo inspiratorio', expHold: 'Bloqueo espiratorio' } as const;
+
+/**
+ * Cómo se resuelve, de un vistazo: una tabla con cada ajuste que importa —al inicio, el que entregó el alumno y el de la
+ * solución (y el de otra solución válida, si la hay)— y debajo los pasos en orden, con lo que mide cada bloqueo y cuánto
+ * esperar. Las filas son los ajustes que la solución cambia y los que el alumno cambió: así se ve qué tocó de más o de menos.
+ */
+function solucion(c: ClinicalCase, result: CaseResult, inicial: VcSettings, rules: Record<SettingsKey, SettingRule>): HTMLElement {
+  const pasos = c.solution.steps;
+  const final = programacionFinal(inicial, pasos);
+  const otras = (c.solution.alternatives ?? []).map((alt) => programacionFinal(inicial, pasos, alt));
+  // Un resultado guardado antes de que la entrega registrara la programación no la trae: entonces no hay columna.
+  const entregado = result.settings as VcSettings | undefined;
+  // Se compara lo que se muestra, no el número interno: deshacer un cambio con el editor no deja una fila fantasma.
+  const distinto = (k: Clave, v: Valor): boolean => valorAjuste(rules, k, v) !== valorAjuste(rules, k, inicial[k]);
+  const claves = new Set<Clave>();
+  for (const p of pasos) if (p.kind === 'ajuste') for (const k of Object.keys(p.changes) as Clave[]) claves.add(k);
+  for (const alt of c.solution.alternatives ?? []) for (const k of Object.keys(alt) as Clave[]) claves.add(k);
+  if (entregado) for (const k of Object.keys(inicial) as Clave[]) if (distinto(k, entregado[k])) claves.add(k);
+
+  const nodos: HTMLElement[] = [element('h3', 'aula-kicker', 'Cómo se resuelve')];
+  if (claves.size) {
+    const celda = (k: Clave, v: Valor, clase: string): HTMLElement => {
+      const cambia = distinto(k, v);
+      const flecha = cambia && typeof v === 'number' && typeof inicial[k] === 'number' ? (v > (inicial[k] as number) ? ' ↑' : ' ↓') : '';
+      return element(
+        'td',
+        `${clase}${cambia ? ' cambia' : ''}`,
+        valorAjuste(rules, k, v),
+        flecha ? element('span', 'case-arrow', flecha) : '',
+      );
+    };
+    const columnas: [string, string][] = [
+      ['Ajuste', ''],
+      ['Al inicio', ''],
+      ...(entregado ? ([['Tu entrega', '']] as [string, string][]) : []),
+      ['Solución', 'sol'],
+      ...otras.map((): [string, string] => ['También vale', 'sol alt']),
+    ];
+    const cabeza = element('thead', '', element('tr', '', ...columnas.map(([t, clase]) => element('th', clase, t))));
+    const filas = [...claves].map((k) =>
+      element(
+        'tr',
+        '',
+        element('th', '', rotulo(k)),
+        element('td', 'inicio', valorAjuste(rules, k, inicial[k])),
+        ...(entregado ? [celda(k, entregado[k], 'tuyo')] : []),
+        celda(k, final[k], 'sol'),
+        ...otras.map((o) => celda(k, o[k], 'sol alt')),
+      ),
+    );
+    const tabla = element('table', 'case-solution-table', cabeza, element('tbody', '', ...filas));
+    tabla.setAttribute('aria-label', 'Ajustes al inicio, en tu entrega y en la solución');
+    nodos.push(element('div', 'case-solution-scroll', tabla));
+  } else nodos.push(element('p', 'aula-caption', 'No hace falta cambiar la programación: el caso se resuelve midiendo.'));
+
+  let previa: VcSettings = { ...inicial };
+  const lista = element(
+    'ol',
+    'case-steps',
+    ...pasos.map((p) => {
+      if (p.kind === 'bloqueo') return element('li', '', element('b', '', BLOQUEO[p.which]), element('span', 'case-step-note', p.note));
+      const cambios = (Object.keys(p.changes) as Clave[]).map(
+        (k) => `${rotulo(k)} ${valorAjuste(rules, k, previa[k])} → ${valorAjuste(rules, k, p.changes[k] as Valor)}`,
+      );
+      previa = { ...previa, ...p.changes };
+      return element(
+        'li',
+        '',
+        element('b', '', cambios.join(' · ')),
+        element('span', 'case-step-note', [p.note, `espera ≈ ${ESPERA(p.waitS)}`].filter(Boolean).join(' · ')),
+      );
+    }),
+  );
+  nodos.push(lista);
+  return element('section', 'case-solution', ...nodos);
+}
+
+/** Desarrollo del caso bajo el ventilador: oculto hasta entregar; después, respuesta, solución, explicación y verdad del modelo. */
+export function caseDevelopmentNodes(
+  sc: Scenario,
+  frame: EngineFrame | null,
+  result: CaseResult | null,
+  inicial: VcSettings,
+  rules: Record<SettingsKey, SettingRule>,
+): HTMLElement[] {
   const c = sc.clinical!;
   if (!result)
     return [element('p', 'aula-caption', 'Se revela al entregar el caso: la explicación, la respuesta y lo que el modelo sabía.')];
@@ -169,7 +277,7 @@ export function caseDevelopmentNodes(sc: Scenario, frame: EngineFrame | null, re
   ];
   if (elegida) nodos.push(element('p', 'aula-caption', `Tu respuesta: ${elegida.text}. ${elegida.why}`));
   if (correcta && correcta !== elegida) nodos.push(element('p', 'aula-caption', `Correcta: ${correcta.text}. ${correcta.why}`));
-  nodos.push(element('p', 'case-reveal', c.reveal));
+  nodos.push(solucion(c, result, inicial, rules), element('p', 'case-reveal', c.reveal));
   const v = verdad(frame);
   if (v) nodos.push(v);
   return nodos;

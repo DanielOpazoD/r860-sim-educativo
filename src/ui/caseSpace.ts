@@ -71,7 +71,11 @@ export function createCaseSpace(
         : caseBriefNodes(ctx.scenario, answer, result, ctx.lesson.sessionImported)),
     );
     $('#learn-case').hidden = !clinical;
-    if (clinical) $('#learn-case-body').replaceChildren(...caseDevelopmentNodes(ctx.scenario, ctx.frame, result));
+    if (clinical) {
+      // La programación con que el caso arranca: la del perfil con la del caso encima, como la carga la interfaz.
+      const inicial = { ...ctx.profile.defaults.settings, ...(ctx.scenario.settings ?? {}) };
+      $('#learn-case-body').replaceChildren(...caseDevelopmentNodes(ctx.scenario, ctx.frame, result, inicial, ctx.profile.rules));
+    }
   }
 
   function show(nextListing: boolean): void {
