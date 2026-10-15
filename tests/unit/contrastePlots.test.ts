@@ -62,6 +62,7 @@ describe('CTR-10 · las líneas de las ayudas contrastan 3:1 sobre la pizarra', 
     'referencia en el bucle': AYUDA.referenciaBucle,
     'bucle previo': AYUDA.previo,
     'unión de las congeladas': AYUDA.union,
+    'cambio de modo': AYUDA.cambioModo,
     'cursor A': AYUDA.cursor,
     'cursor de barrido': MON.cursorBarrido,
   };
