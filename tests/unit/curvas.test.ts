@@ -13,6 +13,7 @@ import {
   nearestSample,
   referenceShift,
   stableBounds,
+  sweepCut,
   timeAxisLabels,
   traceSpan,
   visiblePoints,
@@ -25,7 +26,9 @@ import {
   type WaveBreath,
 } from '../../src/render/plots';
 import { formatNumber } from '../../src/domain/units';
+import type { SessionEvent, VentMode } from '../../src/domain/types';
 import { SCENARIOS, SCENARIO_WAVEFORM_CONTRACTS } from '../../src/scenarios';
+import { modeChangesFromEvents } from '../../src/ui/plotsView';
 
 // Lo que se dibuja tiene que decir lo mismo que el número y la alarma, y no cambiar de tamaño bajo el ojo del alumno.
 // Estas pruebas reconstruyen la traza como la interfaz —cuadro a cuadro, con las muestras que publica el motor— en vez
@@ -461,5 +464,56 @@ describe('CUR-05 · los rótulos de fase no tachan la traza', () => {
     expect(phaseBaseline(traceSpan(plana(80), 50, 90), 104, 10, 0, 120)).toBe(104);
     expect(phaseBaseline([8, 9], 10, 10, 0, 120)).toBe(21);
     expect(phaseBaseline([5, 115], 104, 10, 0, 120)).toBe(104);
+  });
+});
+
+describe('CUR-06 · un cambio de modo se ve como uno solo: marcado y sin la pasada anterior detrás', () => {
+  const win = 12;
+  it('al cambiar a mitad de pasada se oculta la pasada anterior y se conserva entera la pasada en curso', () => {
+    // Pasada en curso desde 24 s; el cambio en 27 s; cursor en 30 s. Lo de 18–24 s es la pasada anterior, del modo viejo.
+    expect(sweepCut(30, win, 27)).toBe(24);
+  });
+  it('tras volver el cursor al origen, de la pasada anterior sólo queda lo posterior al cambio', () => {
+    expect(sweepCut(38, win, 27)).toBe(27);
+  });
+  it('una ventana entera después ya no oculta nada, y sin cambio tampoco', () => {
+    expect(sweepCut(39, win, 27)).toBeNull();
+    expect(sweepCut(30, win, null)).toBeNull();
+  });
+
+  function cambiar(desde: VentMode, hacia: VentMode, despuesMs: number) {
+    const sim = new Simulator(defaultInit({ settings: { ...defaultInit().settings, mode: desde } }), REFERENCE_PROFILE);
+    sim.run(10_000);
+    const eventos: SessionEvent[] = [];
+    const leer = (): void => {
+      for (const e of sim.frame().eventsTail) if (!eventos.some((x) => x.sequence === e.sequence)) eventos.push(e);
+    };
+    leer();
+    const antes = Math.max(...eventos.map((e) => e.sequence));
+    const n = sim.breaths.length;
+    expect(sim.command({ type: 'confirmSettings', changes: { mode: hacia } }).accepted).toBe(true);
+    for (let t = 0; t < despuesMs; t += 100) {
+      sim.run(100);
+      leer();
+    }
+    return { sim, n, leidos: modeChangesFromEvents(eventos, antes, desde) };
+  }
+  it('la marca cae donde el equipo aplica el modo —el inicio de la primera respiración nueva—, no al confirmar', () => {
+    const { sim, n, leidos } = cambiar('AC_VC', 'AC_PC', 10_000);
+    expect(leidos.changes).toHaveLength(1);
+    expect(leidos.mode).toBe('AC_PC');
+    // La respiración en curso al confirmar termina en VC; la marca, en el inicio de la siguiente.
+    const primeraNueva = sim.breaths[n + 1]!;
+    expect(Math.abs(leidos.changes[0]!.t * 1000 - primeraNueva.startSimTimeMs)).toBeLessThanOrEqual(4);
+    expect(leidos.changes[0]!.t).toBeGreaterThan(10);
+  });
+  it('al pasar a CPAP/PS la marca cae donde A/C habría entregado su respiración, que ya no existe', () => {
+    const { leidos } = cambiar('AC_VC', 'CPAP_PS', 6_000);
+    expect(leidos.changes.map((c) => c.mode)).toEqual(['CPAP_PS']);
+    expect(leidos.changes[0]!.t).toBeGreaterThan(10);
+  });
+  it('confirmar el modo vigente (como para salir del respaldo) no es un cambio', () => {
+    const { leidos } = cambiar('AC_VC', 'AC_VC', 6_000);
+    expect(leidos.changes).toEqual([]);
   });
 });

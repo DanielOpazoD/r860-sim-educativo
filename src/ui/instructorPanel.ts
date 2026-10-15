@@ -5,13 +5,14 @@
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
 import { formatNumber as f } from '../domain/units';
+import { validateDomains, validateVcSettings } from '../domain/validation';
 import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
 import { $, $$, element, esc, iconNode, put } from './dom';
 import type { HoldPanel } from './holdPanel';
 import { contextualHelpPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
-import { matchesProfile, PATIENT_PROFILES, profileHint, profileShort, profileState } from './patientProfiles';
+import { frRespaldoQueCede, matchesProfile, PATIENT_PROFILES, profileHint, profileShort, profileState } from './patientProfiles';
 import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetHtml, type PhysSpec } from './patientControls';
 import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import type { PlotsView } from './plotsView';
@@ -295,18 +296,35 @@ export function createInstructorPanel(
       const next = profileState(profile);
       const previousPatient = { ...frame.truth.patient };
       const previousEffort = { ...frame.truth.effort };
+      // Un paciente que dispara lleva el ritmo en A/C: si la FR programada compite con la suya, baja a la que le cede
+      // (E-127), también en CPAP/PS, donde es la FR que encontrará al pasar a A/C. En un caso la FR es del alumno.
+      const programados = { ...frame.settings, ...(frame.pending ?? {}) };
+      const frCede = frRespaldoQueCede(profile);
+      const conFr = frCede === null ? null : { ...programados, rr: frCede };
+      const bajaFr =
+        conFr !== null &&
+        !ctx.scenario.clinical &&
+        programados.rr > conFr.rr &&
+        validateDomains(conFr, ctx.profile.rules).length === 0 &&
+        validateVcSettings(conFr, ctx.profile.crossLimits).ok;
       const applied = await setPhys(
         [
           { type: 'setPatient', params: { ...next.patient }, replace: true },
           { type: 'setEffort', params: { ...next.effort }, replace: true },
+          ...(bajaFr ? [{ type: 'confirmSettings' as const, changes: { rr: frCede as number } }] : []),
         ],
         [
           { type: 'setPatient', params: previousPatient, replace: true },
           { type: 'setEffort', params: previousEffort, replace: true },
+          ...(bajaFr ? [{ type: 'confirmSettings' as const, changes: { rr: programados.rr } }] : []),
         ],
       );
       if (applied) {
-        ctx.toast(`Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`);
+        ctx.toast(
+          bajaFr
+            ? `Perfil aplicado: ${profile.label}. FR de A/C ${f(programados.rr, 0)} → ${f(frCede as number, 0)}/min, por debajo de la del paciente, para que él dispare cada respiración.`
+            : `Perfil aplicado: ${profile.label}. La programación del ventilador no cambia.`,
+        );
       }
     },
     loadScenario,

@@ -15,6 +15,7 @@ import { createCommandPalette } from '../../src/ui/commandPalette';
 import { bindKeyboard } from '../../src/ui/keyboard';
 import { loadPrefs } from '../../src/ui/prefs';
 import { PATIENT_PROFILES } from '../../src/ui/patientProfiles';
+import { CLINICAL_CASES } from '../../src/scenarios/cases';
 
 afterEach(() => {
   vi.clearAllTimers();
@@ -152,6 +153,35 @@ it('despacha acciones delegadas, preferencias y atajos sin activarlos al escribi
     for (const [type, listener] of documentListeners) document.removeEventListener(type, listener);
     for (const [type, listener] of windowListeners) window.removeEventListener(type, listener);
   }
+});
+
+it('PRF-01 · «Esfuerzo normal» baja la FR de A/C para llevar el ritmo, se deshace con el perfil y no toca un caso', async () => {
+  const { ctx } = uiHarness();
+  const quick = createQuickEditor(ctx);
+  const hold = createHoldPanel(ctx, { quick });
+  const metrics = createMetricsView(ctx);
+  const plots = createPlotsView(ctx, { teacherVisible: () => false });
+  const instructor = createInstructorPanel(ctx, { quick, hold, metrics, plots, initialVisible: false });
+  expect(ctx.frame!.settings.rr).toBe(15);
+
+  await instructor.applyProfile('spontaneous');
+  expect(ctx.send).toHaveBeenLastCalledWith({ type: 'confirmSettings', changes: { rr: 12 } }, 'instructor');
+  expect(ctx.toast).toHaveBeenLastCalledWith(expect.stringContaining('FR de A/C 15 → 12/min'));
+  await instructor.undoEvent();
+  expect(ctx.send).toHaveBeenLastCalledWith({ type: 'confirmSettings', changes: { rr: 15 } }, 'instructor');
+
+  // Los demás perfiles no tocan el ventilador.
+  vi.mocked(ctx.send).mockClear();
+  await instructor.applyProfile('weak');
+  expect(vi.mocked(ctx.send).mock.calls.some(([cmd]) => cmd.type === 'confirmSettings')).toBe(false);
+  expect(ctx.toast).toHaveBeenLastCalledWith('Perfil aplicado: Esfuerzo débil. La programación del ventilador no cambia.');
+
+  // En un caso la FR es del alumno: el perfil cambia el paciente y nada más.
+  ctx.scenario = structuredClone(CLINICAL_CASES[0]!);
+  vi.mocked(ctx.send).mockClear();
+  await instructor.applyProfile('spontaneous');
+  expect(vi.mocked(ctx.send).mock.calls.some(([cmd]) => cmd.type === 'confirmSettings')).toBe(false);
+  expect(ctx.toast).toHaveBeenLastCalledWith('Perfil aplicado: Esfuerzo normal. La programación del ventilador no cambia.');
 });
 
 it('la paleta conserva texto literal, búsqueda, foco, selección y cancelación', () => {

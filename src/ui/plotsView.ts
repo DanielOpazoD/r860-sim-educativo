@@ -4,6 +4,7 @@
  * (requestAnimationFrame sólo dibuja cuando algo cambió).
  */
 import type { EngineFrame } from '../engine/simulator';
+import type { SessionEvent, VentMode } from '../domain/types';
 import { formatNumber as f } from '../domain/units';
 import {
   appendSamples,
@@ -21,10 +22,12 @@ import {
   cursorMeasurements,
   nearestSample,
   stableBounds,
+  sweepCut,
   visiblePoints,
   waveMarkers,
   WAVE_MARGIN,
   type Bounds,
+  type ModeChangeMark,
   type Point,
   type ScaleState,
   type WaveBreath,
@@ -33,6 +36,33 @@ import {
 import type { AppContext } from './context';
 import { $, icon, put } from './dom';
 import { clock } from './format';
+import { MODE_LABEL } from './labels';
+
+/**
+ * Cambios de modo que el equipo aplicó, leídos del registro: un ajuste aplicado cuyo `mode` difiere del vigente. El
+ * motor aplica el modo al empezar la respiración siguiente, no al confirmar, y ése es el instante que se marca.
+ * Confirmar el mismo modo (para salir del respaldo de CPAP/PS) no es un cambio.
+ */
+export function modeChangesFromEvents(
+  events: readonly SessionEvent[],
+  afterSeq: number,
+  current: VentMode,
+): { changes: { t: number; mode: VentMode }[]; lastSeq: number; mode: VentMode } {
+  const changes: { t: number; mode: VentMode }[] = [];
+  let lastSeq = afterSeq,
+    mode = current;
+  for (const e of events) {
+    if (e.sequence <= afterSeq) continue;
+    lastSeq = Math.max(lastSeq, e.sequence);
+    if (e.kind !== 'setting') continue;
+    const applied = (e.payload as { applied?: { mode?: unknown } } | null)?.applied;
+    const next = applied?.mode;
+    if (typeof next !== 'string' || !(next in MODE_LABEL) || next === mode) continue;
+    mode = next as VentMode;
+    changes.push({ t: e.simTimeMs / 1000, mode });
+  }
+  return { changes, lastSeq, mode };
+}
 
 export interface PlotsView {
   readonly points: Point[];
@@ -94,6 +124,15 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     markerCache: WaveMarker[] = [],
     markerCacheKey = '',
     mechanicsSignature = '';
+  // Cambios de modo aplicados, con el modo vigente y el último evento leído; null hasta el primer cuadro de una sesión.
+  let modeChanges: ModeChangeMark[] = [],
+    modoVigente: VentMode | null = null,
+    lastModeSeq = 0;
+  const resetModeChanges = (): void => {
+    modeChanges = [];
+    modoVigente = null;
+    lastModeSeq = 0;
+  };
   const fixedBounds: Record<'waves' | 'basic', Bounds | null> = { waves: null, basic: null };
   let dirty = true,
     lastPlot = 0,
@@ -158,6 +197,11 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     const peep = fr.settings.peep === 'off' ? 0 : fr.settings.peep,
       vtMl = fr.settings.vt * 1000;
     const style = drawStyle();
+    // Con las ayudas, las curvas en barrido no mezclan dos modos: la pasada anterior al último cambio se oculta, con sus
+    // marcas y sus disparos (los bucles no). Sin ayudas la curva queda como en el equipo, que no la oculta.
+    const corte = style === 'sweep' && waveAids ? sweepCut(end, waveWindow, modeChanges.at(-1)?.t ?? null) : null;
+    const ondas = corte === null ? pts : pts.filter((p) => p[0] >= corte);
+    const disparos = (frozen ? frozenTriggerDetections : triggerDetectionsS).filter((t) => corte === null || t >= corte);
     const latestBreath = [...breaths].reverse().find((b) => b.endSimTimeMs <= end * 1000 + 1) ?? null;
     const lastHold = fr.procedure.last.inspHold;
     const pplat = lastHold?.quality === 'valid' ? lastHold.values.pplat?.value : null;
@@ -170,7 +214,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     if (markerKey !== markerCacheKey) {
       markerCacheKey = markerKey;
       markerCache = waveMarkers(
-        pts,
+        ondas,
         annotatedBreath,
         lastHold && typeof pplat === 'number'
           ? {
@@ -182,30 +226,32 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
           : null,
       );
     }
-    const markers = waveAids ? markerCache : [];
+    const markers = waveAids ? markerCache.filter((m) => corte === null || m.t >= corte) : [];
     if (view === 'waves')
-      drawWave($<HTMLCanvasElement>('#waves-canvas'), pts, end, peep, vtMl, {
+      drawWave($<HTMLCanvasElement>('#waves-canvas'), ondas, end, peep, vtMl, {
         window: waveWindow,
         style,
         frozen,
         cursorTime,
         cursorTimeB,
         markers,
-        bounds: waveBounds('waves', pts, end, peep, vtMl),
+        modeChanges,
+        bounds: waveBounds('waves', ondas, end, peep, vtMl),
         pmax: fr.settings.pmax,
-        triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
+        triggerDetectionsS: disparos,
         reference: waveAids ? waveReference : null,
         aids: waveAids,
       });
     else if (view === 'basic')
-      drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), pts, end, peep, vtMl, {
+      drawWave($<HTMLCanvasElement>('#basic-wave-canvas'), ondas, end, peep, vtMl, {
         window: waveWindow,
         style,
         frozen,
         markers,
-        bounds: waveBounds('basic', pts, end, peep, vtMl),
+        modeChanges,
+        bounds: waveBounds('basic', ondas, end, peep, vtMl),
         pmax: fr.settings.pmax,
-        triggerDetectionsS: frozen ? frozenTriggerDetections : triggerDetectionsS,
+        triggerDetectionsS: disparos,
         reference: waveAids ? waveReference : null,
         aids: waveAids,
       });
@@ -381,6 +427,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         fixedBounds.waves = null;
         fixedBounds.basic = null;
         resetScales();
+        resetModeChanges();
       } else if (prev && !waveReference && mechanicsSignature !== '' && mechanicsSignature !== nextMechanicsSignature) {
         const before = cyclePoints(points);
         if (before.length >= 3) setWaveReference(before);
@@ -413,6 +460,17 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         }
         lastTriggerSeq = Math.max(lastTriggerSeq, e.sequence);
       }
+      if (modoVigente === null) {
+        // Primer cuadro de la sesión: el modo de partida no es un cambio, ni lo son los eventos anteriores.
+        modoVigente = fr.settings.mode;
+        lastModeSeq = Math.max(0, ...fr.eventsTail.map((e) => e.sequence));
+      } else {
+        const leidos = modeChangesFromEvents(fr.eventsTail, lastModeSeq, modoVigente);
+        lastModeSeq = leidos.lastSeq;
+        modoVigente = leidos.mode;
+        for (const c of leidos.changes) modeChanges.push({ t: c.t, label: `Modo ${MODE_LABEL[c.mode]}` });
+        if (modeChanges.length > 20) modeChanges = modeChanges.slice(-20);
+      }
       appendSamples(points, fr.samples);
       mechanicsSignature = nextMechanicsSignature;
       dirty = true;
@@ -432,6 +490,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       fixedBounds.waves = null;
       fixedBounds.basic = null;
       resetScales();
+      resetModeChanges();
     },
     clearPoints() {
       points = [];
@@ -444,6 +503,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       fixedBounds.waves = null;
       fixedBounds.basic = null;
       resetScales();
+      resetModeChanges();
       dirty = true;
     },
     markDirty() {

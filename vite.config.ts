@@ -15,8 +15,11 @@ export default defineConfig({
   ],
   build: { target: 'es2022', sourcemap: false },
   worker: { format: 'es' },
-  server: { port: 5173, strictPort: true },
-  preview: { port: 4173, strictPort: true },
+  // PORT cambia el puerto del servidor que se arranque (dev o preview) para que varios worktrees o sesiones corran a la
+  // vez; es la variable que fija la app de escritorio con autoPort (.claude/launch.json). strictPort se queda: con el
+  // puerto ocupado, Vite falla en vez de saltar a otro que nadie espera.
+  server: { port: Number(process.env.PORT) || 5173, strictPort: true },
+  preview: { port: Number(process.env.PORT) || 4173, strictPort: true },
   test: {
     include: ['tests/unit/**/*.test.ts', 'tests/bench/**/*.test.ts'],
     environment: 'node',
