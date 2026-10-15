@@ -48,6 +48,21 @@ export interface CaseOption {
   why: string;
 }
 /**
+ * Un paso de la solución de referencia de un caso. El desarrollo lo muestra al entregar y la prueba CAS-SOL lo ejecuta
+ * tal cual sobre el motor: lo que el alumno lee como solución es lo que aprueba el caso.
+ */
+export type CaseStep =
+  /** Confirmar estos ajustes y esperar `waitS` segundos antes del paso siguiente (o de entregar). */
+  | { kind: 'ajuste'; changes: Partial<VcSettings>; waitS: number; note?: string }
+  /** Un bloqueo como el del panel (inspiratorio de 3 s, espiratorio de 4), con lo que mide. */
+  | { kind: 'bloqueo'; which: 'inspHold' | 'expHold'; note: string };
+export interface CaseSolution {
+  /** Una secuencia comprobada que resuelve el caso, en orden. */
+  steps: CaseStep[];
+  /** Otras programaciones que también lo resuelven con los mismos pasos (sustituyen los cambios del último ajuste). */
+  alternatives?: Partial<VcSettings>[];
+}
+/**
  * Caso clínico (P): una pregunta con viñeta que se resuelve en el ventilador y se entrega para evaluarla. Los criterios
  * miden resultados sobre el cuadro (varias soluciones válidas), no clics; la mecánica del paciente queda oculta hasta
  * entregar.
@@ -63,6 +78,8 @@ export interface ClinicalCase {
   criteria: CaseCriterion[];
   /** Explicación que se revela al entregar. */
   reveal: string;
+  /** Cómo se resuelve, en pasos y ajustes concretos: se revela al entregar, en una tabla, antes de la explicación. */
+  solution: CaseSolution;
   references: CaseReference[];
 }
 

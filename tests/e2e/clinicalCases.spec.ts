@@ -57,6 +57,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     // Antes de entregar, el desarrollo no adelanta la respuesta.
     await expect(page.locator('#learn-case-body')).toContainText('Se revela al entregar');
     await expect(page.locator('#learn-case-body .case-reveal')).toHaveCount(0);
+    await expect(page.locator('#learn-case-body .case-solution')).toHaveCount(0);
 
     await hidePanel(page);
     await page.click('[data-action="inspiratory"]');
@@ -72,6 +73,9 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await expect(page.locator('#case-lock-note')).toBeHidden();
     await expect(page.locator('#learn-case .case-verdict')).toHaveText('Caso resuelto');
     await expect(page.locator('#learn-case .case-truth')).toContainText('25 / 20');
+    // Cómo se resuelve, antes de la explicación: aquí no hay ajuste que cambiar, sólo la medición.
+    await expect(page.locator('#learn-case .case-solution')).toContainText('se resuelve midiendo');
+    await expect(page.locator('#learn-case .case-steps li')).toHaveText(/Bloqueo inspiratorio/);
     await page.locator('#instructor-case [data-action="caseDevelopment"]').click();
     await expect(page.locator('#learn-case .case-reveal')).toBeInViewport();
     await showPanel(page, 'case');
