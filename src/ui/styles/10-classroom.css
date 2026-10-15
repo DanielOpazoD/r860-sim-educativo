@@ -76,6 +76,7 @@
   font-variant-numeric: tabular-nums;
 }
 .gas-head {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -95,9 +96,10 @@
   border-radius: var(--radius-pill);
 }
 .gas-trend {
-  justify-self: end;
   display: block;
-  width: 120px;
+  flex: 0 1 120px;
+  min-width: 48px;
+  margin-left: auto;
   height: 18px;
 }
 .gas-trend-line {
@@ -133,6 +135,11 @@
   font-weight: 600;
 }
 .gas-start {
+  font-size: var(--type-2xs);
+  color: var(--shell-muted);
+  white-space: nowrap;
+}
+.gas-rapida {
   font-size: var(--type-2xs);
   color: var(--shell-muted);
   white-space: nowrap;

@@ -3,6 +3,8 @@ import { validatePatientParams } from '../../src/domain/validation';
 import {
   ALVEOLAR_K,
   DEFAULT_GAS,
+  ACELERACION_EQUILIBRIO,
+  ACELERACION_TEJIDOS,
   GasExchange,
   LUNG_CO2_STORE_L,
   VENOARTERIAL_PCO2_MMHG,
@@ -10,6 +12,7 @@ import {
   phFrom,
   slowTauMin,
   steadyPaco2,
+  tissueStoreL,
 } from '../../src/engine/gasExchange';
 import { exportSession, importSession, replaySession } from '../../src/history/session';
 import { BENCH_PATIENT, BENCH_SETTINGS, benchSim, runUntilBreath } from '../helpers';
@@ -47,11 +50,14 @@ function ventilar(g: GasExchange, t0: number, segundos: number, vt = 0.5, durS =
   }
   return t;
 }
-/** Un paciente ventilado 30 min con VT 0,5 a 15/min: en su equilibrio de dos compartimentos. */
-function enEquilibrio(): { g: GasExchange; t: number } {
-  const g = new GasExchange();
+/** Un paciente ventilado 30 min con VT 0,5 a 15/min: en su equilibrio de dos compartimentos. Por omisión, el adulto real. */
+function enEquilibrio(aceleracion = 1): { g: GasExchange; t: number } {
+  const g = new GasExchange('equilibrium', aceleracion);
   return { g, t: ventilar(g, 0, 1800) };
 }
+/** Pendiente de la apnea pasado el tramo rápido (mmHg/min): la producción repartida en los dos depósitos. */
+const pendienteApnea = (aceleracion: number): number =>
+  (ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / (LUNG_CO2_STORE_L + tissueStoreL(DEFAULT_GAS.storeL, aceleracion));
 const gas = (sim: ReturnType<typeof benchSim>) => sim.frame().truth.gas!;
 
 describe('GAS-01 · ecuaciones', () => {
@@ -64,12 +70,16 @@ describe('GAS-01 · ecuaciones', () => {
   });
 
   it('en apnea, pasado el tramo rápido, la PaCO₂ sube 0,863·VCO₂/C mmHg por minuto', () => {
-    const g = new GasExchange(40);
-    apnea(g, 180);
-    const a = g.paco2;
-    apnea(g, 120);
-    expect((g.paco2 - a) / 2).toBeCloseTo((ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / DEFAULT_GAS.storeL, 3);
-    expect(g.state(300, DEFAULT_GAS).vaLMin).toBeNull();
+    // C es la capacidad que cuenta: la total en el adulto real; con la aceleración docente, el pulmón más C_t / 20.
+    expect(pendienteApnea(1)).toBeCloseTo((ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / DEFAULT_GAS.storeL, 9);
+    for (const aceleracion of [1, ACELERACION_TEJIDOS]) {
+      const g = new GasExchange(40, aceleracion);
+      apnea(g, 180);
+      const a = g.paco2;
+      apnea(g, 120);
+      expect((g.paco2 - a) / 2).toBeCloseTo(pendienteApnea(aceleracion), 3);
+      expect(g.state(300, DEFAULT_GAS).vaLMin).toBeNull();
+    }
   });
 
   it('una respiración menor que el espacio muerto no ventila el alvéolo', () => {
@@ -225,8 +235,9 @@ describe('GAS-03 · cinética: la PaCO₂ sigue a la ventilación con el tramo l
     // El tramo lento es el de los tejidos, que se vacían por la sangre y el pulmón en serie: τ ≈ C_t · (1/V̇A + 1/G).
     const g1 = (ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / VENOARTERIAL_PCO2_MMHG,
       serie = 1 / g.vaLMin! + 1 / g1;
-    expect(tau).toBeGreaterThan((DEFAULT_GAS.storeL - LUNG_CO2_STORE_L) * serie);
-    expect(tau).toBeLessThan(DEFAULT_GAS.storeL * serie);
+    const ct = tissueStoreL(DEFAULT_GAS.storeL);
+    expect(tau).toBeGreaterThan(ct * serie);
+    expect(tau).toBeLessThan((ct + LUNG_CO2_STORE_L) * serie);
     const p1 = g.paco2;
     minutos(sim, tau);
     const recorrido = (p1 - gas(sim).paco2) / (p1 - objetivo);
@@ -293,8 +304,9 @@ describe('GAS-04 · validación y reproducción', () => {
 // apnea de anestesiados con el tubo ocluido —Stock 1989 (PMID 2516732): +12 mmHg el primer minuto y 3,4 mmHg/min
 // después, aproximación lineal por tramos de una curva logarítmica; Kobayashi 1994 (PMID 7933492): +9,8 ± 1,9 el
 // primer minuto y 3,4–4,4 mmHg/min después—, la hipocapnia aguda previa (Gentz 1998, PMID 9603587) y la respuesta a
-// un cambio de ventilación de ±10 % (Taskar 1995, PMID 7606958).
-describe('GAS-08 · cinética de dos compartimentos', () => {
+// un cambio de ventilación de ±10 % (Taskar 1995, PMID 7606958). Se comprueban sobre el adulto real (aceleración 1):
+// el simulador recorre el mismo camino ≈ 10 veces más deprisa (GAS-09).
+describe('GAS-08 · cinética de dos compartimentos (adulto real)', () => {
   it('apnea: el primer minuto sube rápido y después 3,4–4,4 mmHg/min, como en los anestesiados con el tubo ocluido', () => {
     const { g } = enEquilibrio();
     const p0 = g.paco2;
@@ -317,7 +329,7 @@ describe('GAS-08 · cinética de dos compartimentos', () => {
     const { g } = enEquilibrio();
     expect(g.venosa - g.paco2).toBeCloseTo(VENOARTERIAL_PCO2_MMHG, 0);
     const p = { ...DEFAULT_GAS, vco2MlMin: 250 };
-    const h = new GasExchange();
+    const h = new GasExchange('equilibrium', 1);
     ventilar(h, 0, 1800, 0.5, 4, p);
     expect((h.venosa - h.paco2) / (g.venosa - g.paco2)).toBeCloseTo(250 / 200, 1);
   });
@@ -351,6 +363,7 @@ describe('GAS-08 · cinética de dos compartimentos', () => {
       tt = ventilar(g, tt, 20 * 60 - 40, vt);
       const veinte = g.paco2;
       const tau = g.state(tt, DEFAULT_GAS).tauMin!;
+      expect(tau).toBeCloseTo(slowTauMin(DEFAULT_GAS.storeL, g.vaLMin(tt)!, 1)!, 9);
       ventilar(g, tt, 120 * 60, vt);
       const final = g.paco2;
       return { diez: (diez - p0) / (final - p0), veinte: (veinte - p0) / (final - p0), tau };
@@ -385,5 +398,67 @@ describe('GAS-08 · cinética de dos compartimentos', () => {
     }
     expect(max - min).toBeLessThan(0.3);
     expect(aMax - aMin).toBeGreaterThan(2);
+  });
+});
+
+// Aceleración docente (P): la sangre y los tejidos guardan 20 veces menos CO₂ que en un adulto real para que el
+// equilibrio llegue en minutos. Lo que se rotula en la interfaz —«≈ 10 veces más rápido»— tiene que ser verdad en
+// todo el rango de ventilación, y el destino no puede cambiar.
+describe('GAS-09 · aceleración docente del equilibrio', () => {
+  it('el tramo lento es ≈ 10 veces más corto que en el adulto real con cualquier V̇A habitual', () => {
+    for (const va of [2, 3, 4.4, 6, 9]) {
+      const veces = slowTauMin(DEFAULT_GAS.storeL, va, 1)! / slowTauMin(DEFAULT_GAS.storeL, va)!;
+      expect(veces).toBeGreaterThan(ACELERACION_EQUILIBRIO * 0.9);
+      expect(veces).toBeLessThan(ACELERACION_EQUILIBRIO * 1.1);
+    }
+  });
+
+  it('el mismo camino en una décima parte del tiempo y hacia el mismo equilibrio', () => {
+    const real = enEquilibrio(1),
+      docente = enEquilibrio(ACELERACION_TEJIDOS);
+    expect(docente.g.paco2).toBeCloseTo(real.g.paco2, 1);
+    const p0 = real.g.paco2,
+      objetivo = steadyPaco2(DEFAULT_GAS.vco2MlMin, vaRegular(0.4, 15))!;
+    // VT de 500 a 400: la PaCO₂ sube. Lo que el adulto recorre en 20 min, el simulador lo recorre en 2: más de la mitad.
+    ventilar(real.g, real.t, 20 * 60, 0.4);
+    const t = ventilar(docente.g, docente.t, 2 * 60, 0.4);
+    const recorrido = (g: GasExchange) => (g.paco2 - p0) / (objetivo - p0);
+    expect(Math.abs(recorrido(docente.g) - recorrido(real.g))).toBeLessThan(0.1);
+    expect(recorrido(docente.g)).toBeGreaterThan(0.5);
+    // Y llega al mismo sitio.
+    ventilar(docente.g, t, 15 * 60, 0.4);
+    expect(docente.g.paco2).toBeCloseTo(objetivo, 0);
+  });
+
+  it('la muestra arterial tampoco oscila con la aceleración', () => {
+    const { g, t } = enEquilibrio(ACELERACION_TEJIDOS);
+    let min = Infinity,
+      max = -Infinity;
+    for (let n = 1; n <= 4; n++) {
+      for (let i = 0; i < 1000; i++) {
+        g.step(0.004, DEFAULT_GAS);
+        if (i === 333) g.move(0.5, DEFAULT_GAS);
+        if (i === 500) g.move(-0.5, DEFAULT_GAS);
+        min = Math.min(min, g.paco2);
+        max = Math.max(max, g.paco2);
+      }
+      g.onBreath(t + 4 * n, 4, DEFAULT_GAS);
+    }
+    expect(max - min).toBeLessThan(0.3);
+  });
+
+  it('banco: bajar la FR de 15 a 10 lleva la PaCO₂ a su nuevo equilibrio en minutos, no en media hora', () => {
+    const sim = benchSim();
+    sim.run(25_000);
+    const p0 = gas(sim).paco2;
+    sim.command({ type: 'confirmSettings', changes: { rr: 10 } });
+    minutos(sim, 5);
+    const g = gas(sim);
+    const objetivo = g.paco2Target!;
+    expect(objetivo).toBeGreaterThan(p0 + 15);
+    expect((g.paco2 - p0) / (objetivo - p0)).toBeGreaterThan(0.9);
+    // En el adulto real, con esa ventilación, el tramo lento dura más de un cuarto de hora.
+    expect(slowTauMin(DEFAULT_GAS.storeL, g.vaLMin!, 1)!).toBeGreaterThan(15);
+    expect(g.tauMin!).toBeLessThan(2);
   });
 });
