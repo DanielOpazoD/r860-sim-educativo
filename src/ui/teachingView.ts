@@ -2,7 +2,7 @@
  * Pestaña «Resumen»: el esquema de una respiración con sus tres presiones marcadas, y las cuatro fórmulas con los
  * números de esta respiración sustituidos. Presentación pura sobre lo que el motor publica; aquí no se calcula física.
  */
-import { DEFAULT_GAS } from '../engine/gasExchange';
+import { ACELERACION_EQUILIBRIO, DEFAULT_GAS } from '../engine/gasExchange';
 import type { EngineFrame } from '../engine/simulator';
 import type { AppContext } from './context';
 import { $, $$, esc } from './dom';
@@ -321,13 +321,15 @@ function ventilacionHTML(fr: EngineFrame): string {
     `<dt>pH</dt><dd>${f(g.ph, 2)}</dd>` +
     `<dt>HCO₃⁻</dt><dd>${f(g.hco3, 0)} <small>mEq/L</small></dd>` +
     `<dt>Equilibrio</dt><dd>${g.paco2Target === null ? '—' : `${f(g.paco2Target, 0)} <small>mmHg</small>`}</dd>` +
-    `<dt>Tramo lento τ</dt><dd>${g.tauMin === null ? '—' : `${f(g.tauMin, 0)} <small>min</small>`}</dd>` +
+    `<dt>Tramo lento τ</dt><dd>${g.tauMin === null ? '—' : `${f(g.tauMin, 1)} <small>min</small>`}</dd>` +
     `</dl>` +
     `<p class="edu-nota">${esc(tendencia(g.paco2, g.paco2Target))}</p>` +
     `<details class="edu-more"><summary>Por qué</summary><p class="edu-ref">El CO₂ del cuerpo está en dos depósitos: el ` +
     `pulmón, pequeño, se pone al día en segundos; la sangre y los tejidos, grandes, en minutos (τ, más lenta cuanto menos ` +
-    `se ventila). Por eso la gasometría de control se pide a los 20–30 minutos y no tras la siguiente respiración, y en ` +
-    `apnea la PaCO₂ salta ≈ 8 mmHg el primer minuto y después sube ≈ 4 por minuto. El bicarbonato se mueve ` +
+    `se ventila). Por eso en un paciente la gasometría de control se pide a los 20–30 minutos y no tras la siguiente ` +
+    `respiración, y en apnea la PaCO₂ salta ≈ 8 mmHg el primer minuto y después sube ≈ 4 por minuto. Este modelo ` +
+    `recorre ese camino ≈ ${ACELERACION_EQUILIBRIO} veces más deprisa para que no haya que esperarlo: llega al mismo ` +
+    `equilibrio en unos minutos, la τ que se muestra es la suya y la apnea también sube más rápido. El bicarbonato se mueve ` +
     `poco y rápido por los tampones (+1 mEq/L por cada 10 mmHg al subir la PaCO₂, −2 al bajar); la compensación ` +
     `renal tarda días y aquí no ocurre.</p></details>` +
     `</section>` +

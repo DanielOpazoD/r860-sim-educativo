@@ -381,3 +381,13 @@ En SC-04, tras subir la resistencia, aparecen las dos: es lo que el equipo mostr
 ## Paleta del equipo (13-10-2026)
 
 La pantalla deja el azul saturado heredado de R860 Lab y toma los colores medidos en las capturas del manual SW10, que son la imagen que genera el equipo (E-118, D). Fondo azul pizarra, teclas de grafito, cifras blancas en negrita, curvas de trazo blanco con flujo verde y volumen blanco, y barra de presión con tubo negro y relleno verde. El valor en alarma pasa del bloque ámbar sólido al borde del color de la prioridad, como el equipo (8-7). Detalle, medidas y contrastes en `docs/09-auditoria-visual.md`.
+
+## La PaCO₂ llega a su equilibrio en minutos (14-10-2026)
+
+Tras bajar la frecuencia o el VT, la PaCO₂ del modelo tardaba lo mismo que la de un paciente: τ lenta de 11,6 min con el banco y 20–30 min hasta el equilibrio. Era fiel, pero obligaba a esperar media hora para ver el efecto de un ajuste. Ahora el depósito de la sangre y los tejidos es 20 veces menor y el camino se recorre ≈ 10 veces más deprisa (E-128, P): con el banco, τ 1,2 min, y bajar la FR de 15 a 10 deja la PaCO₂ a más del 90 % de su nuevo valor en 5 min. El equilibrio no cambia, porque no depende de los depósitos.
+
+- **Lo que no se acelera:** el pulmón. Reducirlo también agrandaría la oscilación alveolar de cada respiración y el promedio dejaría de ser el equilibrio. Por eso la aceleración del camino va de 9 a 11 veces según la ventilación, y no 20.
+- **La apnea también va más rápido:** ≈ 34 mmHg/min pasado el primer minuto, frente a 3,8 en un adulto.
+- **Se dice donde se lee:** «≈ 10× más rápido» junto a «modelo» en la cabecera de la gasometría del panel (la frase entera, «Equilibrio ≈ 10 veces más rápido que en un paciente real», como título y para lectores de pantalla), en «Datos del modelo», en Aula · Fundamentos · Ventilación y en el desarrollo del caso de hipercapnia, que sigue enseñando que en la cabecera la gasometría de control se pide a los 20–30 min.
+- **La calibración frente a lo medido** (Stock, Kobayashi, Gentz, Taskar; E-114) se sigue comprobando sobre el adulto real, con aceleración 1 (GAS-08). GAS-09 comprueba que el «≈ 10×» es verdad con V̇A de 2 a 9 L/min y que el destino es el mismo.
+

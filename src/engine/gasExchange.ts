@@ -19,7 +19,8 @@ import type { GasExchangeParams } from '../domain/types';
  * PaCO₂ = 0,863 · VCO₂ / V̇A (D), con VCO₂ en mL/min STPD y V̇A en L/min BTPS, y la venosa queda 0,863 · VCO₂ / G por
  * encima. En apnea el pulmón alcanza a la sangre venosa en segundos y después todo sube junto a 0,863 · VCO₂ / C
  * mmHg/min: la subida es rápida en el primer minuto y lenta después, como se mide. Tras un cambio de ventilación hay
- * un tramo rápido (el pulmón) y uno lento (los tejidos), más lento cuanto menor es la ventilación.
+ * un tramo rápido (el pulmón) y uno lento (los tejidos), más lento cuanto menor es la ventilación. El simulador recorre
+ * ese camino ≈ 10 veces más deprisa que un paciente real (ACELERACION_TEJIDOS): el equilibrio es el mismo.
  * La PaCO₂ que se informa es la de una muestra arterial: la alveolar, que sube y baja con cada respiración, promediada
  * por la mezcla en la sangre y por los segundos que tarda la extracción.
  * pH por Henderson-Hasselbalch con tamponamiento agudo: el bicarbonato del paciente es el de su PaCO₂ habitual y,
@@ -45,9 +46,10 @@ export const DEFAULT_GAS: GasExchangeParams = {
   /** PaCO₂ habitual del paciente (mmHg), aquella a la que su bicarbonato es `hco3`: 40 en un adulto sano. */
   paco2Basal: 40,
   /**
-   * Capacidad total de los depósitos de CO₂ que cuentan en minutos (L equivalentes: pulmón más sangre y tejidos). Con
-   * 45 L la apnea sube 0,863 · 200 / 45 = 3,8 mmHg/min pasado el primer minuto, en medio de lo medido en anestesiados
-   * con el tubo ocluido: 3,4 (Stock 1989) y 3,4–4,4 (Kobayashi 1994). P calibrado con D.
+   * Capacidad total de los depósitos de CO₂ que cuentan en minutos (L equivalentes: pulmón más sangre y tejidos) de un
+   * adulto real. Con 45 L la apnea sube 0,863 · 200 / 45 = 3,8 mmHg/min pasado el primer minuto, en medio de lo medido
+   * en anestesiados con el tubo ocluido: 3,4 (Stock 1989) y 3,4–4,4 (Kobayashi 1994). P calibrado con D. El simulador
+   * no la usa entera: divide la parte de la sangre y los tejidos por ACELERACION_TEJIDOS.
    */
   storeL: 45,
 };
@@ -72,6 +74,24 @@ export const LUNG_CO2_STORE_L = 3;
 export const VENOARTERIAL_PCO2_MMHG = 6;
 const BLOOD_CO2_CONDUCTANCE_L_MIN = (ALVEOLAR_K * DEFAULT_GAS.vco2MlMin) / VENOARTERIAL_PCO2_MMHG;
 /**
+ * Aceleración docente de la cinética del CO₂ (P). Tras un cambio de ventilación un adulto real tarda 20–30 min en
+ * llegar a su nueva PaCO₂ (τ lenta ≈ 12 min con el banco), y nadie espera eso delante de un simulador. Aquí la sangre y
+ * los tejidos guardan 20 veces menos CO₂ que en un adulto: el equilibrio, que no depende de los depósitos, es el mismo,
+ * y el camino hacia él se recorre ≈ 10 veces más deprisa (ACELERACION_EQUILIBRIO). El pulmón (C_p) no se toca: con un
+ * pulmón más pequeño el lavado de cada respiración agranda la oscilación alveolar y su media deja de ser el
+ * equilibrio. Como el tramo rápido es del pulmón, la aceleración del camino no llega a 20: va de 9 a 11 veces con V̇A
+ * de 2 a 9 L/min. La apnea sube con la misma proporción (≈ 34 mmHg/min pasado el primer minuto, frente a 3,8). La
+ * calibración frente a lo medido (E-114) se comprueba con aceleración 1, que es el adulto real.
+ */
+export const ACELERACION_TEJIDOS = 20;
+/** Cuántas veces más deprisa que en un paciente real llega la PaCO₂ a su equilibrio con esa aceleración: la salvedad que se rotula. */
+export const ACELERACION_EQUILIBRIO = 10;
+
+/** Capacidad del depósito lento, la sangre y los tejidos (L equivalentes), con una aceleración dada. */
+export function tissueStoreL(storeL: number, aceleracion = ACELERACION_TEJIDOS): number {
+  return (storeL - LUNG_CO2_STORE_L) / aceleracion;
+}
+/**
  * Constante de tiempo de la muestra arterial (s): la sangre del pulmón llega a la arteria mezclada, y una gasometría
  * se extrae en unos segundos. Promedia la oscilación alveolar de cada respiración (queda en ±0,1 mmHg) sin retrasar
  * la apnea más que unos segundos. P.
@@ -89,11 +109,11 @@ export function steadyPaco2(vco2MlMin: number, vaLMin: number): number | null {
  * Constante de tiempo del tramo lento hacia el equilibrio (min), o null sin ventilación alveolar: la menor de las dos
  * raíces del sistema de dos compartimentos. Cerca de C_t · (1/V̇A + 1/G): más lenta cuanto menos se ventila.
  */
-export function slowTauMin(storeL: number, vaLMin: number): number | null {
+export function slowTauMin(storeL: number, vaLMin: number, aceleracion = ACELERACION_TEJIDOS): number | null {
   if (!(vaLMin > 0)) return null;
   const g = BLOOD_CO2_CONDUCTANCE_L_MIN,
     cp = LUNG_CO2_STORE_L,
-    ct = storeL - cp;
+    ct = tissueStoreL(storeL, aceleracion);
   const suma = (g + vaLMin) / cp + g / ct,
     producto = (g * vaLMin) / (cp * ct);
   const lenta = (suma - Math.sqrt(suma * suma - 4 * producto)) / 2;
@@ -173,8 +193,14 @@ export class GasExchange {
   /** Con PaCO₂ inicial 'equilibrium', las respiraciones de los primeros EQUILIBRIUM_WINDOW_S fijan el equilibrio. */
   private pendingEquilibrium: boolean;
 
-  /** Con un valor numérico, el alvéolo y la muestra parten de él y la venosa, de su equilibrio con la producción por omisión. */
-  constructor(initialPaco2: number | 'equilibrium' = 'equilibrium') {
+  /**
+   * Con un valor numérico, el alvéolo y la muestra parten de él y la venosa, de su equilibrio con la producción por omisión.
+   * `aceleracion` divide el depósito de la sangre y los tejidos: la del simulador por omisión, 1 para el adulto real.
+   */
+  constructor(
+    initialPaco2: number | 'equilibrium' = 'equilibrium',
+    readonly aceleracion = ACELERACION_TEJIDOS,
+  ) {
     this.pendingEquilibrium = initialPaco2 === 'equilibrium';
     this.paco2 = initialPaco2 === 'equilibrium' ? 40 : initialPaco2;
     this.alveolar = this.paco2;
@@ -183,7 +209,7 @@ export class GasExchange {
 
   /** Producción continua de CO₂ durante `dtS`, su transporte al pulmón y la mezcla en la muestra arterial. */
   step(dtS: number, p: GasExchangeParams): void {
-    const ct = p.storeL - LUNG_CO2_STORE_L;
+    const ct = tissueStoreL(p.storeL, this.aceleracion);
     const transporte = (BLOOD_CO2_CONDUCTANCE_L_MIN * (this.venosa - this.alveolar) * dtS) / 60;
     this.venosa += ((ALVEOLAR_K * p.vco2MlMin * dtS) / 60 - transporte) / ct;
     this.alveolar += transporte / LUNG_CO2_STORE_L;
@@ -264,7 +290,7 @@ export class GasExchange {
       vtL: this.lastVtL,
       paco2Target: objetivo,
       phTarget: objetivo === null ? null : phFrom(bicarbonate(p, objetivo), objetivo),
-      tauMin: va === null ? null : slowTauMin(p.storeL, va),
+      tauMin: va === null ? null : slowTauMin(p.storeL, va, this.aceleracion),
     };
   }
 }

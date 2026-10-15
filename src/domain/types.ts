@@ -219,7 +219,10 @@ export interface GasExchangeParams {
   hco3: number;
   /** PaCO₂ habitual (mmHg): aquella a la que el bicarbonato es `hco3`; fuera de ella actúa el tamponamiento agudo. */
   paco2Basal: number;
-  /** Capacidad total de los depósitos de CO₂ (L equivalentes, pulmón más sangre y tejidos): fija la pendiente de la apnea y el tramo lento. */
+  /**
+   * Capacidad total de los depósitos de CO₂ de un adulto real (L equivalentes, pulmón más sangre y tejidos): fija la pendiente de
+   * la apnea y el tramo lento. El motor acelera la parte de la sangre y los tejidos con fines docentes (E-128).
+   */
   storeL: Liters;
 }
 
