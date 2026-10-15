@@ -417,9 +417,13 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       const text = await file.text();
       // Antes de esperar la respuesta: el motor manda el primer cuadro de la sesión reproducida justo después de ella, y
       // los objetivos del escenario anterior no deben evaluarse contra él ni un cuadro.
+      const previa = ctx.lesson.sessionImported;
       ctx.lesson.setSessionImported(true);
       const r = await ctx.client.importSession(text);
-      if (r.ok) {
+      // Si mientras se reproducía se cargó un escenario (loadScenario devuelve la marca a false), el motor termina en él:
+      // ni la sesión ni su aviso siguen en pantalla.
+      const vigente = ctx.lesson.sessionImported;
+      if (r.ok && vigente) {
         plots.reset();
         ctx.clearFixture();
         ctx.dialog.close();
@@ -428,8 +432,9 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
         // 3 s: queda en su franja mientras la sesión siga cargada, también al reanudar (U-46).
         put('#session-notice', r.warnings?.join(' ') ?? '');
         $('#session-notice').hidden = !r.warnings?.length;
-      } else {
-        ctx.lesson.setSessionImported(false);
+      } else if (!r.ok) {
+        // Un archivo rechazado no cambia el mundo: si había una sesión importada, sigue cargada.
+        if (vigente) ctx.lesson.setSessionImported(previa);
         ctx.toast(`Rechazada: ${r.errors?.join(' · ')}`, true);
       }
     });

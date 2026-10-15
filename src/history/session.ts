@@ -116,7 +116,7 @@ export function importSession(text: string): ImportResult {
   else if (o.engineVersion !== ENGINE_VERSION) {
     if (ACCEPTED_ENGINE_VERSIONS.includes(o.engineVersion))
       warnings.push(
-        `Sesión grabada con el motor ${o.engineVersion} y reproducida con el ${ENGINE_VERSION}, cuya física cambió desde entonces: la reproducción puede no ser idéntica (curvas, mediciones o gasometría).`,
+        `Sesión grabada con el motor ${o.engineVersion} y reproducida con el ${ENGINE_VERSION}: la física cambió entre una versión y otra, así que la reproducción puede no ser idéntica (curvas, mediciones o gasometría).`,
       );
     else errors.push(`engineVersion no soportada: ${o.engineVersion} (se aceptan ${ACCEPTED_ENGINE_VERSIONS.join(', ')})`);
   }

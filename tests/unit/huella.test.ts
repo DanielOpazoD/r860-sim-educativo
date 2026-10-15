@@ -8,7 +8,8 @@ import { SCENARIOS } from '../../src/scenarios';
 
 // HUE-01 · la huella del motor. Cada escenario corre 30 s con sus perturbaciones y se resume en un hash de todas las
 // muestras (Paw, flujo, volumen, Pmus), de la banda de alarmas y de los registros de respiración, y en otro de la
-// gasometría del modelo, que una sesión reproducida también recalcula aunque no realimente la mecánica. Es la red de la física,
+// gasometría del modelo, que una sesión reproducida también recalcula aunque no realimente la mecánica (sólo ve lo que
+// cambia en esos 30 s: una ventana de promedio más larga, por ejemplo, no la mueve). Es la red de la física,
 // como VR-01 lo es de la imagen: un refactor del motor debe dejarla idéntica, y un cambio de física intencional la cambia
 // sólo en los escenarios que toca —el diff de huella-motor.json lo muestra—. Los valores se redondean a 10 cifras
 // significativas antes de resumirlos, para que una última cifra distinta entre plataformas no la mueva.

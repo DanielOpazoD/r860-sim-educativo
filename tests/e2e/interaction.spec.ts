@@ -721,6 +721,15 @@ test.describe('IMP · sesión importada', () => {
     await importar(ENGINE_VERSION);
     await expect(ultimoToast).toContainText('Sesión importada y reproducida en pausa');
     await expect(aviso).toBeHidden();
+
+    // Cargar un caso deja atrás la sesión, y con ella su aviso.
+    await importar('0.4.0');
+    await expect(aviso).toBeVisible({ timeout: 15_000 });
+    await page.locator('.palette-trigger').click();
+    await page.locator('#palette-input').fill('CC-05');
+    await page.locator('#palette-input').press('Enter');
+    await expect(page.locator('#scenario-name')).toHaveText('Hipercapnia con pulmones sanos');
+    await expect(aviso).toBeHidden();
   });
 });
 
