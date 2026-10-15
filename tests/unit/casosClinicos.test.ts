@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { Simulator } from '../../src/engine/simulator';
 import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS, findScenario, type Scenario } from '../../src/scenarios';
-import { CASE_TESTS, evaluateCase, type CaseContext } from '../../src/ui/caseEvaluation';
+import { CASE_TESTS, evaluateCase, type CaseContext, type CaseResult } from '../../src/ui/caseEvaluation';
 import { updateLessonFlags } from '../../src/ui/lesson';
 import { CASES_KEY, loadCaseProgress, saveCaseProgress } from '../../src/ui/caseProgress';
+import { caseDevelopmentNodes } from '../../src/ui/caseView';
+import type { VcSettings } from '../../src/domain/types';
 
 /** Simulador con la mecánica y los ajustes del caso, como lo carga la interfaz. */
 function simular(sc: Scenario): Simulator {
@@ -414,5 +416,103 @@ describe('CAS-08 · ciclado tardío', () => {
     bien.ajustar({ expTriggerPct: 0.25 });
     bien.correr(65_000);
     expect(bien.resultado().passed).toBe(true);
+  });
+});
+
+describe('CAS-SOL · la solución que muestra el desarrollo resuelve el caso', () => {
+  const casos = SCENARIOS.filter((s) => s.clinical);
+  /** Los pasos de la solución, como los haría el alumno; con `alternativa`, ésta sustituye los cambios del último ajuste. */
+  const resolver = (sc: Scenario, alternativa?: Partial<VcSettings>) => {
+    const k = new Caso(sc);
+    const pasos = sc.clinical!.solution.steps;
+    const ultimo = pasos.map((p) => p.kind).lastIndexOf('ajuste');
+    pasos.forEach((p, i) => {
+      if (p.kind === 'bloqueo') k.bloqueo(p.which);
+      else {
+        k.ajustar(alternativa && i === ultimo ? alternativa : p.changes);
+        k.correr(p.waitS * 1000);
+      }
+    });
+    return k.resultado(sc.clinical!.options?.find((o) => o.correct)?.id ?? null);
+  };
+  it('cada caso declara pasos, y los de ajuste cambian la programación', () => {
+    for (const sc of casos) {
+      const pasos = sc.clinical!.solution.steps;
+      expect(pasos.length, sc.id).toBeGreaterThan(0);
+      if (sc.clinical!.kind === 'ajuste')
+        expect(
+          pasos.some((p) => p.kind === 'ajuste'),
+          sc.id,
+        ).toBe(true);
+      if (sc.clinical!.solution.alternatives)
+        expect(
+          pasos.some((p) => p.kind === 'ajuste'),
+          sc.id,
+        ).toBe(true);
+    }
+  });
+  for (const sc of casos)
+    it(`${sc.id}: la solución y sus alternativas aprueban todos los criterios`, () => {
+      const r = resolver(sc);
+      expect(r.criteria.filter((c) => !c.ok).map((c) => c.id)).toEqual([]);
+      expect(r.passed).toBe(true);
+      for (const alt of sc.clinical!.solution.alternatives ?? []) expect(resolver(sc, alt).passed, JSON.stringify(alt)).toBe(true);
+    });
+});
+
+describe('CAS-SOL · el desarrollo muestra la solución en una tabla', () => {
+  const rules = REFERENCE_PROFILE.rules;
+  const inicial = (sc: Scenario): VcSettings => ({ ...REFERENCE_PROFILE.defaults.settings, ...sc.settings });
+  const entregar = (sc: Scenario, cambios: Partial<VcSettings>): CaseResult => ({
+    criteria: [],
+    answer: null,
+    passed: false,
+    atSimMs: 0,
+    settings: { ...inicial(sc), ...cambios },
+  });
+  const celdas = (fila: Element): string[] => [...fila.children].map((c) => c.textContent!.trim());
+  it('CC-05: inicio, tu entrega, la solución y la otra válida, con los pasos en orden', () => {
+    const sc = findScenario('CC-05')!;
+    const raiz = document.createElement('div');
+    raiz.append(...caseDevelopmentNodes(sc, null, entregar(sc, { rr: 18 }), inicial(sc), rules));
+    const tabla = raiz.querySelector('.case-solution table')!;
+    expect(celdas(tabla.querySelector('thead tr')!)).toEqual(['Ajuste', 'Al inicio', 'Tu entrega', 'Solución', 'También vale']);
+    const filas = [...tabla.querySelectorAll('tbody tr')].map(celdas);
+    expect(filas).toEqual([
+      ['Volumen tidal', '400 mL', '400 mL', '500 mL ↑', '400 mL'],
+      ['Frecuencia', '10 /min', '18 /min ↑', '14 /min ↑', '22 /min ↑'],
+    ]);
+    // Lo que cambió el alumno se marca, igual que lo que cambia la solución.
+    expect(tabla.querySelector('tbody tr:nth-child(2) td.tuyo')!.classList.contains('cambia')).toBe(true);
+    const pasos = [...raiz.querySelectorAll('.case-steps li')].map((li) => [...li.children].map((c) => c.textContent));
+    expect(pasos).toEqual([
+      ['Volumen tidal 400 mL → 500 mL · Frecuencia 10 /min → 14 /min', 'más VT con casi el mismo volumen minuto · espera ≈ 30 s'],
+    ]);
+    // La solución va antes de la explicación: es lo primero que se revisa.
+    expect(raiz.querySelector('.case-solution')!.compareDocumentPosition(raiz.querySelector('.case-reveal')!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+  it('CC-04: los pasos dicen el camino (5 → 20 → 11) y la tabla, la PEEP final', () => {
+    const sc = findScenario('CC-04')!;
+    const raiz = document.createElement('div');
+    raiz.append(...caseDevelopmentNodes(sc, null, entregar(sc, {}), inicial(sc), rules));
+    expect([...raiz.querySelectorAll('.case-solution tbody tr')].map(celdas)).toEqual([['PEEP', '5 cmH₂O', '5 cmH₂O', '11 cmH₂O ↑']]);
+    expect([...raiz.querySelectorAll('.case-steps li b')].map((b) => b.textContent)).toEqual([
+      'Bloqueo inspiratorio',
+      'PEEP 5 cmH₂O → 20 cmH₂O',
+      'PEEP 20 cmH₂O → 11 cmH₂O',
+      'Bloqueo inspiratorio',
+    ]);
+  });
+  it('CC-01: sin ajustes que cambiar, lo dice y deja sólo la medición; un cambio de modo del alumno aparece', () => {
+    const sc = findScenario('CC-01')!;
+    const raiz = document.createElement('div');
+    raiz.append(...caseDevelopmentNodes(sc, null, entregar(sc, {}), inicial(sc), rules));
+    expect(raiz.querySelector('.case-solution table')).toBeNull();
+    expect(raiz.querySelector('.case-solution')!.textContent).toContain('se resuelve midiendo');
+    const otro = document.createElement('div');
+    otro.append(...caseDevelopmentNodes(sc, null, entregar(sc, { mode: 'AC_PC' }), inicial(sc), rules));
+    expect([...otro.querySelectorAll('.case-solution tbody tr')].map(celdas)).toEqual([['Modo', 'A/C VC', 'A/C PC', 'A/C VC']]);
   });
 });
