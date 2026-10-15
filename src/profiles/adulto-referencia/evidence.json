@@ -640,13 +640,14 @@
     },
     {
       "id": "E-037",
-      "claim": "La importación de sesiones valida esfuerzo, sensores, modo y claves desconocidas; se aceptan sesiones de motor 0.2.0 y 0.3.0 (con aviso de reproducción no idéntica si la versión difiere).",
+      "claim": "La importación de sesiones valida esfuerzo, sensores, modo y claves desconocidas, y exige la versión del motor. Una sesión de la versión actual se importa sin aviso; una de 0.2.0, 0.3.0 o 0.4.0, grabada con otra física, se reproduce con la de hoy y avisa que la reproducción puede no ser idéntica, en una franja que sigue a la vista mientras la sesión esté cargada; una versión desconocida o ausente se rechaza (U-46).",
       "status": "P",
       "source": "DOSSIER (SEC-03, H2/H6 de R860 Lab no heredados)",
       "locator": "—",
-      "implemented": "src/history/session.ts (ACCEPTED_ENGINE_VERSIONS de src/engine/version.ts), src/engine/simulator.ts (importSession)",
+      "implemented": "src/history/session.ts (ACCEPTED_ENGINE_VERSIONS de src/engine/version.ts), src/engine/simulator.ts (importSession), src/ui/actions.ts (franja #session-notice)",
       "tests": [
-        "tests/unit/session.test.ts",
+        "tests/unit/session.test.ts (VER-01)",
+        "tests/e2e/interaction.spec.ts (VER-02)",
         "tests/unit/boundaries.test.ts",
         "tests/unit/review3.test.ts «engineVersion 0.2.0 se acepta con aviso; 0.1.0 se rechaza; esfuerzo absurdo en init se rechaza»",
         "tests/unit/review.test.ts «importSession rechaza ajustes fuera de dominio y pacientes degenerados»"

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { EngineClient } from '../../src/app/engineClient';
+import { ACCEPTED_ENGINE_VERSIONS, ENGINE_VERSION } from '../../src/engine/version';
 import { exportSession, importSession, replaySession } from '../../src/history/session';
 import { findScenario } from '../../src/scenarios';
 import { benchSim, runUntilBreath, BENCH_PATIENT } from '../helpers';
@@ -83,6 +85,68 @@ describe('TIM · reproducibilidad', () => {
     const sim = benchSim();
     expect(sim.command({ type: 'setPatient', params: { crs: 0.03 }, replace: true }).accepted).toBe(false);
     expect(sim.command({ type: 'setEffort', params: { enabled: true }, replace: true }).accepted).toBe(false);
+  });
+});
+
+describe('VER-01 · la versión del motor de una sesión decide si se importa y con qué aviso (U-46)', () => {
+  const sesion = (): ReturnType<typeof exportSession> => {
+    const sim = benchSim();
+    runUntilBreath(sim, 2);
+    return exportSession(sim);
+  };
+  const importar = (s: object) => importSession(JSON.stringify(s));
+
+  it('una sesión de este motor se importa sin aviso', () => {
+    const r = importar(sesion());
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  it('una de un motor anterior aceptado se importa y se reproduce, avisando que puede no ser idéntica', () => {
+    const anteriores = ACCEPTED_ENGINE_VERSIONS.filter((v) => v !== ENGINE_VERSION);
+    expect(anteriores).toEqual(['0.2.0', '0.3.0', '0.4.0']);
+    const buena = sesion();
+    for (const v of anteriores) {
+      const r = importar({ ...buena, engineVersion: v });
+      expect(r.ok, v).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]).toContain(`motor ${v} y reproducida con el ${ENGINE_VERSION}`);
+      expect(r.warnings[0]).toContain('la reproducción puede no ser idéntica');
+      expect(replaySession(r.session).breaths.length).toBe(buena.breaths.length);
+    }
+  });
+
+  it('una de un motor desconocido se rechaza diciendo cuáles se aceptan', () => {
+    const buena = sesion();
+    for (const v of ['0.1.0', '0.5.0', '0.6.2', '9.9.9', '']) {
+      const r = importar({ ...buena, engineVersion: v });
+      expect(r.ok, v).toBe(false);
+      if (!r.ok)
+        expect(r.errors.join(' ')).toContain(`engineVersion no soportada: ${v} (se aceptan ${ACCEPTED_ENGINE_VERSIONS.join(', ')})`);
+    }
+  });
+
+  it('el aviso llega del motor a la interfaz: el cliente lo devuelve con la importación', async () => {
+    const client = new EngineClient({ forceInline: true });
+    const sim = benchSim();
+    client.init(sim.init, 1, false);
+    await client.ready;
+    const vieja = await client.importSession(JSON.stringify({ ...sesion(), engineVersion: '0.4.0' }));
+    expect(vieja.ok).toBe(true);
+    expect(vieja.warnings?.join(' ')).toContain(`motor 0.4.0 y reproducida con el ${ENGINE_VERSION}`);
+    const actual = await client.importSession(JSON.stringify(sesion()));
+    expect(actual.ok).toBe(true);
+    expect(actual.warnings ?? []).toEqual([]);
+  });
+
+  it('una sin versión del motor se rechaza: no se sabe con qué física se grabó', () => {
+    const { engineVersion: _v, ...sinVersion } = sesion();
+    for (const s of [sinVersion, { ...sinVersion, engineVersion: 0.4 }, { ...sinVersion, engineVersion: null }]) {
+      const r = importar(s);
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors.join(' ')).toMatch(/engineVersion ausente/);
+    }
   });
 });
 

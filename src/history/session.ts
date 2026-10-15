@@ -110,10 +110,15 @@ export function importSession(text: string): ImportResult {
   if (o.schemaVersion !== SESSION_SCHEMA_VERSION) errors.push(`schemaVersion no soportada: ${String(o.schemaVersion)}`);
   const profile = typeof o.profileId === 'string' ? findProfile(o.profileId) : null;
   if (!profile) errors.push(`profileId desconocido: ${String(o.profileId)}`);
-  if (typeof o.engineVersion === 'string' && o.engineVersion !== ENGINE_VERSION) {
+  // Sin versión no se sabe con qué física se grabó; de otra versión aceptada se reproduce con la física de hoy, avisando
+  // (U-46). La interfaz deja el aviso a la vista mientras la sesión esté cargada.
+  if (typeof o.engineVersion !== 'string') errors.push('engineVersion ausente: no se sabe con qué motor se grabó la sesión');
+  else if (o.engineVersion !== ENGINE_VERSION) {
     if (ACCEPTED_ENGINE_VERSIONS.includes(o.engineVersion))
-      warnings.push(`Sesión creada con motor ${o.engineVersion}; la reproducción puede no ser idéntica`);
-    else errors.push(`engineVersion no soportada: ${o.engineVersion}`);
+      warnings.push(
+        `Sesión grabada con el motor ${o.engineVersion} y reproducida con el ${ENGINE_VERSION}: la física cambió entre una versión y otra, así que la reproducción puede no ser idéntica (curvas, mediciones o gasometría).`,
+      );
+    else errors.push(`engineVersion no soportada: ${o.engineVersion} (se aceptan ${ACCEPTED_ENGINE_VERSIONS.join(', ')})`);
   }
   const init = o.init as Record<string, unknown> | undefined;
   if (!init || typeof init !== 'object') errors.push('init ausente');

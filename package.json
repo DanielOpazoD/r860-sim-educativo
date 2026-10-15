@@ -1,6 +1,6 @@
 {
   "name": "ventila-lab",
-  "version": "0.4.0",
+  "version": "0.7.0",
   "private": true,
   "description": "Ventila Lab · Simulador EDUCATIVO web de ventilación mecánica. NO USO CLÍNICO.",
   "type": "module",

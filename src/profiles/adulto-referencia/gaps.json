@@ -372,8 +372,8 @@
     {
       "id": "U-46",
       "question": "Qué debe pasar con las sesiones grabadas bajo `ENGINE_VERSION` 0.3.0 ahora que la física de ese mismo número cambió mucho: dos unidades alveolares, curva sigmoidea, Rohrer y limitación al flujo espiratorio. Una sesión de entonces se reproduce hoy con un modelo distinto bajo la misma etiqueta.",
-      "policy": "U: no resuelto. Subir `ENGINE_VERSION` deja de aceptar las sesiones anteriores, que es lo correcto pero cambia el comportamiento; dejarlo como está reproduce con física distinta bajo la misma versión. Se anota antes de decidir, para no arreglarlo de paso en una ronda de documentación.",
-      "status": "nueva (v0.4.7)",
+      "policy": "CERRADA (decisión del usuario, 2026-10-14): `ENGINE_VERSION` pasa a 0.7.0 (el número siguiente a las etiquetas de entrega de docs/02, que llegaron a v0.6.2) y las sesiones de 0.2.0, 0.3.0 y 0.4.0 se siguen aceptando con el aviso «la reproducción puede no ser idéntica». La versión sube desde ahora con cada cambio de la huella del motor: HUE-01 guarda la versión con que se tomó y se niega a actualizarse si la física cambió sin que suba (docs/04 §5). Una sesión de 0.4.0 grabada antes de un cambio de física y reproducida hoy lo hace con la física actual, avisada en una franja que sigue a la vista mientras la sesión esté cargada; una sesión sin versión o de una versión desconocida se rechaza (E-037). La huella incluye la gasometría del modelo, que la reproducción también recalcula: un cambio de su cinética que se note en los 30 s de cada escenario obliga igualmente a subir la versión.",
+      "status": "cerrada (motor 0.7.0)",
       "blocks": []
     },
     {
