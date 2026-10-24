@@ -68,7 +68,7 @@ Herramientas: TypeScript 7 (nativo), Vite 8, Vitest 5 (+ `@vitest/coverage-v8`, 
 
 ## Documentación
 
-Cinco documentos, cada uno con una pregunta distinta. Los tres primeros se leen en ese orden si es la primera vez.
+Seis documentos, cada uno con una pregunta distinta. Los tres primeros se leen en ese orden si es la primera vez.
 
 | Documento | Responde a | Cómo se mantiene |
 | --- | --- | --- |
@@ -77,6 +77,7 @@ Cinco documentos, cada uno con una pregunta distinta. Los tres primeros se leen 
 | `docs/03-fisiologia-curvas.md` | Qué debe verse en cada curva y de qué ecuación sale | A mano, con cada afirmación anclada a una prueba con nombre |
 | `docs/02-diferencias-frente-al-dossier.md` | En qué se apartó del plan inicial, qué se corrigió y tras qué revisión | A mano, por versiones, incluidos los errores propios |
 | `docs/01-resultados.md` | Qué pruebas existen hoy y cuál fue su resultado | Generado por `npm run results:doc` |
+| `docs/10-diseno-oxigenacion.md` | Cómo se añadirán la oxigenación y el corazón-pulmón, y qué falta decidir | A mano; diseño pendiente de implementar |
 
 Los números que aparecen dentro de la prosa (cobertura, recuentos, escenarios, modos) no se escriben a mano: los inyecta `npm run docs:facts` desde los artefactos reales y la integración continua falla si se desvían. El reparto entre lo generado y lo escrito está en `docs/04-arquitectura.md` §7.
 
