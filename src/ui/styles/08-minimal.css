@@ -1405,13 +1405,6 @@
 #wave-options #view-aids {
   gap: 0;
 }
-.view-settings-footer {
-  flex-shrink: 0;
-  padding: 14px 24px;
-  color: var(--shell-dim);
-  border-top: 1px solid var(--shell-line);
-  font-size: var(--type-sm);
-}
 .view-reference {
   padding: 18px 0 0;
   display: grid;

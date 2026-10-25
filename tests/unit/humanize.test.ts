@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { SessionEvent } from '../../src/domain/types';
+import { REFERENCE_PROFILE } from '../../src/profiles';
 import { eventSentence, humanReason } from '../../src/ui/humanize';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -44,13 +45,27 @@ describe('textos internos del motor', () => {
 
   it('traduce la mecánica del escenario a etiquetas y capitaliza la frase', () => {
     const sentence = eventSentence(event('scenario', { patient: { crs: 0.05 } }));
-    expect(sentence).toContain('distensibilidad');
+    expect(sentence).toContain('compliance');
     expect(sentence).not.toMatch(/\bcrs\b/i);
     expect(sentence.charAt(0)).toBe(sentence.charAt(0).toLocaleUpperCase('es'));
 
     const unknown = eventSentence(event('scenario', { patient: { internalField: true } }));
     expect(unknown).toContain('otros parámetros');
     expect(unknown).not.toContain('internalField');
+  });
+
+  it('nombra el modo CPAP/PS y sus ajustes con su escala y unidad, no con cmH₂O para todo', () => {
+    const rules = REFERENCE_PROFILE.rules;
+    const confirmado = eventSentence(
+      event('setting', { changes: { mode: 'CPAP_PS', psupport: 12, expTriggerPct: 0.3, minRate: 'off', fio2: 0.45, apneaTimeS: 20 } }),
+      rules,
+    );
+    expect(confirmado).toBe(
+      'Usuario confirmó Modo → CPAP/PS, Presión de soporte → 12 cmH₂O, Ciclado espiratorio → 30 %, Frecuencia mínima → Off, FiO₂ → 45 %, Tiempo de apnea → 20 s',
+    );
+    const aplicado = eventSentence(event('setting', { applied: { backupTinspS: 1.2, vt: 0.45 } }), rules);
+    expect(aplicado).toBe('Aplicado: Tinsp de respaldo → 1,20 s, Volumen corriente → 450 mL');
+    expect(aplicado).not.toContain('cmH₂O');
   });
 
   it('omite la razón user al pausar y no expone comandos internos rechazados', () => {

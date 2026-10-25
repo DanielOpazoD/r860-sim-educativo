@@ -203,10 +203,10 @@ const ESFUERZO_EPOC: EffortParams = {
 };
 /**
  * CC-06, calibrado con Thille (Intensive Care Med 2008) sobre el paciente intubado (tubo 8,0 y rama espiratoria del
- * equipo, con limitación al flujo y la variabilidad de un destete difícil): con soporte 20 no dispara el 38 % de los
- * esfuerzos (45 % en el estudio, RIC 36–52) con VT ≈ 8,6 mL/kg (10,2; RIC 7,2–11,5); con 13, disparan todos con
- * ≈ 5,2 mL/kg (5,9; 4,9–6,7). Frecuencia neural 26/min (26,5 en el estudio). Con
- * Rexp 24 (sólo en este caso).
+ * equipo, con limitación al flujo y la variabilidad de un destete difícil): con soporte 20 no dispara ≈ 40 % de los
+ * esfuerzos (38–46 % según el minuto; 45 % en el estudio, RIC 36–52) con VT ≈ 8,9 mL/kg (10,2; RIC 7,2–11,5); con 13,
+ * disparan todos con ≈ 5,1 mL/kg (5,9; 4,9–6,7), y con 14 con ≈ 5,3. Frecuencia neural 26/min (26,5 en el estudio).
+ * Con Rexp 24 (sólo en este caso).
  */
 const ESFUERZO_THILLE: EffortParams = {
   enabled: true,
@@ -242,9 +242,9 @@ export const CLINICAL_CASES: Scenario[] = [
         },
         {
           id: 'c',
-          text: 'Caída de la distensibilidad (edema, atelectasia, neumotórax, intubación selectiva)',
+          text: 'Caída de la compliance (edema, atelectasia, neumotórax, intubación selectiva)',
           correct: false,
-          why: 'Una distensibilidad menor eleva también la presión meseta; aquí la Pplat sigue siendo normal.',
+          why: 'Una compliance menor eleva también la presión meseta; aquí la Pplat sigue siendo normal.',
         },
         {
           id: 'autopeep',
@@ -261,7 +261,7 @@ export const CLINICAL_CASES: Scenario[] = [
       ],
       criteria: [{ id: 'mide', text: 'Mediste la presión meseta con un bloqueo inspiratorio', test: 'inspHold' }],
       reveal:
-        'Con flujo constante, Paw = PEEP + R·Q + VT/C. El bloqueo inspiratorio detiene el flujo: lo que cae de Ppico a Pplat es la carga resistiva y lo que queda sobre la PEEP es la elástica. La carga resistiva medida es de ≈ 28 cmH₂O·s/L —su vía aérea, 25, más el tubo de 8,0 mm, que pesa más cuanto mayor es el flujo—, casi el triple del banco de referencia, con distensibilidad normal (50 mL/cmH₂O). En la cabecera, el siguiente paso es buscar la causa: aspirar secreciones, revisar el tubo y valorar broncoespasmo.',
+        'Con flujo constante, Paw = PEEP + R·Q + VT/C. El bloqueo inspiratorio detiene el flujo: lo que cae de Ppico a Pplat es la carga resistiva y lo que queda sobre la PEEP es la elástica. La resistencia medida es de ≈ 28 cmH₂O·s/L —su vía aérea, 25, más el tubo de 8,0 mm, que pesa más cuanto mayor es el flujo—, casi el triple del banco de referencia, con compliance normal (50 mL/cmH₂O). El bloqueo da una Cstat de ≈ 44 porque resta la PEEP programada y no la total: la meseta incluye una PEEP intrínseca de ≈ 1,2 cmH₂O, y restando la PEEP total la Cstat vuelve a ≈ 50. En la cabecera, el siguiente paso es buscar la causa: aspirar secreciones, revisar el tubo y valorar broncoespasmo.',
       solution: {
         steps: [{ kind: 'bloqueo', which: 'inspHold', note: 'la meseta queda normal: lo que separa la pico de la meseta es resistivo' }],
       },
@@ -302,7 +302,7 @@ export const CLINICAL_CASES: Scenario[] = [
           'Qué es: si la inspiración siguiente empieza antes de que el pulmón termine de vaciarse, queda volumen atrapado. Al final de la espiración ese volumen mantiene la presión alveolar por encima de la PEEP programada; esa diferencia es la PEEP intrínseca o auto-PEEP (PEEPi).',
           'Por qué no se ve: con la válvula espiratoria abierta el manómetro mide el circuito, que está a la PEEP programada (PEEPe). La presión alveolar queda detrás de la resistencia de la vía aérea.',
           'Cómo se sospecha: en la curva de flujo, el flujo espiratorio no vuelve a cero antes de la inspiración siguiente.',
-          'Cómo se mide: al final de la espiración, un bloqueo espiratorio cierra las válvulas. Sin flujo, la presión de la vía aérea se iguala con la alveolar y se asienta en una meseta: la PEEP total. PEEPi = PEEP total − PEEPe. La paciente debe estar pasiva (un esfuerzo deforma la meseta) y el bloqueo debe durar hasta que la presión se asiente: en esta paciente, unos 4 s.',
+          'Cómo se mide: al final de la espiración, un bloqueo espiratorio cierra las válvulas. Sin flujo, la presión de la vía aérea se iguala con la alveolar y se asienta en una meseta: la PEEP total. PEEPi = PEEP total − PEEPe. La paciente debe estar pasiva (un esfuerzo deforma la meseta) y el bloqueo debe durar hasta que la presión se asiente: en esta paciente, unos 4 s con la programación inicial; con más tiempo espiratorio bastan 3.',
           'De qué depende: del tiempo espiratorio frente a la constante de tiempo (τ = R·C). Con menos de unas tres constantes de tiempo, el pulmón no alcanza a vaciarse.',
         ],
       },
@@ -322,7 +322,7 @@ export const CLINICAL_CASES: Scenario[] = [
         },
       ],
       reveal:
-        'La constante de tiempo espiratoria de esta paciente es (Rexp + rama espiratoria del ventilador)·C = (40 + 3) × 0,06 ≈ 2,6 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP total de ≈ 13 cmH₂O (PEEP intrínseca ≈ 8). El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 la PEEP total baja a ≈ 9,6, pero no mucho más: la paciente tiene limitación al flujo espiratorio, como casi todos los EPOC ventilados por una insuficiencia de origen pulmonar (Armaganidis), y por debajo de una presión crítica (≈ 9 cmH₂O) el pulmón deja de vaciarse por más tiempo que se le dé. Por eso la PEEP externa hasta ≈ 85 % de esa presión no aumenta el atrapamiento (Ranieri): con FR 12 e I:E 1:4, subir la PEEP de 5 a 7 deja la PEEP total en ≈ 10; por encima, la suma. En una paciente pasiva tampoco la reduce: lo que desinfla es menos ventilación y más tiempo espiratorio. Para medirla, el bloqueo espiratorio necesita unos 4 s: los tejidos siguen redistribuyendo presión después de cerrar la válvula y la meseta late con el corazón, así que una oclusión corta no llega a una meseta estable. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32 a su PaCO₂ habitual de ≈ 60) baja su PaCO₂ por debajo de lo habitual para ella: con la programación inicial la PaCO₂ de equilibrio sería ≈ 37 y el pH ≈ 7,49, en el límite alto aunque los tampones restan ≈ 5 mEq/L de bicarbonato en la hipocapnia aguda. Su riñón no compensa en minutos.',
+        'La constante de tiempo espiratoria de esta paciente es (Rexp + rama espiratoria del ventilador)·C = (40 + 3) × 0,06 ≈ 2,6 s. Con FR 20 e I:E 1:2 el tiempo espiratorio es de 2 s, menos de una constante de tiempo: cada inspiración empieza antes de que el pulmón vuelva a su volumen de reposo y queda una PEEP total de ≈ 13 cmH₂O (PEEP intrínseca ≈ 8). El tiempo espiratorio crece sobre todo bajando la frecuencia —y con ella el volumen minuto—; alargar sólo el I:E ayuda poco. Con FR 12 e I:E 1:4 la PEEP total baja a ≈ 9,6, pero no mucho más: la paciente tiene limitación al flujo espiratorio, como casi todos los EPOC ventilados por una insuficiencia de origen pulmonar (Armaganidis), y por debajo de una presión crítica (≈ 9 cmH₂O) el pulmón deja de vaciarse por más tiempo que se le dé. Por eso la PEEP externa hasta ≈ 85 % de esa presión no aumenta el atrapamiento (Ranieri): con FR 12 e I:E 1:4, subir la PEEP de 5 a 7 deja la PEEP total en ≈ 10; por encima, la suma. En una paciente pasiva tampoco la reduce: lo que desinfla es menos ventilación y más tiempo espiratorio. Para medirla, el bloqueo espiratorio necesita unos 4 s con la programación inicial; con más tiempo espiratorio (FR 12 e I:E 1:4) bastan 3: los tejidos siguen redistribuyendo presión después de cerrar la válvula y la meseta late con el corazón, así que una oclusión corta no llega a una meseta estable. Además, ventilar de más a una paciente con retención crónica de CO₂ (HCO₃⁻ 32 a su PaCO₂ habitual de ≈ 60) baja su PaCO₂ por debajo de lo habitual para ella: con la programación inicial la PaCO₂ de equilibrio sería ≈ 37 y el pH ≈ 7,49, en el límite alto aunque los tampones restan ≈ 5 mEq/L de bicarbonato en la hipocapnia aguda. Su riñón no compensa en minutos.',
       solution: {
         steps: [
           { kind: 'ajuste', changes: { rr: 12, ie: 1 / 4 }, waitS: 60, note: 'más tiempo para espirar en cada ciclo' },
@@ -355,8 +355,7 @@ export const CLINICAL_CASES: Scenario[] = [
       theme: 'SDRA · ventilación protectora',
       vignette:
         'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,40, PaCO₂ 40 mmHg.',
-      question:
-        'Programa una ventilación protectora sin bajar la PEEP: VT de 6 mL/kg de peso predicho o menos (hasta 6,5), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.',
+      question: `Programa una ventilación protectora sin bajar la PEEP: VT ≤ 6,5 mL/kg de peso predicho (≤ ${Math.round(6.5 * pbwHombre(175))} mL), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.`,
       kind: 'ajuste',
       criteria: [
         {
@@ -372,7 +371,7 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'fr', text: 'FR de 35 o menos', test: 'rrMax', params: { max: 35 } },
         { id: 'peep', text: 'PEEP de 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
       ],
-      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Este pulmón no es lineal: su curva presión-volumen tiene el codo superior en ≈ 22 cmH₂O (Roupie lo encontró en todos sus SDRA, a 26 ± 6). Con 600 mL la meseta pasa el codo: Pplat ≈ 33, presión motriz ≈ 23 y una Cstat de ≈ 26 mL/cmH₂O, que es la de la parte alta de la curva. Bajar a 425 mL (6 mL/kg) sube la Cstat a ≈ 28, pero la presión motriz se queda en ≈ 15,5, todavía no baja de 15, la variable que mejor estratificó la supervivencia en el análisis de Amato. Terragni mostró que en los SDRA con más pulmón no aireado 6 mL/kg y Pplat ≤ 30 no bastan para evitar la hiperinsuflación, y el protocolo ARDSNet permite bajar hasta 4 mL/kg: con 400 mL (5,7 mL/kg) la presión motriz queda en ≈ 14 y la Pplat en ≈ 24. Subir la PEEP no ayuda en este pulmón poco reclutable: a 14 la presión motriz sube a ≈ 17, porque el volumen corriente cae más arriba en la curva (Grasso). El índice de estrés, la forma de la rampa de presión, va de ≈ 1,08 con 600 mL a ≈ 1,04 con 400: dentro del rango normal, pero subiendo con el VT y con la PEEP. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,62 con 400 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 74 mmHg (pH 7,19, ya con el bicarbonato que sube en la hipercapnia aguda). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 28 el pH de equilibrio vuelve a ≈ 7,32.`,
+      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Este pulmón no es lineal: su curva presión-volumen tiene el codo superior en ≈ 22 cmH₂O (Roupie lo encontró en todos sus SDRA, a 26 ± 6). Con 600 mL la meseta pasa el codo: Pplat ≈ 33, presión motriz ≈ 23 y una Cstat de ≈ 26 mL/cmH₂O, que es la de la parte alta de la curva. Bajar a 425 mL (6 mL/kg) con la FR 28 que pide el pH deja la presión motriz en ≈ 15,5: todavía no baja de 15, la variable que mejor estratificó la supervivencia en el análisis de Amato. Unos 1,5 de esos 15,5 son auto-PEEP: con FR 28 el pulmón no termina de vaciarse, la meseta la incluye y la presión motriz se mide contra la PEEP programada; con FR 16 los mismos 425 mL darían ≈ 14. Terragni mostró que en los SDRA con más pulmón no aireado 6 mL/kg y Pplat ≤ 30 no bastan para evitar la hiperinsuflación, y el protocolo ARDSNet permite bajar hasta 4 mL/kg: con 400 mL (5,7 mL/kg) y FR 28 la presión motriz queda en ≈ 14 y la Pplat en ≈ 24. Subir la PEEP no ayuda en este pulmón poco reclutable: a 14 la presión motriz sube a ≈ 17, porque el volumen corriente cae más arriba en la curva (Grasso). El índice de estrés, la forma de la rampa de presión, va de ≈ 1,08 con 600 mL a ≈ 1,04 con 400: dentro del rango normal, pero subiendo con el VT y con la PEEP. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,62 con 400 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 71 mmHg (pH 7,21, ya con el bicarbonato que sube en la hipercapnia aguda). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 28 la PaCO₂ de equilibrio vuelve a ≈ 40 y el pH a ≈ 7,40.`,
       solution: {
         steps: [
           { kind: 'ajuste', changes: { vt: 0.4, rr: 28 }, waitS: 30, note: 'VT bajo y FR alta para sostener el pH' },
@@ -409,13 +408,13 @@ export const CLINICAL_CASES: Scenario[] = [
     synthetic: true,
     category: 'Ventilación protectora',
     level: 3,
-    description: 'La misma PEEP da distinta distensibilidad según la historia. Mide antes y después de abrir.',
+    description: 'La misma PEEP da distinta compliance según la historia. Mide antes y después de abrir.',
     clinical: {
       theme: 'SDRA · reclutamiento y PEEP',
       vignette:
-        'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5. La distensibilidad estática es baja. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la distensibilidad.',
+        'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5. La compliance estática es baja. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la Cstat.',
       question:
-        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 10–12 y vuelve a medir. Deja la PEEP final en 10 o más.',
+        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 9–12 y vuelve a medir. Deja la PEEP final en 10 o más.',
       kind: 'ajuste',
       criteria: [
         { id: 'antes', text: 'Mediste la Cstat a la PEEP inicial, antes de abrir el pulmón', test: 'cstatBeforeOpening' },
@@ -435,7 +434,7 @@ export const CLINICAL_CASES: Scenario[] = [
       },
       references: [REF.suarez2007, REF.art2017],
     },
-    question: '¿Por qué la PEEP decremental encuentra más distensibilidad que la ascendente a la misma PEEP?',
+    question: '¿Por qué la PEEP decremental encuentra más compliance que la ascendente a la misma PEEP?',
     answer: 'Porque lo abierto a presión alta no se cierra hasta caer por debajo de su presión de cierre, que es menor.',
     patient: {
       crs: 0.03,
@@ -461,7 +460,7 @@ export const CLINICAL_CASES: Scenario[] = [
     synthetic: true,
     category: 'Intercambio gaseoso',
     level: 2,
-    description: 'PaCO₂ 86 con pulmones sanos. El volumen minuto no lo es todo.',
+    description: 'PaCO₂ 88 con pulmones sanos. El volumen minuto no lo es todo.',
     clinical: {
       theme: 'CO₂ · espacio muerto',
       vignette:
@@ -510,7 +509,7 @@ export const CLINICAL_CASES: Scenario[] = [
     level: 2,
     description: 'El paciente hace más esfuerzos de los que el ventilador detecta.',
     clinical: {
-      theme: 'Asincronía · esfuerzos inefectivos',
+      theme: 'Esfuerzos inefectivos',
       vignette:
         'Hombre de 66 años, 170 cm, con EPOC, en destete con presión de soporte 20 cmH₂O y PEEP 5. Respira con esfuerzo: cuentas 26 esfuerzos por minuto en el tórax, pero el ventilador marca una frecuencia menor y avisa de un volumen espirado alto.',
       question:
@@ -525,16 +524,16 @@ export const CLINICAL_CASES: Scenario[] = [
         },
         {
           id: 'vt',
-          text: `VT espirado de 5 mL/kg de peso predicho o más (≥ ${Math.round(5 * pbwHombre(170))} mL)`,
+          text: `VT espirado medio del último minuto de 5 mL/kg de peso predicho o más (≥ ${Math.round(5 * pbwHombre(170))} mL)`,
           test: 'vteMinPerKg',
           params: { mlPerKg: 5, pbw: pbwHombre(170) },
         },
       ],
       reveal:
-        'Con soporte 20 el volumen corriente es grande (≈ 570 mL, 8,6 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. Casi cuatro de cada diez esfuerzos se pierden. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 13–14 cmH₂O disparan todos con VT ≈ 345–360 mL: el tubo y la obstrucción frenan los flujos altos del soporte, y el esfuerzo de quien no progresa en el destete varía poco entre respiraciones (Wysocki). La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 40 mmHg (pH 7,47); con 13, en ≈ 52 (pH 7,39), cerca de su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
+        'Con soporte 20 el volumen corriente es grande (≈ 585 mL, 8,9 mL/kg) y, en un pulmón obstructivo, no alcanza a salir antes del esfuerzo siguiente: el esfuerzo llega cuando aún queda presión elástica por vencer —PEEP intrínseca— y no dispara. Se pierden unos cuatro de cada diez esfuerzos. Los esfuerzos inefectivos son la asincronía más frecuente; Thille los asoció a más soporte, volúmenes mayores y un disparo menos sensible —el paciente puede estar recibiendo soporte de más—, y Blanch, a mayor mortalidad. En un estudio fisiológico, Thille bajó el soporte de 20 a 13 cmH₂O: el VT pasó de 10 a 6 mL/kg y los esfuerzos inefectivos, del 45 % al 0 %, sin cambios en la frecuencia del paciente ni en la PaCO₂. Aquí, con 13 cmH₂O disparan todos, pero el VT espirado medio queda justo en el límite (≈ 330–345 mL, 5,0–5,2 mL/kg); con 14 disparan todos con ≈ 340–355 mL (5,3 mL/kg): el tubo y la obstrucción frenan los flujos altos del soporte, y el esfuerzo de quien no progresa en el destete varía poco entre respiraciones (Wysocki). La PaCO₂ cambia mucho menos que el VT: la frecuencia del ventilador se duplica porque los esfuerzos que se perdían ahora disparan, y buena parte del espacio muerto de un EPOC es alveolar y se achica con el VT. Con soporte 20 la PaCO₂ de equilibrio queda en ≈ 39 mmHg (pH 7,48); con 14, en ≈ 50 (pH 7,40), cerca de su equilibrio habitual. En las curvas, un esfuerzo inefectivo es una muesca en el flujo espiratorio que no va seguida de una respiración (Georgopoulos).',
       solution: {
         steps: [
-          { kind: 'ajuste', changes: { psupport: 13 }, waitS: 65, note: 'menos soporte: el VT baja y los esfuerzos vuelven a disparar' },
+          { kind: 'ajuste', changes: { psupport: 14 }, waitS: 65, note: 'menos soporte: el VT baja y los esfuerzos vuelven a disparar' },
         ],
       },
       references: [REF.thille2008, REF.thille2006, REF.blanch2015, REF.georgopoulos2006],
@@ -572,7 +571,7 @@ export const CLINICAL_CASES: Scenario[] = [
         { id: 'trig', text: 'Disparo por flujo de 6 L/min o menos', test: 'flowTriggerMax', params: { maxLpm: 6 } },
       ],
       reveal:
-        'La fuga deja escapar gas de forma continua; el ventilador mide ese flujo como si el paciente inspirara y, si supera el umbral de disparo, entrega una respiración que nadie pidió: autodisparo. A PEEP 5 esta fuga pierde ≈ 3 L/min, más que el umbral de 2 L/min, y el latido suma al flujo que ve el sensor una oscilación de ≈ ±2 L/min (Imanaka la midió tras cirugía cardíaca): con 4–5 L/min el umbral todavía se cruza cuando coinciden, y con 6 el autodisparo cesa. Señales que no son esfuerzo —la fuga, las oscilaciones cardiogénicas— pueden disparar un ventilador con disparo por flujo sensible, y la fuga es uno de los factores principales de asincronía en ventilación no invasiva (Al Otair y BaHammam). Insensibilizar de más tiene su costo cuando el paciente sí respira: esfuerzos inefectivos. La solución definitiva es corregir la fuga.',
+        'La fuga deja escapar gas de forma continua; el ventilador mide ese flujo como si el paciente inspirara y, si supera el umbral de disparo, entrega una respiración que nadie pidió: autodisparo. A PEEP 5 esta fuga pierde ≈ 3 L/min, más que el umbral de 2 L/min, y el latido suma al flujo que ve el sensor una oscilación de ≈ ±2 L/min (Imanaka la midió tras cirugía cardíaca): con 4–5 L/min el umbral todavía se cruza cuando coinciden, y con 6 el autodisparo cesa. Señales que no son esfuerzo —la fuga, las oscilaciones cardiogénicas— pueden disparar un ventilador con disparo por flujo sensible, y la fuga es uno de los factores principales de asincronía en ventilación no invasiva (Al Otair y BaHammam). Insensibilizar de más tiene su costo cuando el paciente sí respira: esfuerzos inefectivos. La solución definitiva es corregir la fuga. Sin autodisparo la ventilación cae (VTesp ≈ 200 mL, pH de equilibrio ≈ 7,21): corregir la fuga es urgente.',
       solution: {
         steps: [{ kind: 'ajuste', changes: { flowTrigger: 6 / 60 }, waitS: 30, note: 'un umbral por encima de la fuga y del latido' }],
       },

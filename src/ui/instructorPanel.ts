@@ -5,7 +5,7 @@
  */
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
-import { formatNumber as f } from '../domain/units';
+import { formatTexto as f } from '../domain/units';
 import { validateDomains, validateVcSettings } from '../domain/validation';
 import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
@@ -97,8 +97,13 @@ export function createInstructorPanel(
         r.value = String(v);
       }
       r.style.setProperty('--fill', `${(100 * (Number(r.value) - sp.min)) / (sp.max - sp.min)}%`);
+      if (sp.requires) syncRequires(k, n, r, sp.requires.on(fr), sp.requires.title);
     }
     const p = fr.truth.patient;
+    // Con curva sigmoidea C ya no es la compliance a todo volumen: escala la curva respecto de la de referencia.
+    const rotuloC = (p.sigmoid?.b ?? 0) > 0 ? 'Compliance de referencia' : (PHYS.compliance as PhysSpec).label;
+    const labelC = document.querySelector('label[for="phys-compliance"]');
+    if (labelC && labelC.textContent !== rotuloC) labelC.textContent = rotuloC;
     syncProfileButtons(p, fr.truth.effort);
     syncPreset(
       $<HTMLSelectElement>('#preset-tissue'),
@@ -112,9 +117,12 @@ export function createInstructorPanel(
       (pre) => Math.abs(p.r2 - pre.r2) < 1e-6,
       () => '',
     );
-    put('#truth-tauin', `${f(p.rInsp * p.crs, 2)} s`);
+    // τ con la compliance local de la unidad principal (pendiente de la curva P-V, con lo reclutado): con curva
+    // sigmoidea es la que usa el motor, no crs. La segunda unidad tiene su propia rama y no entra.
+    const cMain = fr.truth.cLocal - (p.second && p.second.crs > 0 ? p.second.crs : 0);
+    put('#truth-tauin', `${f(p.rInsp * cMain, 2)} s`);
     // El vaciamiento pasa también por la rama espiratoria del equipo: es la constante que se lee en la curva.
-    put('#truth-tau', `${f((p.rExp + (p.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L)) * p.crs, 2)} s`);
+    put('#truth-tau', `${f((p.rExp + (p.rExpValve ?? DEFAULT_EXP_BRANCH_R_CMH2O_S_L)) * cMain, 2)} s`);
     put('#truth-auto', `${f(fr.truth.peepiEndExp, 1)} cmH₂O`);
     put('#truth-vabs', `${f(fr.truth.vAbsL * 1000, 0)} mL`);
     put('#truth-o2', `${f(fr.truth.fio2Delivered * 100, 0)} / ${f((fr.metrics.fio2?.value ?? 0) * 100, 1)} %`);
@@ -150,6 +158,15 @@ export function createInstructorPanel(
       put('#truth-recruit', `${Math.round(fr.truth.recruited * 100)} %`);
     }
     ($('#undo-event') as HTMLButtonElement).disabled = eventUndo.length === 0;
+  }
+  /** Control que depende de otra función: deshabilitado (número, deslizador y botones) mientras esté apagada. */
+  function syncRequires(k: string, n: HTMLInputElement, r: HTMLInputElement, on: boolean, title: string): void {
+    if (n.disabled === !on) return;
+    for (const el of [n, r, ...$$<HTMLButtonElement>(`[data-phys-step="${k}"]`)]) {
+      el.disabled = !on;
+      if (on) el.removeAttribute('title');
+      else el.title = title;
+    }
   }
   async function setPhys(cmds: Command[], undo: Command[] | null): Promise<boolean> {
     let ok = true;
