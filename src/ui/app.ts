@@ -580,5 +580,7 @@ export function startApp(opts: AppOptions): void {
     get degraded() {
       return client.degradedReason;
     },
+    /** Eventos súbitos (apnea, oclusión, fuga, desconexión) sin botón en el panel: sólo para las pruebas. */
+    fault: (kind: string) => instructor.fault(kind),
   };
 }

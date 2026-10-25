@@ -228,7 +228,8 @@ it('los perfiles mantienen sus etiquetas como texto y sus botones conservan ARIA
     expect($('#patient-profiles b').textContent).toBe(profile.label);
     expect($('#patient-profiles').querySelector('img')).toBeNull();
     expect($('#patient-profiles button').getAttribute('aria-pressed')).toBe('false');
-    expect($('#fault-grid use').getAttribute('href')).toBe('#i-pause');
+    // Los eventos súbitos ya no tienen botones en el panel.
+    expect(document.querySelector('#fault-grid')).toBeNull();
     // Mecánica avanzada en pestañas: un grupo a la vista, los demás ocultos.
     expect([...document.querySelectorAll('#advanced-tabs [data-group]')].map((t) => t.textContent)).toEqual([
       'Esfuerzo',

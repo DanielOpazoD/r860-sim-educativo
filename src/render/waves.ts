@@ -24,7 +24,7 @@ export interface WaveBreath {
   cyclingCause: string;
 }
 
-export type WaveMarkerKind = 'start' | 'cycle' | 'ppeak' | 'pplat' | 'end' | 'effort';
+export type WaveMarkerKind = 'start' | 'cycle' | 'ppeak' | 'pplat' | 'peeptot' | 'end' | 'effort';
 
 export interface WaveMarker {
   kind: WaveMarkerKind;
@@ -517,7 +517,7 @@ export function drawWave(
         const value = marker.value ?? sp.min;
         const y = marker.kind === 'effort' ? ybottom - 4 : yf(value);
         const markerColor =
-          marker.kind === 'pplat'
+          marker.kind === 'pplat' || marker.kind === 'peeptot'
             ? PLOT_TEXT_COLORS.marcaPplat
             : marker.kind === 'ppeak'
               ? PLOT_TEXT_COLORS.marcaPpico

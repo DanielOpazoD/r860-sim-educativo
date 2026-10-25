@@ -13,7 +13,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
       await expect(page.locator('[data-instructor="patient"]')).toHaveText('Paciente');
       await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
       await expect(page.locator('#patient-profiles [data-profile]').first()).toBeVisible();
-      await expect(page.locator('#fault-grid [data-event]')).toHaveCount(4);
+      await expect(page.locator('#fault-grid')).toHaveCount(0);
       await expect(page.locator('#undo-event')).toBeVisible();
       // La gasometría es del modelo, no una medición del equipo: está en el panel, rotulada, y nunca en el monitor.
       await expect(page.locator('#case-gas .gas-tag')).toHaveText('modelo');
@@ -52,7 +52,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await expect(page.locator('#case-lock-note')).toBeVisible();
     await expect(page.locator('#case-lock-note [data-action="freeExplore"]')).toBeVisible();
     await expect(page.locator('#patient-controls [data-phys-number="resistance"]')).toBeVisible();
-    await expect(page.locator('#fault-grid [data-event]').first()).toBeVisible();
+    await expect(page.locator('#patient-controls [data-phys-number="expResistance"]')).toBeVisible();
     await page.click('[data-instructor="case"]');
     // Antes de entregar, el desarrollo no adelanta la respuesta.
     await expect(page.locator('#learn-case-body')).toContainText('Se revela al entregar');
@@ -149,7 +149,7 @@ test.describe('CASOS · una sola pantalla: el caso en el panel, el desarrollo ba
     await expect(page.locator('#scenario-name')).toHaveText('Banco lineal pasivo');
     await expect(page.locator('#case-lock-note')).toBeHidden();
     await expect(page.locator('[data-instructor="patient"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('#fault-grid [data-event]').first()).toBeVisible();
+    await expect(page.locator('#patient-controls [data-phys-number="resistance"]')).toBeVisible();
   });
 
   test('cada caso se lee entero en el panel sin desplazarse, con el título en una línea, antes y después de entregar', async ({

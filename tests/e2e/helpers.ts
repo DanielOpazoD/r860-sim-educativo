@@ -44,6 +44,8 @@ declare global {
       waveScale: 'auto' | 'fixed';
       /** Modo examen: activo y cuántas mediciones ya se estimaron. */
       exam: { active: boolean; estimates: number };
+      /** Evento súbito del paciente (apnea, obstruction, leak, disconnect); ya no tiene botón en el panel. */
+      fault(kind: string): Promise<void>;
     };
   }
 }

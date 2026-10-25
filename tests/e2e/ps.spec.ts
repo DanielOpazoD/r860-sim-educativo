@@ -54,10 +54,12 @@ test.describe('CPAP/PS', () => {
     await open(page, { scenario: 'SC-19', speed: 4 });
     await expect(page.locator('#quick-mode')).toHaveText('CPAP/PS');
     await expect.poll(async () => (await frame(page)).metrics.rrSpont?.value ?? 0, { timeout: 30_000 }).toBeGreaterThan(10);
-    // Apnea desde Eventos, en el panel Paciente: el esfuerzo se apaga; a los 20 s de tiempo simulado, alarma y respaldo.
+    // Apnea (evento del instructor, sin botón en el panel): el esfuerzo se apaga; a los 20 s de tiempo simulado, alarma y respaldo.
     await showPanel(page, 'patient');
-    await page.click('[data-event="apnea"]');
-    await expect(page.locator('#event-apnea')).toHaveAttribute('aria-pressed', 'true');
+    await page.evaluate(() => window.__ventila.fault('apnea'));
+    await page.waitForFunction(
+      () => (window.__ventila.frame as unknown as { truth: { effort: { enabled: boolean } } }).truth.effort.enabled === false,
+    );
     await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Apnea', { timeout: 30_000 });
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);
     await expect

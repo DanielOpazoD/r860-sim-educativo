@@ -171,7 +171,29 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
    * ventana hacía rotar la traza alrededor de la unión en vez de desplazarla, y el eje no podía decir qué tiempo se
    * estaba mirando. De vuelta al final de la historia, vuelve el trazado elegido.
    */
-  const drawStyle = (): 'sweep' | 'scroll' => (frozen && reviewEnd < freezeEnd - 1e-9 ? 'scroll' : waveStyle);
+  const drawStyle = (): 'sweep' | 'scroll' =>
+    (frozen && reviewEnd < freezeEnd - 1e-9) || (!frozen && holdInWindow()) ? 'scroll' : waveStyle;
+  /**
+   * Un bloqueo se lee junto a la respiración que lo precede: en barrido, la unión de la pasada podía caer justo antes
+   * de la meseta y borrar la inspiración previa, de modo que se veía la PEEP total sin la curva de la que sale. Mientras
+   * un bloqueo empezado dentro de la ventana siga a la vista, la traza se dibuja en continuo.
+   */
+  function holdInWindow(): boolean {
+    const proc = ctx.frame?.procedure;
+    if (!proc) return false;
+    const desdeMs = (ctx.simS() - waveWindow) * 1000;
+    return [proc.current, proc.last.inspHold, proc.last.expHold].some(
+      // Mientras espera el final de la espiración el bloqueo aún no tiene inicio: cuenta desde que se pidió.
+      (h) => !!h && (h.kind === 'inspHold' || h.kind === 'expHold') && (h.startedAtMs ?? h.requestedAtMs) >= desdeMs,
+    );
+  }
+  /** Rótulo «PEEPtot» sobre la meseta del último bloqueo espiratorio válido que sigue en la ventana. */
+  function peepTotMarker(end: number): WaveMarker | null {
+    const h = ctx.frame?.procedure.last.expHold;
+    const value = h?.quality === 'valid' ? h.values.peepTot?.value : null;
+    if (!h || typeof value !== 'number' || h.completedAtMs === null || h.completedAtMs < (end - waveWindow) * 1000) return null;
+    return { kind: 'peeptot', t: h.completedAtMs / 1000 - 0.4, label: `PEEPtot ${f(value, 0)}`, value };
+  }
   function waveBounds(canvas: 'waves' | 'basic', pts: Point[], end: number, peep: number, vtMl: number): Bounds {
     const measured = getBounds(visiblePoints(pts, end, waveWindow), peep, vtMl);
     if (waveScaleMode === 'fixed') {
@@ -226,7 +248,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
           : null,
       );
     }
-    const markers = waveAids ? markerCache.filter((m) => corte === null || m.t >= corte) : [];
+    const peepTot = peepTotMarker(end);
+    const markers = waveAids ? [...markerCache, ...(peepTot ? [peepTot] : [])].filter((m) => corte === null || m.t >= corte) : [];
     if (view === 'waves')
       drawWave($<HTMLCanvasElement>('#waves-canvas'), ondas, end, peep, vtMl, {
         window: waveWindow,

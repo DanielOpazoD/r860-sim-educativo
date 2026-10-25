@@ -88,10 +88,9 @@ test('VIS · panel Paciente compacto a 1440 px: gases, perfiles, mecánica y eve
   await expect(pane).toBeVisible();
   await expect(page.locator('#flyout-advanced')).toBeHidden();
   await expect(profiles).toHaveCount(5);
-  await expect(page.locator('#patient-controls [data-phys-number]')).toHaveCount(3);
-  await expect(page.locator('#patient-controls [data-phys-step]')).toHaveCount(6);
+  await expect(page.locator('#patient-controls [data-phys-number]')).toHaveCount(4);
+  await expect(page.locator('#patient-controls [data-phys-step]')).toHaveCount(8);
   for (const profile of await profiles.all()) await expect(profile).toBeInViewport();
-  for (const event of await page.locator('#fault-grid [data-event]').all()) await expect(event).toBeInViewport();
   await expect(page.locator('#case-gas .gas-card')).toBeInViewport();
 
   const geometry = await pane.evaluate((el) => {

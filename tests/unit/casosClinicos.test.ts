@@ -493,6 +493,19 @@ describe('CAS-SOL · el desarrollo muestra la solución en una tabla', () => {
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
   });
+  it('CC-02: la auto-PEEP y cómo medirla se ven desde el inicio, con su esquema; la solución sólo al entregar', () => {
+    const sc = findScenario('CC-02')!;
+    const antes = document.createElement('div');
+    antes.append(...caseDevelopmentNodes(sc, null, null, inicial(sc), rules));
+    expect(antes.querySelector('.case-concept h3')!.textContent).toBe('La auto-PEEP: qué es y cómo se mide');
+    expect(antes.querySelector('.case-concept svg[role="img"]')!.getAttribute('aria-label')).toContain('PEEP total');
+    expect(antes.querySelectorAll('.case-concept li')).toHaveLength(5);
+    expect(antes.querySelector('.case-solution')).toBeNull();
+    const despues = document.createElement('div');
+    despues.append(...caseDevelopmentNodes(sc, null, entregar(sc, {}), inicial(sc), rules));
+    expect(despues.querySelector('.case-solution')).not.toBeNull();
+    expect(despues.querySelector('.case-concept')).not.toBeNull();
+  });
   it('CC-04: los pasos dicen el camino (5 → 20 → 11) y la tabla, la PEEP final', () => {
     const sc = findScenario('CC-04')!;
     const raiz = document.createElement('div');

@@ -9,6 +9,7 @@ import type { EngineFrame } from '../engine/simulator';
 import type { CaseStep, ClinicalCase, Scenario } from '../scenarios';
 import type { CaseResult } from './caseEvaluation';
 import type { CaseStatus } from './caseProgress';
+import { autoPeepFigure } from './autoPeepFigure';
 import { element, iconNode } from './dom';
 import { unitText } from './format';
 import { displaySetting, MODE_LABEL, QUICK_LABEL } from './labels';
@@ -258,7 +259,25 @@ function solucion(c: ClinicalCase, result: CaseResult, inicial: VcSettings, rule
   return element('section', 'case-solution', ...nodos);
 }
 
-/** Desarrollo del caso bajo el ventilador: oculto hasta entregar; después, respuesta, solución, explicación y verdad del modelo. */
+const FIGURAS = { autoPeep: autoPeepFigure } as const;
+
+/** El concepto del caso con su esquema: qué buscar y cómo medirlo, a la vista antes y después de entregar. */
+function concepto(c: ClinicalCase): HTMLElement | null {
+  if (!c.concept) return null;
+  const nodos: HTMLElement[] = [element('h3', 'aula-kicker', c.concept.title)];
+  if (c.concept.figure) {
+    const figura = element('div', 'edu-diagram case-concept-figure');
+    figura.innerHTML = FIGURAS[c.concept.figure](); // esquema constante, sin datos del usuario
+    nodos.push(figura);
+  }
+  nodos.push(element('ul', 'case-concept-points', ...c.concept.points.map((p) => element('li', '', p))));
+  return element('section', 'case-concept', ...nodos);
+}
+
+/**
+ * Desarrollo del caso bajo el ventilador. El concepto que el caso pide medir se ve desde el inicio; la respuesta, la
+ * solución, la explicación y la verdad del modelo, sólo al entregar.
+ */
 export function caseDevelopmentNodes(
   sc: Scenario,
   frame: EngineFrame | null,
@@ -267,8 +286,12 @@ export function caseDevelopmentNodes(
   rules: Record<SettingsKey, SettingRule>,
 ): HTMLElement[] {
   const c = sc.clinical!;
+  const idea = concepto(c);
   if (!result)
-    return [element('p', 'aula-caption', 'Se revela al entregar el caso: la explicación, la respuesta y lo que el modelo sabía.')];
+    return [
+      ...(idea ? [idea] : []),
+      element('p', 'aula-caption', 'Se revela al entregar el caso: la explicación, la respuesta y lo que el modelo sabía.'),
+    ];
   const elegida = c.options?.find((o) => o.id === result.answer?.id);
   const correcta = c.options?.find((o) => o.correct);
   const nodos: HTMLElement[] = [
@@ -278,6 +301,7 @@ export function caseDevelopmentNodes(
   if (elegida) nodos.push(element('p', 'aula-caption', `Tu respuesta: ${elegida.text}. ${elegida.why}`));
   if (correcta && correcta !== elegida) nodos.push(element('p', 'aula-caption', `Correcta: ${correcta.text}. ${correcta.why}`));
   nodos.push(solucion(c, result, inicial, rules), element('p', 'case-reveal', c.reveal));
+  if (idea) nodos.push(idea);
   const v = verdad(frame);
   if (v) nodos.push(v);
   return nodos;

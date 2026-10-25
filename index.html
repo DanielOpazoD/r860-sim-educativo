@@ -82,10 +82,9 @@
     </div>
     <section class="instructor-pane active" id="instructor-patient">
       <p class="case-note" id="case-lock-note" hidden>Caso en curso: cambiar el paciente altera el caso. <button class="case-link" data-action="freeExplore">Salir del caso</button></p>
-      <div class="pane-head"><h3 class="small-section-title">Perfil del paciente</h3><span class="pane-actions"><button class="pane-action" data-action="undoEvent" id="undo-event" title="Deshace el último evento o perfil"><svg class="icon"><use href="#i-history"/></svg>Deshacer</button><button class="pane-action" data-action="resetPatient" title="Vuelve a la mecánica del escenario"><svg class="icon"><use href="#i-reset"/></svg>Restablecer</button></span></div>
+      <div class="pane-head"><h3 class="small-section-title">Perfil del paciente</h3><span class="pane-actions"><button class="pane-action" data-action="undoEvent" id="undo-event" title="Deshace el último cambio de perfil"><svg class="icon"><use href="#i-history"/></svg>Deshacer</button><button class="pane-action" data-action="resetPatient" title="Vuelve a la mecánica del escenario"><svg class="icon"><use href="#i-reset"/></svg>Restablecer</button></span></div>
       <div id="patient-profiles"></div>
       <div id="patient-controls"></div>
-      <section class="event-section" aria-labelledby="events-title"><h3 class="small-section-title" id="events-title">Eventos</h3><div class="fault-grid" id="fault-grid"></div></section>
       <div class="flyout-launchers">
         <button class="flyout-launcher" data-flyout="advanced" aria-expanded="false" aria-controls="flyout-advanced"><span>Mecánica avanzada</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <button class="flyout-launcher" data-flyout="model" aria-expanded="false" aria-controls="flyout-model"><span>Datos del modelo</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>

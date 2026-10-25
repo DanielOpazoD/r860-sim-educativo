@@ -357,14 +357,14 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setSensors', params: { fio2Bias: v / 100 } }),
   },
 };
-export const PATIENT_MAIN = ['compliance', 'resistance', 'effort'];
+export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
 /**
  * Mecánica avanzada, en el panel desplegable lateral: un grupo por pestaña, del más usado al más técnico. Cada grupo
  * puede llevar su preajuste fisiológico (tubo en la vía aérea, tejido en el pulmón) y una nota de alcance.
  */
 export const PATIENT_GROUPS: { id: string; title: string; keys: string[]; preset?: 'tissue' | 'tube'; note?: string }[] = [
   { id: 'esfuerzo', title: 'Esfuerzo', keys: ['patientRR', 'muscleTi', 'effortVariability', 'effortExp', 'reverseAmp', 'reverseDelay'] },
-  { id: 'via', title: 'Vía aérea', keys: ['expResistance', 'eflPcrit', 'airwayCollapse', 'rohrer'], preset: 'tube' },
+  { id: 'via', title: 'Vía aérea', keys: ['eflPcrit', 'airwayCollapse', 'rohrer'], preset: 'tube' },
   {
     id: 'pulmon',
     title: 'Pulmón',
@@ -390,17 +390,6 @@ export const PATIENT_GROUPS: { id: string; title: string; keys: string[]; preset
   },
 ];
 export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
-/**
- * Eventos súbitos del panel Paciente: lo que los deslizadores no hacen (oclusión fuera de rango, circuito abierto) o
- * conviene poder deshacer de un golpe. [id, icono, rótulo, descripción (en la ayuda emergente), deshabilitado].
- */
-export const FAULTS: [string, string, string, string, boolean][] = [
-  ['apnea', 'pause', 'Apnea', 'Interrumpe el esfuerzo del paciente', false],
-  ['obstruction', 'lock', 'Oclusión', 'Resistencia extrema: la presión llega a Pmáx', false],
-  ['leak', 'wave', 'Fuga', '6 L/min a 10 cmH₂O en la pieza en Y', false],
-  ['disconnect', 'plug', 'Desconexión', 'Circuito abierto en la pieza en Y', false],
-];
-
 /** Select de un preset fisiológico (U-37) junto a sus deslizadores (E₂/τ₂ o K₂): no cambia valores por omisión. */
 export function presetHtml(preset: 'tissue' | 'tube', contextualPanel: (key: string, id: string) => string): string {
   const [label, help, presets] =

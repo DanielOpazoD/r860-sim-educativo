@@ -42,6 +42,45 @@ describe('Perfiles del paciente', () => {
     expect(corto('healthy')).toBe('C 50 · R 10');
     expect(corto('obstructive')).toBe('C 60 · R 15/25');
     expect(corto('spontaneous')).toBe('Pmus 8 · 15/min');
+    expect(corto('weak')).toBe('Pmus 3 · 20/min');
+  });
+});
+
+describe('PRF-02 · «Esfuerzo débil»: esfuerzos que se ven y no disparan', () => {
+  const { patient, effort } = profileState(PATIENT_PROFILES.find((profile) => profile.id === 'weak')!);
+  // Con y sin músculo, la misma programación: la diferencia de las curvas es lo que el alumno ve del esfuerzo.
+  function medir(settings: { rr: number; flowTrigger: number }) {
+    const base = defaultInit();
+    const crear = (amplitude: number) =>
+      new Simulator(
+        defaultInit({ patient: { ...patient }, effort: { ...effort, amplitude }, settings: { ...base.settings, ...settings } }),
+        REFERENCE_PROFILE,
+      );
+    const con = crear(effort.amplitude),
+      sin = crear(0);
+    let dPaw = 0,
+      dFlujo = 0;
+    for (let i = 0; i < 90_000 / 4; i++) {
+      con.step();
+      sin.step();
+      const a = con.frame().samples,
+        b = sin.frame().samples;
+      for (let k = 0; k < Math.min(a.t.length, b.t.length); k++) {
+        dPaw = Math.max(dPaw, Math.abs(a.paw[k]! - b.paw[k]!));
+        dFlujo = Math.max(dFlujo, Math.abs(a.flow[k]! - b.flow[k]!) * 60);
+      }
+    }
+    return { asistidas: con.breaths.filter((b) => b.type !== 'mandatory').length, dPaw, dFlujo, peepi: con.frame().truth.peepiEndExp };
+  }
+  it.each([
+    ['el banco (FR 15, disparo 2 L/min)', { rr: 15, flowTrigger: 2 / 60 }],
+    ['SC-05 (FR 12, disparo 3 L/min)', { rr: 12, flowTrigger: 3 / 60 }],
+  ])('con %s ningún esfuerzo dispara, pero mueve la presión y el flujo', (_, settings) => {
+    const m = medir(settings);
+    expect(m.asistidas).toBe(0);
+    expect(m.dPaw).toBeGreaterThan(2);
+    expect(m.dFlujo).toBeGreaterThan(3);
+    expect(m.peepi).toBeGreaterThan(1);
   });
 });
 

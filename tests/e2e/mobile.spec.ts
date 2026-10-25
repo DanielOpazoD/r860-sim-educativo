@@ -234,9 +234,9 @@ test.describe('VIS-10 móvil · bisel y vistas sin desbordamiento', () => {
 
     await expect(page.locator('#flyout-advanced')).toBeHidden();
     const targets = page.locator(
-      '#patient-profiles .profile-chip, #patient-controls [data-phys-step], #fault-grid [data-event], #undo-event, [data-action="resetPatient"], [data-flyout]',
+      '#patient-profiles .profile-chip, #patient-controls [data-phys-step], #undo-event, [data-action="resetPatient"], [data-flyout]',
     );
-    await expect(targets).toHaveCount(19);
+    await expect(targets).toHaveCount(17);
     const heights = await targets.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
     expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
 
