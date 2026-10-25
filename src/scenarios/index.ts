@@ -81,6 +81,11 @@ export interface ClinicalCase {
   /** Cómo se resuelve, en pasos y ajustes concretos: se revela al entregar, en una tabla, antes de la explicación. */
   solution: CaseSolution;
   references: CaseReference[];
+  /**
+   * Concepto que el caso exige saber medir, visible desde el inicio en el desarrollo: explica qué buscar y cómo
+   * medirlo, no cómo resolverlo. `figure` nombra un esquema de la interfaz.
+   */
+  concept?: { title: string; points: string[]; figure?: 'autoPeep' };
 }
 
 export interface Scenario {

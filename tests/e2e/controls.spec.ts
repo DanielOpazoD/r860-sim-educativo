@@ -53,6 +53,53 @@ test.describe('Controles exteriores coherentes', () => {
     await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('fixed');
   });
 
+  test('PREF-V · cada opción de la vista se mantiene al cambiar las demás y al recargar', async ({ page }) => {
+    await open(page);
+    const estado = () =>
+      page.evaluate(() => ({
+        descripcion: (document.getElementById('variable-descriptions') as HTMLInputElement).checked,
+        glosario: !document.getElementById('variable-legend')!.hidden,
+        ventana: (document.querySelector('input[name="wave-window"]:checked') as HTMLInputElement).value,
+        trazado: (document.querySelector('input[name="wave-style"]:checked') as HTMLInputElement).value,
+        escala: (document.querySelector('input[name="wave-scale"]:checked') as HTMLInputElement).value,
+        casillas: (document.querySelector('input[name="numeric-density"]:checked') as HTMLInputElement).value,
+        ayudas: document.getElementById('wave-aids-toggle')!.getAttribute('aria-pressed'),
+        velocidad: window.__ventila.speed,
+      }));
+    // Primero la descripción encendida y luego apagada: lo que debe sobrevivir es la elección, no el valor por omisión.
+    await openPersonalization(page);
+    await page.locator('.view-description-toggle').click();
+    await page.locator('.view-description-toggle').click();
+    await expect(page.locator('#variable-descriptions')).not.toBeChecked();
+    const esperado = {
+      descripcion: false,
+      glosario: false,
+      ventana: '6',
+      trazado: 'scroll',
+      escala: 'fixed',
+      casillas: '6',
+      ayudas: 'false',
+      velocidad: 4,
+    };
+    await closePersonalization(page);
+    await openPresentation(page);
+    await chooseRadio(page, 'wave-window', '6');
+    await chooseRadio(page, 'wave-window', '12');
+    await chooseRadio(page, 'wave-window', '6');
+    await chooseRadio(page, 'wave-style', 'scroll');
+    await chooseRadio(page, 'wave-scale', 'fixed');
+    await chooseRadio(page, 'numeric-density', '6');
+    await openTimeControls(page);
+    await page.locator('.speed-option[data-speed="4"]').click();
+    await closePersonalization(page);
+    await page.locator('#wave-aids-toggle').click();
+    await expect.poll(estado).toEqual(esperado);
+    // Recargar sin velocidad en la dirección: la guardada manda.
+    await page.goto(page.url().replace(/([?&])speed=[^&]*&?/, '$1'));
+    await page.waitForFunction(() => window.__ventila && window.__ventila.frame !== null);
+    await expect.poll(estado).toEqual(esperado);
+  });
+
   test('la barra muestra exactamente Pausar, Personalizar vista y las ayudas sobre las curvas; Sesión sólo en Más opciones', async ({
     page,
   }) => {

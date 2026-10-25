@@ -295,6 +295,17 @@ export const CLINICAL_CASES: Scenario[] = [
     description: 'El flujo espiratorio no vuelve a cero: hay PEEP intrínseca. Ajusta los tiempos sin perder el control del pH.',
     clinical: {
       theme: 'EPOC · hiperinflación dinámica',
+      concept: {
+        title: 'La auto-PEEP: qué es y cómo se mide',
+        figure: 'autoPeep',
+        points: [
+          'Qué es: si la inspiración siguiente empieza antes de que el pulmón termine de vaciarse, queda volumen atrapado. Al final de la espiración ese volumen mantiene la presión alveolar por encima de la PEEP programada; esa diferencia es la PEEP intrínseca o auto-PEEP (PEEPi).',
+          'Por qué no se ve: con la válvula espiratoria abierta el manómetro mide el circuito, que está a la PEEP programada (PEEPe). La presión alveolar queda detrás de la resistencia de la vía aérea.',
+          'Cómo se sospecha: en la curva de flujo, el flujo espiratorio no vuelve a cero antes de la inspiración siguiente.',
+          'Cómo se mide: al final de la espiración, un bloqueo espiratorio cierra las válvulas. Sin flujo, la presión de la vía aérea se iguala con la alveolar y se asienta en una meseta: la PEEP total. PEEPi = PEEP total − PEEPe. La paciente debe estar pasiva (un esfuerzo deforma la meseta) y el bloqueo debe durar hasta que la presión se asiente: en esta paciente, unos 4 s.',
+          'De qué depende: del tiempo espiratorio frente a la constante de tiempo (τ = R·C). Con menos de unas tres constantes de tiempo, el pulmón no alcanza a vaciarse.',
+        ],
+      },
       vignette:
         'Mujer de 71 años con EPOC grave, intubada por una exacerbación. Antes de intubarla: pH 7,26, PaCO₂ 78 mmHg, HCO₃⁻ 34 mEq/L. Está sedada, sin esfuerzo propio, en volumen control: VT 500 mL, FR 20, I:E 1:2. El flujo espiratorio no vuelve a cero antes de cada inspiración.',
       question:

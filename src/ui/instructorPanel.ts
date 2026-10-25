@@ -1,6 +1,7 @@
 /**
- * Panel docente: fisiología del paciente virtual, eventos (fallos) con deshacer, verdad del modelo, escenarios y lección.
- * Los cambios de paciente se envían como instructor; la pila de deshacer guarda los comandos inversos.
+ * Panel docente: fisiología del paciente virtual, perfiles con deshacer, verdad del modelo, escenarios y lección.
+ * Los cambios de paciente se envían como instructor; la pila de deshacer guarda los comandos inversos. Los eventos
+ * súbitos (apnea, oclusión, fuga, desconexión) ya no tienen botones en el panel: `fault` queda para las pruebas.
  */
 import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
@@ -8,12 +9,12 @@ import { formatNumber as f } from '../domain/units';
 import { validateDomains, validateVcSettings } from '../domain/validation';
 import { findScenario } from '../scenarios';
 import type { AppContext } from './context';
-import { $, $$, element, esc, iconNode, put } from './dom';
+import { $, $$, element, esc, put } from './dom';
 import type { HoldPanel } from './holdPanel';
 import { contextualHelpPanel } from './helpPanels';
 import type { MetricsView } from './metricsView';
 import { frRespaldoQueCede, matchesProfile, PATIENT_PROFILES, profileHint, profileShort, profileState } from './patientProfiles';
-import { FAULTS, PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetHtml, type PhysSpec } from './patientControls';
+import { PATIENT_GROUPS, PATIENT_MAIN, PHYS, physHtml, presetHtml, type PhysSpec } from './patientControls';
 import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import type { PlotsView } from './plotsView';
 import type { QuickEditor } from './quickEditor';
@@ -24,7 +25,7 @@ import { DEFAULT_EXP_BRANCH_R_CMH2O_S_L } from '../engine/controller';
 
 export interface InstructorPanel {
   readonly teacherVisible: boolean;
-  /** Construye controles de paciente y rejilla de eventos. */
+  /** Construye perfiles y controles de paciente. */
   init(): void;
   /** Estado inicial del botón de mostrar/ocultar y pie del panel (tras medir el monitor, como en el arranque original). */
   initChrome(): void;
@@ -58,7 +59,6 @@ export function createInstructorPanel(
   const flyouts = createSideFlyouts(ctx);
   const eventUndo: Command[][] = [];
   const physEditing = new Set<string>();
-  let apneaApplied = false;
   let profileTruthJson: string | null = null;
 
   function renderToggle(): void {
@@ -149,14 +149,6 @@ export function createInstructorPanel(
       recruitCell.hidden = !p.recruit;
       put('#truth-recruit', `${Math.round(fr.truth.recruited * 100)} %`);
     }
-    for (const [id, on] of [
-      ['apnea', apneaApplied && (!fr.truth.effort.enabled || fr.truth.effort.amplitude === 0)],
-      ['obstruction', fr.truth.patient.rInsp >= 300],
-    ] as [string, boolean][]) {
-      const e = document.getElementById(`event-${id}`);
-      e?.classList.toggle('active', on);
-      e?.setAttribute('aria-pressed', String(on));
-    }
     ($('#undo-event') as HTMLButtonElement).disabled = eventUndo.length === 0;
   }
   async function setPhys(cmds: Command[], undo: Command[] | null): Promise<boolean> {
@@ -175,7 +167,6 @@ export function createInstructorPanel(
       e = fr.truth.effort;
     if (kind === 'apnea') {
       const on = e.enabled && e.amplitude > 0;
-      apneaApplied = on;
       await setPhys(
         [{ type: 'setEffort', params: on ? { enabled: false } : { enabled: true, amplitude: e.amplitude > 0 ? e.amplitude : 6 } }],
         [{ type: 'setEffort', params: { enabled: e.enabled, amplitude: e.amplitude } }],
@@ -269,17 +260,6 @@ export function createInstructorPanel(
         (group) =>
           `<section class="phys-group" role="tabpanel" id="group-${group.id}" data-group="${group.id}" aria-labelledby="tab-group-${group.id}" hidden>${group.preset ? presetHtml(group.preset, contextualHelpPanel) : ''}${physHtml(group.keys, contextualHelpPanel)}${group.note ? `<p class="settings-annotation">${esc(group.note)}</p>` : ''}</section>`,
       ).join('');
-      $('#fault-grid').replaceChildren(
-        ...FAULTS.map(([id, i, label, description, off]) => {
-          const button = element('button', 'event-chip', iconNode(i), element('b', '', label));
-          button.title = description;
-          button.setAttribute('aria-label', `${label}: ${description}`);
-          button.dataset.event = id;
-          button.id = `event-${id}`;
-          button.disabled = !!off;
-          return button;
-        }),
-      );
       flyouts.init();
     },
     initChrome() {
@@ -360,7 +340,7 @@ export function createInstructorPanel(
     async undoEvent() {
       const u = eventUndo.pop();
       if (u) await setPhys(u, null);
-      else ctx.toast('No hay eventos para deshacer.');
+      else ctx.toast('No hay cambios para deshacer.');
     },
     physRangeInput(el) {
       const k = el.dataset.physRange as string;

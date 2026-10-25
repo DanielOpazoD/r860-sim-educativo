@@ -281,6 +281,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       const option = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-speed]');
       if (!option) return;
       ctx.setSpeed(Number(option.dataset.speed));
+      if (!ctx.fixtureId) savePrefs({ speed: Number(option.dataset.speed) });
     });
     speedOptions.addEventListener('keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;

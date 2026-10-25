@@ -180,56 +180,6 @@
   cursor: default;
 }
 
-/* Eventos súbitos: chips en una fila que se reparten el ancho; la descripción va en la ayuda emergente. */
-.event-section {
-  margin: 0 0 10px;
-}
-.event-section .small-section-title {
-  margin: 8px 0 6px;
-}
-.fault-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.fault-grid .event-chip {
-  flex: 1 1 auto;
-  justify-content: center;
-}
-.event-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 5px 8px;
-  border: 1px solid var(--shell-line);
-  border-radius: var(--radius-md);
-  background: var(--shell-surface);
-  color: var(--shell-text);
-  text-align: left;
-}
-.event-chip .icon {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  color: var(--shell-muted);
-}
-.event-chip b {
-  font-size: var(--type-xs);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.event-chip:hover {
-  border-color: var(--shell-accent);
-}
-.event-chip.active {
-  border-color: var(--shell-accent);
-  background: var(--shell-accent-soft);
-  color: var(--shell-accent);
-}
-
 /* Lista de casos */
 .case-panel-lead {
   color: var(--shell-muted);
@@ -674,6 +624,25 @@
   margin: 18px 0;
   max-width: 72ch;
 }
+/* Concepto que el caso pide medir: esquema y puntos breves, a la vista desde el inicio. */
+.case-concept {
+  margin: 4px 0 20px;
+  max-width: 900px;
+}
+.case-concept-figure {
+  margin-top: 10px;
+}
+.case-concept-points {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: var(--shell-text);
+  font-size: var(--type-md);
+  line-height: 1.6;
+  max-width: 80ch;
+}
+.case-concept-points li + li {
+  margin-top: 6px;
+}
 .case-truth {
   border-top: 1px solid var(--shell-line);
   padding-top: 14px;
@@ -940,7 +909,6 @@
 }
 @media (max-width: 700px) {
   /* Objetivos táctiles de 44 px, como el resto del panel en móvil. */
-  .event-chip,
   .pane-action,
   .flyout-launcher,
   .flyout-tab,

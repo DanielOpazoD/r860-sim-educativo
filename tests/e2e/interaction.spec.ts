@@ -343,7 +343,7 @@ test.describe('INT · selección, edición, confirmación y cancelación', () =>
     });
     // Nueva oclusión sin reconocer y resolución: banda gris (resuelta, pendiente de reconocer) hasta reconocer.
     await showPanel(page, 'patient');
-    await page.click('[data-event="obstruction"]');
+    await page.evaluate(() => window.__ventila.fault('obstruction'));
     await page.waitForFunction(() => (window.__ventila.frame as { alarmBar: { color: string } }).alarmBar.color === 'red', null, {
       timeout: 20_000,
     });
@@ -738,12 +738,10 @@ test.describe('IMP · sesión importada', () => {
 });
 
 test.describe('DESC · desconexión del circuito', () => {
-  test('abrir el circuito en Eventos dispara la alarma alta; deshacer la resuelve y reconocer devuelve la banda al azul', async ({
-    page,
-  }) => {
+  test('abrir el circuito en la Y dispara la alarma alta; deshacer la resuelve y reconocer devuelve la banda al azul', async ({ page }) => {
     await open(page, { scenario: 'SC-23', speed: 4 });
     await showPanel(page, 'patient');
-    await page.click('[data-event="disconnect"]');
+    await page.evaluate(() => window.__ventila.fault('disconnect'));
     await expect(page.locator('#alarm-label')).toHaveText('Prioridad alta · Paciente desconectado', { timeout: 20_000 });
     await expect(page.locator('#alarm-band')).toHaveClass(/high/);
     await expect.poll(async () => (await frame(page)).metrics.vte?.value ?? 1, { timeout: 15_000 }).toBeLessThan(0.01);
@@ -1069,16 +1067,19 @@ test.describe('PRE · presets de mecánica del paciente', () => {
 });
 
 test.describe('PAC · panel Paciente esencial', () => {
-  test('tres controles a la vista; la mecánica avanzada sale de la barra en cuatro pestañas, un grupo a la vez', async ({ page }) => {
+  test('cuatro controles a la vista (con las dos resistencias); la mecánica avanzada sale de la barra en cuatro pestañas, un grupo a la vez', async ({
+    page,
+  }) => {
     await open(page, { scenario: 'SC-02' });
     await showPanel(page, 'patient');
-    await expect(page.locator('#instructor-patient [data-phys-range]:visible')).toHaveCount(3);
+    await expect(page.locator('#instructor-patient [data-phys-range]:visible')).toHaveCount(4);
+    await expect(page.locator('#instructor-patient [data-phys-range="expResistance"]')).toBeVisible();
     await expect(page.locator('#flyout-advanced')).toBeHidden();
 
     await openMoreParams(page, 'via');
     await expect(page.locator('#advanced-tabs [data-group]')).toHaveCount(4);
     await expect(page.locator('#patient-extra-controls [data-group]:visible')).toHaveCount(1);
-    await expect(page.locator('[data-phys-range="expResistance"]')).toBeVisible();
+    await expect(page.locator('[data-phys-range="eflPcrit"]')).toBeVisible();
     await expect(page.locator('[data-phys-range="effortExp"]')).toBeHidden();
     await openMoreParams(page, 'esfuerzo');
     await expect(page.locator('[data-phys-range="effortExp"]')).toBeVisible();

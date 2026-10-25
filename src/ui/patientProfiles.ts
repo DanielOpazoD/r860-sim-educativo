@@ -11,12 +11,22 @@ export const PATIENT_PROFILES: {
   scenarioId: string;
   /** Sus esfuerzos disparan: en A/C el paciente debe llevar el ritmo, no competir con la FR programada (E-127). */
   lidera?: true;
+  /** Cambios sobre el escenario de referencia, sólo para el perfil (el escenario y su lección no cambian). */
+  patient?: Partial<PatientParams>;
+  effort?: Partial<EffortParams>;
 }[] = [
   { id: 'healthy', label: 'Sano, sedado', scenarioId: 'SC-01' },
   { id: 'stiff', label: 'Restrictivo', scenarioId: 'SC-21' },
   { id: 'obstructive', label: 'Obstructivo', scenarioId: 'SC-16' },
   { id: 'spontaneous', label: 'Esfuerzo normal', scenarioId: 'SC-19', lidera: true },
-  { id: 'weak', label: 'Esfuerzo débil', scenarioId: 'SC-05' },
+  /**
+   * Esfuerzos inefectivos que se ven: con el 0,6 cmH₂O de SC-05 la curva parecía pasiva. 3 cmH₂O a 20/min no disparan
+   * porque la espiración lenta (Rexp 35, τ ≈ 1,9 s) deja auto-PEEP que el músculo debe vencer antes de mover flujo
+   * hacia el paciente, el mecanismo habitual de los esfuerzos inefectivos (Thille 2006). Medido en el motor
+   * (PRF-02): ninguna respiración asistida con la FR 15 y el disparo de 2 L/min del banco, ni con FR 12 y 3 L/min;
+   * muesca de ≈ 3 cmH₂O en la presión y ≈ 4 L/min en el flujo.
+   */
+  { id: 'weak', label: 'Esfuerzo débil', scenarioId: 'SC-05', patient: { rExp: 35 }, effort: { amplitude: 3, ratePerMin: 20 } },
 ];
 
 export type PatientProfile = (typeof PATIENT_PROFILES)[number];
@@ -40,7 +50,7 @@ export function frRespaldoQueCede(profile: PatientProfile): number | null {
 export function profileState(profile: PatientProfile): { patient: PatientParams; effort: EffortParams } {
   const scenario = findScenario(profile.scenarioId);
   if (!scenario) throw new Error(`El perfil ${profile.id} apunta a un escenario inexistente: ${profile.scenarioId}`);
-  return { patient: scenario.patient, effort: scenario.effort };
+  return { patient: { ...scenario.patient, ...profile.patient }, effort: { ...scenario.effort, ...profile.effort } };
 }
 
 function displayNumber(value: number): string {
