@@ -273,6 +273,37 @@ describe('edición, medición y navegación de diálogos', () => {
     expect($('#bezel-light').classList.contains('pausa')).toBe(true);
   });
 
+  it('la lista de alarmas da valor y umbral en unidades de pantalla, con su unidad', () => {
+    const { ctx, sim } = harness;
+    const alarms = createAlarmsUi(ctx);
+    while (sim.simTimeMs < 12_000) sim.step();
+    sim.command({ type: 'setAlarmLimits', changes: { vteLow: 0.6 } });
+    for (let i = 0; i < 4 * 1500 && !sim.alarms.get('vteLow')!.conditionActive; i++) sim.step();
+    ctx.frame = sim.frame();
+    alarms.alarms();
+    const texto = $('#live-alarms').textContent ?? '';
+    expect(texto).toContain('umbral 600 mL');
+    expect(texto).toMatch(/valor al inicio \d+ mL/);
+    expect(texto).not.toContain('0.6');
+  });
+
+  it('la tabla de mediciones conserva sus filas entre cuadros: sólo cambian valor y estado', () => {
+    const { ctx, sim } = harness;
+    ctx.view = 'data';
+    ctx.frame = sim.frame();
+    const metrics = createMetricsView(ctx);
+    metrics.init();
+    metrics.updateMetrics();
+    const boton = $('#data-table-body [data-metric="ppeak"]');
+    const antes = $('tr[data-row="ppeak"] td:nth-child(2)').textContent;
+    while (sim.simTimeMs < 12_000) sim.step();
+    ctx.frame = sim.frame();
+    metrics.updateMetrics();
+    expect($('#data-table-body [data-metric="ppeak"]')).toBe(boton);
+    expect($('tr[data-row="ppeak"] td:nth-child(2)').textContent).not.toBe(antes);
+    expect($$('#data-table-body tr[data-row], #data-table-body-2 tr[data-row]').length).toBe(20);
+  });
+
   it('VMesp y FiO2 baja no se apagan, como en el equipo: el campo vacío es un error con el mínimo', async () => {
     const { ctx } = harness;
     const alarms = createAlarmsUi(ctx);

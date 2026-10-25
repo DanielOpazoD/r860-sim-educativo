@@ -75,8 +75,11 @@ export function bindKeyboard(
       return;
     }
     if (t.dataset.metric && roveGrid(e, t)) return;
-    if (t.closest('input,select,textarea,button,summary,a') || $<HTMLDialogElement>('#app-dialog').open) return;
+    if ($<HTMLDialogElement>('#app-dialog').open) return;
+    // Al escribir no hay atajos; sobre un botón o un enlace sólo se reserva Espacio, que lo activa.
+    if (t.closest('input,select,textarea,[contenteditable]:not([contenteditable="false"])')) return;
     const key = e.key.toLowerCase();
+    if (key === ' ' && t.closest('button,summary,a,[role="button"]')) return;
     const command = SHORTCUTS[key];
     if (command) {
       e.preventDefault();

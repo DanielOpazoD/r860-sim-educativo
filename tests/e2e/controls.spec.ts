@@ -29,7 +29,7 @@ test.describe('Controles exteriores coherentes', () => {
 
     await expect.poll(() => page.evaluate(() => window.__ventila.waveScale)).toBe('fixed');
     await expect(page.locator('#numeric-density input[value="6"]')).toBeChecked();
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('ventila.tileDensity'))).toBe('6');
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}').tileDensity)).toBe(6);
     await expect(page.locator('#waves-canvas')).toBeVisible();
     await closePersonalization(page);
     await page.locator('[data-view="basic"]').click();
@@ -238,7 +238,7 @@ test.describe('Controles exteriores coherentes', () => {
       expect(box.scroll).toBeLessThanOrEqual(box.client + 1);
     }
     if (!isMobile) {
-      await page.setViewportSize({ width: 844, height: 400 });
+      await page.setViewportSize({ width: 844, height: 320 });
       await openPersonalization(page);
       const dialog = page.locator('#wave-options');
       const body = dialog.locator('.view-settings-body');

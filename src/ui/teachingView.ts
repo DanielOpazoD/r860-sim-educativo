@@ -6,7 +6,7 @@ import { ACELERACION_EQUILIBRIO, DEFAULT_GAS } from '../engine/gasExchange';
 import type { EngineFrame } from '../engine/simulator';
 import type { AppContext } from './context';
 import { $, $$, esc } from './dom';
-import { formatNumber as f } from '../domain/units';
+import { formatTexto as f } from '../domain/units';
 import { DOCENTE as D } from '../render/monitorPalette';
 import { estres, niveles, tarjetas, titulacion, type PuntoTitulacion, type Tarjeta } from './teaching';
 import { humanReason } from './humanize';
@@ -174,7 +174,7 @@ function graficoTitulacion(puntos: PuntoTitulacion[], oculto: (k: string) => boo
   const verCstat = !oculto('cstat');
   if (p.length < 2)
     return (
-      `<p class="edu-falta">Mide la distensibilidad con un bloqueo inspiratorio a distintas PEEP y aquí se dibuja tu curva. ` +
+      `<p class="edu-falta">Mide la compliance con un bloqueo inspiratorio a distintas PEEP y aquí se dibuja tu curva. ` +
       `Llevas ${p.length} de los 2 puntos que hacen falta para empezar a verla.</p>`
     );
   const W = 380,
@@ -200,7 +200,7 @@ function graficoTitulacion(puntos: PuntoTitulacion[], oculto: (k: string) => boo
       `${verCstat ? f(mejor.cstat, 0) : '?'} a PEEP ${f(mejor.peep, 0)}</text>`
     : '';
   return (
-    `<svg viewBox="0 0 ${W} ${H}" class="edu-titulacion" role="img" aria-label="Distensibilidad estática medida a distintas PEEP">` +
+    `<svg viewBox="0 0 ${W} ${H}" class="edu-titulacion" role="img" aria-label="Compliance estática medida a distintas PEEP">` +
     `<line x1="${izq}" y1="${H - aba}" x2="${W - 12}" y2="${H - aba}" stroke="${D.eje}" stroke-width="1"/>` +
     `<line x1="${izq}" y1="12" x2="${izq}" y2="${H - aba}" stroke="${D.eje}" stroke-width="1"/>` +
     `<polyline points="${linea}" fill="none" stroke="${D.formula}" stroke-width="1.5"/>` +
@@ -258,7 +258,7 @@ function proteccionHTML(fr: EngineFrame, puntos: PuntoTitulacion[], oculto: (k: 
       ? `No se puede leer aquí: ${humanReason(e.motivo)}.`
       : e.lectura;
   const grafico = graficoTitulacion(puntos, oculto);
-  const tituloCurva = 'Tu propia curva: cada punto es una distensibilidad que mediste con un bloqueo a esa PEEP.';
+  const tituloCurva = 'Tu propia curva: cada punto es una compliance que mediste con un bloqueo a esa PEEP.';
   const mensajeCurva = puntos.length < 2 ? grafico : `${grafico}<p class="edu-nota">${tituloCurva}</p>`;
   const porQueCurva =
     puntos.length < 2

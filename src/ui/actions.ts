@@ -17,7 +17,7 @@ import { toggleHelp } from './helpPanels';
 import type { HoldPanel } from './holdPanel';
 import type { InstructorPanel } from './instructorPanel';
 import { isMobile } from './labels';
-import { clearPrefs, savePrefs } from './prefs';
+import { resetViewPrefs, savePrefs } from './prefs';
 import type { MetricsView } from './metricsView';
 import type { ModeDialog } from './modeDialog';
 import type { PlotsView } from './plotsView';
@@ -189,16 +189,16 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     session: () => {
       ctx.dialog.open(
         'session',
-        'Sesión y exportaciones',
+        'Sesión y archivos',
         sessionHTML(ctx.scenario.name, ctx.simS(), ENGINE_VERSION, ctx.profile.profileVersion),
         CLOSE_BTN,
         'wide',
       );
     },
     resetPrefs: () => {
-      clearPrefs();
+      resetViewPrefs();
       ctx.dialog.close();
-      ctx.toast('Preferencias restablecidas: se aplican al recargar');
+      ctx.toast('Preferencias de vista restablecidas: se aplican al recargar');
     },
     exportSession: () => exportaciones.exportSession(),
     importSession: () => $('#session-input').click(),
@@ -206,7 +206,7 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
     signalCSV: () => exportaciones.exportCSV(true),
     snapshot: () => exportaciones.snapshot(),
     exportDebrief: () => {
-      if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame)), `Ventila_practica_${stamp()}.txt`);
+      if (ctx.frame) downloadBlob(textBlob(debriefText(debriefInput(), ctx.frame, ctx.profile.rules)), `Ventila_practica_${stamp()}.txt`);
     },
     help: () => openHelp('start'),
     model: () => openHelp('model'),
@@ -298,6 +298,24 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       e.preventDefault();
       next.focus();
       next.click();
+    });
+    // Menú «…»: flechas, Inicio y Fin recorren sus opciones, como pide role="menu".
+    morePopover.panel.addEventListener('keydown', (e) => {
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+      const items = [...morePopover.panel.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]')].filter(
+        (b) => !b.hidden && !b.disabled,
+      );
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement as HTMLButtonElement);
+      const up = e.key === 'ArrowUp';
+      const index =
+        e.key === 'Home'
+          ? 0
+          : e.key === 'End' || (up && current < 0)
+            ? items.length - 1
+            : (current + (up ? -1 : 1) + items.length) % items.length;
+      e.preventDefault();
+      items[index]!.focus();
     });
     morePopover.panel.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menuitemcheckbox"]')) setPopoverOpen(morePopover, false, true);
@@ -395,8 +413,10 @@ export function createActions(ctx: AppContext, fx: Features): Actions {
       }
       if (el instanceof HTMLInputElement && el.type === 'radio' && el.name) {
         const value = segmentedValue(el.name);
-        if (value !== null && el.name === 'numeric-density' && (value === '6' || value === '13'))
+        if (value !== null && el.name === 'numeric-density' && (value === '6' || value === '13')) {
           ctx.setTileDensity(Number(value) as 6 | 13);
+          if (!ctx.fixtureId) savePrefs({ tileDensity: Number(value) as 6 | 13 });
+        }
         if (value !== null && el.name === 'wave-window') plots.setWaveWindow(Number(value));
         if (value !== null && el.name === 'wave-style') plots.setWaveStyle(value as 'sweep' | 'scroll');
         if (value !== null && el.name === 'wave-scale') plots.setWaveScaleMode(value as 'auto' | 'fixed');

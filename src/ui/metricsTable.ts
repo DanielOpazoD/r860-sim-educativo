@@ -60,7 +60,7 @@ export const BIG_METRICS: [string, string, string][] = [
   ['peepe', 'PEEPe', 'cmH₂O'],
   ['ppeak', 'Presión pico', 'cmH₂O'],
   ['mve', 'Volumen minuto', 'L/min'],
-  ['vte', 'VTesp', 'mL'], // el ajuste se llama «Volumen tidal»: el medido no puede llamarse igual en la misma pantalla
+  ['vte', 'VTesp', 'mL'], // el ajuste se llama «Volumen corriente»: el medido no puede llamarse igual en la misma pantalla
   ['rr', 'Frecuencia resp.', '/min'],
 ];
 export const METRIC_HELP: Record<string, string> = {
@@ -71,7 +71,7 @@ export const METRIC_HELP: Record<string, string> = {
   mve: 'metric.mv',
   rr: 'metric.rr',
   vte: 'metric.vte',
-  fio2: 'setting.fio2',
+  fio2: 'metric.fio2',
   mveSpont: 'metric.mvSpont',
   rrSpont: 'metric.rrSpont',
   cstat: 'metric.cstat',
@@ -141,7 +141,9 @@ export function metricQuality(frame: EngineFrame | null, spec: MetricSpec): stri
   if (spec.source === 'hold') {
     const h = frame.procedure.last.inspHold;
     if (!h) return 'Requiere un bloqueo inspiratorio válido';
-    return `Bloqueo a las ${wallDate(h.wallTimeMs ?? 0).slice(-8)} · hace ${clock(frame.simTimeMs / 1000 - (h.completedAtMs ?? 0) / 1000)}${s.quality !== 'valid' ? ` · ${humanReason(s.reason)}` : ''}`;
+    // También con la medición válida: el motivo dice de dónde sale (qué PEEP resta ΔP, si es aproximada).
+    const motivo = humanReason(s.reason);
+    return `Bloqueo a las ${wallDate(h.wallTimeMs ?? 0).slice(-8)} · hace ${clock(frame.simTimeMs / 1000 - (h.completedAtMs ?? 0) / 1000)}${motivo ? ` · ${motivo}` : ''}`;
   }
   return `${QUALITY[s.quality]}${s.reason ? ' · ' + humanReason(s.reason) : ''} · ${SOURCE[s.source]}${s.breathId ? ' · respiración ' + s.breathId.replace('b', '') : ''}${s.windowMs ? ' · ventana ' + (s.windowMs / 1000).toFixed(1) + ' s' : ''}`;
 }

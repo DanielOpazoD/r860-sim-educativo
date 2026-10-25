@@ -22,7 +22,7 @@ function bloqueo(c: CaseContext, kind: 'inspHold' | 'expHold'): ProcedureResult 
   return h && h.quality === 'valid' && h.passiveMechanicsValid !== false && despues(h, desde) ? h : null;
 }
 /** Respiraciones del último minuto, sólo si todo el minuto es posterior al último ajuste; si no, null. */
-function ventana(c: CaseContext): { type: string; tInspS: number }[] | null {
+function ventana(c: CaseContext): { type: string; tInspS: number; vte: number }[] | null {
   const ahora = c.frame.simTimeMs;
   const desde = ahora - SYNC_WINDOW_S * 1000;
   if (desde < Math.max(c.lessonStartMs, c.settingsChangeMs)) return null;
@@ -40,8 +40,15 @@ export const CASE_TESTS: Record<string, CaseTest> = {
   expHold: (c) => bloqueo(c, 'expHold') !== null,
   /** VT programado ≤ p.mlPerKg × p.pbw (mL). */
   vtMaxPerKg: (c, p) => c.frame.settings.vt * 1000 <= p.mlPerKg! * p.pbw! + 1e-6,
-  /** VT espirado ≥ p.mlPerKg × p.pbw (mL): el soporte no se quedó corto. */
-  vteMinPerKg: (c, p) => (c.frame.metrics.vte?.value ?? 0) * 1000 >= p.mlPerKg! * p.pbw!,
+  /**
+   * VT espirado medio del último minuto ≥ p.mlPerKg × p.pbw (mL): el soporte no se quedó corto. Se juzga la media de la
+   * misma ventana que la sincronía, no la última respiración: con un esfuerzo variable el VTe salta ±50 mL entre ciclos.
+   */
+  vteMinPerKg: (c, p) => {
+    const w = ventana(c);
+    if (!w || !w.length) return false;
+    return (w.reduce((s, b) => s + b.vte, 0) / w.length) * 1000 >= p.mlPerKg! * p.pbw!;
+  },
   /** Pplat del último bloqueo válido ≤ p.max. */
   pplatMax: (c, p) => {
     const v = bloqueo(c, 'inspHold')?.values.pplat?.value;

@@ -146,7 +146,7 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'SC-02',
-    name: 'Menor distensibilidad',
+    name: 'Menor compliance',
     synthetic: true,
     category: 'Mecánica restrictiva',
     level: 2,
@@ -627,7 +627,7 @@ SCENARIOS.push({
   category: 'Modos',
   level: 2,
   description:
-    'CPAP/PS con PS 10 sobre PEEP 5, ciclaje al 25 % del flujo pico. Esfuerzo de 8 cmH2O a 15/min: cada respiración la dispara y la termina el paciente; sin esfuerzo, apnea y respaldo.',
+    'CPAP/PS con PS 10 sobre PEEP 5, ciclado al 25 % del flujo pico. Esfuerzo de 8 cmH2O a 15/min: cada respiración la dispara y la termina el paciente; sin esfuerzo, apnea y respaldo.',
   patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0 },
   // Variabilidad de quien respira bien con soporte: Wysocki (2006) encontró en los que superaban la prueba un CV del
   // impulso ≥ 19 % y del ciclo ≥ 10 %; aquí ±35 % de amplitud (CV ≈ 20 %) y ±20 % de período (CV ≈ 12 %).
@@ -688,7 +688,7 @@ SCENARIOS.push({
   category: 'Sincronía',
   level: 3,
   description:
-    'CPAP/PS con PS 12 y ciclaje al 25 % en un pulmón obstructivo (R 30, τ = 1,5 s). El esfuerzo dura 0,6 s pero el flujo tarda ~1 s en caer al umbral: el soporte sigue cuando el paciente ya espira.',
+    'CPAP/PS con PS 12 y ciclado al 25 % en un pulmón obstructivo (R 30, τ = 1,5 s). El esfuerzo dura 0,6 s pero el flujo tarda ~1 s en caer al umbral: el soporte sigue cuando el paciente ya espira.',
   patient: { crs: 0.05, rInsp: 30, rExp: 30, r2: 0, p0: 0 },
   effort: {
     enabled: true,
@@ -717,25 +717,25 @@ SCENARIOS.push({
   initialV: 'equilibrium',
   perturbations: [],
   observe:
-    'Ti mecánico mayor que el esfuerzo (curva de Pmus del panel docente); al subir el ciclaje al 50 % la inspiración se acorta hasta el esfuerzo.',
+    'Ti mecánico mayor que el esfuerzo (curva de Pmus del panel docente); al subir el ciclado al 50 % la inspiración se acorta hasta el esfuerzo.',
   caution:
     'Asincronía de ciclado por la mecánica y el criterio de flujo; el modelo no simula la espiración activa con la que el paciente real pelea.',
   lesson: {
-    title: 'El ciclaje espiratorio es un ajuste, no una constante',
-    text: 'Con τ larga el flujo decae despacio y tarda en caer al 25 % de su pico: el ventilador sigue insuflando cuando el paciente ya terminó su esfuerzo. Subir el porcentaje de ciclaje termina antes la inspiración sin tocar PS.',
+    title: 'El ciclado espiratorio es un ajuste, no una constante',
+    text: 'Con τ larga el flujo decae despacio y tarda en caer al 25 % de su pico: el ventilador sigue insuflando cuando el paciente ya terminó su esfuerzo. Subir el porcentaje de ciclado termina antes la inspiración sin tocar PS.',
     tasks: [
       {
         id: 'late',
         text: 'Compara el Ti del ventilador con la duración del esfuerzo (curva de Pmus, 0,6 s): el soporte sigue cuando el paciente ya espira.',
         test: 'lateCycling',
       },
-      { id: 'ets', text: 'Sube el ciclaje espiratorio al 50 % o más.', test: 'ets50' },
+      { id: 'ets', text: 'Sube el ciclado espiratorio al 50 % o más.', test: 'ets50' },
       { id: 'fixed', text: 'Comprueba que el Ti baja hasta la duración del esfuerzo, con la misma PS.', test: 'cyclingFixed' },
     ],
   },
-  question: '¿Por qué el mismo criterio de ciclaje acaba bien en un pulmón y tarde en otro?',
+  question: '¿Por qué el mismo criterio de ciclado acaba bien en un pulmón y tarde en otro?',
   answer:
-    'Porque el criterio es un porcentaje del flujo pico y el flujo decae con τ = R·C: con resistencia alta el pico es bajo y la caída lenta, así que el umbral llega tarde. El porcentaje de ciclaje se ajusta a la mecánica, no al revés.',
+    'Porque el criterio es un porcentaje del flujo pico y el flujo decae con τ = R·C: con resistencia alta el pico es bajo y la caída lenta, así que el umbral llega tarde. El porcentaje de ciclado se ajusta a la mecánica, no al revés.',
 });
 
 SCENARIOS.push({

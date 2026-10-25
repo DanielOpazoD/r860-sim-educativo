@@ -497,7 +497,7 @@ test.describe('EDU · pestaña Resumen', () => {
         (window.__ventila.frame as unknown as { procedure: { last: { inspHold: { values: { pplat: { value: number } } } } } }).procedure
           .last.inspHold.values.pplat.value,
     );
-    await expect(page.locator('.edu-card').nth(1)).toContainText(pplat.toFixed(1));
+    await expect(page.locator('.edu-card').nth(1)).toContainText(pplat.toFixed(1).replace('.', ','));
     // Y en escritorio la pestaña cabe sin desplazarse: es un resumen, no un documento. En móvil las cuatro tarjetas se
     // apilan y el desplazamiento es inevitable y correcto, así que ahí no se exige.
     const alturas = await page.evaluate(() => {
@@ -1185,14 +1185,24 @@ test.describe('PREF · bienvenida y memoria de preferencias', () => {
     await expect(page.locator('#scenario-name')).toHaveText('Banco lineal pasivo');
   });
 
-  test('restablecer preferencias las borra y avisa que se aplicará al recargar', async ({ page }) => {
+  test('restablecer preferencias borra las de vista, conserva bienvenida y escenario, y avisa que se aplicará al recargar', async ({
+    page,
+  }) => {
     await open(page);
+    await page.evaluate(() =>
+      localStorage.setItem(
+        'ventila.prefs',
+        JSON.stringify({ v: 1, welcomed: true, lastScenario: 'SC-01', waveWindow: '6', tileDensity: 6 }),
+      ),
+    );
     await page.locator('.palette-trigger').click();
     await page.locator('#palette-input').fill('Sesión y archivos');
     await page.locator('#palette-input').press('Enter');
     await page.click('#app-dialog [data-action="resetPrefs"]');
-    await expect(page.locator('#toast-stack .toast').last()).toHaveText('Preferencias restablecidas: se aplican al recargar');
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('ventila.prefs'))).toBeNull();
+    await expect(page.locator('#toast-stack .toast').last()).toHaveText('Preferencias de vista restablecidas: se aplican al recargar');
+    await expect
+      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ventila.prefs') ?? '{}')))
+      .toEqual({ v: 1, welcomed: true, lastScenario: 'SC-01' });
   });
 });
 

@@ -8,8 +8,10 @@ modelos ni modos, ni inicia validación externa.
   beneficio ni identifica una PEEP clínicamente segura. La cautela declara la
   ausencia de intercambio gaseoso y hemodinámica. No se equipara esta secuencia
   con el protocolo ni los resultados del estudio ART.
-- `Scenario.caution` aparece en Lección, Fundamentos y Resultados, y viaja en el
-  resumen descargable. Se reutilizan las cajas y componentes existentes.
+- `Scenario.caution` aparece en Aula · Fundamentos (las tres pestañas: Presiones,
+  Protección y Ventilación) y viaja en el resumen descargable. Las vistas Lección
+  y Resultados de entonces ya no existen. Se reutilizan las cajas y componentes
+  existentes.
 - SC-04 acredita practicar y confirmar un cambio de Plimit, y su texto dice que no
   se comprueba el efecto. SC-22 sí comprueba el efecto (revisión de integración):
   disparo por flujo de al menos 4 L/min y las tres últimas respiraciones terminadas
@@ -33,9 +35,9 @@ y 41 pruebas focalizadas de presentación, objetivos y DOM. Dos controles de
 objetivos demuestran que sin ciclos completados sólo se acredita el ajuste,
 coherente con los nuevos textos.
 
-Las capturas reales de SC-25 en Lección/Fundamentos fueron inspeccionadas; el
-navegador comprueba también Resultados y el nombre accesible al alternar los
-bloqueos. Evidencia fuera del árbol: `../evidence/teaching-*` y gates finales
+Las capturas reales de SC-25 en Lección y Fundamentos (vistas de entonces)
+fueron inspeccionadas; el navegador comprobó también Resultados y el nombre
+accesible al alternar los bloqueos. Evidencia fuera del árbol: `../evidence/teaching-*` y gates finales
 `../evidence/closure-*`. Estas pruebas usan datos sintéticos y no demuestran
 validez clínica ni eficacia educativa externa. La revisión externa de contenido
 y la evaluación educativa quedan propuestas para una decisión posterior, sin
@@ -43,8 +45,10 @@ iniciar estudios ni incorporar participantes.
 
 ## Gates finales del árbol
 
-`check`: 579/579 pruebas, 75 archivos. Cobertura: líneas 69.69%, ramas 60.86%,
-funciones 67.33%, sentencias 67.55%; umbrales intactos. Build aprobado. E2E:
-387 aprobados, 27 omitidos por condiciones existentes, cero fallos; 138 casos
-en tres proyectos (2.7 min). Hechos y resultados regenerados desde estas salidas
-reales y comprobados. Capturas de escritorio y móvil inspeccionadas. Todo local.
+Al cerrar este bloque, `check` pasó 579/579 pruebas en 75 archivos, con
+cobertura de líneas 69,69 %, ramas 60,86 %, funciones 67,33 % y sentencias
+67,55 %; la E2E, 387 aprobadas y 27 omitidas en tres proyectos. Son cifras de
+entonces. Las vigentes salen de los artefactos de la última corrida y están en el
+README (`hechos:pruebas`, `hechos:cobertura`): hoy, 879 pruebas Vitest y 155
+Playwright × 3 proyectos (402 ejecuciones, 63 omitidas por diseño); cobertura de
+líneas 73,0 %, ramas 64,5 %, funciones 70,2 % y sentencias 71,0 %.

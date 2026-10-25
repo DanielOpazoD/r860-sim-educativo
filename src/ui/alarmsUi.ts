@@ -1,8 +1,9 @@
 /** Banda de alarmas, diálogo de alarmas, edición de límites y audio de alarmas (dueño de AlarmAudio). */
-import type { AlarmLimits, AlarmState } from '../domain/types';
+import type { SettingRule } from '../domain/settingRules';
+import type { AlarmLimits, AlarmState, SettingsKey } from '../domain/types';
 import { gridValues, isOnGrid, nearestGridValue } from '../domain/validation';
 import type { EngineFrame } from '../engine/simulator';
-import { formatNumber as f } from '../domain/units';
+import { formatTexto } from '../domain/units';
 import { AlarmAudio, sonidoDeAlarma } from './audio';
 import type { AppContext } from './context';
 import { $, $$, btn, esc, icon, put } from './dom';
@@ -21,6 +22,15 @@ export interface AlarmsUi {
   toggleAudio(): Promise<void>;
 }
 
+/** Alarmas sin límite propio: su valor y su umbral se leen con la regla del ajuste que las define. */
+const AJUSTE_DE_ALARMA: Partial<Record<string, SettingsKey>> = {
+  pmax: 'pmax',
+  plimit: 'plimit',
+  disconnect: 'pmax',
+  vtNotDelivered: 'vt',
+  apnea: 'apneaTimeS',
+};
+
 export function createAlarmsUi(ctx: AppContext): AlarmsUi {
   const audio = new AlarmAudio();
   let alarmSignature = '';
@@ -32,13 +42,26 @@ export function createAlarmsUi(ctx: AppContext): AlarmsUi {
     limitsDraft = null;
   });
 
+  /** Valor de una alarma en unidades de pantalla y con su unidad («600 mL», «30 %»); viene en la escala interna. */
+  function valorAlarma(id: string, v: number): string {
+    const ajuste = AJUSTE_DE_ALARMA[id];
+    const r: SettingRule | undefined =
+      ctx.profile.alarmLimitRules[id as keyof AlarmLimits] ?? (ajuste ? ctx.profile.rules[ajuste] : undefined);
+    if (!r) return formatTexto(v, 1);
+    const unidad = unitText(r.displayUnit);
+    const x = v * r.displayFactor;
+    // Con la resolución del monitor (URM SW10 13-23): VT entero desde 50 mL; VMesp con dos decimales sólo bajo 1 L/min.
+    const decimales = unidad === 'mL' ? (Math.abs(x) < 50 ? 1 : 0) : unidad === 'L/min' ? (Math.abs(x) < 1 ? 2 : 1) : r.decimals;
+    const texto = formatTexto(x, decimales);
+    return unidad ? `${texto} ${unidad}` : texto;
+  }
   function alarmHTML(): string {
     const fr = ctx.frame as EngineFrame;
     // Las filtradas por otra activa no se listan, como en el equipo (URM SW10 8-25).
     const active = fr.alarms.filter((a) => a.conditionActive && !a.filteredBy),
       pending = fr.alarms.filter((a) => !a.conditionActive && a.latching && a.resolvedAtMs !== null && a.acknowledgedAtMs === null);
     const row = (a: AlarmState): string =>
-      `<div class="alarm-row ${a.conditionActive ? (a.priority === 'high' ? 'high' : 'medium') : 'resolved'}"><span class="alarm-priority">${icon(a.conditionActive ? 'bell' : 'check')}</span><div><b>${esc(learnerText(a.message))}</b><p>${esc(CHANNEL[a.source] ?? a.source)}${a.rawValueAtOnset !== null ? ` · valor al inicio ${f(a.rawValueAtOnset, 1)}` : ''}${a.threshold !== null ? ` · umbral ${f(a.threshold, 1)}` : ''}</p><small>${a.conditionActive ? 'ACTIVA' : 'RESUELTA · PENDIENTE DE RECONOCER'} · ${clock((a.onsetAtMs ?? 0) / 1000)}${a.acknowledgedAtMs !== null ? ' · reconocida' : ''} · prioridad ${PRIORITY[a.priority] ?? a.priority}</small></div></div>`;
+      `<div class="alarm-row ${a.conditionActive ? (a.priority === 'high' ? 'high' : 'medium') : 'resolved'}"><span class="alarm-priority">${icon(a.conditionActive ? 'bell' : 'check')}</span><div><b>${esc(learnerText(a.message))}</b><p>${esc(CHANNEL[a.source] ?? a.source)}${a.rawValueAtOnset !== null ? ` · valor al inicio ${valorAlarma(a.id, a.rawValueAtOnset)}` : ''}${a.threshold !== null ? ` · umbral ${valorAlarma(a.id, a.threshold)}` : ''}</p><small>${a.conditionActive ? 'ACTIVA' : 'RESUELTA · PENDIENTE DE RECONOCER'} · ${clock((a.onsetAtMs ?? 0) / 1000)}${a.acknowledgedAtMs !== null ? ' · reconocida' : ''} · prioridad ${PRIORITY[a.priority] ?? a.priority}</small></div></div>`;
     const items = [...active, ...pending];
     return items.length
       ? items.map(row).join('')

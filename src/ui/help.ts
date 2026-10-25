@@ -8,15 +8,15 @@ export const HELP: Record<string, HelpEntry> = {
   'setting.fio2': {
     title: 'Fracción inspirada de oxígeno · FiO₂',
     text: [
-      'Porcentaje de oxígeno en el gas que entrega el ventilador. El aire ambiente contiene aproximadamente 21%.',
+      'Porcentaje de oxígeno en el gas que entrega el ventilador. El aire ambiente contiene aproximadamente 21 %.',
       'El número medido representa el sensor del circuito y tarda en alcanzar el ajuste, como en el equipo: el mezclador llega al 90 % del cambio en menos de 30 s, el sensor lo sigue y la pantalla muestra su media de los últimos 10 s. No es la saturación de oxígeno del paciente.',
     ],
   },
   'setting.vt': {
-    title: 'Volumen tidal · VT',
+    title: 'Volumen corriente · VT',
     text: [
       'Volumen objetivo de cada respiración. En VC el ventilador intenta entregarlo; la presión necesaria depende de la compliance, la resistencia y el flujo.',
-      'Una limitación de presión o una fuga puede impedir alcanzar el volumen esperado. En PRVC/VS es el objetivo que orienta la adaptación de presión entre ciclos.',
+      'Plimit o una fuga pueden impedir alcanzar el volumen programado.',
     ],
   },
   'setting.rr': {
@@ -76,7 +76,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Rampa de presión',
     text: [
       'Tiempo que tarda la presión en subir desde PEEP hasta el objetivo en modos de presión y soporte.',
-      'Un tiempo menor produce una subida más rápida y mayor flujo inicial. Un tiempo mayor suaviza el ascenso. El tiempo de rampa es el que tarda la presión en llegar al 90 % del objetivo, como lo define el equipo; el modelo usa una subida exponencial. En CPAP/PS esta rampa hace de la del soporte (en el equipo, PS Rise Time, 50 ms de fábrica; en PC, 100); aun con 0 ms la válvula tarda unas decenas de milisegundos en servir lo que pide el paciente, y más cuanto más fuerte tira.',
+      'Tiempo hasta el 90 % del objetivo. En CPAP/PS es la rampa del soporte.',
     ],
   },
   'setting.pause': {
@@ -111,7 +111,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Tipo de disparo',
     text: [
       'Selecciona la señal utilizada para detectar el intento inspiratorio: flujo o presión.',
-      'El disparo inicia la inspiración asistida. No debe confundirse con el ciclaje, que decide cuándo termina.',
+      'El disparo inicia la inspiración asistida. No debe confundirse con el ciclado, que decide cuándo termina.',
     ],
   },
   'setting.assist': {
@@ -122,24 +122,10 @@ export const HELP: Record<string, HelpEntry> = {
     ],
   },
   'setting.expTrigger': {
-    title: 'Ciclaje espiratorio',
+    title: 'Ciclado espiratorio',
     text: [
       'Finaliza una respiración de soporte cuando el flujo inspiratorio cae al porcentaje indicado de su máximo.',
       'Un porcentaje mayor tiende a terminar antes la inspiración; uno menor tiende a prolongarla. El tiempo inspiratorio máximo sigue actuando como límite.',
-    ],
-  },
-  'setting.tiMax': {
-    title: 'Tiempo inspiratorio máximo',
-    text: [
-      'Duración máxima de un ciclo asistido por soporte. Finaliza la inspiración si el flujo todavía no ha alcanzado el criterio de ciclaje.',
-      'No fija la duración de todos los ciclos: el ciclaje por flujo puede terminarlos antes.',
-    ],
-  },
-  'setting.simvTi': {
-    title: 'Tiempo inspiratorio obligatorio · SIMV',
-    text: [
-      'Duración de los ciclos obligatorios de SIMV. La frecuencia programada determina la duración total del ciclo y, por diferencia, el tiempo disponible para espirar.',
-      'Las respiraciones espontáneas intermedias utilizan presión de soporte y su propio criterio de ciclaje.',
     ],
   },
   'setting.apnea': {
@@ -168,30 +154,16 @@ export const HELP: Record<string, HelpEntry> = {
   'setting.backupTinsp': {
     title: 'Tinsp de respaldo',
     text: [
-      'Duración de las respiraciones de respaldo. Las que dispara el paciente no la usan: terminan cuando el flujo cae al porcentaje de ciclaje, si la presión pasa de PEEP + PS + 2,5 cmH₂O o, como tope, a los 4 s (Tsupp del equipo).',
-    ],
-  },
-  'setting.backupRR': {
-    title: 'Frecuencia de respaldo',
-    text: [
-      'Frecuencia de los ciclos obligatorios utilizados cuando se activa el respaldo por apnea.',
-      'No modifica la frecuencia de los esfuerzos del paciente: determina la asistencia por tiempo durante el respaldo.',
-    ],
-  },
-  'setting.pmin': {
-    title: 'Presión adaptativa mínima',
-    text: [
-      'Límite inferior del incremento de presión que puede utilizar el controlador de PRVC o VS. Se expresa por encima de PEEP.',
-      'Delimita la adaptación entre respiraciones; no fuerza una presión constante. El controlador de esta aplicación es una aproximación docente.',
+      'Duración de las respiraciones de respaldo. Las que dispara el paciente no la usan: terminan cuando el flujo cae al porcentaje de ciclado, si la presión pasa de PEEP + PS + 2,5 cmH₂O o, como tope, a los 4 s (Tsupp del equipo).',
     ],
   },
   'patient.compliance': {
-    title: 'Compliance estática (CEST)',
+    title: 'Compliance estática · Cstat',
     text: [
-      'Volumen que gana el sistema respiratorio por cada cmH₂O de presión de distensión, sin flujo. Una CEST menor significa un sistema más rígido: el mismo volumen requiere más presión.',
-      'Aquí ajustas la propiedad del modelo. La CEST mostrada como medición se calcula durante una oclusión válida; no se copia de este control.',
+      'Volumen que gana el sistema respiratorio por cada cmH₂O de presión de distensión, sin flujo. Una Cstat menor significa un sistema más rígido: el mismo volumen requiere más presión.',
+      'Aquí ajustas la propiedad del modelo. La Cstat mostrada como medición se calcula durante una oclusión válida; no se copia de este control.',
     ],
-    equation: 'CEST = VT / (Pplat − PEEP total) · mL/cmH₂O',
+    equation: 'Cstat = VT / (Pplat − PEEP total) · mL/cmH₂O',
   },
   'patient.resistance': {
     title: 'Resistencia inspiratoria',
@@ -247,7 +219,7 @@ export const HELP: Record<string, HelpEntry> = {
       'El tejido pulmonar y la pared torácica no responden sólo como un resorte: parte de la presión se disipa lentamente. Al ocluir, la presión cae de golpe lo resistivo (Ppico → P1) y después sigue bajando durante uno a tres segundos hasta la meseta estática (P2).',
       'Con 0 el sistema es un resorte puro y la meseta es plana desde el primer instante. Al subir E₂ aumenta la diferencia entre P1 y P2, es decir entre la elastancia dinámica y la estática.',
     ],
-    equation: 'Pel = P0 + V/Cest + E₂·(V − Vve),  dVve/dt = (V − Vve)/τ₂',
+    equation: 'Pel = P0 + V/C + E₂·(V − Vve),  dVve/dt = (V − Vve)/τ₂',
   },
   'patient.viscTau': {
     title: 'Constante viscoelástica (τ₂)',
@@ -297,7 +269,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Resistencia de la rama espiratoria',
     text: [
       'Resistencia del circuito y la válvula espiratoria, en serie con la vía aérea. Mientras sale gas, la presión medida en la pieza en Y queda algo por encima de la PEEP, proporcional al flujo.',
-      'Por omisión vale 3 cmH₂O·s/L: la que dejó el Carescape en el banco de válvulas espiratorias de Pinède (2021). Las normas la limitan a unos 6 cmH₂O al flujo de referencia; 0 representa una válvula ideal.',
+      'Por omisión vale 3 cmH₂O·s/L: la que dejó un ventilador de UCI adulto en el banco de válvulas espiratorias de Pinède (2021). Las normas la limitan a unos 6 cmH₂O al flujo de referencia; 0 representa una válvula ideal.',
     ],
   },
   'patient.expResistance': {
@@ -306,7 +278,7 @@ export const HELP: Record<string, HelpEntry> = {
       'Oposición a la salida de gas durante la espiración. Una resistencia mayor enlentece el vaciamiento. El gas también atraviesa la rama y la válvula espiratorias del ventilador (Rrama).',
       'Si el siguiente ciclo empieza antes de vaciarse suficientemente, queda gas atrapado y aumenta la PEEP intrínseca.',
     ],
-    equation: 'Constante de tiempo espiratoria: τ = (Rexp + Rrama) × CEST',
+    equation: 'Constante de tiempo espiratoria: τ = (Rexp + Rrama) × C',
   },
   'patient.effortExp': {
     title: 'Esfuerzo espiratorio',
@@ -332,12 +304,26 @@ export const HELP: Record<string, HelpEntry> = {
   'patient.muscleTi': {
     title: 'Duración del esfuerzo',
     text: [
-      'Tiempo durante el que actúan los músculos en cada intento inspiratorio. No es el tiempo inspiratorio programado del ventilador.',
+      'Tiempo inspiratorio neural: el esfuerzo sube hasta su pico en ese tiempo y después se relaja. No es el tiempo inspiratorio programado del ventilador.',
       'Una diferencia importante entre ambos tiempos puede hacer que el esfuerzo continúe después de que el ventilador haya ciclado a espiración.',
     ],
   },
+  'patient.effortVariability': {
+    title: 'Variabilidad del esfuerzo',
+    text: ['Variación aleatoria, respiración a respiración, de la amplitud y del período del esfuerzo (± %).'],
+  },
+  'patient.o2Tau': {
+    title: 'Sensor de O₂: constante de tiempo',
+    text: [
+      'Constante de tiempo con que el sensor de O₂ sigue al gas entregado: en una τ recorre el 63 % del cambio. La pantalla promedia además los últimos 10 s.',
+    ],
+  },
+  'patient.o2Bias': {
+    title: 'Sensor de O₂: sesgo',
+    text: ['Error fijo que se suma a la FiO₂ medida, en puntos %. Las alarmas de FiO₂ comparan esa lectura.'],
+  },
   'patient.leak': {
-    title: 'Fuga del circuito',
+    title: 'Fuga en la pieza en Y',
     text: [
       'Flujo que se pierde fuera del circuito a 10 cmH₂O. Crece con la presión como un orificio, no en proporción: a 5 cmH₂O se pierde ≈ 68 % de ese valor y a 20, ≈ 147 %.',
       'Disminuye el volumen que vuelve al sensor, puede impedir que se sostenga la PEEP y hace caer la presión durante una oclusión.',
@@ -347,7 +333,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Compliance del circuito no compensada',
     text: [
       'El equipo mide el circuito en el System Check (fuga, compliance y resistencia) y usa esos datos en todas sus compensaciones; los circuitos adultos recomendados tienen 2,0–2,4 mL/cmH₂O. Con 0, el circuito es el verificado y no se nota.',
-      'Este control es la parte que el equipo no compensa, como un circuito cambiado después del System Check: parte del gas entregado se queda comprimido en la tubuladura, el VTi se mantiene pero la meseta baja y la Cstat del bloqueo sale como C + esta compliance. Es el aviso del manual: VT, compliance y resistencia dejan de ser exactos.',
+      'Este control es la parte que el equipo no compensa, como un circuito cambiado después del System Check: parte del gas entregado se queda comprimido en la tubuladura, el VTinsp se mantiene pero la meseta baja y la Cstat del bloqueo sale como C + esta compliance. Es el aviso del manual: VT, compliance y resistencia dejan de ser exactos.',
     ],
   },
   'metric.ppeak': {
@@ -356,7 +342,7 @@ export const HELP: Record<string, HelpEntry> = {
       'Máxima presión medida durante la inspiración. En ventilación pasiva incluye la presión elástica y la necesaria para vencer la resistencia al flujo.',
       'Por eso una presión pico alta no identifica por sí sola cuál de esos componentes aumentó.',
     ],
-    equation: 'Ppico ≈ PEEP total + VT / CEST + R × flujo',
+    equation: 'Ppico ≈ PEEP total + VT / C + R × flujo',
   },
   'metric.peep': {
     title: 'PEEP externa medida · PEEPe',
@@ -385,7 +371,7 @@ export const HELP: Record<string, HelpEntry> = {
       'Cantidad de gas que vuelve por el sensor en un minuto. El simulador la obtiene del volumen espirado y del tiempo de los ciclos recientes.',
       'Depende del volumen por respiración y de la frecuencia, pero no equivale a la ventilación alveolar porque no descuenta espacio muerto.',
     ],
-    equation: 'En respiraciones regulares: VM ≈ VTe × FR',
+    equation: 'En respiraciones regulares: VM ≈ VTesp × FR',
   },
   'metric.rr': {
     title: 'Frecuencia respiratoria medida · FR',
@@ -395,14 +381,14 @@ export const HELP: Record<string, HelpEntry> = {
     ],
   },
   'metric.vte': {
-    title: 'Volumen tidal espirado · VTesp',
+    title: 'Volumen corriente espirado · VTesp',
     text: [
       'Volumen que regresa por el sensor durante la espiración. Se calcula integrando el flujo espiratorio.',
       'Puede diferir del volumen ajustado o inspirado por fuga, limitación de presión o cambios transitorios del volumen retenido.',
     ],
   },
   'metric.vti': {
-    title: 'Volumen tidal inspirado · VTi',
+    title: 'Volumen corriente inspirado · VTinsp',
     text: [
       'Volumen de gas que pasa por el sensor en sentido inspiratorio. Se obtiene integrando el flujo positivo de la respiración.',
       'No es necesariamente el volumen que alcanza el compartimento pulmonar cuando existe una fuga en el circuito.',
@@ -410,10 +396,7 @@ export const HELP: Record<string, HelpEntry> = {
   },
   'metric.fio2': {
     title: 'FiO₂ medida',
-    text: [
-      'Porcentaje de oxígeno indicado por el sensor del circuito. Tras cambiar el ajuste, su respuesta no es instantánea.',
-      'Es una medición del gas inspirado, no de la oxigenación sanguínea. El modelo no calcula SpO₂ ni gasometría.',
-    ],
+    text: ['FiO₂ medida por el sensor de O₂, con su retardo; puede diferir de la programada.'],
   },
   'metric.mvSpont': {
     title: 'Volumen minuto espontáneo',
@@ -430,20 +413,20 @@ export const HELP: Record<string, HelpEntry> = {
     ],
   },
   'metric.cstat': {
-    title: 'Compliance estática (CEST)',
+    title: 'Compliance estática · Cstat',
     text: [
       'Relaciona el volumen inspirado con el aumento de presión estática. Una cifra menor significa que el mismo volumen exige más presión.',
-      'Se estima con una meseta válida y una referencia de PEEP total fiable. Con atrapamiento, mide primero PEEP total; la CEST del panel docente es una propiedad independiente del modelo.',
+      'Usa la PEEP total si antes mediste un bloqueo espiratorio con los mismos ajustes; si no, la PEEPe, y con auto-PEEP sobrestima ΔP (y subestima Cstat). La compliance del panel docente es la propiedad del modelo, no esta medición.',
     ],
-    equation: 'CEST = VTi / (Pplat − PEEP total)',
+    equation: 'Cstat = VTinsp / ΔP estática',
   },
   'metric.driving': {
     title: 'Presión de distensión · ΔP estática',
     text: [
       'Incremento de presión elástica entre el final de espiración y el final de inspiración, con el paciente pasivo y sin flujo.',
-      'Se calcula usando PEEP total, no sólo PEEP programada cuando existe auto-PEEP. No es equivalente a Ppico menos PEEP.',
+      'Usa la PEEP total si antes mediste un bloqueo espiratorio con los mismos ajustes; si no, la PEEPe, y con auto-PEEP sobrestima ΔP. No es Ppico menos PEEP.',
     ],
-    equation: 'ΔP = Pplat − PEEP total',
+    equation: 'ΔP = Pplat − PEEP total (o PEEPe)',
   },
   'metric.leak': {
     title: 'Fuga volumétrica estimada',
@@ -451,7 +434,7 @@ export const HELP: Record<string, HelpEntry> = {
       'Porcentaje del volumen inspirado que no vuelve por el sensor en el ciclo medido.',
       'Una diferencia transitoria también puede reflejar cambios del volumen retenido, no necesariamente una fuga. Se interpreta junto con la señal y el estado del circuito.',
     ],
-    equation: 'Fuga (%) = 100 × (VTi − VTe) / VTi',
+    equation: 'Fuga (%) = 100 × (VTinsp − VTesp) / VTinsp',
   },
   'metric.rinsp': {
     title: 'Resistencia inspiratoria aparente',
@@ -485,26 +468,18 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Índice de estrés',
     text: [
       'Forma de la curva de presión durante una inspiración a flujo constante. Con flujo constante el volumen entra a ritmo fijo, así que la forma de la presión frente al tiempo es la forma de la presión elástica frente al volumen dentro del volumen corriente.',
-      'Cerca de 1 la subida es una recta: la distensibilidad no cambia mientras entra el volumen. Por debajo de 1 la curva se dobla hacia abajo —el pulmón admite mejor el volumen a medida que se insufla—. Por encima de 1 se dobla hacia arriba: cuesta cada vez más, que es el aspecto de la sobredistensión.',
+      'Cerca de 1 la subida es una recta: la compliance no cambia mientras entra el volumen. Por debajo de 1 la curva se dobla hacia abajo —el pulmón admite mejor el volumen a medida que se insufla—. Por encima de 1 se dobla hacia arriba: cuesta cada vez más, que es el aspecto de la sobredistensión.',
       'Sólo significa algo si la rampa es del pulmón y de nadie más: si el paciente hace fuerza, si un techo de presión recorta la señal o si el modo no entrega flujo constante, no se publica y se dice el motivo.',
     ],
-    equation: 'Paw(t) = a · t^b + c · · · el índice es b',
-  },
-  'metric.rsbi': {
-    title: 'Índice de respiración rápida superficial · FR/VT',
-    text: [
-      'Relación entre la frecuencia y el volumen corriente en litros durante respiraciones espontáneas. Una cifra mayor representa respiraciones más rápidas o de menor volumen.',
-      'Este simulador muestra la relación mecánica; no determina por sí sola la posibilidad de retirar el soporte.',
-    ],
-    equation: 'FR/VT = frecuencia (/min) / volumen tidal (L)',
+    equation: 'Pva(t) = a · t^b + c · · · el índice es b',
   },
   'teacher.tau': {
     title: 'Constante de tiempo espiratoria · τ',
     text: [
       'Describe la rapidez de vaciamiento de un compartimento pasivo. Combina compliance y resistencia espiratoria.',
-      'En una constante de tiempo se elimina aproximadamente el 63% del volumen por encima del equilibrio. Un valor mayor significa que se necesita más tiempo para espirar.',
+      'En una constante de tiempo se elimina aproximadamente el 63 % del volumen por encima del equilibrio. Un valor mayor significa que se necesita más tiempo para espirar.',
     ],
-    equation: 'τ = (Rexp + Rrama) × CEST (en L/cmH₂O)',
+    equation: 'τ = (Rexp + Rrama) × C (en L/cmH₂O)',
   },
   'teacher.auto': {
     title: 'PEEP intrínseca · PEEPi',
@@ -514,25 +489,11 @@ export const HELP: Record<string, HelpEntry> = {
     ],
     equation: 'PEEPi = PEEP total − PEEP externa',
   },
-  'teacher.vtpbw': {
-    title: 'Volumen / peso corporal predicho',
-    text: [
-      'Normaliza el volumen pulmonar inspirado respecto de un peso de referencia calculado con talla y ecuación seleccionada.',
-      'No utiliza el peso real. En esta aplicación es un dato descriptivo y no cambia automáticamente los ajustes ni la mecánica.',
-    ],
-  },
-  'teacher.missed': {
-    title: 'Esfuerzos no disparados',
-    text: [
-      'Cuenta intentos inspiratorios que no originaron una respiración asistida.',
-      'Pueden ocurrir por un umbral elevado, por PEEP intrínseca o porque el esfuerzo cayó fuera de un momento elegible para el disparo.',
-    ],
-  },
   'procedure.inspiratory': {
     title: 'Bloqueo inspiratorio',
     text: [
       'Al terminar la inspiración se ocluyen los puertos. Sin fuga, el flujo pasa a cero y el volumen queda constante. En el paciente pasivo, la presión desciende desde el pico hasta la meseta.',
-      'Permite medir Pplat y calcular CEST si la referencia espiratoria es válida. El esfuerzo puede deformar la presión, aunque no haya flujo; no se fuerza una meseta artificial.',
+      'Permite medir Pplat y calcular Cstat si la referencia espiratoria es válida. El esfuerzo puede deformar la presión, aunque no haya flujo; no se fuerza una meseta artificial.',
     ],
     equation: 'Flujo = 0 · Volumen constante · Pva → Pplat',
   },
@@ -547,24 +508,9 @@ export const HELP: Record<string, HelpEntry> = {
   'procedure.alarms': {
     title: 'Límites y alarmas',
     text: [
-      'Los límites comparan mediciones de los ciclos con el intervalo elegido. Un valor fuera de rango debe persistir para activar ciertas alarmas.',
-      'Volumen, frecuencia y Ppico baja se evalúan al terminar cada respiración: a frecuencia baja, entre el cambio y la alarma puede pasar un ciclo entero. Un límite recién confirmado no espera: se compara enseguida con la última respiración medida. Pmáx actúa dentro del propio ciclo, sobre la presión antes de redondear.',
-      'Como en el equipo: VTesp bajo pide tres respiraciones seguidas bajo el límite; tras un bloqueo, VMesp bajo, FR baja y FiO2 esperan 60 s, y las de FiO2 también tras cambiarla; al pasar de espera a ventilar, las de volumen, FR, PEEPe y FiO2 esperan 60 s. Una alarma que otra explica sale de la lista: la desconexión retira la apnea y las de volumen, y la apnea, las de volumen y FR baja.',
-      'Silenciar sólo pausa el sonido durante 2 minutos, y no calla la desconexión del paciente; mientras dura, la mitad izquierda de la luz del bisel queda azul. Una alarma alta que nadie resuelve ni reconoce en 30 s sube de tono y de volumen. Reconocer registra la revisión; no elimina una condición que sigue activa. Pmáx se configura con los ajustes de ventilación.',
-    ],
-  },
-  'procedure.sbt': {
-    title: 'Prueba de respiración espontánea',
-    text: [
-      'Cambia temporalmente a CPAP/PS con los valores seleccionados y registra la mecánica respiratoria durante el tiempo elegido. Al finalizar restaura los ajustes anteriores.',
-      'Es un ejercicio de simulación: no incluye oxigenación, hemodinámica ni una evaluación de extubación.',
-    ],
-  },
-  'procedure.duration': {
-    title: 'Duración de la maniobra',
-    text: [
-      'Tiempo de oclusión medido desde que comienza el bloqueo, no desde que se solicita. Primero debe llegar el final de la fase correspondiente.',
-      'El reloj continúa, pero no se inician ciclos nuevos durante la oclusión. Al terminar se libera el circuito y continúa la secuencia ventilatoria.',
+      'Cada límite compara una medición con el intervalo elegido. Volumen, frecuencia y Ppico baja se evalúan al terminar cada respiración; Pmáx, dentro del ciclo.',
+      'Como en el equipo, VTesp bajo pide tres respiraciones seguidas, y tras un bloqueo, un cambio de FiO₂ o la salida de espera varias alarmas esperan 60 s. Una alarma que otra explica sale de la lista.',
+      'Silenciar pausa el sonido 2 min, salvo el de desconexión. Reconocer registra la revisión; no resuelve la condición.',
     ],
   },
 };

@@ -60,8 +60,8 @@ export const ALARM_RULES: Record<string, RuleDef> = {
   mveHigh: { id: 'mveHigh', priority: 'high', message: 'VMesp alto', responseAction: 'none', latching: true, source: 'ventilator.flow' },
   rrLow: { id: 'rrLow', priority: 'high', message: 'FR baja', responseAction: 'none', latching: true, source: 'ventilator.flow' },
   rrHigh: { id: 'rrHigh', priority: 'medium', message: 'FR alta', responseAction: 'none', latching: true, source: 'ventilator.flow' },
-  fio2Low: { id: 'fio2Low', priority: 'high', message: 'FiO2 baja', responseAction: 'none', latching: true, source: 'ventilator.o2' },
-  fio2High: { id: 'fio2High', priority: 'high', message: 'FiO2 alta', responseAction: 'none', latching: true, source: 'ventilator.o2' },
+  fio2Low: { id: 'fio2Low', priority: 'high', message: 'FiO₂ baja', responseAction: 'none', latching: true, source: 'ventilator.o2' },
+  fio2High: { id: 'fio2High', priority: 'high', message: 'FiO₂ alta', responseAction: 'none', latching: true, source: 'ventilator.o2' },
   peepeLow: { id: 'peepeLow', priority: 'high', message: 'PEEPe baja', responseAction: 'none', latching: true, source: 'ventilator.paw' },
   peepeHigh: {
     id: 'peepeHigh',

@@ -47,5 +47,11 @@ export const formatNumber = (v: number | null | undefined, d = 0): string => {
   return Number(texto) === 0 ? texto.replace('-', '') : texto;
 };
 
+/**
+ * Número para el texto que rodea al equipo (panel, gasometría, casos, Aula, ayuda): coma decimal, como se escribe en
+ * español. El monitor del ventilador sigue con `formatNumber` y su punto, como la pantalla del equipo.
+ */
+export const formatTexto = (v: number | null | undefined, d = 0): string => formatNumber(v, d).replace('.', ',');
+
 /** Comparación con tolerancia para valores en unidades internas. */
 export const approxEqual = (a: number, b: number, tol: number): boolean => Math.abs(a - b) <= tol;

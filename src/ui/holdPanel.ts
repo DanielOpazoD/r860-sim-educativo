@@ -146,7 +146,7 @@ export function createHoldPanel(ctx: AppContext, deps: { quick: QuickEditor }): 
         const previos = (ctx.lesson.flags.inspHolds as { d: number; p: number }[] | undefined) ?? [];
         ctx.lesson.flags.inspHolds = [...previos, { d: h.requestedDurationS ?? 0, p: h.values.pplat.value }];
         // Cada medición válida es un punto de la curva de titulación que el alumno construye por su cuenta: la PEEP a
-        // la que midió y la distensibilidad que le salió. No se inventa ninguno; sólo se guardan los que él tomó.
+        // la que midió y la compliance que le salió. No se inventa ninguno; sólo se guardan los que él tomó.
         const cstat = h.values.cstat?.value;
         const peep = ctx.frame?.settings.peep;
         if (typeof cstat === 'number' && typeof peep === 'number') {
