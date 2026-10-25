@@ -89,7 +89,13 @@ export function startApp(opts: AppOptions): void {
   let locked = false;
   /** Modo examen: las mediciones muestran «?» hasta que el alumno escribe su estimación. */
   let examMode = false;
-  const guardada = localStorage.getItem('ventila.tileDensity') ?? localStorage.getItem('r860.tileDensity');
+  const guardada = (() => {
+    try {
+      return localStorage.getItem('ventila.tileDensity') ?? localStorage.getItem('r860.tileDensity');
+    } catch {
+      return null; // sin almacenamiento (ventana privada, sitio bloqueado) la app arranca igual
+    }
+  })();
   let tileDensity: 6 | 13 = guardada === '6' ? 6 : 13;
   let scenario: Scenario = findScenario(params.get('scenario') ?? prefs?.lastScenario ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
   let fixtureId: FixtureId | null = null;
@@ -189,7 +195,11 @@ export function startApp(opts: AppOptions): void {
     },
     setTileDensity(d) {
       tileDensity = d;
-      localStorage.setItem('ventila.tileDensity', String(d));
+      try {
+        localStorage.setItem('ventila.tileDensity', String(d));
+      } catch {
+        // la densidad es una preferencia: sin almacenamiento se aplica igual
+      }
       const grid = $('#numeric-grid');
       grid.classList.toggle('six', d === 6);
       setSegmentedValue('numeric-density', String(d));
@@ -455,7 +465,8 @@ export function startApp(opts: AppOptions): void {
       },
       profile,
     );
-    speed = numParam('speed', 0.1, 10) ?? 1;
+    // Por omisión 2×: la PaCO₂ y los cambios de modo se ven sin esperar. La dirección manda sobre lo guardado.
+    speed = numParam('speed', 0.1, 10) ?? prefs?.speed ?? 2;
     ponerVelocidad(speed);
     const autopause = numParam('autopause', 0, 24 * 3600 * 1000);
     if (parametrosMalos.length)
@@ -492,7 +503,8 @@ export function startApp(opts: AppOptions): void {
   ctx.setTileDensity(tileDensity);
   instructor.init();
   fillStaticHelp();
-  const waveWindow = prefs?.waveWindow ?? (isMobile() ? '6' : undefined);
+  // 12 s por omisión en todos los anchos (el valor marcado en el HTML); la ventana guardada manda.
+  const waveWindow = prefs?.waveWindow;
   if (waveWindow) {
     setSegmentedValue('wave-window', waveWindow);
     plots.setWaveWindow(Number(waveWindow));

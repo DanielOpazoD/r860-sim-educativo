@@ -50,12 +50,25 @@ declare global {
   }
 }
 
-export async function open(page: Page, params: Record<string, string | number> = {}, options: { firstRun?: boolean } = {}): Promise<void> {
+/**
+ * Abre la app. Las pruebas corren a 1× salvo que pidan otra velocidad (sus plazos están medidos a esa velocidad);
+ * `appDefaults` deja la velocidad por omisión de la app (2×) para probarla.
+ */
+export async function open(
+  page: Page,
+  params: Record<string, string | number> = {},
+  options: { firstRun?: boolean; appDefaults?: boolean } = {},
+): Promise<void> {
   if (!options.firstRun)
     await page.addInitScript(() => {
       if (!localStorage.getItem('ventila.prefs')) localStorage.setItem('ventila.prefs', JSON.stringify({ v: 1, welcomed: true }));
     });
-  const q = new URLSearchParams({ t0: T0, seed: '1', ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) });
+  const q = new URLSearchParams({
+    t0: T0,
+    seed: '1',
+    ...(options.appDefaults ? {} : { speed: '1' }),
+    ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])),
+  });
   await page.goto(`/?${q.toString()}`);
   await page.waitForFunction(() => window.__ventila && window.__ventila.frame !== null, null, { timeout: 15_000 });
 }

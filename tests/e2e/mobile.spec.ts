@@ -107,16 +107,12 @@ test.describe('VIS-03 móvil · monitor vertical y editor fuera del monitor', ()
   });
 });
 
-test.describe('Ventana de curvas por omisión según el ancho del viewport', () => {
-  test('móvil (< 700 px): la ventana arranca en 6 s', async ({ page, isMobile }) => {
-    test.skip(!isMobile, 'sólo proyecto móvil');
-    await open(page, { instructor: 0 });
-    await expect(page.locator('#wave-window input[value="6"]')).toBeChecked();
-  });
-  test('escritorio: la ventana arranca en 12 s', async ({ page, isMobile }) => {
-    test.skip(isMobile, 'sólo proyectos de escritorio');
-    await open(page, { instructor: 0 });
+test.describe('Vista por omisión: ventana de 12 s y velocidad 2× en todos los anchos', () => {
+  test('la ventana arranca en 12 s y el tiempo a 2×', async ({ page }) => {
+    await open(page, { instructor: 0 }, { appDefaults: true });
     await expect(page.locator('#wave-window input[value="12"]')).toBeChecked();
+    await expect(page.locator('.speed-option[data-speed="2"]')).toHaveAttribute('aria-checked', 'true');
+    expect(await page.evaluate(() => window.__ventila.speed)).toBe(2);
   });
 });
 

@@ -9,6 +9,8 @@ export type Prefs = {
   waveWindow?: '6' | '12' | '24';
   waveStyle?: 'sweep' | 'scroll';
   waveScale?: 'auto' | 'fixed';
+  /** Velocidad del tiempo simulado elegida en Reproducción. */
+  speed?: number;
   variableDescriptions?: boolean;
   waveGuides?: boolean;
   waveAnnotations?: boolean;
@@ -20,6 +22,8 @@ const VIEWS = new Set(['waves', 'basic', 'loops', 'data', 'trends', 'log', 'teac
 const WAVE_WINDOWS = new Set(['6', '12', '24']);
 const WAVE_STYLES = new Set(['sweep', 'scroll']);
 const WAVE_SCALES = new Set(['auto', 'fixed']);
+/** Velocidades que ofrece Reproducción; otra guardada (o de la dirección) no se recuerda. */
+export const SPEEDS = [0.25, 0.5, 1, 2, 4] as const;
 
 function normalize(value: unknown): Prefs {
   if (!value || typeof value !== 'object' || Array.isArray(value) || (value as { v?: unknown }).v !== 1) return { v: 1 };
@@ -37,6 +41,7 @@ function normalize(value: unknown): Prefs {
     ...(typeof source.waveScale === 'string' && WAVE_SCALES.has(source.waveScale)
       ? { waveScale: source.waveScale as Prefs['waveScale'] }
       : {}),
+    ...(typeof source.speed === 'number' && (SPEEDS as readonly number[]).includes(source.speed) ? { speed: source.speed } : {}),
     ...(typeof source.instructorVisible === 'boolean' ? { instructorVisible: source.instructorVisible } : {}),
     ...(typeof source.variableDescriptions === 'boolean' ? { variableDescriptions: source.variableDescriptions } : {}),
     ...(typeof source.waveGuides === 'boolean' ? { waveGuides: source.waveGuides } : {}),
