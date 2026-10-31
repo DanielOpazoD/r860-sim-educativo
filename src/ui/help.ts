@@ -412,7 +412,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'FiO₂ medida',
     text: [
       'Porcentaje de oxígeno indicado por el sensor del circuito. Tras cambiar el ajuste, su respuesta no es instantánea.',
-      'Es una medición del gas inspirado, no de la oxigenación sanguínea. El modelo no calcula SpO₂ ni gasometría.',
+      'Es una medición del gas inspirado, no de la oxigenación sanguínea. La PaO₂ y la SaO₂ del panel son del modelo: el equipo no las mide.',
     ],
   },
   'metric.mvSpont': {
@@ -557,7 +557,7 @@ export const HELP: Record<string, HelpEntry> = {
     title: 'Prueba de respiración espontánea',
     text: [
       'Cambia temporalmente a CPAP/PS con los valores seleccionados y registra la mecánica respiratoria durante el tiempo elegido. Al finalizar restaura los ajustes anteriores.',
-      'Es un ejercicio de simulación: no incluye oxigenación, hemodinámica ni una evaluación de extubación.',
+      'Es un ejercicio de simulación: no incluye hemodinámica ni una evaluación de extubación.',
     ],
   },
   'procedure.duration': {

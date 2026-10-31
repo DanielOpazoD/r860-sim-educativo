@@ -31,11 +31,13 @@ Antes de conducir, todo esto tiene que ser cierto (si no, se para con código 2)
 2. **Caso y «Cómo se resuelve»** (`?scenario=CC-05&speed=10`): ajusta VT 500 y FR 14 (`#setting-vt` en mL y `#setting-rr`, la solución que declara el caso) → entrega (`#instructor-case [data-action="submitCase"]`) → lee `#learn-case .case-verdict`, la tabla `.case-solution` y los pasos `.case-steps`.
 3. **PaCO₂ hasta el equilibrio**: sigue en CC-05 hasta que `truth.gas.paco2` quede a 1 mmHg o menos de `truth.gas.paco2Target` (con límite de 10 min simulados). Anota los minutos simulados, `tauMin` y el texto de `#case-gas`, que declara la aceleración.
 
+4. **Oxigenación** (`?scenario=CC-04&speed=10`, `truth.oxy`): con PEEP 5 la PaO₂/FiO₂ está bajo 200; PEEP 20 sostenida y luego 11 la sube al menos un 50 %; de vuelta a PEEP 5 se pierde. En CC-03, de FiO₂ 0,5 a 1,0 (`#setting-fio2`, en %) la PaO₂ sube poco: el shunt es refractario.
+
 Para otro cambio, añade un paso que haga lo que haría el alumno y lea el resultado en el cuadro o en el DOM, no en el código.
 
 ## 4. Evidence
 
-`resumen.md` (para pegar en el PR), `evidencia.json` y las capturas `1-…png` a `5-…png`. Cada afirmación lleva su etiqueta:
+`resumen.md` (para pegar en el PR), `evidencia.json` y las capturas `1-…png` a `8-…png`. Cada afirmación lleva su etiqueta:
 
 - **medido**: leído en la app o en el cuadro del motor durante esta corrida (con su fuente: selector o campo).
 - **inferido**: calculado a partir de lo medido, o visible sólo en una captura (el canvas no expone texto).
@@ -60,6 +62,7 @@ El script cierra el navegador y detiene su `vite` también si algo falla. Si lo 
 | Fuga, autodisparo y desconexión | `engine/patient.ts`, `engine/sensors.ts` | `tests/unit/fuga.test.ts` (LEAK-01…07) |
 | Alarmas como las del manual | `engine/alarms.ts` | `tests/unit/alarms.test.ts` (ALM-URM) |
 | Gasometría del modelo y su equilibrio acelerado (≈ 10×) | `engine/gasExchange.ts`, `ui/gasView.ts` | `tests/unit/gasometria.test.ts` (GAS-01…09) |
+| Oxigenación del modelo: PaO₂, SaO₂, shunt y V/Q bajo | `engine/oxygenation.ts`, `ui/gasView.ts` | `tests/unit/oxigenacion.test.ts` (OXI-01…08, OXI-11), `tests/unit/casosClinicos.test.ts` (OXI-09, OXI-10) |
 | Casos clínicos: entrega, criterios y «Cómo se resuelve» | `scenarios/cases.ts`, `ui/caseEvaluation.ts`, `ui/caseView.ts` | `tests/unit/casosClinicos.test.ts` (CAS-SOL), `tests/e2e/clinicalCases.spec.ts` |
 | Versión del motor y aviso al importar sesiones | `engine/version.ts`, `history/session.ts` | `tests/unit/session.test.ts` (VER-01), `tests/unit/huella.test.ts` (HUE-01) |
 | La física de cada escenario no cambia sin querer | todo `engine/` | `tests/unit/huella.test.ts` (HUE-01) |

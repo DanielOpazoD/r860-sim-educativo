@@ -169,6 +169,14 @@ const SDRA_TEJIDO = { eVisc: 2 * tejido('healthy').eVisc, tauViscS: 1.0, cardiac
  */
 const SDRA_FOCAL = { b: 2.2, c: 4, d: 14 };
 /**
+ * Oxigenación de los dos SDRA. Dantzker (1979) midió en el SDRA un modo de shunt o V/Q < 0,01 que recibía cerca de la
+ * mitad del gasto; Gattinoni (2006), un pulmón reclutable muy variable (13 ± 11 % de media) y un 24 % que no se recluta.
+ * Valores P, elegidos para caer en el SDRA moderado de Berlín (PaO₂/FiO₂ 100–200) con FiO₂ 0,5: el del neumónico focal
+ * no se recluta (CC-03); el de CC-04 tiene la mitad de su shunt en unidades que abren.
+ */
+const SDRA_POCO_RECLUTABLE = { shuntBase: 0.25, lowVqFrac: 0.05, lowVqRatio: 0.1 };
+const SDRA_RECLUTABLE = { shuntBase: 0.15, shuntRecruitable: 0.15, lowVqFrac: 0.05, lowVqRatio: 0.1 };
+/**
  * Limitación al flujo espiratorio del EPOC (resistor de Starling): Armaganidis (Crit Care Med 2000) la encontró en 11 de
  * 13 pacientes ventilados por una insuficiencia de origen pulmonar, con PEEPi estática 7,1 ± 2,8 frente a 1,2 sin
  * ella; Ranieri (Am Rev Respir Dis 1993) midió en EPOC limitados PEEPi 9,8 y que la PEEP externa hasta ≈ 85 % de ella
@@ -354,25 +362,25 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'SDRA · ventilación protectora',
       vignette:
-        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,40, PaCO₂ 40 mmHg.',
+        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10 y FiO₂ 0,5. Lleva VT 600 mL (8,5 mL/kg predicho) y FR 16, con pH 7,40 y PaCO₂ 40.',
       question:
         'Programa una ventilación protectora sin bajar la PEEP: VT de 6 mL/kg de peso predicho o menos (hasta 6,5), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.',
       kind: 'ajuste',
       criteria: [
         {
           id: 'vt',
-          text: `VT de 6,5 mL/kg de peso predicho o menos (≤ ${Math.round(6.5 * pbwHombre(175))} mL)`,
+          text: `VT de 6,5 mL/kg predicho o menos (≤ ${Math.round(6.5 * pbwHombre(175))} mL)`,
           test: 'vtMaxPerKg',
           params: { mlPerKg: 6.5, pbw: pbwHombre(175) },
         },
-        { id: 'mide', text: 'Mediste la meseta con un bloqueo inspiratorio después de tu último ajuste', test: 'inspHold' },
+        { id: 'mide', text: 'Mediste la meseta tras tu último ajuste', test: 'inspHold' },
         { id: 'pplat', text: 'Pplat ≤ 30 cmH₂O', test: 'pplatMax', params: { max: 30 } },
         { id: 'dp', text: 'Presión motriz < 15 cmH₂O', test: 'drivingBelow', params: { max: 15 } },
         { id: 'ph', text: 'pH de equilibrio entre 7,30 y 7,45', test: 'phEqRange', params: { min: 7.3, max: 7.45 } },
         { id: 'fr', text: 'FR de 35 o menos', test: 'rrMax', params: { max: 35 } },
         { id: 'peep', text: 'PEEP de 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
       ],
-      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Este pulmón no es lineal: su curva presión-volumen tiene el codo superior en ≈ 22 cmH₂O (Roupie lo encontró en todos sus SDRA, a 26 ± 6). Con 600 mL la meseta pasa el codo: Pplat ≈ 33, presión motriz ≈ 23 y una Cstat de ≈ 26 mL/cmH₂O, que es la de la parte alta de la curva. Bajar a 425 mL (6 mL/kg) sube la Cstat a ≈ 28, pero la presión motriz se queda en ≈ 15,5, todavía no baja de 15, la variable que mejor estratificó la supervivencia en el análisis de Amato. Terragni mostró que en los SDRA con más pulmón no aireado 6 mL/kg y Pplat ≤ 30 no bastan para evitar la hiperinsuflación, y el protocolo ARDSNet permite bajar hasta 4 mL/kg: con 400 mL (5,7 mL/kg) la presión motriz queda en ≈ 14 y la Pplat en ≈ 24. Subir la PEEP no ayuda en este pulmón poco reclutable: a 14 la presión motriz sube a ≈ 17, porque el volumen corriente cae más arriba en la curva (Grasso). El índice de estrés, la forma de la rampa de presión, va de ≈ 1,08 con 600 mL a ≈ 1,04 con 400: dentro del rango normal, pero subiendo con el VT y con la PEEP. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,62 con 400 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 74 mmHg (pH 7,19, ya con el bicarbonato que sube en la hipercapnia aguda). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 28 el pH de equilibrio vuelve a ≈ 7,32.`,
+      reveal: `Peso predicho (ARDSNet): 50 + 2,3 × (talla en pulgadas − 60) = ${String(pbwHombre(175)).replace('.', ',')} kg; 6 mL/kg ≈ 425 mL. Este pulmón no es lineal: su curva presión-volumen tiene el codo superior en ≈ 22 cmH₂O (Roupie lo encontró en todos sus SDRA, a 26 ± 6). Con 600 mL la meseta pasa el codo: Pplat ≈ 33, presión motriz ≈ 23 y una Cstat de ≈ 26 mL/cmH₂O, que es la de la parte alta de la curva. Bajar a 425 mL (6 mL/kg) sube la Cstat a ≈ 28, pero la presión motriz se queda en ≈ 15,5, todavía no baja de 15, la variable que mejor estratificó la supervivencia en el análisis de Amato. Terragni mostró que en los SDRA con más pulmón no aireado 6 mL/kg y Pplat ≤ 30 no bastan para evitar la hiperinsuflación, y el protocolo ARDSNet permite bajar hasta 4 mL/kg: con 400 mL (5,7 mL/kg) la presión motriz queda en ≈ 14 y la Pplat en ≈ 24. Subir la PEEP no ayuda en este pulmón poco reclutable: a 14 la presión motriz sube a ≈ 17, porque el volumen corriente cae más arriba en la curva (Grasso). El índice de estrés, la forma de la rampa de presión, va de ≈ 1,08 con 600 mL a ≈ 1,04 con 400: dentro del rango normal, pero subiendo con el VT y con la PEEP. La meseta sigue bajando unas décimas durante el bloqueo: el tejido del SDRA relaja esfuerzos más que el sano (Eissa). El precio es la ventilación alveolar. El espacio muerto del SDRA es sobre todo alveolar —unidades ventiladas con poca perfusión— y Nuckton midió una fracción fisiológica media de 0,58; aquí VD/VT pasa de 0,53 con 600 mL a 0,62 con 400 mL, porque la vía aérea pesa más en un VT pequeño. Con FR 16 la PaCO₂ de equilibrio subiría a ≈ 74 mmHg (pH 7,19, ya con el bicarbonato que sube en la hipercapnia aguda). El protocolo ARDSNet sube la FR hasta 35 para mantener el pH ≥ 7,30: con FR 28 el pH de equilibrio vuelve a ≈ 7,40. La oxigenación no se mueve con nada de esto, y es parte de la lección: este pulmón no se recluta y su shunt es del 25 % del gasto. PaO₂ ≈ 71 mmHg con FiO₂ 0,5 (PaO₂/FiO₂ ≈ 142, SDRA moderado de Berlín, dentro del objetivo de ARDSNet de 55–80), igual con 600 o con 400 mL y con PEEP 10 o 14. Bajar la FiO₂ a 0,21 sólo la lleva a ≈ 55: la sangre del shunt no ve el gas inspirado.`,
       solution: {
         steps: [
           { kind: 'ajuste', changes: { vt: 0.4, rr: 28 }, waitS: 30, note: 'VT bajo y FR alta para sostener el pH' },
@@ -392,11 +400,11 @@ export const CLINICAL_CASES: Scenario[] = [
       r2: INTUBADO_H.r2,
       ...SDRA_TEJIDO,
       sigmoid: SDRA_FOCAL,
-      gas: { alveolarDeadspaceFrac: 0.35 },
+      gas: { alveolarDeadspaceFrac: 0.35, ...SDRA_POCO_RECLUTABLE },
     },
     effort: passive,
     sensors: idealSensors,
-    settings: { vt: 0.6, rr: 16, ie: 1 / 2, peep: 10, pmax: 50, plimit: 100, pausePct: 0 },
+    settings: { fio2: 0.5, vt: 0.6, rr: 16, ie: 1 / 2, peep: 10, pmax: 50, plimit: 100, pausePct: 0 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Presión motriz alta con VT de 8,5 mL/kg.',
@@ -413,18 +421,24 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'SDRA · reclutamiento y PEEP',
       vignette:
-        'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5. La distensibilidad estática es baja. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la distensibilidad.',
+        'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5, FiO₂ 0,5, con PaO₂/FiO₂ ≈ 125. La distensibilidad estática es baja. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la distensibilidad.',
       question:
-        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 10–12 y vuelve a medir. Deja la PEEP final en 10 o más.',
+        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 10–12 y vuelve a medir. Deja la PEEP final en 10 o más: con FiO₂ de 0,5 o más, la PaO₂/FiO₂ debe llegar a 180.',
       kind: 'ajuste',
       criteria: [
         { id: 'antes', text: 'Mediste la Cstat a la PEEP inicial, antes de abrir el pulmón', test: 'cstatBeforeOpening' },
         { id: 'abre', text: 'Abriste el pulmón con una PEEP alta sostenida', test: 'lesson:recruitedFull' },
         { id: 'despues', text: 'A PEEP 9–12 tras abrir, la Cstat supera en un 30 % o más a la inicial', test: 'lesson:cstatDecremental' },
         { id: 'peep', text: 'La PEEP final queda en 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
+        {
+          id: 'oxigena',
+          text: 'Con FiO₂ de 0,5 o más, la PaO₂/FiO₂ de equilibrio llega a 180 (arranca en ≈ 125)',
+          test: 'pafiEqMin',
+          params: { min: 180, fio2Min: 0.5 },
+        },
       ],
       reveal:
-        'Este pulmón tiene unidades que sólo abren por encima de ≈ 28 cmH₂O de distensión y no se cierran hasta bajar de ≈ 9: histéresis. A PEEP 5 están cerradas y la Cstat es ≈ 29 mL/cmH₂O. Tras abrirlas con PEEP 20, a PEEP 10–12 siguen abiertas y la Cstat sube a ≈ 43: la misma PEEP da distinta mecánica según la historia, que es lo que aprovecha la titulación decremental (Suarez-Sipmann). Pero mecánica no es pronóstico: en el ensayo ART, en SDRA moderado-grave, la estrategia de reclutamiento con PEEP titulada aumentó la mortalidad a 28 días frente a PEEP baja (55,3 % frente a 49,3 %) y el barotrauma. El máximo de Cstat no identifica por sí solo una PEEP segura.',
+        'Este pulmón tiene unidades que sólo abren por encima de ≈ 28 cmH₂O de distensión y no se cierran hasta bajar de ≈ 9: histéresis. A PEEP 5 están cerradas y la Cstat es ≈ 29 mL/cmH₂O. Tras abrirlas con PEEP 20, a PEEP 10–12 siguen abiertas y la Cstat sube a ≈ 43: la misma PEEP da distinta mecánica según la historia, que es lo que aprovecha la titulación decremental (Suarez-Sipmann). Pero mecánica no es pronóstico: en el ensayo ART, en SDRA moderado-grave, la estrategia de reclutamiento con PEEP titulada aumentó la mortalidad a 28 días frente a PEEP baja (55,3 % frente a 49,3 %) y el barotrauma. El máximo de Cstat no identifica por sí solo una PEEP segura. La oxigenación lo confirma: a PEEP 5 el shunt es del 30 % del gasto, con PaO₂ ≈ 62 mmHg y PaO₂/FiO₂ ≈ 124; abierto y a PEEP 11 baja al 15 % y la PaO₂/FiO₂ llega a ≈ 198. Subir la FiO₂ no lo habría logrado: el shunt no la ve. Si la PEEP vuelve a 5, el pulmón se cierra en segundos y lo ganado se pierde.',
       solution: {
         steps: [
           { kind: 'bloqueo', which: 'inspHold', note: 'mide la Cstat a la PEEP inicial' },
@@ -445,10 +459,11 @@ export const CLINICAL_CASES: Scenario[] = [
       r2: INTUBADA_M.r2,
       ...SDRA_TEJIDO,
       recruit: { frac: 0.6, pOpen: 28, pClose: 9, tauOpenS: 0.6, tauCloseS: 8 },
+      gas: SDRA_RECLUTABLE,
     },
     effort: passive,
     sensors: idealSensors,
-    settings: { vt: 0.4, rr: 18, ie: 1 / 2, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
+    settings: { fio2: 0.5, vt: 0.4, rr: 18, ie: 1 / 2, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'La Cstat a la misma PEEP cambia tras la apertura.',
@@ -465,7 +480,7 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'CO₂ · espacio muerto',
       vignette:
-        'Hombre de 58 años, 175 cm, sin enfermedad pulmonar, en el posoperatorio de una cirugía abdominal y aún sedado. Programa: VT 400 mL, FR 10. Lleva un intercambiador de calor y humedad y un alargador en la pieza en Y. Suena la alarma de volumen minuto bajo. Gasometría: pH 7,14, PaCO₂ 88 mmHg, HCO₃⁻ 29 mEq/L.',
+        'Hombre de 58 años, 175 cm, sin enfermedad pulmonar, en el posoperatorio de una cirugía abdominal y aún sedado. Programa: VT 400 mL, FR 10, FiO₂ 0,4. Lleva un intercambiador de calor y humedad y un alargador en la pieza en Y. Suena la alarma de volumen minuto bajo. Gasometría: pH 7,14, PaCO₂ 88 mmHg, HCO₃⁻ 29 mEq/L.',
       question: 'Normaliza la PaCO₂ de equilibrio (35–45 mmHg) sin superar 8 mL/kg de peso predicho y sin provocar atrapamiento.',
       kind: 'ajuste',
       criteria: [
@@ -493,14 +508,13 @@ export const CLINICAL_CASES: Scenario[] = [
     patient: { crs: 0.05, rInsp: 10, rExp: 10, p0: 0, ...INTUBADO_H, gas: { deadspaceL: 0.2, vco2MlMin: 180 } },
     effort: passive,
     sensors: idealSensors,
-    settings: { vt: 0.4, rr: 10, ie: 1 / 2, peep: 5, pmax: 40, plimit: 100, pausePct: 0 },
+    settings: { fio2: 0.4, vt: 0.4, rr: 10, ie: 1 / 2, peep: 5, pmax: 40, plimit: 100, pausePct: 0 },
     // Límite de volumen minuto bajo programado para este paciente (5 L/min): el de su viñeta, no el 4 por omisión.
     alarmLimits: { mveLow: 5 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Volumen minuto bajo y fracción de espacio muerto alta.',
-    caution:
-      'Espacio muerto de la vía aérea fijo y fracción alveolar constante; sin oxigenación. La gasometría es del modelo, no del equipo.',
+    caution: 'Espacio muerto de la vía aérea fijo y fracción alveolar constante. La gasometría es del modelo, no del equipo.',
   },
   {
     id: 'CC-06',
@@ -611,7 +625,7 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'Asincronía · ciclado',
       vignette:
-        'Mujer de 69 años con EPOC, en presión de soporte 12 cmH₂O con criterio de ciclado espiratorio del 5 % del flujo pico. Está incómoda: el ventilador sigue insuflando cuando ella ya quiere espirar, y algunos esfuerzos no disparan.',
+        'Mujer de 69 años con EPOC, en presión de soporte 12 cmH₂O y FiO₂ 0,3, con criterio de ciclado espiratorio del 5 % del flujo pico. Está incómoda: el ventilador sigue insuflando cuando ella ya quiere espirar, y algunos esfuerzos no disparan.',
       question:
         'Ajusta el ciclado para que la inspiración del ventilador termine con la de la paciente (retraso ≤ 0,3 s) y todos los esfuerzos disparen. Espera un minuto tras tu último cambio antes de entregar.',
       kind: 'ajuste',
@@ -649,7 +663,7 @@ export const CLINICAL_CASES: Scenario[] = [
     patient: { ...EPOC_PS, ...INTUBADA_M },
     effort: ESFUERZO_EPOC,
     sensors: idealSensors,
-    settings: { ...PS_BASE, psupport: 12, expTriggerPct: 0.05 },
+    settings: { ...PS_BASE, fio2: 0.3, psupport: 12, expTriggerPct: 0.05 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Ti mecánico mucho mayor que el neural.',

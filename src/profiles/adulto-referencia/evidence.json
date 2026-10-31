@@ -247,6 +247,18 @@
       "title": "Albaiceta GM, García E, Taboada F. Comparative study of four sigmoid models of pressure-volume curve in acute lung injury. Biomed Eng Online 2007;6:7 (PMID 17300715; PMC1802870; doi 10.1186/1475-925X-6-7)",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Texto completo leído en Europe PMC (2026-10-14). 30 pacientes con lesión pulmonar aguda; con el modelo de Venegas (V = a + b/(1 + e^(−(P−c)/d))) en la rama inspiratoria: asíntota superior (a + b) 1836 ± 680 mL y compliance máxima 67 ± 18 mL/cmH₂O (media ± DE); los puntos de máxima curvatura son c ∓ 1,317·d. Los valores medios de c y d sólo aparecen en una figura."
+    },
+    {
+      "id": "C17",
+      "title": "Ecuaciones de la oxigenación: Severinghaus JW. Simple, accurate equations for human blood O2 dissociation computations. J Appl Physiol 1979;46(3):599–602 (PMID 35496); Riley RL, Cournand A. Ideal alveolar air and the analysis of ventilation-perfusion relationships in the lungs. J Appl Physiol 1949;1(12):825–47 (PMID 18145478)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Severinghaus: resumen leído por la API de PubMed (2026-10-31), con la ec. 1 literal. Riley y Cournand: el registro no trae resumen, así que se cita sólo como origen del marco de tres compartimentos; no se leyó el texto."
+    },
+    {
+      "id": "C18",
+      "title": "Oxigenación en el SDRA: ARDS Definition Task Force. JAMA 2012;307(23):2526–33 (PMID 22797452); Dantzker DR et al. Am Rev Respir Dis 1979;120(5):1039–52 (PMID 389116); Gattinoni L et al. N Engl J Med 2006;354(17):1775–86 (PMID 16641394); NIH NHLBI ARDS Clinical Network, Mechanical Ventilation Protocol Summary, 07-2008",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Resúmenes leídos por la API de PubMed y resumen del protocolo leído en su PDF (2026-10-31); no los textos completos. Berlín: moderado 100 < PaO₂/FiO₂ ≤ 200. ARDSNet: objetivo PaO₂ 55–80 mmHg o SpO₂ 88–95 %. Dantzker: 16 pacientes, modo normal con el 52 % del gasto y el resto a shunt o V/Q < 0,01; la PEEP reduce ese flujo y también el gasto. Gattinoni: 68 pacientes, reclutable 13 ± 11 %, 24 % no reclutable."
     }
   ],
   "claims": [
@@ -1699,6 +1711,35 @@
       "tests": [
         "tests/unit/gasometria.test.ts (GAS-09)",
         "tests/unit/gasometria.test.ts (GAS-08)"
+      ]
+    },
+    {
+      "id": "E-129",
+      "claim": "Oxigenación de modelo: mezcla venosa de unidades ideales, de V/Q bajo y shunt (Riley y Cournand 1949). PAO₂ = FiO₂·713 − PaCO₂/R, con R = VCO₂/VO₂ = 0,8; S = ((PO₂³ + 150·PO₂)⁻¹·23400 + 1)⁻¹ (Severinghaus 1979, ec. 1); CvO₂ = CaO₂ − VO₂/GC con VO₂ 250 mL/min, GC fijo 5 L/min y Hb 15 g/dL. Shunt = base + reclutable × (1 − fracción reclutada); las unidades de V/Q bajo igualan el O₂ que les entra por la ventilación con el que toma su sangre. El shunt no ve la FiO₂ y el V/Q bajo sí: con un 30 % del gasto, de FiO₂ 0,5 a 1,0 la PaO₂ pasa de ≈ 66 a ≈ 100 mmHg con shunt y de ≈ 134 a ≈ 566 con V/Q bajo. Adulto sano (shunt 3 %, V/Q bajo 3 % a V/Q 0,3, P calibrado): PaO₂ 90 mmHg, SaO₂ 96,9 %, PaO₂/FiO₂ 427. La PaO₂ sigue a su equilibrio con τ 30 s (P), sin aceleración docente, y no realimenta la mecánica. Límites: PAO₂ de estado estacionario, así que no enseña preoxigenación ni tiempos de desaturación; sin efecto Bohr, atelectasia por absorción ni hemodinámica. No se muestra en el monitor del equipo.",
+      "status": "D (ecuaciones: gas alveolar y Severinghaus, leído su resumen; marco de tres compartimentos, sólo la cita de Riley, sin resumen disponible) / D-secundario (Hb, VO₂, GC, libro de texto) / P (valores de shunt y V/Q bajo, τ)",
+      "source": "C17",
+      "locator": "Severinghaus, J Appl Physiol 1979;46(3):599-602, resumen, ec. 1; Riley y Cournand, J Appl Physiol 1949;1(12):825-47",
+      "implemented": "src/engine/oxygenation.ts; src/engine/simulator.ts (oxygenation, truth.oxy); src/engine/gasExchange.ts (DEFAULT_GAS); src/ui/gasView.ts; src/ui/instructorPanel.ts",
+      "tests": [
+        "tests/unit/oxigenacion.test.ts (OXI-01)",
+        "tests/unit/oxigenacion.test.ts (OXI-02)",
+        "tests/unit/oxigenacion.test.ts (OXI-03)",
+        "tests/unit/oxigenacion.test.ts (OXI-04)",
+        "tests/unit/oxigenacion.test.ts (OXI-05)",
+        "tests/unit/oxigenacion.test.ts (OXI-07)"
+      ]
+    },
+    {
+      "id": "E-130",
+      "claim": "Los dos SDRA de los casos, con FiO₂ 0,5, caen en el moderado de Berlín (100 < PaO₂/FiO₂ ≤ 200). CC-03, neumónico focal poco reclutable: shunt 25 % sin parte reclutable, PaO₂/FiO₂ ≈ 142, PaO₂ ≈ 71 mmHg, dentro del objetivo de ARDSNet (55–80 mmHg), y ni el VT ni la PEEP la mueven. CC-04: shunt 15 % más 15 % reclutable, PaO₂/FiO₂ ≈ 124 cerrado y ≈ 198 abierto, y lo pierde al volver a PEEP 5. Dantzker 1979 midió con gases inertes en 16 pacientes con SDRA un modo de shunt o V/Q < 0,01 que recibía cerca de la mitad del gasto (el modo normal, el 52 %) y que la PEEP reducía; Gattinoni 2006, en 68 pacientes, un pulmón reclutable de 13 ± 11 % de su peso, muy variable, y un 24 % de media que no se recluta. Estos valores son más suaves que el 48 % de Dantzker (SDRA de 1979, antes de la ventilación protectora) y se eligieron para la clase de Berlín, no para reproducir ese estudio. CC-04 exige FiO₂ ≥ 0,5 porque el cociente sube al bajar la FiO₂ con shunt alto: con shunt 30 %, ≈ 147 a FiO₂ 0,4 y ≈ 93 a 1,0.",
+      "status": "D (cortes de Berlín, objetivo de ARDSNet, hallazgos de Dantzker y Gattinoni, leídos sus resúmenes y el protocolo) / P (valores de cada caso y umbrales de 180 y FiO₂ 0,5)",
+      "source": "C18",
+      "locator": "JAMA 2012;307(23):2526-33, resumen; ARDSNet Mechanical Ventilation Protocol Summary 07-2008, «Oxygenation goal»; Am Rev Respir Dis 1979;120(5):1039-52, resumen; N Engl J Med 2006;354(17):1775-86, resumen",
+      "implemented": "src/scenarios/cases.ts (SDRA_POCO_RECLUTABLE, SDRA_RECLUTABLE, CC-03, CC-04); src/ui/caseEvaluation.ts (pafiEqMin)",
+      "tests": [
+        "tests/unit/oxigenacion.test.ts (OXI-08)",
+        "tests/unit/casosClinicos.test.ts (OXI-09)",
+        "tests/unit/casosClinicos.test.ts (OXI-10)"
       ]
     }
   ]

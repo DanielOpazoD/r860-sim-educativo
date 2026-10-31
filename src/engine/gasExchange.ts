@@ -52,6 +52,23 @@ export const DEFAULT_GAS: GasExchangeParams = {
    * no la usa entera: divide la parte de la sangre y los tejidos por ACELERACION_TEJIDOS.
    */
   storeL: 45,
+  /** Hemoglobina de un adulto sano (g/dL). P. */
+  hbGdL: 15,
+  /**
+   * Consumo de O₂ en reposo (mL/min): con los 200 de VCO₂, un cociente respiratorio de 0,8, el de la ecuación del gas
+   * alveolar. D-secundario (libro de texto).
+   */
+  vo2MlMin: 250,
+  /** Gasto cardíaco en reposo (L/min). D-secundario (libro de texto). */
+  cardiacOutputLMin: 5,
+  /**
+   * Un pulmón sano: poco shunt y una dispersión pequeña de V/Q. Calibrados para dar, con el banco por omisión, PaO₂ 90
+   * mmHg y un gradiente alveoloarterial de 11, dentro de lo normal. P calibrado.
+   */
+  shuntBase: 0.03,
+  shuntRecruitable: 0,
+  lowVqFrac: 0.03,
+  lowVqRatio: 0.3,
 };
 
 /** Constante de la ecuación de la ventilación alveolar: PB · (310/273) / 1000 con PB 760 mmHg (VCO₂ STPD → BTPS). D. */
@@ -192,6 +209,10 @@ export class GasExchange {
   private alveolarOutL = 0;
   /** Con PaCO₂ inicial 'equilibrium', las respiraciones de los primeros EQUILIBRIUM_WINDOW_S fijan el equilibrio. */
   private pendingEquilibrium: boolean;
+  /** Mientras las primeras respiraciones fijan el equilibrio inicial: la oxigenación lo sigue sin retraso. */
+  get fijandoEquilibrio(): boolean {
+    return this.pendingEquilibrium;
+  }
 
   /**
    * Con un valor numérico, el alvéolo y la muestra parten de él y la venosa, de su equilibrio con la producción por omisión.
