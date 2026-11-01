@@ -133,38 +133,58 @@ export interface OxygenState {
   pvo2: number;
 }
 
-/** Estado de la PaO₂: sigue a su equilibrio con PAO2_TAU_S. Sólo depende de lo que le entrega el simulador. */
+/**
+ * Estado de la PaO₂: sigue a su equilibrio con PAO2_TAU_S. Sólo depende de lo que le entrega el simulador en cada paso:
+ * el equilibrio se resuelve aquí, cada PERIODO_EQUILIBRIO_S de simulación, y `state` sólo lee. Hay pruebas que piden un
+ * cuadro en cada paso, y así lo que se publica no depende de cuántos cuadros se pidan.
+ */
 export class Oxygenation {
   pao2: number | null = null;
-  private equilibrio = 0;
   private desdeUltimoS = Number.POSITIVE_INFINITY;
+  private ahora: OxygenEquilibrium | null = null;
+  private objetivo: number | null = null;
+  private fio2 = 0.21;
+  private lowVqFrac = 0;
 
-  /** `fijar` lleva la PaO₂ a su equilibrio sin retraso: mientras la gasometría fija el estado inicial, lo de ahora es lo basal. */
-  step(dtS: number, p: GasExchangeParams, fio2: number, paco2: number, recruited: number, fijar: boolean): void {
+  /**
+   * `fijar` lleva la PaO₂ a su equilibrio sin retraso: mientras la gasometría fija el estado inicial, lo de ahora es lo
+   * basal. `paco2Objetivo` da la PaCO₂ de equilibrio con la ventilación actual (null sin ventilación alveolar).
+   */
+  step(
+    dtS: number,
+    p: GasExchangeParams,
+    fio2: number,
+    paco2: number,
+    recruited: number,
+    fijar: boolean,
+    paco2Objetivo: () => number | null,
+  ): void {
     this.desdeUltimoS += dtS;
-    if (this.desdeUltimoS >= PERIODO_EQUILIBRIO_S) {
+    this.fio2 = fio2;
+    if (!this.ahora || this.desdeUltimoS >= PERIODO_EQUILIBRIO_S) {
       this.desdeUltimoS = 0;
-      this.equilibrio = oxygenEquilibrium(p, fio2, paco2, recruited).pao2;
+      this.ahora = oxygenEquilibrium(p, fio2, paco2, recruited);
+      const objetivo = paco2Objetivo();
+      this.objetivo = objetivo === null ? null : oxygenEquilibrium(p, fio2, objetivo, recruited).pao2;
+      this.lowVqFrac = p.lowVqFrac;
     }
-    if (this.pao2 === null || fijar) this.pao2 = this.equilibrio;
-    else this.pao2 += (this.equilibrio - this.pao2) * (1 - Math.exp(-dtS / PAO2_TAU_S));
+    if (this.pao2 === null || fijar) this.pao2 = this.ahora.pao2;
+    else this.pao2 += (this.ahora.pao2 - this.pao2) * (1 - Math.exp(-dtS / PAO2_TAU_S));
   }
 
-  /** La parte que describe al paciente (shunt, PAO₂, venosa) es la de ahora; `paco2Target` da el equilibrio con la ventilación actual. */
-  state(p: GasExchangeParams, fio2: number, paco2: number, paco2Target: number | null, recruited: number): OxygenState {
-    const ahora = oxygenEquilibrium(p, fio2, paco2, recruited);
-    const pao2 = this.pao2 ?? ahora.pao2;
-    const objetivo = paco2Target === null ? null : oxygenEquilibrium(p, fio2, paco2Target, recruited).pao2;
+  /** null antes del primer paso. Shunt, PAO₂ y venosa son los del último equilibrio resuelto. */
+  state(): OxygenState | null {
+    if (!this.ahora || this.pao2 === null) return null;
     return {
-      pao2,
-      sao2: saturation(pao2),
-      pafi: pao2 / fio2,
-      pao2Target: objetivo,
-      pafiTarget: objetivo === null ? null : objetivo / fio2,
-      pAO2: ahora.pAO2,
-      shunt: ahora.shunt,
-      lowVqFrac: p.lowVqFrac,
-      pvo2: ahora.pvo2,
+      pao2: this.pao2,
+      sao2: saturation(this.pao2),
+      pafi: this.pao2 / this.fio2,
+      pao2Target: this.objetivo,
+      pafiTarget: this.objetivo === null ? null : this.objetivo / this.fio2,
+      pAO2: this.ahora.pAO2,
+      shunt: this.ahora.shunt,
+      lowVqFrac: this.lowVqFrac,
+      pvo2: this.ahora.pvo2,
     };
   }
 }

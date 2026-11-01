@@ -221,6 +221,17 @@ export class Simulator {
           s: { ...this.controller.settings, fio2: 0 },
         }),
     );
+    // Un primer equilibrio sin avanzar el tiempo: el cuadro de t = 0 ya lleva oxigenación, como lleva gasometría.
+    const gp0 = gasParams(this.patient.params.gas);
+    this.oxygenation.step(
+      0,
+      gp0,
+      this.o2.delivered,
+      this.gas.paco2,
+      this.patient.recruited,
+      true,
+      () => this.gas.state(0, gp0).paco2Target,
+    );
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
     this.breathV2Start = this.patient.v2;
@@ -470,7 +481,15 @@ export class Simulator {
     this.gas.move(vLung - this.lungVPrev, gp);
     this.lungVPrev = vLung;
     this.gas.step(dtS, gp);
-    this.oxygenation.step(dtS, gp, this.o2.delivered, this.gas.paco2, this.patient.recruited, this.gas.fijandoEquilibrio);
+    this.oxygenation.step(
+      dtS,
+      gp,
+      this.o2.delivered,
+      this.gas.paco2,
+      this.patient.recruited,
+      this.gas.fijandoEquilibrio,
+      () => this.gas.state(this.clock.simTimeMs / 1000, gp).paco2Target,
+    );
     this.clock.tick(); // el reloj representa el FIN del paso cuando se procesan los eventos
     this.o2.step(dtS);
     this.drainController();
@@ -522,8 +541,6 @@ export class Simulator {
     const n = this.samplesSinceFrame;
     this.samplesSinceFrame = 0;
     const eventsTail = this.events.slice(-80);
-    const gp = gasParams(this.patient.params.gas);
-    const gas = this.gas.state(t / 1000, gp);
     return {
       engineVersion: ENGINE_VERSION,
       profileVersion: this.profile.profileVersion,
@@ -567,8 +584,8 @@ export class Simulator {
         effort: { ...this.effort.params },
         sensors: { ...this.o2.params },
         fio2Delivered: this.o2.delivered,
-        gas,
-        oxy: this.oxygenation.state(gp, this.o2.delivered, gas.paco2, gas.paco2Target, this.patient.recruited),
+        gas: this.gas.state(t / 1000, gasParams(this.patient.params.gas)),
+        oxy: this.oxygenation.state(),
       },
       samples: this.ring.last(n),
       eventsTail,

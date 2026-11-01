@@ -101,7 +101,8 @@ describe('Casos, Aula y texto recibido', () => {
     cases.init();
     // Ahora e inicio de PaCO₂ y pH, rotulados como del modelo; sin columna de equilibrio ni avisos.
     expect($('#case-gas').querySelectorAll('.gas-item')).toHaveLength(4);
-    expect($('#case-gas [title="PaO₂/FiO₂ (mmHg)"]').textContent).toContain('P/F');
+    expect($('#case-gas abbr').textContent).toBe('P/F');
+    expect($('#case-gas abbr').title).toBe('PaO₂/FiO₂ (mmHg)');
     expect($('#case-gas').textContent).toContain('PaCO₂');
     expect($('#case-gas').textContent).toContain('inicio');
     expect($('#case-gas').textContent).not.toContain('Tiende');

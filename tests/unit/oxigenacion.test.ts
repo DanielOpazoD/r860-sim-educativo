@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_GAS, gasParams } from '../../src/engine/gasExchange';
-import { oxygenEquilibrium, po2FromSaturation, saturation } from '../../src/engine/oxygenation';
+import { Oxygenation, PAO2_TAU_S, oxygenEquilibrium, po2FromSaturation, saturation } from '../../src/engine/oxygenation';
 import { Simulator } from '../../src/engine/simulator';
 import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS, findScenario } from '../../src/scenarios';
@@ -61,6 +61,50 @@ describe('OXI-04 · el shunt no responde a la FiO₂; el V/Q bajo, sí', () => {
   });
 });
 
+describe('OXI-04b · cifras frente a un cálculo independiente', () => {
+  // Resueltas aparte, con otro código y a mano (shunt 30 %: CaO₂ 199,45 mL/L a FiO₂ 1,0): fijan la constante 0,863 y Fick.
+  it.each([
+    ['shunt 30 %, FiO₂ 0,5', con(0.3), 0.5, 66.5],
+    ['shunt 30 %, FiO₂ 1,0', con(0.3), 1, 99.8],
+    ['V/Q bajo 30 %, FiO₂ 0,5', con(0, 0.3), 0.5, 134.4],
+    ['V/Q bajo 30 %, FiO₂ 1,0', con(0, 0.3), 1, 565.6],
+  ] as const)('%s', (_n, p, fio2, pao2) => {
+    expect(oxygenEquilibrium(p, fio2, 40, 0).pao2).toBeCloseTo(pao2, 0);
+  });
+});
+
+describe('OXI-04c · cinética', () => {
+  const correr = (o: Oxygenation, s: number, fio2: number, fijar = false) => {
+    for (let i = 0; i < s / 0.004; i++) o.step(0.004, sano, fio2, 40, 0, fijar, () => 40);
+  };
+  it('sigue a su equilibrio con τ = 30 s: a un τ ha recorrido el 63 % del camino', () => {
+    const o = new Oxygenation();
+    correr(o, 1, 0.21);
+    const a = o.pao2!,
+      meta = oxygenEquilibrium(sano, 0.5, 40, 0).pao2;
+    correr(o, PAO2_TAU_S, 0.5);
+    expect(PAO2_TAU_S).toBe(30);
+    expect((o.pao2! - a) / (meta - a)).toBeCloseTo(1 - Math.exp(-1), 1);
+  });
+  it('mientras la gasometría fija el estado inicial no hay retraso', () => {
+    const o = new Oxygenation();
+    correr(o, 1, 0.21, true);
+    correr(o, 1, 0.5, true);
+    expect(o.pao2!).toBeCloseTo(oxygenEquilibrium(sano, 0.5, 40, 0).pao2, 5);
+  });
+  it('el equilibrio que se informa usa la PaCO₂ de equilibrio, no la de ahora', () => {
+    const o = new Oxygenation();
+    expect(o.state()).toBeNull();
+    o.step(0.004, sano, 0.21, 70, 0, false, () => 40);
+    const e = o.state()!;
+    expect(e.pao2Target!).toBeCloseTo(oxygenEquilibrium(sano, 0.21, 40, 0).pao2, 5);
+    expect(e.pAO2).toBeCloseTo(oxygenEquilibrium(sano, 0.21, 70, 0).pAO2, 5);
+    const apnea = new Oxygenation();
+    apnea.step(0.004, sano, 0.21, 70, 0, false, () => null);
+    expect(apnea.state()!.pafiTarget).toBeNull();
+  });
+});
+
 describe('OXI-05 · el shunt reclutable depende de la fracción reclutada', () => {
   const p = gasParams({ shuntBase: 0.15, shuntRecruitable: 0.15, lowVqFrac: 0.05, lowVqRatio: 0.1 });
   it('shunt = base + reclutable × (1 − reclutado)', () => {
@@ -86,6 +130,9 @@ describe('OXI-06 · límites del modelo', () => {
     expect(conGas({ shuntBase: 0.2 })).toEqual([]);
     expect(conGas({ shuntBase: 1.2 }).length).toBeGreaterThan(0);
     expect(conGas({ hbGdL: 1 }).length).toBeGreaterThan(0);
+    // Físicamente imposibles aunque cada valor esté en rango: más consumo del que se puede entregar, y un R absurdo.
+    expect(conGas({ cardiacOutputLMin: 1, vo2MlMin: 300 }).length).toBeGreaterThan(0);
+    expect(conGas({ vco2MlMin: 50, vo2MlMin: 800 }).length).toBeGreaterThan(0);
     expect(conGas({ shuntBase: 0.6, shuntRecruitable: 0.3, lowVqFrac: 0.2 }).length).toBeGreaterThan(0);
   });
 });

@@ -580,6 +580,18 @@ describe('OXI-09 · CC-04: abrir el pulmón mejora la oxigenación, y volver a c
   });
 });
 
+describe('OXI-09b · CC-04: hiperventilar no es un atajo', () => {
+  it('VT 800 y FR 35 abren el pulmón a la fuerza y suben el P/F, pero sin las mediciones de antes y después no se resuelve', () => {
+    const k = caso('CC-04');
+    k.ajustar({ vt: 0.8, rr: 35 });
+    k.correr(60_000);
+    const r = k.resultado();
+    expect(r.criteria.find((c) => c.id === 'oxigena')!.ok).toBe(true);
+    expect(r.criteria.find((c) => c.id === 'antes')!.ok).toBe(false);
+    expect(r.passed).toBe(false);
+  });
+});
+
 describe('OXI-10 · CC-03: objetivo de oxigenación de ARDSNet', () => {
   it('con la solución la PaO₂ de equilibrio queda en el objetivo (55–80 mmHg), y la hipercapnia permisiva la baja poco', () => {
     const inicio = caso('CC-03');

@@ -131,9 +131,9 @@ export function createGasView(ctx: AppContext): { render(): void } {
         unidad ? element('small', '', ` ${unidad}`) : '',
       );
     // «P/F», la abreviatura de la cabecera: con «PaO₂/FiO₂» la fila se parte en dos en el panel estrecho.
-    const pf = cifra('P/F', f(o.pafi, 0), '');
-    pf.title = 'PaO₂/FiO₂ (mmHg)';
-    pf.setAttribute('aria-label', `PaO₂/FiO₂ ${f(o.pafi, 0)} mmHg`);
+    const abreviatura = element('abbr', 'gas-abbr', 'P/F');
+    abreviatura.title = 'PaO₂/FiO₂ (mmHg)';
+    const pf = element('span', 'gas-now', element('small', '', abreviatura), ' ', element('b', '', f(o.pafi, 0)));
     const valor = (nombre: string, ahora: string, unidad: string, alInicio: string): HTMLElement =>
       element('span', 'gas-item', cifra(nombre, ahora, unidad), element('small', 'gas-start', `inicio ${alInicio}`));
     const resumen = `PaCO₂ de ${f(inicio.paco2, 0)} al inicio a ${f(g.paco2, 0)} mmHg ahora.`;

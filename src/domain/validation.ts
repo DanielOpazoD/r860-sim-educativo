@@ -370,6 +370,17 @@ export function validatePatientParams(p: {
     // Los valores que falten son los del adulto sano, los mismos de DEFAULT_GAS (el dominio no importa el motor).
     if (g && typeof g === 'object' && (g.shuntBase ?? 0.03) + (g.shuntRecruitable ?? 0) + (g.lowVqFrac ?? 0.03) >= 0.95)
       r.push('Shunt y V/Q bajo no pueden llevarse todo el gasto');
+    if (g && typeof g === 'object') {
+      const vo2 = g.vo2MlMin ?? 250;
+      // Sólo si se declara la VO₂: subir la VCO₂ a solas (una fiebre, GAS-02) es un paciente legítimo de la gasometría.
+      if (g.vo2MlMin !== undefined) {
+        const cociente = (g.vco2MlMin ?? 200) / vo2;
+        if (cociente < 0.5 || cociente > 1.3) r.push('Cociente respiratorio VCO₂/VO₂ fuera de 0,5–1,3');
+      }
+      // La sangre no puede ceder más O₂ del que lleva: 1,34 mL/g por la Hb, en mL/L.
+      if (vo2 / (g.cardiacOutputLMin ?? 5) >= 13.4 * (g.hbGdL ?? 15))
+        r.push('El consumo de O₂ supera lo que el gasto y la hemoglobina pueden entregar');
+    }
   }
   if (p.rExpVolumeDep !== undefined) {
     const d = p.rExpVolumeDep;
