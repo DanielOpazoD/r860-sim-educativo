@@ -170,6 +170,8 @@ export const PLOT_TEXT_COLORS = {
   marcaPpico: '#ffc9c4',
   /** Marca de esfuerzo del paciente. */
   marcaEsfuerzo: '#e3cdff',
+  /** Anotación de la lectura en vivo (doble disparo, esfuerzo inefectivo, autodisparo, corte por Pmáx). */
+  lectura: '#ffd27a',
   /** Rótulo del cambio de modo sobre las curvas («Modo A/C PC»). */
   cambioModo: MENTA,
   /** Rótulo de la línea de PEEP. */
