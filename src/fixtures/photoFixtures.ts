@@ -228,6 +228,7 @@ export function frameFromFixture(f: PhotoFixture): EngineFrame {
       sensors: { fio2TauS: 0, fio2Bias: 0 },
       fio2Delivered: f.set.fio2Pct / 100,
       gas: null,
+      oxy: null,
     },
     samples: {
       t: new Float64Array(0),

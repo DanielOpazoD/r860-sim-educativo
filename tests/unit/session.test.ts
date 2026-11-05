@@ -104,7 +104,7 @@ describe('VER-01 · la versión del motor de una sesión decide si se importa y 
 
   it('una de un motor anterior aceptado se importa y se reproduce, avisando que puede no ser idéntica', () => {
     const anteriores = ACCEPTED_ENGINE_VERSIONS.filter((v) => v !== ENGINE_VERSION);
-    expect(anteriores).toEqual(['0.2.0', '0.3.0', '0.4.0']);
+    expect(anteriores).toEqual(['0.2.0', '0.3.0', '0.4.0', '0.7.0']);
     const buena = sesion();
     for (const v of anteriores) {
       const r = importar({ ...buena, engineVersion: v });

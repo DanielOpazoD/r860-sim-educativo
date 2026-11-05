@@ -1,5 +1,5 @@
 import type { NumericSegment, SettingRule } from './settingRules';
-import type { VcSettings, EffortParams, SensorParams } from './types';
+import type { VcSettings, EffortParams, GasExchangeParams, SensorParams } from './types';
 import { lpsToLpm, rrToCycleS } from './units';
 
 const EPS = 1e-9;
@@ -276,7 +276,7 @@ export function validatePatientParams(p: {
   efl?: { pcrit: number; rusFraction: number };
   rExpVolumeDep?: { gain: number; vRefL: number };
   second?: { crs: number; rInsp: number; rExp: number };
-  gas?: Partial<{ vco2MlMin: number; deadspaceL: number; alveolarDeadspaceFrac: number; hco3: number; paco2Basal: number; storeL: number }>;
+  gas?: Partial<GasExchangeParams>;
 }): string[] {
   const r: string[] = [];
   // Las cinco magnitudes del modelo son obligatorias: `Object.entries` no ve las claves ausentes, así que un
@@ -352,6 +352,13 @@ export function validatePatientParams(p: {
       hco3: [5, 50, 'Bicarbonato fuera de 5–50 mEq/L'],
       paco2Basal: [20, 100, 'PaCO₂ habitual fuera de 20–100 mmHg'],
       storeL: [5, 200, 'Depósito de CO₂ fuera de 5–200 L'],
+      hbGdL: [3, 25, 'Hemoglobina fuera de 3–25 g/dL'],
+      vo2MlMin: [50, 800, 'Consumo de O₂ fuera de 50–800 mL/min'],
+      cardiacOutputLMin: [1, 20, 'Gasto cardíaco fuera de 1–20 L/min'],
+      shuntBase: [0, 0.8, 'Shunt fuera de 0–0,8 del gasto'],
+      shuntRecruitable: [0, 0.8, 'Shunt reclutable fuera de 0–0,8 del gasto'],
+      lowVqFrac: [0, 0.8, 'Fracción de V/Q bajo fuera de 0–0,8 del gasto'],
+      lowVqRatio: [0.001, 0.8, 'Relación V/Q baja fuera de 0,001–0,8'],
     } as const;
     if (!g || typeof g !== 'object' || Array.isArray(g)) r.push('Gasometría inválida');
     else
@@ -360,6 +367,20 @@ export function validatePatientParams(p: {
         if (!rango) r.push(`gas.${k}: clave desconocida`);
         else if (typeof v !== 'number' || !Number.isFinite(v) || v < rango[0] || v > rango[1]) r.push(rango[2]);
       }
+    // Los valores que falten son los del adulto sano, los mismos de DEFAULT_GAS (el dominio no importa el motor).
+    if (g && typeof g === 'object' && (g.shuntBase ?? 0.03) + (g.shuntRecruitable ?? 0) + (g.lowVqFrac ?? 0.03) >= 0.95)
+      r.push('Shunt y V/Q bajo no pueden llevarse todo el gasto');
+    if (g && typeof g === 'object') {
+      const vo2 = g.vo2MlMin ?? 250;
+      // Sólo si se declara la VO₂: subir la VCO₂ a solas (una fiebre, GAS-02) es un paciente legítimo de la gasometría.
+      if (g.vo2MlMin !== undefined) {
+        const cociente = (g.vco2MlMin ?? 200) / vo2;
+        if (cociente < 0.5 || cociente > 1.3) r.push('Cociente respiratorio VCO₂/VO₂ fuera de 0,5–1,3');
+      }
+      // La sangre no puede ceder más O₂ del que lleva: 1,34 mL/g por la Hb, en mL/L.
+      if (vo2 / (g.cardiacOutputLMin ?? 5) >= 13.4 * (g.hbGdL ?? 15))
+        r.push('El consumo de O₂ supera lo que el gasto y la hemoglobina pueden entregar');
+    }
   }
   if (p.rExpVolumeDep !== undefined) {
     const d = p.rExpVolumeDep;

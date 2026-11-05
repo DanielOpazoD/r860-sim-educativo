@@ -396,7 +396,9 @@ export const HELP: Record<string, HelpEntry> = {
   },
   'metric.fio2': {
     title: 'FiO₂ medida',
-    text: ['FiO₂ medida por el sensor de O₂, con su retardo; puede diferir de la programada.'],
+    text: [
+      'FiO₂ medida por el sensor de O₂, con su retardo; puede diferir de la programada. La PaO₂ y la SaO₂ del panel son del modelo: el equipo no las mide.',
+    ],
   },
   'metric.mvSpont': {
     title: 'Volumen minuto espontáneo',

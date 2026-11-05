@@ -274,6 +274,89 @@ try {
   writeFileSync(join(SALIDA, 'paco2-serie.json'), JSON.stringify(serie, null, 2));
   await caso.close();
 
+  // ---------- Drive 4 · oxigenación: abrir el pulmón y la FiO₂ ----------
+  const oxi = await pagina('scenario=CC-04&speed=10');
+  await esperarSim(oxi, 25);
+  const leerOxi = () =>
+    oxi.evaluate(() => {
+      const f = window.__ventila.frame;
+      const o = f.truth.oxy;
+      return {
+        tSimS: f.simTimeMs / 1000,
+        peep: f.settings.peep,
+        fio2: f.settings.fio2,
+        pao2: o.pao2,
+        sao2: o.sao2,
+        pafi: o.pafi,
+        shunt: o.shunt,
+      };
+    });
+  const texto = (o) =>
+    `PEEP ${o.peep} · FiO₂ ${o.fio2} · PaO₂ ${o.pao2.toFixed(0)} · SaO₂ ${(o.sao2 * 100).toFixed(1)} % · PaO₂/FiO₂ ${o.pafi.toFixed(0)} · shunt ${(o.shunt * 100).toFixed(0)} %`;
+  const ponerPeep = async (valor) => {
+    await oxi.getByText('Modo actual').click();
+    await oxi.fill('#setting-peep', String(valor));
+    await oxi.locator('#setting-peep').dispatchEvent('change');
+    await oxi.locator('[data-action="confirmModes"]').click();
+    await oxi.waitForFunction((v) => window.__ventila.frame.settings.peep === v, valor, { timeout: 30_000 });
+    return (await leerOxi()).tSimS;
+  };
+  const cerrado = await leerOxi();
+  await oxi.locator('#case-gas').screenshot({ path: join(SALIDA, '6-oxigenacion-cerrado.png') });
+  await esperarSim(oxi, (await ponerPeep(20)) + 30);
+  await esperarSim(oxi, (await ponerPeep(11)) + 180);
+  const abierto = await leerOxi();
+  await oxi.locator('#case-gas').screenshot({ path: join(SALIDA, '7-oxigenacion-abierto.png') });
+  const mejora = abierto.pafi / cerrado.pafi;
+  anotar('oxigenación', 'CC-04 cerrado (PEEP 5)', texto(cerrado), 'medido', 'frame.truth.oxy', cerrado.pafi < 200);
+  anotar('oxigenación', 'CC-04 abierto (PEEP 20 → 11)', texto(abierto), 'medido', 'frame.truth.oxy');
+  anotar(
+    'oxigenación',
+    'mejora de la PaO₂/FiO₂ al abrir',
+    `× ${mejora.toFixed(2)}`,
+    'inferido',
+    'cociente de las dos anteriores',
+    mejora >= 1.5,
+  );
+  comprobar('oxigenación', cerrado.pafi < 200 && mejora >= 1.5, `PaO₂/FiO₂ ${cerrado.pafi.toFixed(0)} → ${abierto.pafi.toFixed(0)}`);
+  await esperarSim(oxi, (await ponerPeep(5)) + 180);
+  const cerrado2 = await leerOxi();
+  anotar(
+    'oxigenación',
+    'de vuelta a PEEP 5, 3 min después',
+    texto(cerrado2),
+    'medido',
+    'frame.truth.oxy',
+    cerrado2.pafi < abierto.pafi * 0.7,
+  );
+  comprobar('oxigenación', cerrado2.pafi < abierto.pafi * 0.7, 'no se perdió lo ganado al volver a PEEP 5');
+  await oxi.close();
+
+  const refractaria = await pagina('scenario=CC-03&speed=10');
+  await esperarSim(refractaria, 25);
+  const leerR = () => refractaria.evaluate(() => window.__ventila.frame.truth.oxy.pao2);
+  const con05 = await leerR();
+  await refractaria.getByText('Modo actual').click();
+  await refractaria.fill('#setting-fio2', '100');
+  await refractaria.locator('#setting-fio2').dispatchEvent('change');
+  await refractaria.locator('[data-action="confirmModes"]').click();
+  await refractaria.waitForFunction(() => window.__ventila.frame.settings.fio2 === 1, null, { timeout: 30_000 });
+  const tF = (await refractaria.evaluate(() => window.__ventila.frame.simTimeMs)) / 1000;
+  await esperarSim(refractaria, tF + 180);
+  const con10 = await leerR();
+  await refractaria.locator('#case-gas').screenshot({ path: join(SALIDA, '8-oxigenacion-fio2-1.png') });
+  const subida = con10 - con05;
+  anotar(
+    'oxigenación',
+    'CC-03 (shunt 25 %): PaO₂ con FiO₂ 0,5 → 1,0 (mmHg)',
+    `${con05.toFixed(0)} → ${con10.toFixed(0)}`,
+    'medido',
+    'frame.truth.oxy',
+    subida < 100,
+  );
+  comprobar('oxigenación', subida < 100, `la PaO₂ subió ${subida.toFixed(0)} mmHg: no se comporta como refractaria`);
+  await refractaria.close();
+
   anotar(
     'general',
     'errores de página o de consola',
@@ -302,7 +385,7 @@ try {
     '',
     fallos.length ? `**Fallos (${fallos.length})**\n\n${fallos.map((f) => `- ${f}`).join('\n')}` : '**Todo pasó.**',
     '',
-    'Capturas: 1-curvas-antes-AC_VC.png, 2-curvas-despues-AC_PC.png, 3-gasometria-antes.png, 4-desarrollo-del-caso.png, 5-gasometria-equilibrio.png',
+    'Capturas: 1-curvas-antes-AC_VC.png, 2-curvas-despues-AC_PC.png, 3-gasometria-antes.png, 4-desarrollo-del-caso.png, 5-gasometria-equilibrio.png, 6-oxigenacion-cerrado.png, 7-oxigenacion-abierto.png, 8-oxigenacion-fio2-1.png',
   ].join('\n');
   writeFileSync(join(SALIDA, 'evidencia.json'), JSON.stringify({ sello: SELLO, url: URL_BASE, evidencia, fallos }, null, 2));
   writeFileSync(join(SALIDA, 'resumen.md'), resumen + '\n');

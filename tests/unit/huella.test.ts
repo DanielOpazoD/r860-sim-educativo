@@ -62,6 +62,7 @@ function huella(id: string): Huella {
       for (const canal of [f.samples.paw, f.samples.flow, f.samples.vol, f.samples.pmus]) h.update(Array.from(canal, redondear).join(','));
       h.update(JSON.stringify(f.alarmBar));
       hGas.update(JSON.stringify(f.truth.gas, cifras));
+      hGas.update(JSON.stringify(f.truth.oxy, cifras));
     }
   }
   h.update(JSON.stringify(sim.breaths, cifras));

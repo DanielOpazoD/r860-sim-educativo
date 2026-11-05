@@ -100,14 +100,18 @@ describe('Casos, Aula y texto recibido', () => {
     const cases = createCaseSpace(ctx, { loadScenario: vi.fn(), switchTab: vi.fn() });
     cases.init();
     // Ahora e inicio de PaCO₂ y pH, rotulados como del modelo; sin columna de equilibrio ni avisos.
-    expect($('#case-gas').querySelectorAll('.gas-item')).toHaveLength(2);
+    expect($('#case-gas').querySelectorAll('.gas-item')).toHaveLength(4);
+    expect($('#case-gas abbr').textContent).toBe('P/F');
+    expect($('#case-gas abbr').title).toBe('PaO₂/FiO₂ (mmHg)');
     expect($('#case-gas').textContent).toContain('PaCO₂');
     expect($('#case-gas').textContent).toContain('inicio');
     expect($('#case-gas').textContent).not.toContain('Tiende');
     expect($('#case-gas .gas-tag').textContent).toBe('modelo');
     // La salvedad de la aceleración docente (E-128), visible y con la frase entera para lectores de pantalla.
-    expect($('#case-gas .gas-rapida').textContent).toBe('≈ 10× más rápido');
-    expect($('#case-gas .gas-rapida').getAttribute('aria-label')).toBe('Equilibrio ≈ 10 veces más rápido que en un paciente real');
+    expect($('#case-gas .gas-rapida').textContent).toBe('PaCO₂ ≈ 10× más rápida');
+    expect($('#case-gas .gas-rapida').getAttribute('aria-label')).toBe(
+      'Equilibrio de la PaCO₂ ≈ 10 veces más rápido que en un paciente real',
+    );
     $<HTMLTextAreaElement>('#reflection-notes').value = 'reflexión';
     ctx.scenario = { ...SCENARIOS.find((s) => s.clinical)!, question: hostile };
     ctx.lesson.render();

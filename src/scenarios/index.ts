@@ -431,7 +431,7 @@ export const SCENARIOS: Scenario[] = [
     patient: { crs: 0.05, rInsp: 10, rExp: 10, r2: 0, p0: 0, sigmoid: { b: 1.6, c: 18, d: 5 } },
     effort: passive,
     sensors: idealSensors,
-    settings: { vt: 0.3, rr: 15, ie: 1 / 3, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
+    settings: { fio2: 0.4, vt: 0.3, rr: 15, ie: 1 / 3, peep: 5, pmax: 60, plimit: 100, pausePct: 0 },
     initialV: 'equilibrium',
     perturbations: [],
     observe: 'Compliance medida frente a PEEP; codo inferior y sobredistensión.',
@@ -702,6 +702,7 @@ SCENARIOS.push({
   sensors: idealSensors,
   settings: {
     mode: 'CPAP_PS',
+    fio2: 0.3,
     psupport: 12,
     expTriggerPct: 0.25,
     riseMs: 100,

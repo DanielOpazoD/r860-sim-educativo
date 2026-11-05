@@ -88,6 +88,11 @@ export const CASE_TESTS: Record<string, CaseTest> = {
     const tRec = c.flags.recruitedAltaMs as number | undefined;
     return hist.some((p) => p.t !== undefined && p.t >= c.lessonStartMs && (tRec === undefined || p.t < tRec));
   },
+  /**
+   * PaO₂/FiO₂ de equilibrio ≥ p.min con FiO₂ programada ≥ p.fio2Min. Con shunt alto el cociente SUBE al bajar la FiO₂
+   * (con shunt 30 %, 147 a FiO₂ 0,4 y 93 a FiO₂ 1,0): sin el mínimo, el caso se resolvería bajándola, sin abrir el pulmón.
+   */
+  pafiEqMin: (c, p) => c.frame.settings.fio2 >= p.fio2Min! - 1e-9 && (c.frame.truth.oxy?.pafiTarget ?? 0) >= p.min!,
   /** PEEP programada ≥ p.min. */
   peepMin: (c, p) => c.frame.settings.peep !== 'off' && c.frame.settings.peep >= p.min!,
   /** Frecuencia programada ≤ p.max. */

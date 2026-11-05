@@ -1,8 +1,14 @@
-# Diseño: oxigenación y corazón-pulmón (pendiente de implementar)
+# Diseño: oxigenación y corazón-pulmón
 
-Estado al 24-10-2026: **diseño acordado, sin código**. Aquí está todo lo necesario para que otra persona o IA lo
-implemente sin depender de la conversación en que se decidió. Cuando una parte se implemente, sus afirmaciones pasan
-a `evidence.json` con su marca D/O/P/U, y este documento queda como registro de la decisión.
+Estado: **A implementada** (`src/engine/oxygenation.ts`, E-129 y E-130, motor 0.8.0); **B y C pendientes**. Lo que sigue
+sobre A queda como registro de la decisión; lo que hoy es cierto está en `docs/03-fisiologia-curvas.md` y en
+`evidence.json`. Los criterios de «terminado» de A los aprobó el usuario el 31-10-2026.
+
+Diferencias entre este diseño y lo implementado en A: los valores salieron de la calibración (adulto sano: shunt 3 %,
+V/Q bajo 3 % a V/Q 0,3; CC-03: shunt 25 %; CC-04: 15 % + 15 % reclutable); τ de la PaO₂ = 30 s; y CC-04 exige además una
+FiO₂ ≥ 0,5, porque la PaO₂/FiO₂ sube al bajar la FiO₂ con shunt alto y el caso se resolvería bajándola. CC-03 no gana un
+criterio de oxigenación: su shunt no se mueve con lo que el caso pide ajustar, así que el criterio casi nunca decía nada, y
+la línea de más desbordaba el panel. Lo explica el desarrollo. Cuatro escenarios cambian de FiO₂ (OXI-11).
 
 ## Por qué
 
@@ -80,7 +86,7 @@ La oxigenación **no realimenta la mecánica**: lee el estado del motor y public
   reclutable (no declara `recruit`): la PEEP sube poco la oxigenación, coherente con lo que ya enseña sobre la presión
   motriz (Grasso). El desarrollo lo explica.
 
-### Criterios de «terminado» — **pendientes de aprobación del usuario**
+### Criterios de «terminado» (aprobados el 31-10-2026)
 
 Las cifras exactas se calibran contra la bibliografía antes de fijarlas en pruebas.
 
@@ -136,6 +142,8 @@ Cada referencia se abre y se lee antes de citarla en `evidence.json`, como exige
    muestras nuevo y su propio dibujo.
 
 ## Cómo retomar
+
+Estos pasos se escribieron para A y sirven igual para B, con sus propios criterios, que el usuario debe aprobar.
 
 1. Lee `CLAUDE.md`, `docs/04-arquitectura.md` (capas: la física va en `src/engine/`; la interfaz sólo lee `truth`) y
    este documento.

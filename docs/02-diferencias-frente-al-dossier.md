@@ -398,3 +398,14 @@ Una sesión guardada anota la versión del motor, pero el número llevaba en 0.4
 - **La gasometría entra en la huella.** Una sesión reproducida recalcula también la PaCO₂ y el pH del modelo, aunque no realimenten la mecánica. HUE-01 suma por escenario un segundo hash con la gasometría, así que cambiar su cinética también obliga a subir la versión, si se nota en los 30 s de cada escenario. Las huellas mecánicas de los 30 escenarios quedan idénticas.
 - **El aviso se queda a la vista.** Antes iba dentro del toast de importación, que se va a los 3 s. Ahora ocupa una franja bajo la cabecera que sigue al reanudar, y desaparece al cargar otro escenario o al importar una sesión sin avisos.
 - **Sin versión, se rechaza.** Una sesión sin `engineVersion` se aceptaba sin aviso; ahora se rechaza, porque no se sabe con qué física se grabó. Una versión desconocida se rechaza diciendo cuáles se aceptan (VER-01, VER-02; E-037).
+
+## Oxigenación de modelo (31-10-2026)
+
+Sin PaO₂ ni shunt, la PEEP en el SDRA no se podía enseñar por su objetivo real. Ahora el motor calcula PaO₂, SaO₂ y PaO₂/FiO₂ con una mezcla venosa (E-129, P con ecuaciones D), en el panel lateral como dato del modelo. El diseño y sus decisiones están en `docs/10-diseno-oxigenacion.md`.
+
+- **El shunt depende del reclutamiento**: abrir el pulmón y sostenerlo con PEEP lleva CC-04 de PaO₂/FiO₂ 124 a 198. Volver a PEEP 5 lo pierde, con el retraso del cierre.
+- **CC-03 y CC-04 arrancan con FiO₂ 0,5** (E-130). CC-04 se evalúa también por oxigenación; CC-03 la explica en su desarrollo, pero no la evalúa: su shunt no se mueve con nada de lo que el caso pide ajustar. CC-04 exige FiO₂ ≥ 0,5: la PaO₂/FiO₂ sube al bajar la FiO₂ con shunt alto, y sin ese mínimo el caso se resolvía bajándola.
+- **Cuatro escenarios cambian de FiO₂**: todos venían con 0,21 porque no tenía consecuencia, y con la oxigenación CC-05 (PaCO₂ 88) daba SaO₂ 48 %. CC-05 y SC-15 pasan a 0,4; CC-08 y SC-20, a 0,3. OXI-11 exige SaO₂ ≥ 90 % al arrancar en todos.
+- **La salvedad del panel pasa a «PaCO₂ ≈ 10× más rápida»**: sólo el CO₂ va acelerado (E-128).
+- **Corrección de paso:** el desarrollo de CC-03 decía que con VT 400 y FR 28 el pH vuelve a ≈ 7,32. El motor da PaCO₂ 40 y pH ≈ 7,40; el texto se quedó atrás de un cambio anterior y ninguna prueba lo fijaba. Ahora OXI-10 lo fija.
+- **El motor pasa a 0.8.0**: las huellas mecánicas no cambian; cambian las de gasometría, que ahora incluyen la oxigenación.
