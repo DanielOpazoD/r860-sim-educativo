@@ -1,6 +1,6 @@
 # Diseño: oxigenación y corazón-pulmón
 
-Estado: **A implementada** (`src/engine/oxygenation.ts`, E-129 y E-130, motor 0.8.0); **B y C pendientes**. Lo que sigue
+Estado: **B implementada** (`src/engine/circulation.ts`, E-131 y E-132, motor 0.9.0), **A implementada** (`src/engine/oxygenation.ts`, E-129 y E-130, motor 0.8.0); **C pendiente**. Lo que sigue
 sobre A queda como registro de la decisión; lo que hoy es cierto está en `docs/03-fisiologia-curvas.md` y en
 `evidence.json`. Los criterios de «terminado» de A los aprobó el usuario el 31-10-2026.
 
@@ -163,3 +163,10 @@ Estos pasos se escribieron para A y sirven igual para B, con sus propios criteri
 8. `npm run ci` (regenera las cifras del README y `docs/01-resultados.md`). Amplía `/verify-r860` con el paso de
    oxigenación y córrela. Pide la revisión del agente `revisor` y abre el PR **sin fusionar**, con la evidencia
    etiquetada en la descripción.
+
+## B · Lo implementado (05-11-2026)
+
+- Retorno venoso de Guyton con la presión pleural como fracción de la presión media de la vía aérea, Cpulmón / (Cpulmón + Cpared), y la presión abdominal devolviendo la mitad de esa subida a la Pmsf. La volemia es la Pmsf, en «Mecánica avanzada › Circulación».
+- GC, PAM y DO₂ en el panel lateral, «Datos del modelo» (Pmsf, Pad y fracción transmitida) y el desarrollo del caso.
+- CC-04 evalúa la mejor PEEP por DO₂: con FiO₂ 0,5, la DO₂ de equilibrio debe pasar de 970 mL/min. Lo cumple la PEEP más baja que mantiene el pulmón abierto; el caso pide además la PEEP final entre 10 y 12, porque una PEEP de más también se podía compensar con volemia o con la pared desde el panel Paciente. Con PEEP 20 la DO₂ abierta (918) es menor que la cerrada a PEEP 5 (957).
+- Se decidió **no** modelar la poscarga del ventrículo derecho. Jardin la señala como el mecanismo en el SDRA, pero su resumen no da cifras con que calibrarla, y el texto completo no estaba disponible. Queda declarada como límite: en un SDRA el modelo subestima la caída del gasto.

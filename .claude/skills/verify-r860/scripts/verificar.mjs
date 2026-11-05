@@ -289,10 +289,12 @@ try {
         sao2: o.sao2,
         pafi: o.pafi,
         shunt: o.shunt,
+        gc: f.truth.circ?.cardiacOutputLMin ?? null,
+        do2: f.truth.circ?.do2MlMin ?? null,
       };
     });
   const texto = (o) =>
-    `PEEP ${o.peep} · FiO₂ ${o.fio2} · PaO₂ ${o.pao2.toFixed(0)} · SaO₂ ${(o.sao2 * 100).toFixed(1)} % · PaO₂/FiO₂ ${o.pafi.toFixed(0)} · shunt ${(o.shunt * 100).toFixed(0)} %`;
+    `PEEP ${o.peep} · FiO₂ ${o.fio2} · PaO₂ ${o.pao2.toFixed(0)} · SaO₂ ${(o.sao2 * 100).toFixed(1)} % · PaO₂/FiO₂ ${o.pafi.toFixed(0)} · shunt ${(o.shunt * 100).toFixed(0)} %${o.gc === null ? '' : ` · GC ${o.gc.toFixed(2)} · DO₂ ${o.do2.toFixed(0)}`}`;
   const ponerPeep = async (valor) => {
     await oxi.getByText('Modo actual').click();
     await oxi.fill('#setting-peep', String(valor));
@@ -304,8 +306,26 @@ try {
   const cerrado = await leerOxi();
   await oxi.locator('#case-gas').screenshot({ path: join(SALIDA, '6-oxigenacion-cerrado.png') });
   await esperarSim(oxi, (await ponerPeep(20)) + 30);
+  await esperarSim(oxi, (await ponerPeep(16)) + 180);
+  const abierto16 = await leerOxi();
   await esperarSim(oxi, (await ponerPeep(11)) + 180);
   const abierto = await leerOxi();
+  if (abierto.do2 !== null) {
+    anotar('corazón-pulmón', 'CC-04 abierto a PEEP 16', texto(abierto16), 'medido', 'frame.truth.oxy, frame.truth.circ');
+    anotar(
+      'corazón-pulmón',
+      'la DO₂ es mayor a PEEP 11 que a 16 y que cerrado a PEEP 5',
+      `${abierto.do2.toFixed(0)} frente a ${abierto16.do2.toFixed(0)} y ${cerrado.do2.toFixed(0)}`,
+      'medido',
+      'frame.truth.circ',
+      abierto.do2 > abierto16.do2 && abierto.do2 > cerrado.do2,
+    );
+    comprobar(
+      'corazón-pulmón',
+      abierto.do2 > abierto16.do2 && abierto.do2 > cerrado.do2,
+      'la DO₂ no tiene su máximo en la PEEP baja que mantiene abierto',
+    );
+  }
   await oxi.locator('#case-gas').screenshot({ path: join(SALIDA, '7-oxigenacion-abierto.png') });
   const mejora = abierto.pafi / cerrado.pafi;
   anotar('oxigenación', 'CC-04 cerrado (PEEP 5)', texto(cerrado), 'medido', 'frame.truth.oxy', cerrado.pafi < 200);
@@ -331,6 +351,47 @@ try {
   );
   comprobar('oxigenación', cerrado2.pafi < abierto.pafi * 0.7, 'no se perdió lo ganado al volver a PEEP 5');
   await oxi.close();
+
+  // ---------- Drive 5 · corazón-pulmón: la PEEP cuesta gasto ----------
+  const cp = await pagina('scenario=SC-01&speed=10');
+  await esperarSim(cp, 30);
+  const leerCp = () =>
+    cp.evaluate(() => {
+      const f = window.__ventila.frame;
+      return f.truth.circ
+        ? { peep: f.settings.peep, gc: f.truth.circ.cardiacOutputLMin, pam: f.truth.circ.mapMmHg, pao2: f.truth.oxy.pao2 }
+        : null;
+    });
+  const cp5 = await leerCp();
+  if (cp5) {
+    await cp.getByText('Modo actual').click();
+    await cp.fill('#setting-peep', '15');
+    await cp.locator('#setting-peep').dispatchEvent('change');
+    await cp.locator('[data-action="confirmModes"]').click();
+    await cp.waitForFunction(() => window.__ventila.frame.settings.peep === 15, null, { timeout: 30_000 });
+    const t15 = (await cp.evaluate(() => window.__ventila.frame.simTimeMs)) / 1000;
+    await esperarSim(cp, t15 + 60);
+    const cp15 = await leerCp();
+    await cp.locator('#case-gas').screenshot({ path: join(SALIDA, '9-corazon-pulmon-peep15.png') });
+    anotar(
+      'corazón-pulmón',
+      'SC-01 PEEP 5 → 15: GC (L/min)',
+      `${cp5.gc.toFixed(2)} → ${cp15.gc.toFixed(2)}`,
+      'medido',
+      'frame.truth.circ',
+      cp15.gc < cp5.gc,
+    );
+    anotar(
+      'corazón-pulmón',
+      'SC-01 PEEP 5 → 15: PAM (mmHg)',
+      `${cp5.pam.toFixed(0)} → ${cp15.pam.toFixed(0)}`,
+      'medido',
+      'frame.truth.circ',
+      cp15.pam < cp5.pam,
+    );
+    comprobar('corazón-pulmón', cp15.gc < cp5.gc, 'subir la PEEP no bajó el gasto');
+  }
+  await cp.close();
 
   const refractaria = await pagina('scenario=CC-03&speed=10');
   await esperarSim(refractaria, 25);
@@ -385,7 +446,7 @@ try {
     '',
     fallos.length ? `**Fallos (${fallos.length})**\n\n${fallos.map((f) => `- ${f}`).join('\n')}` : '**Todo pasó.**',
     '',
-    'Capturas: 1-curvas-antes-AC_VC.png, 2-curvas-despues-AC_PC.png, 3-gasometria-antes.png, 4-desarrollo-del-caso.png, 5-gasometria-equilibrio.png, 6-oxigenacion-cerrado.png, 7-oxigenacion-abierto.png, 8-oxigenacion-fio2-1.png',
+    'Capturas: 1-curvas-antes-AC_VC.png, 2-curvas-despues-AC_PC.png, 3-gasometria-antes.png, 4-desarrollo-del-caso.png, 5-gasometria-equilibrio.png, 6-oxigenacion-cerrado.png, 7-oxigenacion-abierto.png, 8-oxigenacion-fio2-1.png, 9-corazon-pulmon-peep15.png',
   ].join('\n');
   writeFileSync(join(SALIDA, 'evidencia.json'), JSON.stringify({ sello: SELLO, url: URL_BASE, evidencia, fallos }, null, 2));
   writeFileSync(join(SALIDA, 'resumen.md'), resumen + '\n');

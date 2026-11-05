@@ -31,7 +31,8 @@ import { VcController } from './controller';
 import type { ControllerEvent } from './controllerTypes';
 import { EffortGenerator } from './effort';
 import { GasExchange, gasParams, type GasState } from './gasExchange';
-import { Oxygenation, type OxygenState } from './oxygenation';
+import { Oxygenation, oxygenContent, type OxygenState } from './oxygenation';
+import { Circulation, circulationParams, type CirculationState } from './circulation';
 import { MetricEngine } from './metrics';
 import { equilibriumVolumeFor, PatientModel, recruitmentAtRest } from './patient';
 import { ProcedureManager, type O2ProcedureState } from './procedures';
@@ -87,6 +88,8 @@ export interface Truth {
   gas: GasState | null;
   /** Oxigenación de modelo (P): como la gasometría, docente y nunca en el monitor. null en las transcripciones fotográficas. */
   oxy: OxygenState | null;
+  /** Corazón-pulmón de modelo (P): gasto, PAM y entrega de O₂. null en las transcripciones fotográficas. */
+  circ: CirculationState | null;
 }
 
 export interface TrendPoint {
@@ -148,6 +151,13 @@ export class Simulator {
   /** CO₂ arterial de modelo: lo alimenta el volumen pulmonar verdadero, no el sensor del ventilador. */
   readonly gas = new GasExchange();
   readonly oxygenation = new Oxygenation();
+  readonly circulation = new Circulation();
+  /** Presión media de la vía aérea de la última respiración (cmH₂O); antes de la primera, la PEEP. Mueve el gasto. */
+  private get presionMedia(): number {
+    // En espera no hay presión positiva: la de la última respiración dejaba el gasto frenado indefinidamente.
+    if (this.ventilation !== 'ventilating') return this.controller.paw;
+    return this.breaths.at(-1)?.pmean ?? this.controller.peepTarget;
+  }
   /** Volumen pulmonar del paso anterior (L). */
   private lungVPrev = 0;
   /** Segundos de bloqueo (inspiratorio o espiratorio) dentro de la respiración en curso. */
@@ -223,6 +233,7 @@ export class Simulator {
     );
     // Un primer equilibrio sin avanzar el tiempo: el cuadro de t = 0 ya lleva oxigenación, como lleva gasometría.
     const gp0 = gasParams(this.patient.params.gas);
+    this.circulation.step(0, circulationParams(this.patient.params.circulation), this.patient.params.crs, this.presionMedia, true);
     this.oxygenation.step(
       0,
       gp0,
@@ -231,6 +242,7 @@ export class Simulator {
       this.patient.recruited,
       true,
       () => this.gas.state(0, gp0).paco2Target,
+      this.circulation.cardiacOutputLMin,
     );
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
@@ -481,6 +493,14 @@ export class Simulator {
     this.gas.move(vLung - this.lungVPrev, gp);
     this.lungVPrev = vLung;
     this.gas.step(dtS, gp);
+    // El gasto sale de la presión media de la última respiración y alimenta el Fick de la oxigenación.
+    this.circulation.step(
+      dtS,
+      circulationParams(this.patient.params.circulation),
+      this.patient.params.crs,
+      this.presionMedia,
+      this.gas.fijandoEquilibrio,
+    );
     this.oxygenation.step(
       dtS,
       gp,
@@ -489,6 +509,7 @@ export class Simulator {
       this.patient.recruited,
       this.gas.fijandoEquilibrio,
       () => this.gas.state(this.clock.simTimeMs / 1000, gp).paco2Target,
+      this.circulation.cardiacOutputLMin,
     );
     this.clock.tick(); // el reloj representa el FIN del paso cuando se procesan los eventos
     this.o2.step(dtS);
@@ -586,6 +607,13 @@ export class Simulator {
         fio2Delivered: this.o2.delivered,
         gas: this.gas.state(t / 1000, gasParams(this.patient.params.gas)),
         oxy: this.oxygenation.state(),
+        circ: this.circulation.state(
+          circulationParams(this.patient.params.circulation),
+          oxygenContent(this.oxygenation.pao2 ?? 0, gasParams(this.patient.params.gas).hbGdL),
+          this.oxygenation.objetivoPao2 === null
+            ? null
+            : oxygenContent(this.oxygenation.objetivoPao2, gasParams(this.patient.params.gas).hbGdL),
+        ),
       },
       samples: this.ring.last(n),
       eventsTail,

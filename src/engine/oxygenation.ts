@@ -8,7 +8,7 @@ import type { GasExchangeParams } from '../domain/types';
  *   PAO₂ = FiO₂ · (PB − PH₂O) − PaCO₂ / R                (ecuación del gas alveolar, unidades ideales)
  *   V/Q · (PIO₂ − PO₂) / 0,863 = C(PO₂) − CvO₂           (balance de O₂ de las unidades de V/Q bajo)
  *   CaO₂ = (1 − s − f) · C(PAO₂) + f · C(PO₂ baja) + s · CvO₂
- *   CvO₂ = CaO₂ − VO₂ / GC                               (Fick; en esta entrega el gasto cardíaco es fijo)
+ *   CvO₂ = CaO₂ − VO₂ / GC                               (Fick; el gasto lo da circulation.ts)
  *   s = shuntBase + shuntRecruitable · (1 − fracción reclutada)
  * El shunt no ve el gas inspirado, así que no responde a la FiO₂; las unidades de V/Q bajo, sí: es lo que distingue una
  * hipoxemia refractaria de una corregible. Dantzker (1979) midió en el SDRA un modo de shunt o V/Q < 0,01 que recibía
@@ -55,6 +55,12 @@ export function po2FromSaturation(s: number): number {
   return (lo + hi) / 2;
 }
 
+/** Gasto cardíaco de reposo (L/min), el de las ecuaciones puras sin circulación. D-secundario (libro de texto). */
+export const GASTO_REPOSO_LMIN = 5;
+
+/** Contenido arterial de O₂ (mL/L) para una PO₂ y una hemoglobina: el de la entrega de O₂. */
+export const oxygenContent = (po2: number, hbGdL: number): number => contenido(po2, hbGdL);
+
 /** Contenido de O₂ de la sangre (mL/L): unido a la hemoglobina más disuelto. */
 function contenido(po2: number, hbGdL: number): number {
   return HUFNER_ML_G * hbGdL * 10 * saturation(po2) + O2_SOLUBILITY_ML_L * po2;
@@ -97,12 +103,18 @@ export interface OxygenEquilibrium {
 }
 
 /** Equilibrio del intercambio de O₂ para una FiO₂, una PaCO₂ y una fracción reclutada. Puro y determinista. */
-export function oxygenEquilibrium(p: GasExchangeParams, fio2: number, paco2: number, recruited: number): OxygenEquilibrium {
+export function oxygenEquilibrium(
+  p: GasExchangeParams,
+  fio2: number,
+  paco2: number,
+  recruited: number,
+  gastoLMin = GASTO_REPOSO_LMIN,
+): OxygenEquilibrium {
   const r = p.vco2MlMin / p.vo2MlMin;
   const pio2 = fio2 * (PB_MMHG - PH2O_MMHG);
   const pAO2 = Math.max(PAO2_MIN_MMHG, pio2 - paco2 / r);
   const shunt = p.shuntBase + p.shuntRecruitable * (1 - recruited);
-  const extraccion = p.vo2MlMin / p.cardiacOutputLMin;
+  const extraccion = p.vo2MlMin / gastoLMin;
   const capilar = contenido(pAO2, p.hbGdL);
   // CvO₂ depende de CaO₂ y al revés: punto fijo amortiguado. Con shunt alto el paso sin amortiguar oscila.
   let cao2 = capilar;
@@ -158,18 +170,24 @@ export class Oxygenation {
     recruited: number,
     fijar: boolean,
     paco2Objetivo: () => number | null,
+    gastoLMin = GASTO_REPOSO_LMIN,
   ): void {
     this.desdeUltimoS += dtS;
     this.fio2 = fio2;
     if (!this.ahora || this.desdeUltimoS >= PERIODO_EQUILIBRIO_S) {
       this.desdeUltimoS = 0;
-      this.ahora = oxygenEquilibrium(p, fio2, paco2, recruited);
+      this.ahora = oxygenEquilibrium(p, fio2, paco2, recruited, gastoLMin);
       const objetivo = paco2Objetivo();
-      this.objetivo = objetivo === null ? null : oxygenEquilibrium(p, fio2, objetivo, recruited).pao2;
+      this.objetivo = objetivo === null ? null : oxygenEquilibrium(p, fio2, objetivo, recruited, gastoLMin).pao2;
       this.lowVqFrac = p.lowVqFrac;
     }
     if (this.pao2 === null || fijar) this.pao2 = this.ahora.pao2;
     else this.pao2 += (this.ahora.pao2 - this.pao2) * (1 - Math.exp(-dtS / PAO2_TAU_S));
+  }
+
+  /** PaO₂ de equilibrio con la ventilación actual (mmHg), o null sin ventilación alveolar. */
+  get objetivoPao2(): number | null {
+    return this.objetivo;
   }
 
   /** null antes del primer paso. Shunt, PAO₂ y venosa son los del último equilibrio resuelto. */

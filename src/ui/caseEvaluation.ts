@@ -93,8 +93,15 @@ export const CASE_TESTS: Record<string, CaseTest> = {
    * (con shunt 30 %, 147 a FiO₂ 0,4 y 93 a FiO₂ 1,0): sin el mínimo, el caso se resolvería bajándola, sin abrir el pulmón.
    */
   pafiEqMin: (c, p) => c.frame.settings.fio2 >= p.fio2Min! - 1e-9 && (c.frame.truth.oxy?.pafiTarget ?? 0) >= p.min!,
+  /**
+   * Entrega de O₂ de equilibrio ≥ p.min con la FiO₂ programada ≤ p.fio2Max. Sin el tope, subir la FiO₂ compensaría el
+   * gasto que quita una PEEP de más (CC-04: con FiO₂ 1,0, PEEP 20 llega a la DO₂ de PEEP 11 con 0,5).
+   */
+  do2EqMin: (c, p) => c.frame.settings.fio2 <= p.fio2Max! + 1e-9 && (c.frame.truth.circ?.do2TargetMlMin ?? 0) >= p.min!,
   /** PEEP programada ≥ p.min. */
   peepMin: (c, p) => c.frame.settings.peep !== 'off' && c.frame.settings.peep >= p.min!,
+  /** PEEP programada en [p.min, p.max]. */
+  peepRange: (c, p) => c.frame.settings.peep !== 'off' && c.frame.settings.peep >= p.min! && c.frame.settings.peep <= p.max!,
   /** Frecuencia programada ≤ p.max. */
   rrMax: (c, p) => c.frame.settings.rr <= p.max!,
   /** En el último minuto disparan al menos p.fraction de los esfuerzos del paciente. */

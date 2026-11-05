@@ -308,6 +308,20 @@ export const HELP: Record<string, HelpEntry> = {
       'Una diferencia importante entre ambos tiempos puede hacer que el esfuerzo continúe después de que el ventilador haya ciclado a espiración.',
     ],
   },
+  'patient.volemia': {
+    title: 'Volemia (presión media de llenado)',
+    text: [
+      'Presión media de llenado sistémico (Pmsf): la que empuja la sangre de vuelta al corazón. Con 11 mmHg el gasto es de unos 5 L/min; con menos, el paciente está hipovolémico.',
+      'La PEEP sube la presión pleural y con ella la de la aurícula derecha, que frena el retorno. Con poca volemia el gradiente es pequeño y la misma PEEP cuesta más gasto en proporción. Es un modelo: el gasto y la PAM no los mide el equipo.',
+    ],
+  },
+  'patient.chestWall': {
+    title: 'Compliance de la pared torácica',
+    text: [
+      'Fija qué fracción de la presión alveolar llega a la pleura: compliance del pulmón / (compliance del pulmón + la de la pared). Con un pulmón rígido llega menos, y la PEEP cuesta menos gasto.',
+      'Una pared rígida (obesidad, distensión abdominal) hace lo contrario: llega más presión a la pleura.',
+    ],
+  },
   'patient.effortVariability': {
     title: 'Variabilidad del esfuerzo',
     text: ['Variación aleatoria, respiración a respiración, de la amplitud y del período del esfuerzo (± %).'],

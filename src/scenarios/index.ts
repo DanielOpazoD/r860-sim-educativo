@@ -880,7 +880,7 @@ SCENARIOS.push({
   observe:
     'La Cstat medida a la misma PEEP cambia según el pasado: baja al principio, alta tras mantener PEEP 20 y volver a 10–12. El bucle P-V se ensancha y «Reclutamiento» en Datos del modelo muestra la fracción abierta.',
   caution:
-    'La PEEP 20 y el 90 % de reclutamiento son condiciones de este modelo con umbrales únicos. El máximo de Cstat es un resultado mecánico: no identifica una PEEP clínicamente segura ni demuestra beneficio. El modelo no representa intercambio de gases ni hemodinámica.',
+    'La PEEP 20 y el 90 % de reclutamiento son condiciones de este modelo con umbrales únicos. El máximo de Cstat es un resultado mecánico: no identifica una PEEP clínicamente segura ni demuestra beneficio. La oxigenación y el gasto del modelo no realimentan la mecánica.',
   lesson: {
     title: 'Medir dos veces la misma PEEP',
     text: 'Explora la histéresis del modelo: compara la Cstat a la misma PEEP antes y después de la apertura. La secuencia describe mecánica simulada, no una pauta clínica.',

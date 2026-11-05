@@ -4,6 +4,8 @@ import type { EngineFrame } from '../engine/simulator';
 import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import { DEFAULT_EXP_BRANCH_R_CMH2O_S_L } from '../engine/controller';
 import { formatTexto } from '../domain/units';
+import type { CirculationParams } from '../domain/types';
+import { circulationParams } from '../engine/circulation';
 
 export interface PhysSpec {
   label: string;
@@ -374,6 +376,31 @@ export const PHYS: Record<string, PhysSpec> = {
   },
 };
 export const PATIENT_MAIN = ['compliance', 'resistance', 'expResistance', 'effort'];
+/** Un parámetro de la circulación, con los demás como estén: `setPatient` reemplaza el grupo entero. */
+const circ = (fr: EngineFrame, cambio: Partial<CirculationParams>): Command => ({
+  type: 'setPatient',
+  params: { circulation: { ...circulationParams(fr.truth.patient.circulation), ...cambio } },
+});
+PHYS.volemia = {
+  label: 'Volemia (Pmsf)',
+  unit: 'mmHg',
+  min: 5,
+  max: 18,
+  step: 0.5,
+  help: 'patient.volemia',
+  get: (fr) => circulationParams(fr.truth.patient.circulation).pmsfMmHg,
+  cmd: (v, fr) => circ(fr, { pmsfMmHg: v }),
+};
+PHYS.chestWall = {
+  label: 'Compliance de la pared',
+  unit: 'mL/cmH₂O',
+  min: 30,
+  max: 400,
+  step: 10,
+  help: 'patient.chestWall',
+  get: (fr) => circulationParams(fr.truth.patient.circulation).chestWallComplianceL * 1000,
+  cmd: (v, fr) => circ(fr, { chestWallComplianceL: v / 1000 }),
+};
 /**
  * Mecánica avanzada, en el panel desplegable lateral: un grupo por pestaña, del más usado al más técnico. Cada grupo
  * puede llevar su preajuste fisiológico (tubo en la vía aérea, tejido en el pulmón) y una nota de alcance.
@@ -397,6 +424,12 @@ export const PATIENT_GROUPS: { id: string; title: string; keys: string[]; preset
       'viscTau',
     ],
     preset: 'tissue',
+  },
+  {
+    id: 'circulacion',
+    title: 'Circulación',
+    keys: ['volemia', 'chestWall'],
+    note: 'Modelo del corazón-pulmón: retorno venoso de Guyton frenado por la presión pleural. No modela la poscarga del ventrículo derecho: en el SDRA subestima la caída del gasto con la PEEP.',
   },
   {
     id: 'circuito',

@@ -259,6 +259,12 @@
       "title": "Oxigenación en el SDRA: ARDS Definition Task Force. JAMA 2012;307(23):2526–33 (PMID 22797452); Dantzker DR et al. Am Rev Respir Dis 1979;120(5):1039–52 (PMID 389116); Gattinoni L et al. N Engl J Med 2006;354(17):1775–86 (PMID 16641394); NIH NHLBI ARDS Clinical Network, Mechanical Ventilation Protocol Summary, 07-2008",
       "kind": "literatura clínica",
       "note": "NO es documentación del fabricante. Resúmenes leídos por la API de PubMed y resumen del protocolo leído en su PDF (2026-10-31); no los textos completos. Berlín: moderado 100 < PaO₂/FiO₂ ≤ 200. ARDSNet: objetivo PaO₂ 55–80 mmHg o SpO₂ 88–95 %. Dantzker: 16 pacientes, modo normal con el 52 % del gasto y el resto a shunt o V/Q < 0,01; la PEEP reduce ese flujo y también el gasto. Gattinoni: 68 pacientes, reclutable 13 ± 11 %, 24 % no reclutable."
+    },
+    {
+      "id": "C19",
+      "title": "Corazón-pulmón: Mahmood SS, Pinsky MR. Heart-lung interactions during mechanical ventilation: the basics. Ann Transl Med 2018;6(18):349 (doi 10.21037/atm.2018.04.29); Jardin F et al. Influence of positive end-expiratory pressure on left ventricular performance. N Engl J Med 1981;304(7):387–92 (PMID 7005679); Suter PM, Fairley HB, Isenberg MD. Optimum end-expiratory airway pressure in patients with acute pulmonary failure. N Engl J Med 1975;292(6):284–9 (doi 10.1056/NEJM197502062920604)",
+      "kind": "literatura clínica",
+      "note": "NO es documentación del fabricante. Mahmood y Pinsky: página de la revista leída a través de un resumen automático (2026-11-05), no el texto completo: gradiente de retorno «normalmente 4–8 mmHg», la presión abdominal sube la Pmsf y amortigua la caída, y con el pulmón poco distensible el efecto de la presión alveolar «a menudo se amortigua»; no da una fracción numérica de transmisión. Jardin y Suter: sólo lo que dicen sus resúmenes, en buscadores (PubMed y Europe PMC no respondían): Jardin, 10 pacientes con SDRA, PEEP de 0 a 30 cmH₂O, caída progresiva del gasto, la PAM y las dimensiones del VI, atribuida al desplazamiento del septo; sin cifras. Suter, 15 pacientes: la PEEP de máximo transporte de O₂ (gasto × CaO₂) coincidía con la de mayor compliance y menor espacio muerto, entre 0 y 15 cmH₂O."
     }
   ],
   "claims": [
@@ -1740,6 +1746,34 @@
         "tests/unit/oxigenacion.test.ts (OXI-08)",
         "tests/unit/casosClinicos.test.ts (OXI-09)",
         "tests/unit/casosClinicos.test.ts (OXI-10)"
+      ]
+    },
+    {
+      "id": "E-131",
+      "claim": "Corazón-pulmón de modelo: retorno venoso de Guyton, GC = (Pmsf − Pad)/Rrv, con PAM = Pad + GC·Rvs. La presión pleural sube con la presión media de la vía aérea en la fracción Cpulmón/(Cpulmón + Cpared) y sube la Pad; la presión abdominal devuelve la mitad de esa subida a la Pmsf. Con el banco: GC 5 L/min, Pad 4 mmHg, PAM 89 mmHg, gradiente de retorno ≈ 7,8 mmHg, dentro de los 4–8 que citan Mahmood y Pinsky. SC-01 de PEEP 5 a 15: GC 5,0 → 4,4 L/min (−12 %); hipovolémico (Pmsf 9), 3,7 → 3,1 (−16 %). Un pulmón de 28 mL/cmH₂O transmite ≈ 14 % frente a 25 % con 50 y pierde menos gasto. El gasto entra en el Fick de la oxigenación. No modela la poscarga del ventrículo derecho ni la interdependencia ventricular, que Jardin señaló como mecanismo en el SDRA: en un pulmón rígido el modelo subestima la caída. Sin reflejos, sin curva arterial. No realimenta la mecánica.",
+      "status": "D-secundario (ecuación de Guyton, fracción transmitida Cpulmón/(Cpulmón + Cpared), compliance de la pared de 200 mL/cmH₂O: libro de texto) / D-secundario (gradiente de 4–8 mmHg, amortiguación con el pulmón rígido y por la presión abdominal: Mahmood y Pinsky, leído en un resumen de su página) / P (Pmsf, Pad₀, Rrv, Rvs, fracción abdominal 0,5, τ 10 s)",
+      "source": "C19",
+      "locator": "Mahmood y Pinsky, Ann Transl Med 2018;6(18):349, resumen de la página de la revista; Jardin, N Engl J Med 1981;304:387–92, resumen",
+      "implemented": "src/engine/circulation.ts; src/engine/simulator.ts (circulation, presionMedia, truth.circ); src/engine/oxygenation.ts (gastoLMin); src/ui/gasView.ts; src/ui/patientControls.ts (volemia, chestWall)",
+      "tests": [
+        "tests/unit/corazonPulmon.test.ts (CP-01)",
+        "tests/unit/corazonPulmon.test.ts (CP-02)",
+        "tests/unit/corazonPulmon.test.ts (CP-03)",
+        "tests/unit/corazonPulmon.test.ts (CP-04)",
+        "tests/unit/corazonPulmon.test.ts (CP-05)",
+        "tests/unit/corazonPulmon.test.ts (CP-07)"
+      ]
+    },
+    {
+      "id": "E-132",
+      "claim": "CC-04 evalúa la mejor PEEP por entrega de O₂: con FiO₂ 0,5, la DO₂ de equilibrio (GC × CaO₂) debe pasar de 970 mL/min. Con el pulmón abierto, DO₂ ≈ 994 mL/min a PEEP 10, 987 a 11, 979 a 12, 949 a 16 y 918 a 20; cerrado a PEEP 5, 957. Gana la PEEP más baja que mantiene el pulmón abierto, como el transporte de O₂ máximo de Suter (1975), que coincidía con la mayor compliance: el caso exige una PEEP final de 10 a 12 (con 13 la DO₂ aún pasa, 971; con 14, 964). El tope de FiO₂ evita compensar con O₂ una PEEP de más (con FiO₂ 1,0, PEEP 20 pasa de 970), y el de PEEP, compensarla con volemia o con la pared (con volemia 18, PEEP 20 llega a 1871).",
+      "status": "D (que la PEEP de máximo transporte de O₂ existe y coincide con la de mayor compliance: Suter, resumen) / P (umbral de 970 mL/min y tope de FiO₂)",
+      "source": "C19",
+      "locator": "Suter, N Engl J Med 1975;292(6):284–9, resumen",
+      "implemented": "src/scenarios/cases.ts (CC-04: criterio do2, pregunta y desarrollo); src/ui/caseEvaluation.ts (do2EqMin)",
+      "tests": [
+        "tests/unit/corazonPulmon.test.ts (CP-06)",
+        "tests/unit/casosClinicos.test.ts (CP-08)"
       ]
     }
   ]

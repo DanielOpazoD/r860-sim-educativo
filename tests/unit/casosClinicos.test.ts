@@ -292,6 +292,7 @@ describe('CAS-04 · PEEP decremental', () => {
       ['despues', true],
       ['peep', true],
       ['oxigena', true],
+      ['do2', true],
     ]);
     const sinAbrir = caso('CC-04');
     sinAbrir.bloqueo('inspHold');
@@ -584,7 +585,7 @@ describe('OXI-09 · CC-04: abrir el pulmón mejora la oxigenación, y volver a c
     const antes = pafi(inicio);
     expect(antes).toBeLessThan(200);
     expect(antes).toBeCloseTo(124, -1);
-    expect(inicio.sim.frame().truth.oxy!.pao2).toBeCloseTo(62, 0);
+    expect(inicio.sim.frame().truth.oxy!.pao2).toBeCloseTo(63, 0);
     expect(oxigena(inicio)).toBe(false);
     const k = abierto();
     expect(pafi(k) / antes).toBeGreaterThanOrEqual(1.5);
@@ -654,5 +655,51 @@ describe('OXI-10 · CC-03: objetivo de oxigenación de ARDSNet', () => {
     k.correr(30_000);
     expect(k.gas.paco2Target!).toBeCloseTo(40, -0.5);
     expect(phEq(k)).toBeCloseTo(7.4, 1);
+  });
+});
+
+describe('CP-08 · CC-04: la mejor PEEP por entrega de O₂', () => {
+  /** Abierto con PEEP 20 sostenida y llevado a la PEEP dada, con la FiO₂ dada. */
+  const abierto = (peep: number, fio2 = 0.5): Caso => {
+    const k = caso('CC-04');
+    k.bloqueo('inspHold');
+    k.ajustar({ peep: 20 });
+    k.correr(30_000);
+    k.ajustar({ peep, fio2 });
+    k.correr(60_000);
+    k.bloqueo('inspHold');
+    return k;
+  };
+  const do2 = (k: Caso) => k.resultado().criteria.find((c) => c.id === 'do2')!.ok;
+  it('arranca bajo el umbral; abierto a PEEP 11 lo pasa; a 16 ya no, aunque siga abierto', () => {
+    expect(do2(caso('CC-04'))).toBe(false);
+    const k11 = abierto(11);
+    expect(k11.sim.frame().truth.circ!.do2TargetMlMin!).toBeCloseTo(987, -1);
+    expect(do2(k11)).toBe(true);
+    const k16 = abierto(16);
+    expect(k16.sim.frame().truth.recruited).toBeGreaterThan(0.95);
+    expect(do2(k16)).toBe(false);
+  });
+  it('PEEP 20 con el pulmón abierto entrega menos O₂ que cerrado a PEEP 5', () => {
+    const cerrado = caso('CC-04').sim.frame().truth.circ!.do2TargetMlMin!;
+    expect(abierto(20).sim.frame().truth.circ!.do2TargetMlMin!).toBeLessThan(cerrado);
+  });
+  it('no hay atajo con la volemia: PEEP 20 con volemia 18 sube la DO₂, pero la PEEP final queda fuera de 10–12', () => {
+    const k = caso('CC-04');
+    k.bloqueo('inspHold');
+    k.ajustar({ peep: 20 });
+    k.correr(30_000);
+    k.sim.command({ type: 'setPatient', params: { circulation: { pmsfMmHg: 18 } } });
+    k.correr(60_000);
+    k.bloqueo('inspHold');
+    const r = k.resultado();
+    expect(r.criteria.find((c) => c.id === 'do2')!.ok).toBe(true);
+    expect(r.criteria.find((c) => c.id === 'peep')!.ok).toBe(false);
+    expect(r.passed).toBe(false);
+  });
+  it('no hay atajo: con FiO₂ 1,0 la PEEP de más no cumple aunque la DO₂ suba', () => {
+    const k = abierto(20, 1);
+    expect(k.sim.frame().truth.circ!.do2TargetMlMin!).toBeGreaterThan(970);
+    expect(do2(k)).toBe(false);
   });
 });
