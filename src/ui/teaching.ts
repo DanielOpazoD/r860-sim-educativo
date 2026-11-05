@@ -9,7 +9,7 @@
  * dejan de medir lo que se cree que miden. La Ppico no lleva rango a propósito: no tiene uno.
  */
 import type { EngineFrame } from '../engine/simulator';
-import { formatNumber } from '../domain/units';
+import { formatTexto } from '../domain/units';
 
 export interface Referencia {
   /** Extremo inferior del rango, o null si sólo hay techo. */
@@ -98,7 +98,7 @@ function estado(valor: number | null, decimales: number, ref: Referencia | null)
   return 'dentro';
 }
 
-const n = (v: number | null, d = 0): string => formatNumber(v, d);
+const n = (v: number | null, d = 0): string => formatTexto(v, d);
 
 /**
  * Qué PEEP hay de verdad en el denominador. Es el error más común al calcular la presión motriz: con atrapamiento
@@ -173,7 +173,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
     referencia: REF_DRIVING,
     estado: estado(driving.valor, 1, REF_DRIVING),
     faltaPara: 'Necesita la meseta: bloqueo inspiratorio.',
-    nota: 'El VT normalizado por la distensibilidad: ΔP = VT / Cstat. ' + denominador(cstat.motivo),
+    nota: 'El VT normalizado por la compliance: ΔP = VT / Cstat. ' + denominador(cstat.motivo),
     aviso: driving.aviso,
   };
 
@@ -181,7 +181,7 @@ export function tarjetas(fr: EngineFrame): Tarjeta[] {
   const vtMl = vtHold.valor === null ? null : vtHold.valor * 1000;
   const tarjetaCstat: Tarjeta = {
     id: 'cstat',
-    titulo: 'Distensibilidad estática',
+    titulo: 'Compliance estática',
     formula: 'Cstat = VT / ΔP',
     sustituida: cstatMl !== null && vtMl !== null && driving.valor !== null ? `${n(cstatMl)} = ${n(vtMl)} / ${n(driving.valor, 1)}` : null,
     valor: cstatMl,
@@ -238,7 +238,7 @@ export interface Estres {
 }
 
 /**
- * Bandas del índice de estrés. Por debajo de 0,9 la distensibilidad mejora mientras entra el volumen; por encima de
+ * Bandas del índice de estrés. Por debajo de 0,9 la compliance mejora mientras entra el volumen; por encima de
  * 1,1 empeora. Entre medias la forma global es aproximadamente recta; no excluye procesos regionales simultáneos.
  */
 const ESTRES_BAJO = 0.9;
@@ -251,7 +251,7 @@ export function estres(fr: EngineFrame): Estres {
   }
   const b = m.value;
   // La rampa se mide con el flujo de la MÁQUINA: con fuga o circuito compresible ese flujo no es constante en el
-  // pulmón, así que la forma de la presión no describe sólo su distensibilidad. La auditoría lo vio: una fuga de
+  // pulmón, así que la forma de la presión no describe sólo su compliance. La auditoría lo vio: una fuga de
   // 40 L/min a 10 cmH₂O bajó el índice a 0,84 en un pulmón lineal y el panel lo contó como reclutamiento.
   if ((fr.truth.patient.leakLpmAt10 ?? 0) > 0 || (fr.truth.patient.circuitComplianceLPerCmH2O ?? 0) > 0) {
     return {
@@ -267,14 +267,14 @@ export function estres(fr: EngineFrame): Estres {
       valor: b,
       motivo: null,
       regimen: 'reclutando',
-      lectura: 'La distensibilidad mejora mientras entra el volumen: queda pulmón por abrir dentro del ciclo.',
+      lectura: 'La compliance mejora mientras entra el volumen: queda pulmón por abrir dentro del ciclo.',
     };
   if (b > ESTRES_ALTO)
     return {
       valor: b,
       motivo: null,
       regimen: 'sobredistension',
-      lectura: 'La distensibilidad empeora mientras entra el volumen: el ciclo llega a la zona de sobredistensión.',
+      lectura: 'La compliance empeora mientras entra el volumen: el ciclo llega a la zona de sobredistensión.',
     };
   return {
     valor: b,

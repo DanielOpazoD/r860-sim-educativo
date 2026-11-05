@@ -85,6 +85,7 @@ export interface PlotsView {
   clearLoopReference(): void;
   /** Guarda la última respiración completa como referencia dibujada atenuada bajo las curvas. */
   saveWaveReference(): void;
+  /** Quita la referencia; no vuelve a fijarse sola al cambiar un ajuste o el paciente hasta que se pida otra vez. */
   clearWaveReference(): void;
   /** Instante de inicio de la respiración guardada como referencia (s), o null. */
   readonly waveRefAt: number | null;
@@ -120,6 +121,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     cursorRatioB: number | null = null,
     loopReference: Point[] | null = null,
     waveReference: Point[] | null = null,
+    // El usuario quitó la comparación: no se vuelve a fijar sola hasta que la pida otra vez.
+    waveRefDismissed = false,
     breaths: WaveBreath[] = [],
     markerCache: WaveMarker[] = [],
     markerCacheKey = '',
@@ -214,6 +217,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       // Al volver a una vista su escala guardada ya no describe lo que hay: se parte de lo visible.
       resetScales();
       lastView = view;
+      syncFrozenChrome();
     }
     const { pts, end } = activeTrace();
     const peep = fr.settings.peep === 'off' ? 0 : fr.settings.peep,
@@ -372,14 +376,19 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       setCursorAt(startRatio, 'A');
       setCursorAt(cycleRatio, 'B');
     } else frozenPoints = [];
-    $('#signal-inspector').hidden = !frozen;
-    $('#frozen-ribbon').hidden = !frozen;
+    syncFrozenChrome();
     $('#freeze-button').innerHTML = icon(frozen ? 'play' : 'freeze') + `<span>${frozen ? 'Reanudar curvas' : 'Congelar curvas'}</span>`;
     $('#freeze-button').classList.toggle('active', frozen);
     $('#freeze-button').setAttribute('aria-pressed', String(frozen));
     $('#freeze-button').setAttribute('aria-label', frozen ? 'Reanudar curvas' : 'Congelar curvas');
     put('#view-active-state', frozen ? 'Curvas congeladas' : '');
     dirty = true;
+  }
+  /** Cinta y cursores sólo donde hay curvas congeladas: la cinta en las vistas con trazo, los cursores en Curvas y datos. */
+  function syncFrozenChrome(): void {
+    const view = ctx.view;
+    $('#signal-inspector').hidden = !frozen || view !== 'waves';
+    $('#frozen-ribbon').hidden = !frozen || !['waves', 'basic', 'loops'].includes(view);
   }
   function onPointer(e: PointerEvent): void {
     if (!frozen || !frozenPoints.length) return;
@@ -389,14 +398,22 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     const x = ((e.clientX - rect.left) / rect.width) * w;
     setCursorAt((x - WAVE_MARGIN.left) / (w - WAVE_MARGIN.left - WAVE_MARGIN.right));
   }
+  /** Sin ayudas el botón queda deshabilitado: su título dice cómo habilitarlo. */
+  function waveRefTitle(): void {
+    $<HTMLButtonElement>('#wave-ref-button').title = !waveAids
+      ? 'Enciende las ayudas sobre las curvas para comparar'
+      : waveReference
+        ? 'Quita la respiración de referencia'
+        : 'Superpone la última respiración completa para compararla con las siguientes';
+  }
   function setWaveReference(cyc: Point[]): void {
     waveReference = cyc.map((x) => [...x] as Point);
     const btn = $<HTMLButtonElement>('#wave-ref-button');
     btn.classList.add('active');
     btn.setAttribute('aria-pressed', 'true');
     btn.setAttribute('aria-label', 'Dejar de comparar la última respiración');
-    btn.title = 'Quita la respiración de referencia';
     (btn.querySelector('span') as HTMLElement).textContent = 'Dejar de comparar';
+    waveRefTitle();
     dirty = true;
   }
   function resetWaveReferenceButton(): void {
@@ -405,7 +422,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     btn.setAttribute('aria-pressed', 'false');
     (btn.querySelector('span') as HTMLElement).textContent = 'Comparar última respiración';
     btn.setAttribute('aria-label', 'Comparar última respiración');
-    btn.title = 'Superpone la última respiración completa para compararla con las siguientes';
+    waveRefTitle();
     put('#view-active-state', frozen ? 'Curvas congeladas' : '');
   }
   return {
@@ -427,6 +444,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     setWaveAids(on) {
       waveAids = on;
       $<HTMLButtonElement>('#wave-ref-button').disabled = !on;
+      waveRefTitle();
       const toggle = $<HTMLButtonElement>('#wave-aids-toggle');
       toggle.classList.toggle('active', on);
       toggle.setAttribute('aria-pressed', String(on));
@@ -449,7 +467,13 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         fixedBounds.basic = null;
         resetScales();
         resetModeChanges();
-      } else if (prev && !waveReference && mechanicsSignature !== '' && mechanicsSignature !== nextMechanicsSignature) {
+      } else if (
+        prev &&
+        !waveReference &&
+        !waveRefDismissed &&
+        mechanicsSignature !== '' &&
+        mechanicsSignature !== nextMechanicsSignature
+      ) {
         const before = cyclePoints(points);
         if (before.length >= 3) setWaveReference(before);
       }
@@ -553,6 +577,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       return waveReference?.length ? waveReference[0]![0] : null;
     },
     saveWaveReference() {
+      waveRefDismissed = false;
       const cyc = cyclePoints(points);
       if (cyc.length < 3) {
         ctx.toast('Espera un ciclo completo.', true);
@@ -565,6 +590,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     },
     clearWaveReference() {
       waveReference = null;
+      waveRefDismissed = true;
       resetWaveReferenceButton();
       dirty = true;
     },
@@ -608,10 +634,8 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       setCursorAt(value / 1000, cursor);
     },
     start() {
-      const canvas = $('#waves-canvas');
-      // También `pointerdown`: en una pantalla táctil no existe «mover sin pulsar», así que tocar la curva debe bastar.
-      canvas.addEventListener('pointermove', onPointer);
-      canvas.addEventListener('pointerdown', onPointer);
+      // Sólo al pulsar o tocar: pasar el ratón por la curva no mueve el cursor A.
+      $('#waves-canvas').addEventListener('pointerdown', onPointer);
       requestAnimationFrame(tick);
     },
   };

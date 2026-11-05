@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { clearPrefs, loadPrefs, PREFS_KEY, savePrefs } from '../../src/ui/prefs';
+import { LEGACY_PREFS_KEY, loadPrefs, PREFS_KEY, resetViewPrefs, savePrefs } from '../../src/ui/prefs';
 
 function storage(initial: Record<string, string> = {}): Storage {
   const values = new Map(Object.entries(initial));
@@ -64,6 +64,33 @@ describe('preferencias de interfaz', () => {
     });
     expect(loadPrefs()).toEqual({ v: 1 });
     expect(() => savePrefs({ welcomed: true })).not.toThrow();
-    expect(() => clearPrefs()).not.toThrow();
+    expect(() => resetViewPrefs()).not.toThrow();
+  });
+
+  it('migra una vez la clave antigua de preferencias', () => {
+    const local = storage({ [LEGACY_PREFS_KEY]: JSON.stringify({ v: 1, waveStyle: 'scroll', welcomed: true }) });
+    vi.stubGlobal('localStorage', local);
+    expect(LEGACY_PREFS_KEY).not.toBe(PREFS_KEY);
+    expect(loadPrefs()).toEqual({ v: 1, waveStyle: 'scroll', welcomed: true });
+    expect(local.getItem(LEGACY_PREFS_KEY)).toBeNull();
+    expect(local.getItem(PREFS_KEY)).not.toBeNull();
+  });
+
+  it('guarda la densidad de casillas en las preferencias y migra la clave suelta', () => {
+    const local = storage({ [PREFS_KEY]: JSON.stringify({ v: 1, welcomed: true }), 'ventila.tileDensity': '6' });
+    vi.stubGlobal('localStorage', local);
+    expect(loadPrefs()).toEqual({ v: 1, welcomed: true, tileDensity: 6 });
+    expect(local.getItem('ventila.tileDensity')).toBeNull();
+    savePrefs({ tileDensity: 13 });
+    expect(loadPrefs().tileDensity).toBe(13);
+  });
+
+  it('restablecer borra las preferencias de vista y conserva bienvenida y último escenario', () => {
+    const local = storage({
+      [PREFS_KEY]: JSON.stringify({ v: 1, welcomed: true, lastScenario: 'SC-03', waveWindow: '6', speed: 4, tileDensity: 6 }),
+    });
+    vi.stubGlobal('localStorage', local);
+    resetViewPrefs();
+    expect(loadPrefs()).toEqual({ v: 1, welcomed: true, lastScenario: 'SC-03' });
   });
 });

@@ -83,6 +83,32 @@ export function createMetricsView(ctx: AppContext): MetricsView {
   const quality = (spec: MetricSpec): string => metricQuality(ctx.frame, spec);
   /** El dato existe pero en examen todavía no se estimó: la casilla enseña «?» en su lugar. */
   const oculto = (key: string): boolean => ctx.examMasked(key);
+  /** Celdas vivas de la tabla de mediciones, por clave: se crean una vez y se actualizan en cada cuadro. */
+  const filasTabla = new Map<string, { valor: HTMLTableCellElement; estado: HTMLTableCellElement }>();
+  function construirTabla(): void {
+    filasTabla.clear();
+    const fila = (key: string): HTMLTableRowElement[] => {
+      const m = ALL_METRICS.find((candidate) => candidate.key === key);
+      if (!m) return [];
+      const name = element('button', 'metric-name', m.label, iconNode('info'));
+      name.dataset.metric = m.key;
+      const valor = element('td', '');
+      const estado = element('td', 'metric-status');
+      filasTabla.set(m.key, { valor, estado });
+      const row = element('tr', '', element('td', '', name), valor, estado);
+      row.dataset.row = m.key;
+      return [row];
+    };
+    const grupos = (items: (typeof DATA_TABLE_GROUPS)[number]): HTMLTableRowElement[] =>
+      items.flatMap((group) => {
+        const heading = element('th', '', group.title);
+        heading.colSpan = 3;
+        heading.scope = 'colgroup';
+        return [element('tr', 'group-row', heading), ...group.keys.flatMap(fila)];
+      });
+    $('#data-table-body').replaceChildren(...grupos(DATA_TABLE_GROUPS[0]!));
+    $('#data-table-body-2').replaceChildren(...grupos(DATA_TABLE_GROUPS[1]!));
+  }
   return {
     init() {
       $('#variable-legend').innerHTML =
@@ -178,35 +204,29 @@ export function createMetricsView(ctx: AppContext): MetricsView {
         put(e.querySelector('b'), oculto(spec.key) && value(spec) !== null ? '?' : f(value(spec), decimalesMostrados(spec, value(spec))));
       }
       if (ctx.view === 'data') {
-        const fila = (key: string): HTMLTableRowElement[] => {
-          const m = ALL_METRICS.find((candidate) => candidate.key === key);
-          if (!m) return [];
+        // Las filas se crean una vez; cada cuadro sólo reescribe el valor y el estado que cambiaron. Reconstruirlas en
+        // cada cuadro destruía el botón del nombre entre el pulsar y el soltar, y el clic se perdía.
+        if (!filasTabla.values().next().value?.valor.isConnected) construirTabla();
+        for (const [key, fila] of filasTabla) {
+          const m = ALL_METRICS.find((candidate) => candidate.key === key) as MetricSpec;
           const est = examEstimates.get(m.key);
           const status = metricStatus(ctx.frame, m);
           const valor = oculto(m.key) && value(m) !== null ? '?' : f(value(m), decimalesMostrados(m, value(m)));
-          const name = element('button', 'metric-name', m.label, iconNode('info'));
-          name.dataset.metric = m.key;
-          const cell = element(
-            'td',
-            'metric-status',
-            ...(est ? [element('span', 'q-estimate', `Estimaste ${f(est.guess, m.decimals)} · `)] : []),
-            element('span', `q-chip q-${status.tone}`, status.label),
-            ...(status.source ? [element('span', 'q-src', status.source)] : []),
-          );
-          cell.title = status.detail;
-          const row = element('tr', '', element('td', '', name), element('td', '', ...celdaValor(valor, m.unit)), cell);
-          row.dataset.row = m.key;
-          return [row];
-        };
-        const grupos = (items: (typeof DATA_TABLE_GROUPS)[number]): HTMLTableRowElement[] =>
-          items.flatMap((group) => {
-            const heading = element('th', '', group.title);
-            heading.colSpan = 3;
-            heading.scope = 'colgroup';
-            return [element('tr', 'group-row', heading), ...group.keys.flatMap(fila)];
-          });
-        $('#data-table-body').replaceChildren(...grupos(DATA_TABLE_GROUPS[0]!));
-        $('#data-table-body-2').replaceChildren(...grupos(DATA_TABLE_GROUPS[1]!));
+          if (fila.valor.dataset.texto !== valor) {
+            fila.valor.dataset.texto = valor;
+            fila.valor.replaceChildren(...celdaValor(valor, m.unit));
+          }
+          const firma = JSON.stringify([est?.guess ?? null, status.tone, status.label, status.source]);
+          if (fila.estado.dataset.firma !== firma) {
+            fila.estado.dataset.firma = firma;
+            fila.estado.replaceChildren(
+              ...(est ? [element('span', 'q-estimate', `Estimaste ${f(est.guess, m.decimals)} · `)] : []),
+              element('span', `q-chip q-${status.tone}`, status.label),
+              ...(status.source ? [element('span', 'q-src', status.source)] : []),
+            );
+          }
+          if (fila.estado.title !== status.detail) fila.estado.title = status.detail;
+        }
       }
     },
     updateLogs() {
@@ -223,7 +243,7 @@ export function createMetricsView(ctx: AppContext): MetricsView {
             `event-log-row ${e.kind === 'alarm' ? 'alert-event' : ''}`,
             element('time', '', clock(e.simTimeMs / 1000)),
             element('span', '', EVENT_KIND[e.kind] ?? e.kind),
-            element('span', '', learnerText(eventSentence(e))),
+            element('span', '', learnerText(eventSentence(e, ctx.profile.rules))),
           ),
         ),
       );

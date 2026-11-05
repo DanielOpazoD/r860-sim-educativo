@@ -3,6 +3,7 @@ import type { Command } from '../domain/commands';
 import type { EngineFrame } from '../engine/simulator';
 import { TISSUE_PRESETS, TUBE_PRESETS } from '../domain/mechanicsPresets';
 import { DEFAULT_EXP_BRANCH_R_CMH2O_S_L } from '../engine/controller';
+import { formatTexto } from '../domain/units';
 
 export interface PhysSpec {
   label: string;
@@ -13,7 +14,12 @@ export interface PhysSpec {
   help: string;
   get: (fr: EngineFrame) => number;
   cmd: (v: number, fr: EngineFrame) => Command;
+  /** Control que sólo actúa con otra función encendida: mientras esté apagada se deshabilita con este aviso. */
+  requires?: { on: (fr: EngineFrame) => boolean; title: string };
 }
+const conCurva = (fr: EngineFrame): boolean => (fr.truth.patient.sigmoid?.b ?? 0) > 0;
+const REQUIERE_CURVA = { on: conCurva, title: 'Activa primero la capacidad (b)' };
+const REQUIERE_RECLUTAMIENTO = { on: (fr: EngineFrame) => !!fr.truth.patient.recruit, title: 'Activa primero la capacidad ganable' };
 export const PHYS: Record<string, PhysSpec> = {
   compliance: {
     label: 'Compliance (C)',
@@ -24,7 +30,7 @@ export const PHYS: Record<string, PhysSpec> = {
     help: 'patient.compliance',
     get: (fr) => fr.truth.patient.crs * 1000,
     // Con curva sigmoidea la presión elástica sale de ella y no de crs: el control escala su capacidad en la misma
-    // proporción, así que mover C cambia la distensibilidad a todo volumen (antes no hacía nada en esos pulmones).
+    // proporción, así que mover C cambia la compliance a todo volumen (antes no hacía nada en esos pulmones).
     cmd: (v, fr) => {
       const p = fr.truth.patient,
         s = p.sigmoid;
@@ -34,8 +40,8 @@ export const PHYS: Record<string, PhysSpec> = {
     },
   },
   resistance: {
-    label: 'Resistencia insp.',
-    unit: 'cmH₂O/L/s',
+    label: 'Resistencia inspiratoria',
+    unit: 'cmH₂O·s/L',
     min: 2,
     max: 100,
     step: 1,
@@ -44,8 +50,8 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { rInsp: v } }),
   },
   expResistance: {
-    label: 'Resistencia esp.',
-    unit: 'cmH₂O/L/s',
+    label: 'Resistencia espiratoria',
+    unit: 'cmH₂O·s/L',
     min: 2,
     max: 150,
     step: 1,
@@ -54,7 +60,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { rExp: v } }),
   },
   expValve: {
-    label: 'Resistencia de rama esp.',
+    label: 'Resistencia de la rama espiratoria',
     unit: 'cmH₂O·s/L',
     min: 0,
     max: 6,
@@ -64,7 +70,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setPatient', params: { rExpValve: v } }),
   },
   leak: {
-    label: 'Fuga en la Y',
+    label: 'Fuga en la pieza en Y',
     unit: 'L/min a 10 cmH₂O',
     min: 0,
     max: 40,
@@ -97,12 +103,13 @@ export const PHYS: Record<string, PhysSpec> = {
     }),
   },
   sigmoidC: {
-    label: 'Curva P-V: máxima compliance (c)',
+    label: 'Curva P-V: inflexión (c)',
     unit: 'cmH₂O',
     min: 0,
     max: 40,
     step: 1,
     help: 'patient.sigmoid',
+    requires: REQUIERE_CURVA,
     get: (fr) => fr.truth.patient.sigmoid?.c ?? 18,
     cmd: (v, fr) => ({
       type: 'setPatient',
@@ -116,6 +123,7 @@ export const PHYS: Record<string, PhysSpec> = {
     max: 15,
     step: 0.5,
     help: 'patient.sigmoid',
+    requires: REQUIERE_CURVA,
     get: (fr) => fr.truth.patient.sigmoid?.d ?? 5,
     cmd: (v, fr) => ({
       type: 'setPatient',
@@ -153,6 +161,7 @@ export const PHYS: Record<string, PhysSpec> = {
     max: 45,
     step: 1,
     help: 'patient.recruit',
+    requires: REQUIERE_RECLUTAMIENTO,
     get: (fr) => fr.truth.patient.recruit?.pOpen ?? 28,
     cmd: (v, fr) => ({
       type: 'setPatient',
@@ -166,6 +175,7 @@ export const PHYS: Record<string, PhysSpec> = {
     max: 30,
     step: 1,
     help: 'patient.recruit',
+    requires: REQUIERE_RECLUTAMIENTO,
     get: (fr) => fr.truth.patient.recruit?.pClose ?? 10,
     cmd: (v, fr) => ({
       type: 'setPatient',
@@ -190,11 +200,12 @@ export const PHYS: Record<string, PhysSpec> = {
   },
   secondR: {
     label: 'Segunda unidad: resistencia',
-    unit: 'cmH₂O/L/s',
+    unit: 'cmH₂O·s/L',
     min: 2,
     max: 300,
     step: 2,
     help: 'patient.second',
+    requires: { on: (fr) => !!fr.truth.patient.second, title: 'Activa primero la compliance de la segunda unidad' },
     get: (fr) => fr.truth.patient.second?.rInsp ?? 60,
     cmd: (v, fr) => ({
       type: 'setPatient',
@@ -265,7 +276,9 @@ export const PHYS: Record<string, PhysSpec> = {
     step: 0.5,
     help: 'patient.effort',
     get: (fr) => (fr.truth.effort.enabled ? fr.truth.effort.amplitude : 0),
-    cmd: (v) => ({ type: 'setEffort', params: { enabled: v > 0, amplitude: v } }),
+    // Un 0 no apaga el generador: con enabled: false callaba también el disparo reverso. Un paciente pasivo (apagado)
+    // sigue apagado, para no salir de su perfil por escribir el 0 que ya mostraba.
+    cmd: (v, fr) => ({ type: 'setEffort', params: { enabled: v > 0 || fr.truth.effort.enabled, amplitude: v } }),
   },
   effortExp: {
     label: 'Esfuerzo espiratorio',
@@ -288,7 +301,7 @@ export const PHYS: Record<string, PhysSpec> = {
     cmd: (v) => ({ type: 'setEffort', params: { ratePerMin: v } }),
   },
   muscleTi: {
-    label: 'Duración del esfuerzo',
+    label: 'Tiempo neural hasta el pico',
     unit: 's',
     min: 0.3,
     max: 3,
@@ -303,8 +316,9 @@ export const PHYS: Record<string, PhysSpec> = {
     min: 0,
     max: 50,
     step: 5,
-    help: 'patient.effort',
-    get: (fr) => (fr.truth.effort.variability?.amplitudeFrac ?? 0) * 100,
+    help: 'patient.effortVariability',
+    // Un solo control para las dos variabilidades (amplitud y período): muestra la mayor y al moverlo fija ambas.
+    get: (fr) => Math.max(fr.truth.effort.variability?.amplitudeFrac ?? 0, fr.truth.effort.variability?.periodFrac ?? 0) * 100,
     cmd: (v) => ({
       type: 'setEffort',
       params: { variability: v > 0 ? { amplitudeFrac: v / 100, periodFrac: v / 100 } : undefined },
@@ -330,11 +344,13 @@ export const PHYS: Record<string, PhysSpec> = {
     max: 1.5,
     step: 0.1,
     help: 'patient.reverseDelay',
+    requires: { on: (fr) => (fr.truth.effort.reverse?.amplitude ?? 0) > 0, title: 'Activa primero el disparo reverso' },
     get: (fr) => fr.truth.effort.reverse?.delayS ?? 0.5,
-    cmd: (v, fr) => ({
-      type: 'setEffort',
-      params: { reverse: { amplitude: fr.truth.effort.reverse?.amplitude ?? 0, delayS: v } },
-    }),
+    // Sin disparo reverso no se crea uno de amplitud 0: dejaría el esfuerzo fuera de su perfil («Personalizado»).
+    cmd: (v, fr) => {
+      const r = fr.truth.effort.reverse;
+      return { type: 'setEffort', params: r ? { reverse: { ...r, delayS: v } } : {} };
+    },
   },
   o2Tau: {
     label: 'Sensor O₂: constante',
@@ -342,17 +358,17 @@ export const PHYS: Record<string, PhysSpec> = {
     min: 0.5,
     max: 60,
     step: 0.5,
-    help: 'setting.fio2',
+    help: 'patient.o2Tau',
     get: (fr) => fr.truth.sensors.fio2TauS,
     cmd: (v) => ({ type: 'setSensors', params: { fio2TauS: v } }),
   },
   o2Bias: {
     label: 'Sensor O₂: sesgo',
-    unit: '%',
+    unit: 'puntos %',
     min: -20,
     max: 20,
     step: 1,
-    help: 'setting.fio2',
+    help: 'patient.o2Bias',
     get: (fr) => Math.round(fr.truth.sensors.fio2Bias * 100),
     cmd: (v) => ({ type: 'setSensors', params: { fio2Bias: v / 100 } }),
   },
@@ -386,7 +402,7 @@ export const PATIENT_GROUPS: { id: string; title: string; keys: string[]; preset
     id: 'circuito',
     title: 'Circuito',
     keys: ['expValve', 'leak', 'circuitCompliance', 'o2Tau', 'o2Bias'],
-    note: 'La fuga se modela en la pieza en Y como un orificio: crece con la raíz de la presión, sin compensación de fuga ni distensibilidad del circuito.',
+    note: 'La fuga es un orificio en la pieza en Y (Q ∝ P^0,56); el equipo no compensa la fuga ni la compliance del circuito.',
   },
 ];
 export const PATIENT_EXTRA = PATIENT_GROUPS.flatMap((group) => group.keys);
@@ -406,12 +422,14 @@ export function presetHtml(preset: 'tissue' | 'tube', contextualPanel: (key: str
     `<small class="preset-note" id="${id}-note"></small>${contextualPanel(help, hid)}</div>`
   );
 }
+/** Extremo de un deslizador con coma decimal y los decimales del propio valor (0,3 s, no «0»). */
+const extremo = (v: number): string => formatTexto(v, (String(v).split('.')[1] ?? '').length);
 export function physHtml(keys: string[], contextualPanel: (key: string, id: string) => string): string {
   return keys
     .map((k) => {
       const sp = PHYS[k] as PhysSpec;
       const id = `help-phys-${k}`;
-      return `<div class="phys-field contextual-field"><div class="phys-field-header"><div class="parameter-label"><label for="phys-${k}">${sp.label}</label><small class="phys-unit">${sp.unit}</small></div><div class="phys-value"><button class="step-button" type="button" data-phys-step="${k}" data-direction="-1" aria-label="Disminuir ${sp.label}" aria-describedby="${id}">−</button><input id="phys-${k}" data-phys-number="${k}" type="number" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="${sp.label} (${sp.unit})" aria-describedby="${id}"><button class="step-button" type="button" data-phys-step="${k}" data-direction="1" aria-label="Aumentar ${sp.label}" aria-describedby="${id}">+</button></div></div><input type="range" data-phys-range="${k}" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="Deslizador ${sp.label}" aria-describedby="${id}"><div class="phys-range-labels"><span>${sp.min}</span><span>${sp.max}</span></div>${contextualPanel(sp.help, id)}</div>`;
+      return `<div class="phys-field contextual-field"><div class="phys-field-header"><div class="parameter-label"><label for="phys-${k}">${sp.label}</label><small class="phys-unit">${sp.unit}</small></div><div class="phys-value"><button class="step-button" type="button" data-phys-step="${k}" data-direction="-1" aria-label="Disminuir ${sp.label}" aria-describedby="${id}">−</button><input id="phys-${k}" data-phys-number="${k}" type="number" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="${sp.label} (${sp.unit})" aria-describedby="${id}"><button class="step-button" type="button" data-phys-step="${k}" data-direction="1" aria-label="Aumentar ${sp.label}" aria-describedby="${id}">+</button></div></div><input type="range" data-phys-range="${k}" min="${sp.min}" max="${sp.max}" step="${sp.step}" aria-label="Deslizador ${sp.label}" aria-describedby="${id}"><div class="phys-range-labels"><span>${extremo(sp.min)}</span><span>${extremo(sp.max)}</span></div>${contextualPanel(sp.help, id)}</div>`;
     })
     .join('');
 }

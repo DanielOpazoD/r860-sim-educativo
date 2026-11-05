@@ -197,7 +197,7 @@ export const VC_ADULT_RULES: Record<Exclude<keyof VcSettings, 'mode'>, SettingRu
   },
   fio2: {
     key: 'fio2',
-    label: 'FiO2',
+    label: 'FiO₂',
     unit: 'fraction',
     displayUnit: '%',
     displayFactor: 100,
@@ -719,7 +719,7 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
   },
   fio2Low: {
     key: 'fio2Low',
-    label: 'FiO2 baja',
+    label: 'FiO₂ baja',
     unit: 'fraction',
     displayUnit: '%',
     displayFactor: 100,
@@ -740,7 +740,7 @@ export const ALARM_LIMIT_RULES: Record<keyof AlarmLimits, SettingRule> = {
   },
   fio2High: {
     key: 'fio2High',
-    label: 'FiO2 alta',
+    label: 'FiO₂ alta',
     unit: 'fraction',
     displayUnit: '%',
     displayFactor: 100,

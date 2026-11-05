@@ -18,6 +18,8 @@ function conBloqueo(over: Parameters<typeof benchSim>[0] = {}, durationS = 3): E
   return sim.frame();
 }
 const por = (fr: EngineFrame, id: string) => tarjetas(fr).find((t) => t.id === id)!;
+/** Como lo escribe el Aula: coma decimal. */
+const coma = (v: number, d: number): string => v.toFixed(d).replace('.', ',');
 
 describe('RES · el resumen dice lo mismo que el monitor', () => {
   it('sin bloqueo sólo se lee la Ppico; las otras tres dicen qué falta', () => {
@@ -57,9 +59,9 @@ describe('RES · el resumen dice lo mismo que el monitor', () => {
     expect(cstat).toBeCloseTo(vtMl / dp, 6);
 
     // Y cada tarjeta enseña esa misma cuenta con sus números, no un texto suelto.
-    expect(por(fr, 'pplat').sustituida).toBe(`${pplat.toFixed(1)} = ${peep.toFixed(1)} + ${dp.toFixed(1)}`);
-    expect(por(fr, 'driving').sustituida).toBe(`${dp.toFixed(1)} = ${pplat.toFixed(1)} − ${peep.toFixed(1)}`);
-    expect(por(fr, 'cstat').sustituida).toBe(`${cstat.toFixed(0)} = ${vtMl.toFixed(0)} / ${dp.toFixed(1)}`);
+    expect(por(fr, 'pplat').sustituida).toBe(`${coma(pplat, 1)} = ${coma(peep, 1)} + ${coma(dp, 1)}`);
+    expect(por(fr, 'driving').sustituida).toBe(`${coma(dp, 1)} = ${coma(pplat, 1)} − ${coma(peep, 1)}`);
+    expect(por(fr, 'cstat').sustituida).toBe(`${coma(cstat, 0)} = ${coma(vtMl, 0)} / ${coma(dp, 1)}`);
   });
 
   it('la Ppico no lleva rango de referencia, porque no tiene uno', () => {
@@ -146,8 +148,8 @@ describe('RES · con atrapamiento aéreo la resta es contra la PEEP total', () =
     // La resta es contra la PEEP total medida, no contra la espiratoria.
     expect(pplat - dp).toBeCloseTo(peepTot, 1);
     // Y las dos sustituciones que se muestran son aritméticamente ciertas.
-    expect(por(fr, 'pplat').sustituida).toBe(`${pplat.toFixed(1)} = ${peepTot.toFixed(1)} + ${dp.toFixed(1)}`);
-    expect(por(fr, 'driving').sustituida).toBe(`${dp.toFixed(1)} = ${pplat.toFixed(1)} − ${peepTot.toFixed(1)}`);
+    expect(por(fr, 'pplat').sustituida).toBe(`${coma(pplat, 1)} = ${coma(peepTot, 1)} + ${coma(dp, 1)}`);
+    expect(por(fr, 'driving').sustituida).toBe(`${coma(dp, 1)} = ${coma(pplat, 1)} − ${coma(peepTot, 1)}`);
 
     // El esquema mide la carga elástica desde la misma PEEP que la tarjeta, y separa la intrínseca.
     const nv = niveles(fr);
