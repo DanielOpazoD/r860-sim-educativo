@@ -89,14 +89,7 @@ export function startApp(opts: AppOptions): void {
   let locked = false;
   /** Modo examen: las mediciones muestran «?» hasta que el alumno escribe su estimación. */
   let examMode = false;
-  const guardada = (() => {
-    try {
-      return localStorage.getItem('ventila.tileDensity') ?? localStorage.getItem('r860.tileDensity');
-    } catch {
-      return null; // sin almacenamiento (ventana privada, sitio bloqueado) la app arranca igual
-    }
-  })();
-  let tileDensity: 6 | 13 = guardada === '6' ? 6 : 13;
+  let tileDensity: 6 | 13 = prefs?.tileDensity ?? 13;
   let scenario: Scenario = findScenario(params.get('scenario') ?? prefs?.lastScenario ?? 'SC-01') ?? (SCENARIOS[0] as Scenario);
   let fixtureId: FixtureId | null = null;
 
@@ -195,11 +188,6 @@ export function startApp(opts: AppOptions): void {
     },
     setTileDensity(d) {
       tileDensity = d;
-      try {
-        localStorage.setItem('ventila.tileDensity', String(d));
-      } catch {
-        // la densidad es una preferencia: sin almacenamiento se aplica igual
-      }
       const grid = $('#numeric-grid');
       grid.classList.toggle('six', d === 6);
       setSegmentedValue('numeric-density', String(d));
@@ -315,8 +303,11 @@ export function startApp(opts: AppOptions): void {
     return commands;
   });
   openPalette = () => palette.open();
+  const paletteKey = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
   const paletteKbd = document.querySelector<HTMLElement>('.palette-kbd');
-  if (paletteKbd) paletteKbd.textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
+  if (paletteKbd) paletteKbd.textContent = paletteKey;
+  const paletteTrigger = document.querySelector<HTMLElement>('.palette-trigger');
+  if (paletteTrigger) paletteTrigger.title = `Buscar comandos (${paletteKey})`;
   function showWelcome(): void {
     welcomeOpen = true;
     dialog.open('welcome', 'Bienvenido a Ventila Lab', welcomeHTML(), null, 'compact');

@@ -65,7 +65,7 @@ export interface AppContext {
   switchView(v: string): void;
   readonly frozen: boolean;
   toggleFreeze(): void;
-  /** Densidad de la columna numérica: 6 casillas grandes (como el equipo) u 13 completas. Persiste en localStorage. */
+  /** Densidad de la columna numérica: 6 casillas grandes (como el equipo) u 13 completas. Se guarda en las preferencias de vista. */
   readonly tileDensity: 6 | 13;
   setTileDensity(d: 6 | 13): void;
   readonly locked: boolean;

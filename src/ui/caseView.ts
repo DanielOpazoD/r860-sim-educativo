@@ -4,7 +4,8 @@
  */
 import type { SettingRule } from '../domain/settingRules';
 import type { SettingsKey, VcSettings, VentMode } from '../domain/types';
-import { formatNumber as f } from '../domain/units';
+import { formatTexto as f } from '../domain/units';
+import { DEFAULT_GAS } from '../engine/gasExchange';
 import type { EngineFrame } from '../engine/simulator';
 import type { CaseStep, ClinicalCase, Scenario } from '../scenarios';
 import type { CaseResult } from './caseEvaluation';
@@ -134,7 +135,11 @@ function fila(label: string, valor: string): HTMLElement {
   return element('div', '', element('dt', '', label), element('dd', '', valor));
 }
 
-/** Lo que el modelo sabía y el alumno no veía: sólo tras entregar. */
+/**
+ * Lo que el modelo sabía y el alumno no veía: sólo tras entregar. Además de la mecánica, la variable que enseña el caso
+ * cuando el modelo la tiene: el espacio muerto (CC-03, CC-05 y los EPOC) y la presión crítica de la limitación al flujo
+ * (CC-02, CC-06). Con coma decimal: es texto del caso, no el monitor.
+ */
 function verdad(frame: EngineFrame | null): HTMLElement | null {
   if (!frame) return null;
   const t = frame.truth;
@@ -142,16 +147,22 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
   const g = t.gas;
   const s = p.sigmoid && p.sigmoid.b > 0 ? p.sigmoid : null;
   const filas = [
-    // Con curva sigmoidea no hay una sola distensibilidad: se dice la máxima y dónde empieza a caer.
+    // Con curva sigmoidea no hay una sola compliance: se dice la máxima y dónde empieza a caer.
     s
-      ? fila(
-          'Distensibilidad',
-          `no lineal · máxima ${f((s.b / (4 * s.d)) * 1000, 0)} mL/cmH₂O; cae sobre ≈ ${f(s.c + 1.317 * s.d, 0)} cmH₂O`,
-        )
-      : fila('Distensibilidad', `${f(p.crs * 1000, 0)} mL/cmH₂O`),
-    fila('Resistencia insp / esp', `${f(p.rInsp, 0)} / ${f(p.rExp, 0)} cmH₂O·s/L`),
+      ? fila('Compliance', `no lineal · máxima ${f((s.b / (4 * s.d)) * 1000, 0)} mL/cmH₂O; cae sobre ≈ ${f(s.c + 1.317 * s.d, 0)} cmH₂O`)
+      : fila('Compliance', `${f(p.crs * 1000, 0)} mL/cmH₂O`),
+    // La del paciente: el bloqueo mide además la del tubo, que crece con el flujo.
+    fila(p.r2 ? 'Resistencia insp / esp (sin el tubo)' : 'Resistencia insp / esp', `${f(p.rInsp, 0)} / ${f(p.rExp, 0)} cmH₂O·s/L`),
     fila('Auto-PEEP verdadera', `${f(t.peepiEndExp, 1)} cmH₂O`),
   ];
+  if (p.efl) filas.push(fila('Presión crítica (limitación al flujo)', `${f(p.efl.pcrit, 0)} cmH₂O`));
+  const gp = p.gas;
+  if (gp && (gp.deadspaceL !== undefined || gp.alveolarDeadspaceFrac !== undefined)) {
+    const via = (gp.deadspaceL ?? DEFAULT_GAS.deadspaceL) * 1000;
+    const alveolar = gp.alveolarDeadspaceFrac ?? DEFAULT_GAS.alveolarDeadspaceFrac;
+    const vdvt = g && g.vdVt !== null ? ` · VD/VT ${f(g.vdVt, 2)}` : '';
+    filas.push(fila('Espacio muerto', `vía aérea ${f(via, 0)} mL · fracción alveolar ${f(alveolar, 2)}${vdvt}`));
+  }
   if (t.effort.enabled)
     filas.push(
       fila('Esfuerzo del paciente', `${f(t.effort.amplitude, 0)} cmH₂O · ${f(t.effort.ratePerMin, 0)}/min · Ti ${f(t.effort.tiS, 1)} s`),
@@ -164,12 +175,13 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
 /** Un ajuste de la programación, el modo incluido: el alumno puede resolver (o no) cambiando de modo. */
 type Clave = keyof VcSettings;
 type Valor = VcSettings[Clave];
-const rotulo = (k: Clave): string => (k === 'mode' ? 'Modo' : QUICK_LABEL[k]);
+// «Volumen corriente», el término de los casos, aunque la tecla rápida diga otro.
+const rotulo = (k: Clave): string => (k === 'mode' ? 'Modo' : k === 'vt' ? 'Volumen corriente' : QUICK_LABEL[k]);
 
-/** Un ajuste con su unidad, como en la tecla rápida: «500 mL», «1:4», «6 L/min». */
+/** Un ajuste con su unidad, como en la tecla rápida pero con coma decimal: «500 mL», «1:2,5», «6 L/min». */
 function valorAjuste(rules: Record<SettingsKey, SettingRule>, k: Clave, v: Valor): string {
   if (k === 'mode') return MODE_LABEL[v as VentMode];
-  const texto = displaySetting(rules, k, v as VcSettings[SettingsKey]);
+  const texto = displaySetting(rules, k, v as VcSettings[SettingsKey]).replace(/\./g, ',');
   const unidad = typeof v === 'number' && k !== 'ie' ? unitText(rules[k].displayUnit) : '';
   return unidad ? `${texto} ${unidad}` : texto;
 }

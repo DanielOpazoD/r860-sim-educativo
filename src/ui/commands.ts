@@ -97,7 +97,7 @@ export interface PaletteEntry {
 /** Comandos que ofrece la paleta, en el orden en que se listan sin consulta. */
 export const PALETTE_COMMANDS: readonly PaletteEntry[] = [
   { id: 'pause', label: 'Pausar o reanudar', keywords: 'detener parar play pausa continuar' },
-  { id: 'freeze', label: 'Congelar curvas', keywords: 'congelar inmovilizar ondas' },
+  { id: 'freeze', label: 'Congelar o reanudar curvas', keywords: 'congelar inmovilizar ondas' },
   {
     id: 'waveAids',
     label: 'Ayudas sobre las curvas',
@@ -105,7 +105,7 @@ export const PALETTE_COMMANDS: readonly PaletteEntry[] = [
   },
   { id: 'snapshot', label: 'Captura del monitor', keywords: 'foto png imagen captura pantalla' },
   { id: 'alarms', label: 'Alarmas activas', keywords: 'alarmas alertas límites' },
-  { id: 'home', label: 'Volver al inicio del monitor', keywords: 'inicio casa principal' },
+  { id: 'home', label: 'Volver a Curvas y datos', keywords: 'inicio casa principal vista' },
   { id: 'help', label: 'Guía y alcance', keywords: 'ayuda información instrucciones' },
   { id: 'fullscreen', label: 'Pantalla completa', keywords: 'completa maximizar' },
   { id: 'modes', label: 'Modo y ajustes del ventilador', keywords: 'modo ventilación parámetros configuración' },

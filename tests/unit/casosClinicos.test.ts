@@ -351,7 +351,8 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
     expect(bien.disparan).toBe(1);
     expect(bien.mlKg).toBeGreaterThan(4.9);
     expect(bien.mlKg).toBeLessThan(6.7);
-    expect(bien.k.resultado().passed).toBe(true);
+    // Con 13 disparan todos, pero el VTe medio (≈ 5,1 mL/kg) queda en el límite del criterio: la solución es 14 (abajo).
+    expect(bien.k.resultado().criteria.find((c) => c.id === 'disparo')!.ok).toBe(true);
     const poco = conSoporte(6);
     expect(poco.k.resultado().criteria.find((c) => c.id === 'vt')!.ok).toBe(false);
   });
@@ -370,6 +371,20 @@ describe('CAS-06 · esfuerzos inefectivos', () => {
       expect(phEq(k)).toBeGreaterThan(7.35);
       expect(phEq(k)).toBeLessThan(7.45);
     }
+  });
+  it('la solución (soporte 14) aprueba en cualquier instante: el VT se juzga con la media del último minuto', () => {
+    const k = caso('CC-06');
+    k.ajustar({ psupport: 14 });
+    k.correr(65_000);
+    const umbral = 5 * (50 + 2.3 * (170 / 2.54 - 60)); // 5 mL/kg de peso predicho, como el criterio
+    const ultimas: number[] = [];
+    for (let i = 0; i < 60; i++) {
+      expect(k.resultado().passed, `a los ${k.sim.simTimeMs} ms`).toBe(true);
+      ultimas.push(k.sim.frame().metrics.vte!.value! * 1000);
+      k.correr(2_000);
+    }
+    // Juzgada por la última respiración habría suspendido a veces: el VTe varía entre ciclos más que el margen.
+    expect(Math.min(...ultimas)).toBeLessThan(umbral);
   });
   it('antes de un minuto tras el último ajuste no se puede juzgar la sincronía', () => {
     const k = caso('CC-06');
@@ -479,14 +494,14 @@ describe('CAS-SOL · el desarrollo muestra la solución en una tabla', () => {
     expect(celdas(tabla.querySelector('thead tr')!)).toEqual(['Ajuste', 'Al inicio', 'Tu entrega', 'Solución', 'También vale']);
     const filas = [...tabla.querySelectorAll('tbody tr')].map(celdas);
     expect(filas).toEqual([
-      ['Volumen tidal', '400 mL', '400 mL', '500 mL ↑', '400 mL'],
+      ['Volumen corriente', '400 mL', '400 mL', '500 mL ↑', '400 mL'],
       ['Frecuencia', '10 /min', '18 /min ↑', '14 /min ↑', '22 /min ↑'],
     ]);
     // Lo que cambió el alumno se marca, igual que lo que cambia la solución.
     expect(tabla.querySelector('tbody tr:nth-child(2) td.tuyo')!.classList.contains('cambia')).toBe(true);
     const pasos = [...raiz.querySelectorAll('.case-steps li')].map((li) => [...li.children].map((c) => c.textContent));
     expect(pasos).toEqual([
-      ['Volumen tidal 400 mL → 500 mL · Frecuencia 10 /min → 14 /min', 'más VT con casi el mismo volumen minuto · espera ≈ 30 s'],
+      ['Volumen corriente 400 mL → 500 mL · Frecuencia 10 /min → 14 /min', 'más VT con casi el mismo volumen minuto · espera ≈ 30 s'],
     ]);
     // La solución va antes de la explicación: es lo primero que se revisa.
     expect(raiz.querySelector('.case-solution')!.compareDocumentPosition(raiz.querySelector('.case-reveal')!)).toBe(
@@ -505,6 +520,26 @@ describe('CAS-SOL · el desarrollo muestra la solución en una tabla', () => {
     despues.append(...caseDevelopmentNodes(sc, null, entregar(sc, {}), inicial(sc), rules));
     expect(despues.querySelector('.case-solution')).not.toBeNull();
     expect(despues.querySelector('.case-concept')).not.toBeNull();
+  });
+  it('«Lo que el modelo sabía» dice la variable que enseña el caso, con coma decimal', () => {
+    const verdad = (id: string): Record<string, string> => {
+      const sc = findScenario(id)!;
+      const sim = simular(sc);
+      sim.run(20_000);
+      const raiz = document.createElement('div');
+      raiz.append(...caseDevelopmentNodes(sc, sim.frame(), entregar(sc, {}), inicial(sc), rules));
+      return Object.fromEntries(
+        [...raiz.querySelectorAll('.case-truth dl > div')].map((d) => [d.children[0]!.textContent, d.children[1]!.textContent]),
+      );
+    };
+    const cc02 = verdad('CC-02');
+    expect(cc02['Compliance']).toBe('60 mL/cmH₂O');
+    expect(cc02['Presión crítica (limitación al flujo)']).toBe('9 cmH₂O');
+    expect(cc02['Auto-PEEP verdadera']).toMatch(/^\d+,\d cmH₂O$/);
+    const cc05 = verdad('CC-05');
+    expect(cc05['Espacio muerto']).toMatch(/^vía aérea 200 mL · fracción alveolar 0,12 · VD\/VT 0,\d\d$/);
+    expect(cc05['Presión crítica (limitación al flujo)']).toBeUndefined();
+    expect(Object.keys(cc05)).not.toContain('Distensibilidad');
   });
   it('CC-04: los pasos dicen el camino (5 → 20 → 11) y la tabla, la PEEP final', () => {
     const sc = findScenario('CC-04')!;

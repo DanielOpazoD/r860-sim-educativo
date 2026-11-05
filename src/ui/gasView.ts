@@ -3,7 +3,7 @@
  * de la PaCO₂ con la marca del último cambio. El equipo no la mide: se rotula «modelo» y nunca va al monitor. Junto al
  * rótulo, la salvedad de que el modelo llega a su equilibrio ≈ 10 veces más deprisa que un paciente (ACELERACION_EQUILIBRIO).
  */
-import { formatNumber as f } from '../domain/units';
+import { formatTexto as f } from '../domain/units';
 import { ACELERACION_EQUILIBRIO, EQUILIBRIUM_WINDOW_S } from '../engine/gasExchange';
 import type { AppContext } from './context';
 import { $, element } from './dom';

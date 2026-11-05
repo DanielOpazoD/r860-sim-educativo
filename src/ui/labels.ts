@@ -13,7 +13,7 @@ export const MODE_LABEL: Record<VentMode, string> = { AC_VC: 'A/C VC', AC_PC: 'A
 export const modeLabel = (m: string): string => MODE_LABEL[m as VentMode] ?? m;
 export const QUICK_LABEL: Record<SettingsKey, string> = {
   fio2: 'FiO₂',
-  vt: 'Volumen tidal',
+  vt: 'Volumen corriente',
   rr: 'Frecuencia',
   ie: 'I:E',
   peep: 'PEEP',
@@ -28,7 +28,7 @@ export const QUICK_LABEL: Record<SettingsKey, string> = {
   pinsp: 'Pinsp',
   riseMs: 'Rampa',
   psupport: 'Presión de soporte',
-  expTriggerPct: 'Ciclaje espiratorio',
+  expTriggerPct: 'Ciclado espiratorio',
   minRate: 'Frecuencia mínima',
   backupPinsp: 'Pinsp de respaldo',
   backupTinspS: 'Tinsp de respaldo',

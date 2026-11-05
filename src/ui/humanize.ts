@@ -1,6 +1,10 @@
 /** Diccionario de textos para el alumno: la procedencia técnica (códigos, canales, motivos internos) vive en evidence.json y en el registro exportado. */
-import type { MetricSample, SessionEvent } from '../domain/types';
-import { ieText } from './format';
+import type { SettingRule } from '../domain/settingRules';
+import type { MetricSample, SessionEvent, SettingsKey, VcSettings, VentMode } from '../domain/types';
+import { formatTexto } from '../domain/units';
+import { DEFAULT_PROFILE } from '../profiles';
+import { unitText } from './format';
+import { displaySetting, MODE_LABEL, QUICK_LABEL } from './labels';
 
 const REASONS: Record<string, string> = {
   volumenInspiradoInsuficiente: 'volumen inspirado insuficiente para calcular el porcentaje de fuga',
@@ -52,8 +56,12 @@ export function humanReason(reason: string | null | undefined): string {
     return (
       'aprox.: dos unidades en paralelo, no equivale a un solo compartimento · ' + humanReason(reason.slice('twoCompartments;'.length))
     );
-  if (reason.startsWith('denominador=')) return 'Cstat = VT / (Pplat − PEEP) sin PEEP total medida';
-  if (reason.startsWith('Pplat − PEEPe')) return 'Pplat − PEEP de esa respiración';
+  // Origen de ΔP y Cstat: qué PEEP se restó. «denominador=…» es el de Cstat; «Pplat − …», el de ΔP.
+  if (reason.startsWith('denominador=') || reason.startsWith('Pplat − PEEP')) {
+    if (reason.includes('PEEPtot (bloqueo')) return 'con la PEEP total del bloqueo espiratorio previo';
+    if (reason.includes('otra mecánica')) return 'con la PEEPe: la PEEP total previa es de otros ajustes o de otra mecánica';
+    return 'con la PEEPe: sin PEEP total medida';
+  }
   if (reason.startsWith('Inspiración terminada por Pmáx')) return 'no elegible: la inspiración terminó por Pmáx';
   if (reason.startsWith('fin:'))
     return reason
@@ -102,53 +110,22 @@ export function alarmBandLabel(bar: { color: string; message: string }): string 
   const prioridad = bar.color === 'red' ? 'alta' : bar.color === 'yellow' ? 'media' : 'informativa';
   return `Prioridad ${prioridad} · ${learnerText(bar.message)}`;
 }
-const MODE: Record<string, string> = { AC_VC: 'A/C VC', AC_PC: 'A/C PC' };
-const SETTING: Record<string, string> = {
-  fio2: 'FiO₂',
-  vt: 'VT',
-  rr: 'Frecuencia',
-  ie: 'I:E',
-  peep: 'PEEP',
-  pmax: 'Pmáx',
-  plimit: 'Plimit',
-  pausePct: 'Pausa insp',
-  assistControl: 'Disparo asistido',
-  flowTrigger: 'Disparo por flujo',
-  biasFlow: 'Flujo de base',
-  triggerByPressure: 'Disparo por presión',
-  pressureTrigger: 'Umbral de presión',
-  pinsp: 'Pinsp',
-  riseMs: 'Rampa',
-  mode: 'Modo',
-};
-function settingText(k: string, v: unknown): string {
-  if (v === 'off') return 'Off';
-  if (typeof v === 'boolean') return v ? 'sí' : 'no';
-  if (k === 'mode') return MODE[String(v)] ?? String(v);
-  if (typeof v !== 'number') return String(v);
-  switch (k) {
-    case 'fio2':
-      return `${Math.round(v * 100)} %`;
-    case 'vt':
-      return `${Math.round(v * 1000)} mL`;
-    case 'ie':
-      return ieText(v);
-    case 'pausePct':
-      return `${Math.round(v * 100)} %`;
-    case 'flowTrigger':
-    case 'biasFlow':
-      return `${(v * 60).toFixed(1)} L/min`;
-    case 'riseMs':
-      return `${v} ms`;
-    case 'rr':
-      return `${v}/min`;
-    default:
-      return `${v} cmH₂O`;
-  }
+/**
+ * Un ajuste del registro con el nombre de su tecla y el valor como lo muestra el equipo, en su unidad: los mismos
+ * rótulos y la misma escala que la barra de teclas rápidas (`labels.ts`), con coma decimal porque es texto.
+ */
+function settingText(rules: Record<SettingsKey, SettingRule>, k: string, v: unknown): string {
+  if (k === 'mode') return MODE_LABEL[v as VentMode] ?? String(v);
+  const rule = rules[k as SettingsKey];
+  if (!rule) return typeof v === 'number' ? formatTexto(v, 2) : String(v);
+  const texto = displaySetting(rules, k as SettingsKey, v as VcSettings[SettingsKey]).replace('.', ',');
+  const unidad = typeof v === 'number' && k !== 'ie' ? unitText(rule.displayUnit) : '';
+  return unidad ? `${texto} ${unidad}` : texto;
 }
-const changesText = (ch: Record<string, unknown>): string =>
+const settingName = (k: string): string => (k === 'mode' ? 'Modo' : (QUICK_LABEL[k as SettingsKey] ?? k));
+const changesText = (rules: Record<SettingsKey, SettingRule>, ch: Record<string, unknown>): string =>
   Object.entries(ch)
-    .map(([k, v]) => `${SETTING[k] ?? k} → ${settingText(k, v)}`)
+    .map(([k, v]) => `${settingName(k)} → ${settingText(rules, k, v)}`)
     .join(', ');
 const ACTOR: Record<string, string> = {
   learner: 'usuario',
@@ -159,7 +136,7 @@ const ACTOR: Record<string, string> = {
 };
 
 const PATIENT_FIELD_LABEL: Record<string, string> = {
-  crs: 'distensibilidad',
+  crs: 'compliance',
   rInsp: 'resistencia inspiratoria',
   rinsp: 'resistencia inspiratoria',
   raw: 'resistencia inspiratoria',
@@ -189,17 +166,17 @@ function patientFields(patient: unknown): string {
 }
 
 /** Frase legible para el registro de eventos. */
-function eventSentenceBody(e: SessionEvent): string {
+function eventSentenceBody(e: SessionEvent, rules: Record<SettingsKey, SettingRule>): string {
   const p = (e.payload ?? {}) as Record<string, unknown>;
   const who = ACTOR[e.actor] ?? e.actor;
   switch (e.kind) {
     case 'setting':
-      if (p.applied) return `Aplicado: ${changesText(p.applied as Record<string, unknown>)}`;
-      if (p.changes) return `${who} confirmó ${changesText(p.changes as Record<string, unknown>)}`;
+      if (p.applied) return `Aplicado: ${changesText(rules, p.applied as Record<string, unknown>)}`;
+      if (p.changes) return `${who} confirmó ${changesText(rules, p.changes as Record<string, unknown>)}`;
       return 'Ajuste';
     case 'breath': {
-      if (p.plimitReached !== undefined) return `Plimit alcanzada a ${(p.plimitReached as number).toFixed(1)} cmH₂O`;
-      if (p.trigger !== undefined) return `Disparo del paciente (${((p.trigger as number) * 60).toFixed(1)} L/min)`;
+      if (p.plimitReached !== undefined) return `Plimit alcanzada a ${formatTexto(p.plimitReached as number, 1)} cmH₂O`;
+      if (p.trigger !== undefined) return `Disparo del paciente (${formatTexto((p.trigger as number) * 60, 1)} L/min)`;
       const type: Record<string, string> = {
         mandatory: 'obligatoria',
         assisted: 'asistida',
@@ -207,10 +184,10 @@ function eventSentenceBody(e: SessionEvent): string {
         spontaneous: 'espontánea',
         backup: 'de respaldo',
       };
-      return `Respiración ${String(p.breathId).replace('b', '')} ${type[String(p.type)] ?? ''} · VTe ${Math.round((p.vte as number) * 1000)} mL · Ppico ${(p.ppeak as number).toFixed(0)}${p.cause === 'pmax' ? ' · terminada por Pmáx' : p.cause === 'tiMax' ? ' · soporte cortado por Ti máximo' : p.cause === 'pressure' ? ' · soporte cortado por presión (PEEP + PS + 2,5)' : ''}`;
+      return `Respiración ${String(p.breathId).replace('b', '')} ${type[String(p.type)] ?? ''} · VTesp ${Math.round((p.vte as number) * 1000)} mL · Ppico ${formatTexto(p.ppeak as number, 0)} cmH₂O${p.cause === 'pmax' ? ' · terminada por Pmáx' : p.cause === 'tiMax' ? ' · soporte cortado por Ti máximo' : p.cause === 'pressure' ? ' · soporte cortado por presión (PEEP + PS + 2,5)' : ''}`;
     }
     case 'alarm':
-      if (p.pmaxReached !== undefined) return `Alarma: Pmáx alcanzada (${(p.pmaxReached as number).toFixed(1)} cmH₂O)`;
+      if (p.pmaxReached !== undefined) return `Alarma: Pmáx alcanzada (${formatTexto(p.pmaxReached as number, 1)} cmH₂O)`;
       if (p.apnea !== undefined) return `Alarma: apnea (sin respiración en ${String(p.apnea)} s) · respaldo por presión`;
       if (p.apneaEnded !== undefined) return 'Apnea terminada: el paciente volvió a disparar (el respaldo sigue hasta confirmar el modo)';
       if (p.backupStarted !== undefined)
@@ -263,8 +240,9 @@ function eventSentenceBody(e: SessionEvent): string {
   }
 }
 
-export function eventSentence(e: SessionEvent): string {
-  return eventSentenceBody(e).replace(/^./u, (first) => first.toLocaleUpperCase('es'));
+/** `rules`: las reglas del perfil en uso, que dan la escala y la unidad de cada ajuste. */
+export function eventSentence(e: SessionEvent, rules: Record<SettingsKey, SettingRule> = DEFAULT_PROFILE.rules): string {
+  return eventSentenceBody(e, rules).replace(/^./u, (first) => first.toLocaleUpperCase('es'));
 }
 
 /**
