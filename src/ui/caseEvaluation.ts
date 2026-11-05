@@ -100,6 +100,8 @@ export const CASE_TESTS: Record<string, CaseTest> = {
   do2EqMin: (c, p) => c.frame.settings.fio2 <= p.fio2Max! + 1e-9 && (c.frame.truth.circ?.do2TargetMlMin ?? 0) >= p.min!,
   /** PEEP programada ≥ p.min. */
   peepMin: (c, p) => c.frame.settings.peep !== 'off' && c.frame.settings.peep >= p.min!,
+  /** PEEP programada en [p.min, p.max]. */
+  peepRange: (c, p) => c.frame.settings.peep !== 'off' && c.frame.settings.peep >= p.min! && c.frame.settings.peep <= p.max!,
   /** Frecuencia programada ≤ p.max. */
   rrMax: (c, p) => c.frame.settings.rr <= p.max!,
   /** En el último minuto disparan al menos p.fraction de los esfuerzos del paciente. */

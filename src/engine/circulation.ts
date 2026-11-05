@@ -24,7 +24,7 @@ import type { CirculationParams } from '../domain/types';
 export const DEFAULT_CIRCULATION: CirculationParams = {
   /**
    * Pmsf, Pad₀ y Rrv dan con el banco por omisión (presión media de la vía aérea ≈ 8 cmH₂O, compliance 50 mL/cmH₂O) un
-   * gasto de 5 L/min, una Pad de 4 mmHg y un gradiente de retorno de ≈ 8,8 mmHg, en el extremo alto de los 4–8 mmHg que
+   * gasto de 5 L/min, una Pad de 4 mmHg y un gradiente de retorno de ≈ 7,8 mmHg, dentro de los 4–8 mmHg que
    * citan Mahmood y Pinsky. P calibrado.
    */
   pmsfMmHg: 11,
@@ -53,7 +53,7 @@ export function pleuralTransmission(crsL: number, chestWallL: number): number {
   const inversa = 1 / crsL - 1 / chestWallL;
   if (!(inversa > 0)) return 0.9;
   const pulmon = 1 / inversa;
-  return pulmon / (pulmon + chestWallL);
+  return Math.min(0.9, pulmon / (pulmon + chestWallL));
 }
 
 export interface CirculationEquilibrium {

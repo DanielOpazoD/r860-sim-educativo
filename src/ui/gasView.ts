@@ -123,6 +123,10 @@ export function createGasView(ctx: AppContext): { render(): void } {
     if (nueva === firma) return;
     firma = nueva;
 
+    const conTitulo = (el: HTMLElement, titulo: string): HTMLElement => {
+      el.title = titulo;
+      return el;
+    };
     const cifra = (nombre: string, ahora: string, unidad: string): HTMLElement =>
       element(
         'span',
@@ -164,9 +168,9 @@ export function createGasView(ctx: AppContext): { render(): void } {
               element(
                 'span',
                 'gas-item gas-hemo',
-                cifra('GC', f(h.cardiacOutputLMin, 1), 'L/min'),
-                cifra('PAM', f(h.mapMmHg, 0), 'mmHg'),
-                cifra('DO₂', f(h.do2MlMin, 0), 'mL/min'),
+                conTitulo(cifra('GC', f(h.cardiacOutputLMin, 1), 'L/min'), 'Gasto cardíaco del modelo'),
+                conTitulo(cifra('PAM', f(h.mapMmHg, 0), 'mmHg'), 'Presión arterial media del modelo'),
+                conTitulo(cifra('DO₂', f(h.do2MlMin, 0), 'mL/min'), 'Entrega de O₂: gasto × contenido arterial de O₂'),
               ),
             ]
           : []),

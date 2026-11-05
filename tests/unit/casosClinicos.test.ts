@@ -684,6 +684,19 @@ describe('CP-08 · CC-04: la mejor PEEP por entrega de O₂', () => {
     const cerrado = caso('CC-04').sim.frame().truth.circ!.do2TargetMlMin!;
     expect(abierto(20).sim.frame().truth.circ!.do2TargetMlMin!).toBeLessThan(cerrado);
   });
+  it('no hay atajo con la volemia: PEEP 20 con volemia 18 sube la DO₂, pero la PEEP final queda fuera de 10–12', () => {
+    const k = caso('CC-04');
+    k.bloqueo('inspHold');
+    k.ajustar({ peep: 20 });
+    k.correr(30_000);
+    k.sim.command({ type: 'setPatient', params: { circulation: { pmsfMmHg: 18 } } });
+    k.correr(60_000);
+    k.bloqueo('inspHold');
+    const r = k.resultado();
+    expect(r.criteria.find((c) => c.id === 'do2')!.ok).toBe(true);
+    expect(r.criteria.find((c) => c.id === 'peep')!.ok).toBe(false);
+    expect(r.passed).toBe(false);
+  });
   it('no hay atajo: con FiO₂ 1,0 la PEEP de más no cumple aunque la DO₂ suba', () => {
     const k = abierto(20, 1);
     expect(k.sim.frame().truth.circ!.do2TargetMlMin!).toBeGreaterThan(970);

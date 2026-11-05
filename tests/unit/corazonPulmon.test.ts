@@ -34,6 +34,9 @@ describe('CP-01 · la presión que llega a la pleura depende de la rigidez del p
     // Pulmón y pared de igual compliance (Crs = la mitad de cada una): llega la mitad.
     expect(pleuralTransmission(0.1, 0.2)).toBeCloseTo(0.5, 5);
     expect(pleuralTransmission(0.3, 0.2)).toBe(0.9);
+    // Monótona hasta el tope: un sistema casi tan distensible como la pared no pasa de 0,9.
+    expect(pleuralTransmission(0.199, 0.2)).toBe(0.9);
+    expect(pleuralTransmission(0.15, 0.2)).toBeLessThanOrEqual(pleuralTransmission(0.19, 0.2));
   });
 });
 
@@ -64,8 +67,8 @@ describe('CP-03 · banco SC-01 en reposo', () => {
     expect(h.mapMmHg).toBeCloseTo(89, -1);
     expect(h.do2MlMin).toBeGreaterThan(900);
     expect(h.do2MlMin).toBeLessThan(1100);
-    expect(h.pmsfMmHg - h.praMmHg).toBeGreaterThan(4);
-    expect(h.pmsfMmHg - h.praMmHg).toBeLessThan(9);
+    expect(h.pmsfMmHg - h.praMmHg).toBeGreaterThan(7);
+    expect(h.pmsfMmHg - h.praMmHg).toBeLessThan(8.5);
   });
 });
 
@@ -154,5 +157,40 @@ describe('CP-07 · validación y límites', () => {
   });
   it('los parámetros que faltan son los del adulto por omisión', () => {
     expect(circulationParams({ pmsfMmHg: 9 })).toEqual({ ...DEFAULT_CIRCULATION, pmsfMmHg: 9 });
+  });
+});
+
+describe('CP-09 · dinámica, espera y cableado', () => {
+  it('una presión media negativa no sube el gasto por encima del de presión cero', () => {
+    expect(circulationEquilibrium(DEFAULT_CIRCULATION, 0.05, -10).cardiacOutputLMin).toBe(
+      circulationEquilibrium(DEFAULT_CIRCULATION, 0.05, 0).cardiacOutputLMin,
+    );
+  });
+  it('el gasto sigue al cambio de PEEP en segundos, no al instante (τ 10 s)', () => {
+    const sim = simular(findScenario('SC-01')!);
+    sim.run(30_000);
+    const antes = circ(sim).cardiacOutputLMin;
+    ajustar(sim, { peep: 15 }, 6_000);
+    const pronto = circ(sim).cardiacOutputLMin;
+    sim.run(60_000);
+    const final = circ(sim).cardiacOutputLMin;
+    expect(pronto).toBeLessThan(antes);
+    expect(pronto).toBeGreaterThan(final + 0.05);
+  });
+  it('en espera, sin presión positiva, el gasto vuelve al de presión cero', () => {
+    const sim = simular(findScenario('SC-01')!);
+    sim.run(30_000);
+    ajustar(sim, { peep: 20 });
+    sim.command({ type: 'enterStandby' });
+    sim.run(120_000);
+    expect(circ(sim).cardiacOutputLMin).toBeGreaterThan(5.3);
+  });
+  it('en el motor, menos volemia baja la PaO₂ de un pulmón con shunt (el gasto entra en el Fick)', () => {
+    const cc04 = findScenario('CC-04')!;
+    const normal = simular(cc04),
+      hipo = simular(cc04, { circulation: { pmsfMmHg: 8 } });
+    normal.run(30_000);
+    hipo.run(30_000);
+    expect(oxy(hipo).pao2).toBeLessThan(oxy(normal).pao2 - 3);
   });
 });

@@ -154,6 +154,8 @@ export class Simulator {
   readonly circulation = new Circulation();
   /** Presión media de la vía aérea de la última respiración (cmH₂O); antes de la primera, la PEEP. Mueve el gasto. */
   private get presionMedia(): number {
+    // En espera no hay presión positiva: la de la última respiración dejaba el gasto frenado indefinidamente.
+    if (this.ventilation !== 'ventilating') return this.controller.paw;
     return this.breaths.at(-1)?.pmean ?? this.controller.peepTarget;
   }
   /** Volumen pulmonar del paso anterior (L). */

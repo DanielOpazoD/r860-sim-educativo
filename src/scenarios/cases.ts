@@ -422,13 +422,13 @@ export const CLINICAL_CASES: Scenario[] = [
       vignette:
         'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5, FiO₂ 0,5, con PaO₂/FiO₂ ≈ 125. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la Cstat.',
       question:
-        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 9–12 y vuelve a medir. Deja la PEEP final en 10 o más, la que dé más entrega de O₂ (DO₂) con FiO₂ 0,5.',
+        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 9–12 y vuelve a medir. Deja la PEEP final entre 10 y 12, la que dé más entrega de O₂ (DO₂) con FiO₂ 0,5.',
       kind: 'ajuste',
       criteria: [
         { id: 'antes', text: 'Mediste la Cstat a PEEP 5, antes de abrir', test: 'cstatBeforeOpening' },
         { id: 'abre', text: 'Abriste el pulmón con una PEEP alta sostenida', test: 'lesson:recruitedFull' },
         { id: 'despues', text: 'Tras abrir, a PEEP 9–12, Cstat ≥ 1,3 × la inicial', test: 'lesson:cstatDecremental' },
-        { id: 'peep', text: 'La PEEP final queda en 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
+        { id: 'peep', text: 'La PEEP final queda entre 10 y 12 cmH₂O', test: 'peepRange', params: { min: 10, max: 12 } },
         {
           id: 'oxigena',
           text: 'P/F de equilibrio ≥ 180 con FiO₂ ≥ 0,5 (arranca en ≈ 125)',
