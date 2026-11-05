@@ -291,6 +291,7 @@ describe('CAS-04 · PEEP decremental', () => {
       ['abre', true],
       ['despues', true],
       ['peep', true],
+      ['oxigena', true],
     ]);
     const sinAbrir = caso('CC-04');
     sinAbrir.bloqueo('inspHold');
@@ -562,5 +563,96 @@ describe('CAS-SOL · el desarrollo muestra la solución en una tabla', () => {
     const otro = document.createElement('div');
     otro.append(...caseDevelopmentNodes(sc, null, entregar(sc, { mode: 'AC_PC' }), inicial(sc), rules));
     expect([...otro.querySelectorAll('.case-solution tbody tr')].map(celdas)).toEqual([['Modo', 'A/C VC', 'A/C PC', 'A/C VC']]);
+  });
+});
+
+describe('OXI-09 · CC-04: abrir el pulmón mejora la oxigenación, y volver a cerrarlo la pierde', () => {
+  const pafi = (k: Caso): number => k.sim.frame().truth.oxy!.pafi;
+  /** El pulmón abierto y en PEEP 11, como en la solución. */
+  const abierto = (): Caso => {
+    const k = caso('CC-04');
+    k.ajustar({ peep: 20 });
+    k.correr(30_000);
+    k.ajustar({ peep: 11 });
+    k.correr(120_000);
+    return k;
+  };
+  const oxigena = (k: Caso): boolean => k.resultado().criteria.find((c) => c.id === 'oxigena')!.ok;
+
+  it('desreclutado a PEEP 5 está bajo 200; abierto y a PEEP 11 sube al menos un 50 %, y el caso lo exige', () => {
+    const inicio = caso('CC-04');
+    const antes = pafi(inicio);
+    expect(antes).toBeLessThan(200);
+    expect(antes).toBeCloseTo(124, -1);
+    expect(inicio.sim.frame().truth.oxy!.pao2).toBeCloseTo(62, 0);
+    expect(oxigena(inicio)).toBe(false);
+    const k = abierto();
+    expect(pafi(k) / antes).toBeGreaterThanOrEqual(1.5);
+    expect(pafi(k)).toBeCloseTo(198, -1);
+    expect(oxigena(k)).toBe(true);
+  });
+  it('de vuelta a PEEP 5 cae otra vez, y no al instante: con el desreclutamiento y la muestra arterial', () => {
+    const k = abierto();
+    const arriba = pafi(k);
+    k.ajustar({ peep: 5 });
+    k.correr(3_000);
+    expect(pafi(k)).toBeGreaterThan(arriba * 0.9);
+    k.correr(180_000);
+    expect(pafi(k)).toBeLessThan(arriba * 0.7);
+    expect(oxigena(k)).toBe(false);
+  });
+  it('no hay atajo: ni subir la PEEP sin abrir ni tocar la FiO₂ resuelve la oxigenación', () => {
+    const sinAbrir = caso('CC-04');
+    sinAbrir.ajustar({ peep: 11 });
+    sinAbrir.correr(60_000);
+    expect(oxigena(sinAbrir)).toBe(false);
+    for (const fio2 of [0.21, 0.3, 0.4, 0.5, 0.7, 1]) {
+      const k = caso('CC-04');
+      k.ajustar({ fio2 });
+      k.correr(60_000);
+      expect(oxigena(k), `FiO₂ ${fio2}`).toBe(false);
+    }
+  });
+});
+
+describe('OXI-09b · CC-04: hiperventilar no es un atajo', () => {
+  it('VT 800 y FR 35 abren el pulmón a la fuerza y suben el P/F, pero sin las mediciones de antes y después no se resuelve', () => {
+    const k = caso('CC-04');
+    k.ajustar({ vt: 0.8, rr: 35 });
+    k.correr(60_000);
+    const r = k.resultado();
+    expect(r.criteria.find((c) => c.id === 'oxigena')!.ok).toBe(true);
+    expect(r.criteria.find((c) => c.id === 'antes')!.ok).toBe(false);
+    expect(r.passed).toBe(false);
+  });
+});
+
+describe('OXI-10 · CC-03: objetivo de oxigenación de ARDSNet', () => {
+  it('con la solución la PaO₂ de equilibrio queda en el objetivo (55–80 mmHg), y la hipercapnia permisiva la baja poco', () => {
+    const inicio = caso('CC-03');
+    const antes = inicio.sim.frame().truth.oxy!.pao2Target!;
+    const k = caso('CC-03');
+    k.ajustar({ vt: 0.4, rr: 28 });
+    k.correr(30_000);
+    const o = k.sim.frame().truth.oxy!;
+    expect(o.pao2Target!).toBeGreaterThanOrEqual(55);
+    expect(o.pao2Target!).toBeLessThanOrEqual(80);
+    expect(Math.abs(o.pao2Target! - antes)).toBeLessThan(10);
+  });
+  it('el shunt no ve la FiO₂: de 0,5 a 0,21 la PaO₂ sólo baja a ≈ 55', () => {
+    const inicio = caso('CC-03');
+    expect(inicio.sim.frame().truth.oxy!.pafi).toBeCloseTo(142, -1);
+    expect(inicio.sim.frame().truth.oxy!.pao2).toBeCloseTo(71, 0);
+    const baja = caso('CC-03');
+    baja.ajustar({ fio2: 0.21 });
+    baja.correr(150_000);
+    expect(baja.sim.frame().truth.oxy!.pao2Target!).toBeCloseTo(55, 0);
+  });
+  it('con VT 400 y FR 28 el pH de equilibrio vuelve a ≈ 7,40, el del desarrollo', () => {
+    const k = caso('CC-03');
+    k.ajustar({ vt: 0.4, rr: 28 });
+    k.correr(30_000);
+    expect(k.gas.paco2Target!).toBeCloseTo(40, -0.5);
+    expect(phEq(k)).toBeCloseTo(7.4, 1);
   });
 });

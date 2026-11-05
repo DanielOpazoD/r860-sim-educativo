@@ -224,6 +224,20 @@ export interface GasExchangeParams {
    * la apnea y el tramo lento. El motor acelera la parte de la sangre y los tejidos con fines docentes (E-128).
    */
   storeL: Liters;
+  /** Hemoglobina (g/dL). */
+  hbGdL: number;
+  /** Consumo de O₂ (mL/min). Con `vco2MlMin` fija el cociente respiratorio de la ecuación del gas alveolar. */
+  vo2MlMin: number;
+  /** Gasto cardíaco (L/min): fijo en esta entrega; entra en Fick. */
+  cardiacOutputLMin: number;
+  /** Shunt que no se recluta (fracción del gasto). */
+  shuntBase: number;
+  /** Shunt adicional del pulmón cerrado: desaparece a medida que la fracción reclutada llega a 1 (sólo con `recruit`). */
+  shuntRecruitable: number;
+  /** Fracción del gasto que perfunde unidades de V/Q bajo. */
+  lowVqFrac: number;
+  /** Relación V/Q de esas unidades. */
+  lowVqRatio: number;
 }
 
 export interface EffortParams {

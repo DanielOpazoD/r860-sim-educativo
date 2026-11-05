@@ -31,6 +31,7 @@ import { VcController } from './controller';
 import type { ControllerEvent } from './controllerTypes';
 import { EffortGenerator } from './effort';
 import { GasExchange, gasParams, type GasState } from './gasExchange';
+import { Oxygenation, type OxygenState } from './oxygenation';
 import { MetricEngine } from './metrics';
 import { equilibriumVolumeFor, PatientModel, recruitmentAtRest } from './patient';
 import { ProcedureManager, type O2ProcedureState } from './procedures';
@@ -84,6 +85,8 @@ export interface Truth {
   fio2Delivered: number;
   /** Gasometría de modelo (P): docente, nunca en el monitor del equipo. null en las transcripciones fotográficas (sin motor). */
   gas: GasState | null;
+  /** Oxigenación de modelo (P): como la gasometría, docente y nunca en el monitor. null en las transcripciones fotográficas. */
+  oxy: OxygenState | null;
 }
 
 export interface TrendPoint {
@@ -144,6 +147,7 @@ export class Simulator {
   readonly metrics = new MetricEngine();
   /** CO₂ arterial de modelo: lo alimenta el volumen pulmonar verdadero, no el sensor del ventilador. */
   readonly gas = new GasExchange();
+  readonly oxygenation = new Oxygenation();
   /** Volumen pulmonar del paso anterior (L). */
   private lungVPrev = 0;
   /** Segundos de bloqueo (inspiratorio o espiratorio) dentro de la respiración en curso. */
@@ -216,6 +220,17 @@ export class Simulator {
           r: Math.round(this.patient.recruited * 100) / 100,
           s: { ...this.controller.settings, fio2: 0 },
         }),
+    );
+    // Un primer equilibrio sin avanzar el tiempo: el cuadro de t = 0 ya lleva oxigenación, como lleva gasometría.
+    const gp0 = gasParams(this.patient.params.gas);
+    this.oxygenation.step(
+      0,
+      gp0,
+      this.o2.delivered,
+      this.gas.paco2,
+      this.patient.recruited,
+      true,
+      () => this.gas.state(0, gp0).paco2Target,
     );
     this.ring = new SampleRing(Math.ceil(30_000 / init.dtMs));
     this.breathVStart = v0;
@@ -466,6 +481,15 @@ export class Simulator {
     this.gas.move(vLung - this.lungVPrev, gp);
     this.lungVPrev = vLung;
     this.gas.step(dtS, gp);
+    this.oxygenation.step(
+      dtS,
+      gp,
+      this.o2.delivered,
+      this.gas.paco2,
+      this.patient.recruited,
+      this.gas.fijandoEquilibrio,
+      () => this.gas.state(this.clock.simTimeMs / 1000, gp).paco2Target,
+    );
     this.clock.tick(); // el reloj representa el FIN del paso cuando se procesan los eventos
     this.o2.step(dtS);
     this.drainController();
@@ -561,6 +585,7 @@ export class Simulator {
         sensors: { ...this.o2.params },
         fio2Delivered: this.o2.delivered,
         gas: this.gas.state(t / 1000, gasParams(this.patient.params.gas)),
+        oxy: this.oxygenation.state(),
       },
       samples: this.ring.last(n),
       eventsTail,

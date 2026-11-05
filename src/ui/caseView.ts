@@ -169,6 +169,9 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
     );
   if (g && g.paco2Target !== null && g.phTarget !== null)
     filas.push(fila('PaCO₂ y pH de equilibrio', `${f(g.paco2Target, 0)} mmHg · ${f(g.phTarget, 2)}`));
+  const o = t.oxy;
+  if (o && o.pafiTarget !== null)
+    filas.push(fila('PaO₂/FiO₂ de equilibrio y shunt', `${f(o.pafiTarget, 0)} · shunt ${f(o.shunt * 100, 0)} % del gasto`));
   return element('div', 'case-truth', element('h3', 'aula-kicker', 'Lo que el modelo sabía'), element('dl', 'edu-gases', ...filas));
 }
 
