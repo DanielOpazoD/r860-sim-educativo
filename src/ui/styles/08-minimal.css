@@ -1320,6 +1320,21 @@
 .view-active-state:empty {
   display: none;
 }
+/* Lectura en vivo: qué acaba de pasar en la curva y por qué, en una línea bajo el equipo (ayuda; no en examen). */
+.live-reading {
+  margin: 8px auto 0;
+  max-width: 78ch;
+  font-size: var(--type-sm);
+  line-height: 1.5;
+  color: var(--shell-text);
+}
+.live-reading p {
+  margin: 2px 0 0;
+}
+.live-reading b {
+  color: var(--shell-accent);
+  font-weight: 600;
+}
 #wave-options {
   position: fixed;
   inset: 0;

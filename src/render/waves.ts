@@ -22,9 +22,12 @@ export interface WaveBreath {
   pplatCycle: number | null;
   tauExpS: number | null;
   cyclingCause: string;
+  /** Tipo de respiración del registro (mandatory, assisted, spontaneous, backup, manual); '' si no se conoce. */
+  type?: string;
 }
 
-export type WaveMarkerKind = 'start' | 'cycle' | 'ppeak' | 'pplat' | 'peeptot' | 'end' | 'effort';
+/** `lectura`: anotación de la lectura en vivo (doble disparo, esfuerzo inefectivo…), arriba del panel de Pva. */
+export type WaveMarkerKind = 'start' | 'cycle' | 'ppeak' | 'pplat' | 'peeptot' | 'end' | 'effort' | 'lectura';
 
 export interface WaveMarker {
   kind: WaveMarkerKind;
@@ -515,28 +518,37 @@ export function drawWave(
         }
       } else if (i === 0) {
         const value = marker.value ?? sp.min;
-        const y = marker.kind === 'effort' ? ybottom - 4 : yf(value);
+        // La lectura en vivo va arriba del panel; junto a los bordes baja una línea para no pisar «Antes · Después» a la
+        // izquierda ni la unidad y el rótulo de Pmáx a la derecha.
+        const linea = MON_FS['2xs'] + 3;
+        const lecturaY = x > w - right - 110 ? ytop + 7 + 2 * linea : x < left + 90 ? ytop + 7 + linea : ytop + 7;
+        const y = marker.kind === 'effort' ? ybottom - 4 : marker.kind === 'lectura' ? lecturaY : yf(value);
         const markerColor =
           marker.kind === 'pplat' || marker.kind === 'peeptot'
             ? PLOT_TEXT_COLORS.marcaPplat
             : marker.kind === 'ppeak'
               ? PLOT_TEXT_COLORS.marcaPpico
-              : PLOT_TEXT_COLORS.marcaEsfuerzo;
+              : marker.kind === 'lectura'
+                ? PLOT_TEXT_COLORS.lectura
+                : PLOT_TEXT_COLORS.marcaEsfuerzo;
         ctx.fillStyle = markerColor;
         ctx.beginPath();
         ctx.arc(x, y, 2.8, 0, Math.PI * 2);
         ctx.fill();
         ctx.font = `normal ${MON_FS['2xs']}px Arial,sans-serif`;
         const ancho = ctx.measureText(marker.label).width;
+        // El rótulo va a la derecha de su marca; si ahí no cabe, a la izquierda (como el del cambio de modo).
+        const x0 = x + 4 + ancho <= w - right - 2 ? x + 4 : x - 4 - ancho;
+        // La lectura en vivo baja hasta tres líneas si arriba ya hay un rótulo (Ppico, otra lectura): no se pisan.
         const base = labelBaseline(
           escritos,
-          x + 4,
-          x + 4 + ancho,
+          x0,
+          x0 + ancho,
           Math.max(ytop + 10, y - 4),
-          Math.min(ybottom - 3, y + 13),
+          marker.kind === 'lectura' ? ytop + 10 + 3 * (MON_FS['2xs'] + 2) : Math.min(ybottom - 3, y + 13),
           MON_FS['2xs'],
         );
-        rotular(marker.label, x + 4, base, markerColor);
+        rotular(marker.label, x0, base, markerColor);
       }
     }
     if (style === 'sweep' && !options.frozen) {

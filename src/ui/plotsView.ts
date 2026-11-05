@@ -34,7 +34,8 @@ import {
   type WaveMarker,
 } from '../render/plots';
 import type { AppContext } from './context';
-import { $, icon, put } from './dom';
+import { $, element, icon, put } from './dom';
+import { flujoAlFinalDeLaEspiracion, lecturaAutoPeep, lecturasDeRespiracion, type Lectura } from './lecturaEnVivo';
 import { clock } from './format';
 import { MODE_LABEL } from './labels';
 
@@ -127,6 +128,36 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
     markerCache: WaveMarker[] = [],
     markerCacheKey = '',
     mechanicsSignature = '';
+  // Lectura en vivo: lo que pasó en cada respiración terminada (doble disparo, esfuerzo inefectivo…) y el estado de
+  // atrapamiento que se lee en el flujo. Ayuda docente: se calcula aquí sobre lo publicado; en examen no se muestra.
+  let lecturas: Lectura[] = [],
+    autoPeepTexto: string | null = null,
+    lecturaPintada = '';
+  const resetLecturas = (): void => {
+    lecturas = [];
+    autoPeepTexto = null;
+    renderLectura();
+  };
+  /** La línea bajo el equipo: la última lectura reciente y, aparte, el atrapamiento mientras dure. */
+  function renderLectura(): void {
+    const caja = document.getElementById('live-reading');
+    if (!caja) return;
+    const ultima = lecturas.at(-1) ?? null;
+    const reciente = ultima && ctx.simS() - ultima.t <= 2 * waveWindow ? ultima : null;
+    const visible = waveAids && !ctx.examMode && !ctx.fixtureId && (reciente !== null || autoPeepTexto !== null);
+    const clave = visible ? `${reciente?.breathId ?? ''}:${reciente?.kind ?? ''}:${autoPeepTexto ?? ''}` : '';
+    if (clave === lecturaPintada) return;
+    lecturaPintada = clave;
+    caja.hidden = !visible;
+    if (!visible) {
+      caja.replaceChildren();
+      return;
+    }
+    const lineas: HTMLElement[] = [];
+    if (reciente) lineas.push(element('p', '', element('b', '', reciente.titulo), ` · ${reciente.porque}`));
+    if (autoPeepTexto) lineas.push(element('p', '', element('b', '', 'Aire atrapado'), ` · ${autoPeepTexto}`));
+    caja.replaceChildren(element('span', 'aula-kicker', 'Lectura en vivo'), ...lineas);
+  }
   // Cambios de modo aplicados, con el modo vigente y el último evento leído; null hasta el primer cuadro de una sesión.
   let modeChanges: ModeChangeMark[] = [],
     modoVigente: VentMode | null = null,
@@ -253,7 +284,12 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       );
     }
     const peepTot = peepTotMarker(end);
-    const markers = waveAids ? [...markerCache, ...(peepTot ? [peepTot] : [])].filter((m) => corte === null || m.t >= corte) : [];
+    const anotaciones: WaveMarker[] = ctx.examMode
+      ? []
+      : lecturas.filter((l) => l.t >= end - waveWindow && l.t <= end).map((l) => ({ kind: 'lectura', t: l.t, label: l.titulo }));
+    const markers = waveAids
+      ? [...markerCache, ...(peepTot ? [peepTot] : []), ...anotaciones].filter((m) => corte === null || m.t >= corte)
+      : [];
     if (view === 'waves')
       drawWave($<HTMLCanvasElement>('#waves-canvas'), ondas, end, peep, vtMl, {
         window: waveWindow,
@@ -448,6 +484,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       const toggle = $<HTMLButtonElement>('#wave-aids-toggle');
       toggle.classList.toggle('active', on);
       toggle.setAttribute('aria-pressed', String(on));
+      renderLectura();
       dirty = true;
     },
     ingest(prev, fr) {
@@ -467,6 +504,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         fixedBounds.basic = null;
         resetScales();
         resetModeChanges();
+        resetLecturas();
       } else if (
         prev &&
         !waveReference &&
@@ -477,6 +515,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         const before = cyclePoints(points);
         if (before.length >= 3) setWaveReference(before);
       }
+      const nuevas: WaveBreath[] = [];
       for (const e of fr.eventsTail) {
         if (e.kind !== 'breath' || e.sequence <= lastTriggerSeq) continue;
         const p = e.payload as Record<string, unknown>;
@@ -500,7 +539,9 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
             pplatCycle: typeof p.pplatCycle === 'number' ? p.pplatCycle : null,
             tauExpS: typeof p.tauExpS === 'number' ? p.tauExpS : null,
             cyclingCause: String(p.cause ?? ''),
+            type: String(p.type ?? ''),
           });
+          nuevas.push(breaths.at(-1) as WaveBreath);
           if (breaths.length > 200) breaths = breaths.slice(-200);
         }
         lastTriggerSeq = Math.max(lastTriggerSeq, e.sequence);
@@ -517,6 +558,23 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
         if (modeChanges.length > 20) modeChanges = modeChanges.slice(-20);
       }
       appendSamples(points, fr.samples);
+      // Con la traza ya al día se lee cada respiración terminada: la anterior aporta la espiración donde viven los
+      // esfuerzos que no dispararon.
+      if (nuevas.length) {
+        const contexto = {
+          flowTriggerLpm: fr.settings.triggerByPressure ? null : fr.settings.flowTrigger * 60,
+          pmax: fr.settings.pmax,
+          expTriggerPct: fr.settings.expTriggerPct,
+          peepi: fr.truth.peepiEndExp,
+        };
+        for (const b of nuevas) {
+          const i = breaths.indexOf(b);
+          lecturas.push(...lecturasDeRespiracion(b, i > 0 ? (breaths[i - 1] as WaveBreath) : null, points, triggerDetectionsS, contexto));
+          autoPeepTexto = lecturaAutoPeep(flujoAlFinalDeLaEspiracion(b, points));
+        }
+        if (lecturas.length > 60) lecturas = lecturas.slice(-60);
+      }
+      renderLectura();
       mechanicsSignature = nextMechanicsSignature;
       dirty = true;
     },
@@ -536,6 +594,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       fixedBounds.basic = null;
       resetScales();
       resetModeChanges();
+      resetLecturas();
     },
     clearPoints() {
       points = [];
@@ -549,6 +608,7 @@ export function createPlotsView(ctx: AppContext, deps: { teacherVisible: () => b
       fixedBounds.basic = null;
       resetScales();
       resetModeChanges();
+      resetLecturas();
       dirty = true;
     },
     markDirty() {
