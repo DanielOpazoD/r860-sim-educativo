@@ -203,6 +203,24 @@ export interface PatientParams {
    * su resultado nunca se muestra en el monitor del equipo. Ausente = adulto de referencia (DEFAULT_GAS del motor).
    */
   gas?: Partial<GasExchangeParams>;
+  /** Corazón-pulmón de modelo: retorno venoso, volemia y pared torácica. Los que falten, los del adulto por omisión. */
+  circulation?: Partial<CirculationParams>;
+}
+
+/** Corazón-pulmón de modelo (P): retorno venoso de Guyton frenado por la presión pleural. */
+export interface CirculationParams {
+  /** Presión media de llenado sistémico (mmHg): la volemia. */
+  pmsfMmHg: number;
+  /** Presión de la aurícula derecha sin presión pleural añadida (mmHg). */
+  praBaseMmHg: number;
+  /** Resistencia al retorno venoso (mmHg·min/L). */
+  rvrMmHgMinL: number;
+  /** Compliance de la pared torácica (L/cmH₂O): fija qué fracción de la presión alveolar llega a la pleura. */
+  chestWallComplianceL: number;
+  /** Fracción de la subida de la presión pleural que la presión abdominal devuelve a la Pmsf (0–1). */
+  abdominalFraction: number;
+  /** Resistencia vascular sistémica (mmHg·min/L). */
+  svrMmHgMinL: number;
 }
 
 export interface GasExchangeParams {
@@ -228,8 +246,6 @@ export interface GasExchangeParams {
   hbGdL: number;
   /** Consumo de O₂ (mL/min). Con `vco2MlMin` fija el cociente respiratorio de la ecuación del gas alveolar. */
   vo2MlMin: number;
-  /** Gasto cardíaco (L/min): fijo en esta entrega; entra en Fick. */
-  cardiacOutputLMin: number;
   /** Shunt que no se recluta (fracción del gasto). */
   shuntBase: number;
   /** Shunt adicional del pulmón cerrado: desaparece a medida que la fracción reclutada llega a 1 (sólo con `recruit`). */

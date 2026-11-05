@@ -362,13 +362,13 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'SDRA · ventilación protectora',
       vignette:
-        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10 y FiO₂ 0,5. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16. Gasometría: pH 7,40, PaCO₂ 40 mmHg.',
-      question: `Programa una ventilación protectora sin bajar la PEEP: VT ≤ 6,5 mL/kg de peso predicho (≤ ${Math.round(6.5 * pbwHombre(175))} mL), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo inspiratorio.`,
+        'Hombre de 52 años, 175 cm, con SDRA por neumonía: PaO₂/FiO₂ 140 con PEEP 10 y FiO₂ 0,5. Lleva VT 600 mL (8,5 mL/kg de peso predicho) y FR 16, con pH 7,40 y PaCO₂ 40 mmHg.',
+      question: `Programa una ventilación protectora sin bajar la PEEP: VT ≤ 6,5 mL/kg de peso predicho (≤ ${Math.round(6.5 * pbwHombre(175))} mL), Pplat ≤ 30 cmH₂O, presión motriz < 15 cmH₂O y pH de equilibrio 7,30–7,45 con FR ≤ 35. Mide la meseta con un bloqueo.`,
       kind: 'ajuste',
       criteria: [
         {
           id: 'vt',
-          text: `VT de 6,5 mL/kg predicho o menos (≤ ${Math.round(6.5 * pbwHombre(175))} mL)`,
+          text: `VT ≤ 6,5 mL/kg predicho (≤ ${Math.round(6.5 * pbwHombre(175))} mL)`,
           test: 'vtMaxPerKg',
           params: { mlPerKg: 6.5, pbw: pbwHombre(175) },
         },
@@ -420,24 +420,30 @@ export const CLINICAL_CASES: Scenario[] = [
     clinical: {
       theme: 'SDRA · reclutamiento y PEEP',
       vignette:
-        'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5, FiO₂ 0,5, con PaO₂/FiO₂ ≈ 125. La compliance estática es baja. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la Cstat.',
+        'Mujer de 45 años con SDRA moderado. En volumen control: VT 400 mL, FR 18, PEEP 5, FiO₂ 0,5, con PaO₂/FiO₂ ≈ 125. El equipo decide probar una maniobra de reclutamiento seguida de una PEEP decremental guiada por la Cstat.',
       question:
-        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 9–12 y vuelve a medir. Deja la PEEP final en 10 o más: con FiO₂ de 0,5 o más, la PaO₂/FiO₂ debe llegar a 180.',
+        'Mide la Cstat a PEEP 5, abre el pulmón con PEEP 20 sostenida al menos 30 s, baja a PEEP 9–12 y vuelve a medir. Deja la PEEP final en 10 o más, la que dé más entrega de O₂ (DO₂) con FiO₂ 0,5.',
       kind: 'ajuste',
       criteria: [
-        { id: 'antes', text: 'Mediste la Cstat a la PEEP inicial, antes de abrir el pulmón', test: 'cstatBeforeOpening' },
+        { id: 'antes', text: 'Mediste la Cstat a PEEP 5, antes de abrir', test: 'cstatBeforeOpening' },
         { id: 'abre', text: 'Abriste el pulmón con una PEEP alta sostenida', test: 'lesson:recruitedFull' },
-        { id: 'despues', text: 'A PEEP 9–12 tras abrir, la Cstat supera en un 30 % o más a la inicial', test: 'lesson:cstatDecremental' },
+        { id: 'despues', text: 'Tras abrir, a PEEP 9–12, Cstat ≥ 1,3 × la inicial', test: 'lesson:cstatDecremental' },
         { id: 'peep', text: 'La PEEP final queda en 10 cmH₂O o más', test: 'peepMin', params: { min: 10 } },
         {
           id: 'oxigena',
-          text: 'Con FiO₂ de 0,5 o más, la PaO₂/FiO₂ de equilibrio llega a 180 (arranca en ≈ 125)',
+          text: 'P/F de equilibrio ≥ 180 con FiO₂ ≥ 0,5 (arranca en ≈ 125)',
           test: 'pafiEqMin',
           params: { min: 180, fio2Min: 0.5 },
         },
+        {
+          id: 'do2',
+          text: 'DO₂ de equilibrio > 970 mL/min con FiO₂ 0,5 (arranca en ≈ 955)',
+          test: 'do2EqMin',
+          params: { min: 970, fio2Max: 0.5 },
+        },
       ],
       reveal:
-        'Este pulmón tiene unidades que sólo abren por encima de ≈ 28 cmH₂O de distensión y no se cierran hasta bajar de ≈ 9: histéresis. A PEEP 5 están cerradas y la Cstat es ≈ 29 mL/cmH₂O. Tras abrirlas con PEEP 20, a PEEP 10–12 siguen abiertas y la Cstat sube a ≈ 43: la misma PEEP da distinta mecánica según la historia, que es lo que aprovecha la titulación decremental (Suarez-Sipmann). Pero mecánica no es pronóstico: en el ensayo ART, en SDRA moderado-grave, la estrategia de reclutamiento con PEEP titulada aumentó la mortalidad a 28 días frente a PEEP baja (55,3 % frente a 49,3 %) y el barotrauma. El máximo de Cstat no identifica por sí solo una PEEP segura. La oxigenación lo confirma: a PEEP 5 el shunt es del 30 % del gasto, con PaO₂ ≈ 62 mmHg y PaO₂/FiO₂ ≈ 124; abierto y a PEEP 11 baja al 15 % y la PaO₂/FiO₂ llega a ≈ 198. Subir la FiO₂ no lo habría logrado: el shunt no la ve. Si la PEEP vuelve a 5, el pulmón se cierra en segundos y lo ganado se pierde.',
+        'Este pulmón tiene unidades que sólo abren por encima de ≈ 28 cmH₂O de distensión y no se cierran hasta bajar de ≈ 9: histéresis. A PEEP 5 están cerradas y la Cstat es ≈ 29 mL/cmH₂O. Tras abrirlas con PEEP 20, a PEEP 10–12 siguen abiertas y la Cstat sube a ≈ 43: la misma PEEP da distinta mecánica según la historia, que es lo que aprovecha la titulación decremental (Suarez-Sipmann). Pero mecánica no es pronóstico: en el ensayo ART, en SDRA moderado-grave, la estrategia de reclutamiento con PEEP titulada aumentó la mortalidad a 28 días frente a PEEP baja (55,3 % frente a 49,3 %) y el barotrauma. El máximo de Cstat no identifica por sí solo una PEEP segura. La oxigenación lo confirma: a PEEP 5 el shunt es del 30 % del gasto, con PaO₂ ≈ 62 mmHg y PaO₂/FiO₂ ≈ 124; abierto y a PEEP 11 baja al 15 % y la PaO₂/FiO₂ llega a ≈ 198. Subir la FiO₂ no lo habría logrado: el shunt no la ve. Si la PEEP vuelve a 5, el pulmón se cierra en segundos y lo ganado se pierde. Y la PEEP también cuesta gasto: la presión pleural sube y frena el retorno venoso. Con el pulmón abierto y FiO₂ 0,5, la DO₂ (gasto × contenido arterial de O₂) es ≈ 994 mL/min a PEEP 10, ≈ 979 a 12, ≈ 949 a 16 y ≈ 918 a 20: menos que cerrado a PEEP 5 (≈ 957). La mejor PEEP es la más baja que mantiene el pulmón abierto (Suter). En este pulmón rígido sólo llega a la pleura ≈ 15 % de la presión alveolar; un paciente hipovolémico la pagaría más cara.',
       solution: {
         steps: [
           { kind: 'bloqueo', which: 'inspHold', note: 'mide la Cstat a la PEEP inicial' },
@@ -467,7 +473,7 @@ export const CLINICAL_CASES: Scenario[] = [
     perturbations: [],
     observe: 'La Cstat a la misma PEEP cambia tras la apertura.',
     caution:
-      'Un único par de umbrales de apertura y cierre; sin intercambio de oxígeno ni hemodinámica. No es una pauta clínica de reclutamiento.',
+      'Un único par de umbrales de apertura y cierre. El gasto cae con la presión pleural pero no con la poscarga del ventrículo derecho, que en el SDRA pesa más: la caída real puede ser mayor. No es una pauta clínica de reclutamiento.',
   },
   {
     id: 'CC-05',

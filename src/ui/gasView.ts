@@ -88,6 +88,7 @@ export function createGasView(ctx: AppContext): { render(): void } {
     registrar();
     const g = ctx.frame?.truth.gas ?? null;
     const o = ctx.frame?.truth.oxy ?? null;
+    const h = ctx.frame?.truth.circ ?? null;
     const host = $('#case-gas');
     if (!g || !o || !inicio) {
       if (firma !== '—') {
@@ -115,6 +116,7 @@ export function createGasView(ctx: AppContext): { render(): void } {
       f(o.pao2, 0),
       pct(o.sao2),
       f(o.pafi, 0),
+      h ? [f(h.cardiacOutputLMin, 1), f(h.mapMmHg, 0), f(h.do2MlMin, 0)] : null,
       puntos.length,
       cambioS,
     ]);
@@ -156,6 +158,18 @@ export function createGasView(ctx: AppContext): { render(): void } {
         valor('PaO₂', f(o.pao2, 0), 'mmHg', f(inicio.pao2, 0)),
         // Dos filas: una tercera le quita a un caso el alto que necesita para leerse entero. La PaO₂ lleva el «inicio».
         element('span', 'gas-item', cifra('SaO₂', pct(o.sao2), '%'), pf),
+        // El corazón-pulmón en una sola línea a todo el ancho: en media columna se partía en dos y desbordaba un caso.
+        ...(h
+          ? [
+              element(
+                'span',
+                'gas-item gas-hemo',
+                cifra('GC', f(h.cardiacOutputLMin, 1), 'L/min'),
+                cifra('PAM', f(h.mapMmHg, 0), 'mmHg'),
+                cifra('DO₂', f(h.do2MlMin, 0), 'mL/min'),
+              ),
+            ]
+          : []),
       ),
     );
   }

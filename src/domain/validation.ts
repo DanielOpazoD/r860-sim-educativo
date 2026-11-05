@@ -1,5 +1,5 @@
 import type { NumericSegment, SettingRule } from './settingRules';
-import type { VcSettings, EffortParams, GasExchangeParams, SensorParams } from './types';
+import type { CirculationParams, VcSettings, EffortParams, GasExchangeParams, SensorParams } from './types';
 import { lpsToLpm, rrToCycleS } from './units';
 
 const EPS = 1e-9;
@@ -277,6 +277,7 @@ export function validatePatientParams(p: {
   rExpVolumeDep?: { gain: number; vRefL: number };
   second?: { crs: number; rInsp: number; rExp: number };
   gas?: Partial<GasExchangeParams>;
+  circulation?: Partial<CirculationParams>;
 }): string[] {
   const r: string[] = [];
   // Las cinco magnitudes del modelo son obligatorias: `Object.entries` no ve las claves ausentes, así que un
@@ -298,6 +299,7 @@ export function validatePatientParams(p: {
         'second',
         'disconnected',
         'gas',
+        'circulation',
         'cardiac',
       ].includes(k) &&
       (typeof v !== 'number' || !Number.isFinite(v))
@@ -354,7 +356,6 @@ export function validatePatientParams(p: {
       storeL: [5, 200, 'Depósito de CO₂ fuera de 5–200 L'],
       hbGdL: [3, 25, 'Hemoglobina fuera de 3–25 g/dL'],
       vo2MlMin: [50, 800, 'Consumo de O₂ fuera de 50–800 mL/min'],
-      cardiacOutputLMin: [1, 20, 'Gasto cardíaco fuera de 1–20 L/min'],
       shuntBase: [0, 0.8, 'Shunt fuera de 0–0,8 del gasto'],
       shuntRecruitable: [0, 0.8, 'Shunt reclutable fuera de 0–0,8 del gasto'],
       lowVqFrac: [0, 0.8, 'Fracción de V/Q bajo fuera de 0–0,8 del gasto'],
@@ -377,10 +378,25 @@ export function validatePatientParams(p: {
         const cociente = (g.vco2MlMin ?? 200) / vo2;
         if (cociente < 0.5 || cociente > 1.3) r.push('Cociente respiratorio VCO₂/VO₂ fuera de 0,5–1,3');
       }
-      // La sangre no puede ceder más O₂ del que lleva: 1,34 mL/g por la Hb, en mL/L.
-      if (vo2 / (g.cardiacOutputLMin ?? 5) >= 13.4 * (g.hbGdL ?? 15))
-        r.push('El consumo de O₂ supera lo que el gasto y la hemoglobina pueden entregar');
     }
+  }
+  if (p.circulation !== undefined) {
+    const c = p.circulation;
+    const RANGOS = {
+      pmsfMmHg: [4, 30, 'Presión media de llenado fuera de 4–30 mmHg'],
+      praBaseMmHg: [-5, 20, 'Presión auricular basal fuera de −5–20 mmHg'],
+      rvrMmHgMinL: [0.3, 10, 'Resistencia al retorno venoso fuera de 0,3–10 mmHg·min/L'],
+      chestWallComplianceL: [0.02, 0.5, 'Compliance de la pared fuera de 20–500 mL/cmH₂O'],
+      abdominalFraction: [0, 1, 'Fracción abdominal fuera de 0–1'],
+      svrMmHgMinL: [3, 60, 'Resistencia vascular sistémica fuera de 3–60 mmHg·min/L'],
+    } as const;
+    if (!c || typeof c !== 'object' || Array.isArray(c)) r.push('Circulación inválida');
+    else
+      for (const [k, v] of Object.entries(c)) {
+        const rango = RANGOS[k as keyof typeof RANGOS];
+        if (!rango) r.push(`circulation.${k}: clave desconocida`);
+        else if (typeof v !== 'number' || !Number.isFinite(v) || v < rango[0] || v > rango[1]) r.push(rango[2]);
+      }
   }
   if (p.rExpVolumeDep !== undefined) {
     const d = p.rExpVolumeDep;

@@ -130,6 +130,10 @@
   font-size: var(--type-2xs);
   color: var(--shell-muted);
 }
+.gas-hemo {
+  grid-column: 1 / -1;
+  gap: 0 12px;
+}
 .gas-abbr {
   text-decoration: none;
 }

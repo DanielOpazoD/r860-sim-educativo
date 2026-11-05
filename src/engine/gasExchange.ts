@@ -59,8 +59,6 @@ export const DEFAULT_GAS: GasExchangeParams = {
    * alveolar. D-secundario (libro de texto).
    */
   vo2MlMin: 250,
-  /** Gasto cardíaco en reposo (L/min). D-secundario (libro de texto). */
-  cardiacOutputLMin: 5,
   /**
    * Un pulmón sano: poco shunt y una dispersión pequeña de V/Q. Calibrados para dar, con el banco por omisión, PaO₂ 90
    * mmHg y un gradiente alveoloarterial de 11, dentro de lo normal. P calibrado.
