@@ -235,6 +235,7 @@ it('los perfiles mantienen sus etiquetas como texto y sus botones conservan ARIA
       'Esfuerzo',
       'Vía aérea',
       'Pulmón',
+      'Circulación',
       'Circuito',
     ]);
     expect(document.querySelectorAll('#patient-extra-controls [data-group]:not([hidden])')).toHaveLength(1);

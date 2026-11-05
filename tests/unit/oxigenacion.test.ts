@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_GAS, gasParams } from '../../src/engine/gasExchange';
-import { Oxygenation, PAO2_TAU_S, oxygenEquilibrium, po2FromSaturation, saturation } from '../../src/engine/oxygenation';
+import { GASTO_REPOSO_LMIN, Oxygenation, PAO2_TAU_S, oxygenEquilibrium, po2FromSaturation, saturation } from '../../src/engine/oxygenation';
 import { Simulator } from '../../src/engine/simulator';
 import { REFERENCE_PROFILE, defaultInit } from '../../src/profiles';
 import { SCENARIOS, findScenario } from '../../src/scenarios';
@@ -31,7 +31,7 @@ describe('OXI-02 · adulto sano en aire ambiente', () => {
     expect(e.pAO2 - e.pao2).toBeLessThan(20);
   });
   it('la sangre venosa cierra el balance de Fick: CaO₂ − CvO₂ = VO₂/GC', () => {
-    expect(e.cao2MlL - e.cvo2MlL).toBeCloseTo(DEFAULT_GAS.vo2MlMin / DEFAULT_GAS.cardiacOutputLMin, 5);
+    expect(e.cao2MlL - e.cvo2MlL).toBeCloseTo(DEFAULT_GAS.vo2MlMin / GASTO_REPOSO_LMIN, 5);
   });
 });
 
@@ -131,7 +131,6 @@ describe('OXI-06 · límites del modelo', () => {
     expect(conGas({ shuntBase: 1.2 }).length).toBeGreaterThan(0);
     expect(conGas({ hbGdL: 1 }).length).toBeGreaterThan(0);
     // Físicamente imposibles aunque cada valor esté en rango: más consumo del que se puede entregar, y un R absurdo.
-    expect(conGas({ cardiacOutputLMin: 1, vo2MlMin: 300 }).length).toBeGreaterThan(0);
     expect(conGas({ vco2MlMin: 50, vo2MlMin: 800 }).length).toBeGreaterThan(0);
     expect(conGas({ shuntBase: 0.6, shuntRecruitable: 0.3, lowVqFrac: 0.2 }).length).toBeGreaterThan(0);
   });

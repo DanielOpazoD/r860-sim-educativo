@@ -129,6 +129,9 @@ export function createInstructorPanel(
     const ox = fr.truth.oxy;
     put('#truth-shunt', ox ? `${f(ox.shunt * 100, 0)} % · ${f(ox.lowVqFrac * 100, 0)} %` : '—');
     put('#truth-pao2', ox ? `${f(ox.pAO2, 0)} / ${f(ox.pvo2, 0)} mmHg` : '—');
+    const hc = fr.truth.circ;
+    put('#truth-retorno', hc ? `${f(hc.pmsfMmHg, 1)} / ${f(hc.praMmHg, 1)} mmHg` : '—');
+    put('#truth-transmision', hc ? `${f(hc.transmission * 100, 0)} %` : '—');
     put('#truth-pvisc', `${f(fr.truth.pVisc, 2)} cmH₂O`);
     put('#truth-clocal', `${f(fr.truth.cLocal * 1000, 1)} mL/cmH₂O`);
     const sg = fr.truth.patient.sigmoid;

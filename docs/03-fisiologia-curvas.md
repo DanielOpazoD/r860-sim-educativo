@@ -382,4 +382,16 @@ PaO₂ y SaO₂ se calculan en `src/engine/oxygenation.ts` con una mezcla venosa
 
 Banco SC-01: PaO₂ 90 mmHg, SaO₂ 96,9 %, PaO₂/FiO₂ 427, gradiente alveoloarterial 11.
 
-Simplificaciones declaradas: la PAO₂ es de estado estacionario, así que en apnea cae porque sube la PaCO₂ y no porque el pulmón se vacíe de O₂: no sirve para enseñar preoxigenación ni tiempos de desaturación. Tampoco hay efecto Bohr, ni atelectasia por absorción, ni hemodinámica: la PEEP alta aún no baja el gasto (entrega B de `docs/10-diseno-oxigenacion.md`). La PaO₂/FiO₂ sube al bajar la FiO₂ cuando el shunt es alto, como en un paciente: por eso CC-04 exige una FiO₂ mínima.
+Simplificaciones declaradas: la PAO₂ es de estado estacionario, así que en apnea cae porque sube la PaCO₂ y no porque el pulmón se vacíe de O₂: no sirve para enseñar preoxigenación ni tiempos de desaturación. Tampoco hay efecto Bohr ni atelectasia por absorción. El gasto lo da el modelo de corazón-pulmón (§ siguiente). La PaO₂/FiO₂ sube al bajar la FiO₂ cuando el shunt es alto, como en un paciente: por eso CC-04 exige una FiO₂ mínima.
+
+## Corazón-pulmón de modelo
+
+El gasto cardíaco, la presión arterial media y la entrega de O₂ salen de `src/engine/circulation.ts`. Son del modelo, como la gasometría, y no realimentan la mecánica (CP-07).
+
+- **Retorno venoso de Guyton**: GC = (Pmsf − Pad) / Rrv, y PAM = Pad + GC · Rvs. Con el banco: GC 5 L/min, Pad 4 mmHg, PAM 89 mmHg y un gradiente de retorno de ≈ 7,8 mmHg (CP-02, CP-03).
+- **La presión pleural frena el retorno**: sube la Pad en la fracción de la presión media de la vía aérea que llega a la pleura, Cpulmón / (Cpulmón + Cpared). Es 0,25 con 50 mL/cmH₂O y 0,15 en el SDRA de CC-04 (CP-01). La presión abdominal devuelve la mitad de esa subida a la Pmsf.
+- **La volemia es la Pmsf**. SC-01 de PEEP 5 a 15: GC 5,0 → 4,4 L/min y PAM 89 → 81. Hipovolémico (Pmsf 9): 3,7 → 3,1 L/min y PAM 67 → 59. Con 28 mL/cmH₂O, la misma PEEP cuesta menos gasto (CP-04).
+- **El gasto alimenta la oxigenación**: menos gasto baja la PvO₂, y con shunt, la PaO₂ (CP-05). Entrega de O₂: DO₂ = GC × CaO₂.
+- **CC-04 con el pulmón abierto y FiO₂ 0,5**: DO₂ ≈ 994 mL/min a PEEP 10, ≈ 949 a 16 y ≈ 918 a 20, menos que cerrado a PEEP 5 (≈ 957). La mejor PEEP es la más baja que lo mantiene abierto (CP-06, CP-08).
+
+Simplificaciones declaradas: no hay poscarga del ventrículo derecho ni interdependencia ventricular, el mecanismo al que Jardin atribuyó la caída del gasto con la PEEP en el SDRA, así que en un pulmón rígido el modelo la subestima. Tampoco hay reflejos (frecuencia cardíaca, tono venoso), curva arterial ni variación latido a latido. El gasto sigue a su equilibrio con τ = 10 s y usa la presión media de la última respiración (en espera, la de la vía aérea). La transmisión usa la compliance del paciente, no la de la curva ni lo reclutado: en CC-04 queda en 0,15 aunque la Cstat pase de 29 a 43. Con muy poca volemia el gasto toca su suelo de 0,5 L/min y la sangre venosa se queda sin O₂.

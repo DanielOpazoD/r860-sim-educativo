@@ -100,7 +100,8 @@ describe('Casos, Aula y texto recibido', () => {
     const cases = createCaseSpace(ctx, { loadScenario: vi.fn(), switchTab: vi.fn() });
     cases.init();
     // Ahora e inicio de PaCO₂ y pH, rotulados como del modelo; sin columna de equilibrio ni avisos.
-    expect($('#case-gas').querySelectorAll('.gas-item')).toHaveLength(4);
+    expect($('#case-gas').querySelectorAll('.gas-item')).toHaveLength(5);
+    expect($('#case-gas').textContent).toContain('DO₂');
     expect($('#case-gas abbr').textContent).toBe('P/F');
     expect($('#case-gas abbr').title).toBe('PaO₂/FiO₂ (mmHg)');
     expect($('#case-gas').textContent).toContain('PaCO₂');

@@ -409,3 +409,12 @@ Sin PaO₂ ni shunt, la PEEP en el SDRA no se podía enseñar por su objetivo re
 - **La salvedad del panel pasa a «PaCO₂ ≈ 10× más rápida»**: sólo el CO₂ va acelerado (E-128).
 - **Corrección de paso:** el desarrollo de CC-03 decía que con VT 400 y FR 28 el pH vuelve a ≈ 7,32. El motor da PaCO₂ 40 y pH ≈ 7,40; el texto se quedó atrás de un cambio anterior y ninguna prueba lo fijaba. Ahora OXI-10 lo fija.
 - **El motor pasa a 0.8.0**: las huellas mecánicas no cambian; cambian las de gasometría, que ahora incluyen la oxigenación.
+
+## Corazón-pulmón de modelo (05-11-2026)
+
+La PEEP alta no tenía costo hemodinámico. Ahora el motor calcula el gasto cardíaco con el retorno venoso de Guyton, frenado por la presión pleural (E-131, P con ecuaciones D-secundario), y lo usa en el Fick de la oxigenación. Lo que sale en el panel lateral, como dato del modelo: GC, PAM y entrega de O₂.
+
+- **Un pulmón rígido transmite menos presión a la pleura**: la misma PEEP cuesta menos gasto. Eso es fiel a lo que se describe, pero el modelo no tiene la poscarga del ventrículo derecho, y en el SDRA subestima la caída.
+- **CC-04 evalúa la mejor PEEP por DO₂** (E-132). Con FiO₂ 0,5 la DO₂ de equilibrio debe pasar de 970 mL/min. Abrir y quedarse en 10–12 lo cumple; a 16 ya no. El tope de FiO₂ evita compensar con O₂ una PEEP de más.
+- **La volemia y la compliance de la pared**, en la pestaña «Circulación» de «Mecánica avanzada».
+- **El motor pasa a 0.9.0**: las huellas mecánicas no cambian; las de gasometría incluyen ahora el gasto.

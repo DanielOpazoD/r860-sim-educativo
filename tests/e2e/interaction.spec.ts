@@ -1067,7 +1067,7 @@ test.describe('PRE · presets de mecánica del paciente', () => {
 });
 
 test.describe('PAC · panel Paciente esencial', () => {
-  test('cuatro controles a la vista (con las dos resistencias); la mecánica avanzada sale de la barra en cuatro pestañas, un grupo a la vez', async ({
+  test('cuatro controles a la vista (con las dos resistencias); la mecánica avanzada sale de la barra en cinco pestañas, un grupo a la vez', async ({
     page,
   }) => {
     await open(page, { scenario: 'SC-02' });
@@ -1077,7 +1077,7 @@ test.describe('PAC · panel Paciente esencial', () => {
     await expect(page.locator('#flyout-advanced')).toBeHidden();
 
     await openMoreParams(page, 'via');
-    await expect(page.locator('#advanced-tabs [data-group]')).toHaveCount(4);
+    await expect(page.locator('#advanced-tabs [data-group]')).toHaveCount(5);
     await expect(page.locator('#patient-extra-controls [data-group]:visible')).toHaveCount(1);
     await expect(page.locator('[data-phys-range="eflPcrit"]')).toBeVisible();
     await expect(page.locator('[data-phys-range="effortExp"]')).toBeHidden();

@@ -63,6 +63,7 @@ function huella(id: string): Huella {
       h.update(JSON.stringify(f.alarmBar));
       hGas.update(JSON.stringify(f.truth.gas, cifras));
       hGas.update(JSON.stringify(f.truth.oxy, cifras));
+      hGas.update(JSON.stringify(f.truth.circ, cifras));
     }
   }
   h.update(JSON.stringify(sim.breaths, cifras));

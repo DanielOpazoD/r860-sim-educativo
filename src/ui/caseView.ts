@@ -172,6 +172,11 @@ function verdad(frame: EngineFrame | null): HTMLElement | null {
   const o = t.oxy;
   if (o && o.pafiTarget !== null)
     filas.push(fila('PaO₂/FiO₂ de equilibrio y shunt', `${f(o.pafiTarget, 0)} · shunt ${f(o.shunt * 100, 0)} % del gasto`));
+  const h = t.circ;
+  if (h)
+    filas.push(
+      fila('Gasto, PAM y entrega de O₂', `${f(h.cardiacOutputLMin, 1)} L/min · ${f(h.mapMmHg, 0)} mmHg · DO₂ ${f(h.do2MlMin, 0)} mL/min`),
+    );
   return element('div', 'case-truth', element('h3', 'aula-kicker', 'Lo que el modelo sabía'), element('dl', 'edu-gases', ...filas));
 }
 

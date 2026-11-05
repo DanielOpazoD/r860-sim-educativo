@@ -3,9 +3,9 @@ import { open, openFundamentos } from './helpers';
 test('SC-25 mantiene sus límites visibles en los Fundamentos', async ({ page }, info) => {
   await open(page, { scenario: 'SC-25', paused: 1 });
   await openFundamentos(page);
-  await expect(page.locator('#teaching-body .notice-box')).toContainText('gases ni hemodinámica');
+  await expect(page.locator('#teaching-body .notice-box')).toContainText('no realimentan la mecánica');
   await page.click('[data-edu-tab="proteccion"]');
-  await expect(page.locator('#teaching-body')).toContainText('gases ni hemodinámica');
+  await expect(page.locator('#teaching-body')).toContainText('no realimentan la mecánica');
   await expect(page.locator('#teaching-body')).toContainText('no identifica una PEEP clínicamente segura');
   await page.screenshot({ path: info.outputPath('SC25-interpretacion.png'), fullPage: true });
 });
